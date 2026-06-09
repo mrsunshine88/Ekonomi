@@ -157,11 +157,12 @@ All matematik sker i `calculateMonth(state, monthId)` i `src/store.ts`:
 2. **Beräkna skulder (`liabilities`):** För varje räkning, baserat på `splitType`:
    - `'equal'` → beloppet delas lika på alla personkonton.
    - `specificAccountId` → 100% skuld för den personen.
-3. **Räkna balansen:** Om räkningen är på ett **delat konto** (t.ex. huskontot) → varje person måste *föra över* sin andel. Om räkningen är betald av en **person** direkt → den personen får kredit, de andra debiteras.
-4. **Splitwise-algoritm (Debt Simplification):** Balanserna sorteras i fordringsägare och gäldenärer. Algoritmen parar ihop dem och skapar minimalt antal `SwishTransfer[]`-objekt.
+3. **Automatisk överföring (`isAutoTransfer`):** Om räkningen har flaggan `isAutoTransfer: true` satt hoppar `calculateMonth()` över att lägga till den i `transfersToShared`. Det innebär att räkningens belopp fortfarande syns i månadsvyn och räknas med i hushållets totala utgifter, men det genereras **inget krav** på att någon manuellt ska föra över sin andel – pengarna antas redan röra sig automatiskt (t.ex. via stående order). Fjärran överföringssummorna i "Sammanställning"-rutan minskar därmed automatiskt med rätt belopp utan att man behöver räkna manuellt.
+4. **Räkna balansen:** Om räkningen är på ett **delat konto** (t.ex. huskontot) → varje person måste *föra över* sin andel (såvida inte `isAutoTransfer` är satt). Om räkningen är betald av en **person** direkt → den personen får kredit, de andra debiteras.
+5. **Splitwise-algoritm (Debt Simplification):** Balanserna sorteras i fordringsägare och gäldenärer. Algoritmen parar ihop dem och skapar minimalt antal `SwishTransfer[]`-objekt.
 
 ### Varför:
-Kärnan i hela appen. Oavsett om sambon tog elräkningen och du tog hyran, fixar appen nettobeloppet på en bråkdel av en sekund. Eliminerar all manuell räkning och missförstånd.
+Kärnan i hela appen. Oavsett om sambon tog elräkningen och du tog hyran, fixar appen nettobeloppet på en bråkdel av en sekund. Eliminerar all manuell räkning och missförstånd. Med `isAutoTransfer` slipper man dessutom sitta och räkna bort fasta stående order-belopp ur det som ska betalas manuellt varje månad.
 
 ---
 
@@ -327,7 +328,7 @@ Säker och tydlig hantering av vilka som är med i hushållet, vem som får bjud
 |-----|--------|
 | `src/supabase.ts` | Supabase-klient och anslutningskonfiguration. |
 | `src/AuthContext.tsx` | Autentisering, registrering, sessionshantering, hushållsskapande. |
-| `src/types.ts` | All datastruktur: `AppState`, `BillDefinition` (inkl. `isLoan`, `totalDebt`), `PrivateBill`, `PrivateMonthData`, `MonthData`, `Account`, `SwishTransfer`, `CalculationResult`. |
+| `src/types.ts` | All datastruktur: `AppState`, `BillDefinition` (inkl. `isLoan`, `totalDebt`, `isAutoTransfer`), `PrivateBill`, `PrivateMonthData`, `MonthData`, `Account`, `SwishTransfer`, `CalculationResult`. |
 | `src/migrateToRelational.ts` | Engångsskript som automatiskt migrerar gammal `state_json` till de nya relationstabellerna vid uppstart. Använder `upsert` – kan köras om utan bieffekter. |
 | `src/store.ts` | Appens hjärna: `useStore()` (parallell inläsning från alla tabeller, realtidsprenumeration, optimistisk UI, alla CRUD-mutationer), `calculateMonth()` (Splitwise-matematik). |
 | `src/App.tsx` | Rotkomponent, routing (hamburgermeny mobil / knappar desktop), hamburgermeny-state, kopplar alla store-actions till komponenter. |
@@ -336,7 +337,7 @@ Säker och tydlig hantering av vilka som är med i hushållet, vem som får bjud
 | `src/components/PrivateView.tsx` | Privat vy: filtrerar `privateBills` på `userId`, inmatning, låsning av privata månader. |
 | `src/components/Summary.tsx` | Sammanfattningsrutan med Swish- och Överföringsrekommendationer. |
 | `src/components/Statistics.tsx` | EkonomiTB: grafer (recharts), skuld-progress-bars, Excel-knapp, Gemensam/Privat-växel. |
-| `src/components/ManageBills.tsx` | Inställningspanelen: Räkningar (inkl. Lån-kryssruta), Konton, Lås upp (uppdelat Gemensam/Privat), Allmänt. Responsiv flik-layout (knappar på dator, `<select>`-rullgardin på mobil). |
+| `src/components/ManageBills.tsx` | Inställningspanelen: Räkningar (inkl. Lån-kryssruta och Automatisk överföring-kryssruta), Konton, Lås upp (uppdelat Gemensam/Privat), Allmänt. Responsiv flik-layout (knappar på dator, `<select>`-rullgardin på mobil). |
 | `src/components/MyPages.tsx` | Mina sidor: e-post/lösenordsändring, hushållskod, lämna hushåll. |
 | `src/index.css` | Hela appens design: mörkt glassmorphism-tema, CSS-variabler, mobilmedia-queries, hamburgermeny-animationer, `.settings-tabs-desktop` / `.settings-tabs-mobile`-klasser. |
 | `vite.config.ts` | Vite + PWA-konfiguration (Service Worker, manifest, caching-strategi). |
@@ -384,4 +385,5 @@ Förvandlingen av appen från ett robust hobby-projekt till en fullfjädrad "Ent
 | 3.0 | 2026-06-09 | Fullständig migrering till relationsdatabas. Krockfri synkronisering. Automatisk datamigrering. Realtidslyssnare på alla tabeller. |
 | 4.0 | 2026-06-09 | Enterprise-uppgradering: Zustand, Zod validering, lazy-loading, skalbar paginering, och säkerhetshärdning i databas (Constraints). |
 | 5.0 | 2026-06-09 | The Final Polish: Behörighetsnivåer (RBAC), GDPR-efterlevnad (Självradering) och Automatiserade enhetstester (Vitest integrerat i byggflödet). |
-| **5.1** | **2026-06-09** | **Hushållsadministration & UX: Visuell skillnad på logga in/skapa konto, medlemslistor, kick-funktion för ägare, fixat minnesläckage i Zustand vid utloggning, och förfinad RLS för att medlemmar ska se varandra.** |
+| 5.1 | 2026-06-09 | Hushållsadministration & UX: Visuell skillnad på logga in/skapa konto, medlemslistor, kick-funktion för ägare, fixat minnesläckage i Zustand vid utloggning, och förfinad RLS för att medlemmar ska se varandra. |
+| **5.2** | **2026-06-09** | **Automatisk Överföring: Ny `isAutoTransfer`-flagga på gemensamma räkningar. När aktiverad exkluderas räkningens belopp från vad man manuellt ska föra över till huskontot. Kryssrutan finns under ⋯ Inställningar → Räkningar → Ändra. Räkningar med flaggan visas med grön ↩️ Auto-överföring-etikett i listan.** |
