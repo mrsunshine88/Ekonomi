@@ -1,9 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
 import { supabase } from '../supabase';
 
 export default function MyPages() {
-  const { user, householdId, refreshHousehold } = useAuth();
+  const { user, householdId, role, refreshHousehold } = useAuth();
+  const [members, setMembers] = useState<{id: string, email: string, role: string}[]>([]);
+
+  useEffect(() => {
+    if (householdId) {
+      supabase.from('profiles').select('id, email, role').eq('household_id', householdId)
+        .then(({ data }) => {
+          if (data) setMembers(data);
+        });
+    } else {
+      setMembers([]);
+    }
+  }, [householdId]);
+
+  const handleKickMember = async (memberId: string, memberEmail: string) => {
+    if (!window.confirm(`Är du säker på att du vill ta bort ${memberEmail} från hushållet?`)) return;
+    setLoading(true);
+    try {
+      const newHouseholdId = crypto.randomUUID();
+      await supabase.from('households').insert([{ id: newHouseholdId }]);
+      await supabase.from('profiles').update({ household_id: newHouseholdId, role: 'owner' }).eq('id', memberId);
+      
+      setMembers(prev => prev.filter(m => m.id !== memberId));
+      setMsg(`✅ ${memberEmail} har tagits bort från hushållet.`);
+    } catch (e: any) {
+      setMsg('❌ Kunde inte ta bort medlem: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   const [inviteCode, setInviteCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
@@ -194,21 +223,25 @@ export default function MyPages() {
             </button>
           </div>
 
-          <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>👥 Gå med i annans hushåll</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-            Vill du istället gå med i någon annans ekonomi? Klistra in deras kod här:
-          </p>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input 
-              type="text" 
-              placeholder="Klistra in sambons kod..." 
-              value={inviteCode} 
-              onChange={e => setInviteCode(e.target.value)}
-              style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
-            />
-            <button onClick={handleJoinHousehold} disabled={loading} style={{ padding: '0.75rem 1.5rem', background: 'var(--accent-color)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
-              Gå med
-            </button>
+          <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem', marginTop: '1.5rem' }}>👥 Hushållets medlemmar</h3>
+          <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '8px', overflow: 'hidden' }}>
+            {members.map(m => (
+              <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div>
+                  <div style={{ color: '#fff' }}>{m.email} {m.id === user?.id && '(Du)'}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{m.role === 'owner' ? '👑 Ägare' : 'Medlem'}</div>
+                </div>
+                {role === 'owner' && m.id !== user?.id && (
+                  <button 
+                    onClick={() => handleKickMember(m.id, m.email)}
+                    disabled={loading}
+                    style={{ background: '#f43f5e', color: '#fff', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                  >
+                    Kicka ut
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
