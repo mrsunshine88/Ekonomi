@@ -664,15 +664,15 @@ export default function ManageBills() {
 
       {/* Raderingsmodal */}
       {billToDelete && createPortal(
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '1rem' }}>
-          <div className="card" style={{ maxWidth: '400px', width: '100%', border: '1px solid #f43f5e', background: '#111', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
-            <h3 style={{ color: '#f43f5e', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', zIndex: 99999 }}>
+          <div className="card" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', maxWidth: '400px', width: '90%', border: '1px solid #f43f5e', background: '#111', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', margin: 0, padding: '1.5rem' }}>
+            <h3 style={{ color: '#f43f5e', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>⚠️</span> Är du säker?
             </h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+            <p style={{ color: 'var(--text-secondary)', margin: '0 0 1.5rem 0', lineHeight: '1.5' }}>
               När du raderar denna räkning kommer den att döljas för alla framtida månader, men historiken sparas så att gamla grafer och sammanställningar fortfarande stämmer.
             </p>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+            <div style={{ display: 'flex', gap: '1rem' }}>
               <button 
                 onClick={() => setBillToDelete(null)}
                 style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
