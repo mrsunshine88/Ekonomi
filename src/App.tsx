@@ -9,6 +9,7 @@ const Statistics = lazy(() => import('./components/Statistics'));
 import LoginScreen from './components/Auth/LoginScreen';
 import MyPages from './components/MyPages';
 import PrivateView from './components/PrivateView';
+import InstallPrompt from './components/InstallPrompt';
 
 function App() {
   const { user, householdId, loading } = useAuth();
@@ -71,6 +72,7 @@ function App() {
   return (
     <div className="container">
       <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
+      <InstallPrompt />
       <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem', position: 'relative' }}>
         {/* Mobile hamburger button - only visible on mobile */}
         <button
