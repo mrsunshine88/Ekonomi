@@ -151,31 +151,45 @@ export default function ManageBills({
 
   return (
     <div className="card" style={{ marginBottom: '2rem', border: '1px solid var(--accent-color)' }}>
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1.5rem', paddingBottom: '0.5rem', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-        <button 
-          onClick={() => setActiveTab('bills')}
-          style={{ background: activeTab === 'bills' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'bills' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'bills' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'bills' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
-        >
-          📋 Räkningar
-        </button>
-        <button 
-          onClick={() => setActiveTab('accounts')}
-          style={{ background: activeTab === 'accounts' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'accounts' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'accounts' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'accounts' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
-        >
-          🏦 Konton
-        </button>
-        <button 
-          onClick={() => setActiveTab('locks')}
-          style={{ background: activeTab === 'locks' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'locks' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'locks' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'locks' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
-        >
-          🔒 Lås upp
-        </button>
-        <button 
-          onClick={() => setActiveTab('general')}
-          style={{ background: activeTab === 'general' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'general' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'general' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'general' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
-        >
-          ⚙️ Allmänt
-        </button>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div className="settings-tabs-desktop" style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1.5rem', paddingBottom: '0.5rem' }}>
+          <button 
+            onClick={() => setActiveTab('bills')}
+            style={{ background: activeTab === 'bills' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'bills' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'bills' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'bills' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
+          >
+            📋 Räkningar
+          </button>
+          <button 
+            onClick={() => setActiveTab('accounts')}
+            style={{ background: activeTab === 'accounts' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'accounts' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'accounts' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'accounts' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
+          >
+            🏦 Konton
+          </button>
+          <button 
+            onClick={() => setActiveTab('locks')}
+            style={{ background: activeTab === 'locks' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'locks' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'locks' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'locks' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
+          >
+            🔒 Lås upp
+          </button>
+          <button 
+            onClick={() => setActiveTab('general')}
+            style={{ background: activeTab === 'general' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'general' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'general' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'general' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
+          >
+            ⚙️ Allmänt
+          </button>
+        </div>
+        <div className="settings-tabs-mobile" style={{ marginBottom: '1.5rem' }}>
+          <select 
+            value={activeTab} 
+            onChange={(e) => setActiveTab(e.target.value as 'bills' | 'accounts' | 'locks' | 'general')}
+            style={{ width: '100%', padding: '0.8rem', fontSize: '1.05rem', background: 'rgba(0,0,0,0.4)', color: 'var(--text-primary)', border: '1px solid var(--accent-color)', borderRadius: '8px', cursor: 'pointer', appearance: 'auto' }}
+          >
+            <option value="bills">📋 Hantera Räkningar</option>
+            <option value="accounts">🏦 Hantera Konton</option>
+            <option value="locks">🔒 Lås upp månader</option>
+            <option value="general">⚙️ Allmänna inställningar</option>
+          </select>
+        </div>
       </div>
 
       {activeTab === 'general' && (

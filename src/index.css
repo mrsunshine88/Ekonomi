@@ -299,6 +299,14 @@ button.primary:hover {
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.settings-tabs-mobile {
+  display: none;
+}
+
+.settings-tabs-desktop {
+  display: flex;
+}
+
 /* Hamburger button - hidden on desktop, shown on mobile */
 .hamburger-btn {
   display: none;
@@ -320,6 +328,14 @@ button.primary:hover {
   .bill-row {
     grid-template-columns: 1fr;
     gap: 0.5rem;
+  }
+
+  .settings-tabs-desktop {
+    display: none !important;
+  }
+
+  .settings-tabs-mobile {
+    display: block !important;
   }
 
   /* Hide desktop nav on mobile */
