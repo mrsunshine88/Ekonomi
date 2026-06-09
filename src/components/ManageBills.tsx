@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { BillDefinition, PaymentInterval, PrivateBill } from '../types';
 import { useStore } from '../store';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../AuthContext';
 import toast from 'react-hot-toast';
 
@@ -662,9 +663,9 @@ export default function ManageBills() {
       )}
 
       {/* Raderingsmodal */}
-      {billToDelete && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
-          <div className="card" style={{ maxWidth: '400px', width: '100%', border: '1px solid #f43f5e', background: '#111' }}>
+      {billToDelete && createPortal(
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '1rem' }}>
+          <div className="card" style={{ maxWidth: '400px', width: '100%', border: '1px solid #f43f5e', background: '#111', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
             <h3 style={{ color: '#f43f5e', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>⚠️</span> Är du säker?
             </h3>
@@ -686,7 +687,8 @@ export default function ManageBills() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>
