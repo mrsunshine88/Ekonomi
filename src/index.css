@@ -21,7 +21,7 @@
 body {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background-color: var(--bg-color);
-  background-image: 
+  background-image:
     radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15), transparent 25%),
     radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.15), transparent 25%);
   color: var(--text-primary);
@@ -30,7 +30,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-weight: 700;
   letter-spacing: -0.025em;
 }
@@ -88,7 +90,8 @@ h1, h2, h3 {
 }
 
 /* Inputs and Forms */
-input, select {
+input,
+select {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
@@ -100,14 +103,16 @@ input, select {
   width: 100%;
 }
 
-input:focus, select:focus {
+input:focus,
+select:focus {
   outline: none;
   border-color: var(--accent-color);
   background: var(--surface-hover);
 }
 
 select option {
-  background-color: #0f172a; /* Dark solid color */
+  background-color: #0f172a;
+  /* Dark solid color */
   color: #f1f5f9;
 }
 
@@ -131,7 +136,7 @@ input[type="number"]::-webkit-inner-spin-button {
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.bill-row > div:first-child {
+.bill-row>div:first-child {
   flex: 1;
   padding-right: 1rem;
 }
@@ -288,21 +293,22 @@ button.primary:hover {
   gap: 0.5rem;
   flex-wrap: wrap;
   justify-content: center;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
   padding: 0.5rem;
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 @media (max-width: 768px) {
   .grid-2 {
     grid-template-columns: 1fr;
   }
+
   .bill-row {
     grid-template-columns: 1fr;
     gap: 0.5rem;
   }
-  
+
   .nav-container {
     position: fixed;
     bottom: 0;
@@ -320,7 +326,7 @@ button.primary:hover {
     padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
     justify-content: space-around !important;
   }
-  
+
   .nav-container button {
     flex: 1;
     padding: 0.5rem !important;
@@ -330,27 +336,28 @@ button.primary:hover {
     align-items: center;
     gap: 0.2rem;
   }
-  
+
   .container {
     padding-bottom: 8rem;
   }
-  
+
   .header h1 {
     font-size: 2rem;
   }
-  
-  .summary-value, .swish-amount {
+
+  .summary-value,
+  .swish-amount {
     font-size: 2.2rem;
   }
-  
+
   .card {
     padding: 1rem;
   }
-  
+
   .summary-box {
     padding: 1.5rem 1rem;
   }
-  
+
   .back-button {
     display: inline-flex;
     align-items: center;

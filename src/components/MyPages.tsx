@@ -19,7 +19,7 @@ export default function MyPages() {
       const { data: hh, error: hhErr } = await supabase.from('households').select('id').eq('id', inviteCode.trim()).single();
       if (hhErr || !hh) throw new Error('Kunde inte hitta koden. Är den rättstavad?');
 
-      const { error } = await supabase.from('profiles').update({ household_id: hh.id }).eq('id', user?.id);
+      const { error } = await supabase.from('profiles').upsert([{ id: user?.id, email: user?.email, household_id: hh.id }]);
       if (error) throw error;
 
       await refreshHousehold();
@@ -32,20 +32,21 @@ export default function MyPages() {
   };
 
   const handleCreateHousehold = async () => {
+    if (!user) return;
     setLoading(true);
     try {
       const newHouseholdId = crypto.randomUUID();
-      
       const { error: hhErr } = await supabase.from('households').insert([{ id: newHouseholdId }]);
       if (hhErr) throw hhErr;
-
-      const { error: profErr } = await supabase.from('profiles').update({ household_id: newHouseholdId }).eq('id', user?.id);
-      if (profErr) throw profErr;
-
+      
+      const { error } = await supabase.from('profiles').upsert([{ id: user.id, email: user.email, household_id: newHouseholdId }]);
+      if (error) throw error;
+      
       await refreshHousehold();
       setMsg('✅ Molnsynk och delning aktiverat!');
-    } catch (e: any) {
-      setMsg('❌ ' + e.message);
+    } catch (err: any) {
+      console.error(err);
+      setMsg('❌ Kunde inte skapa molnsynk. Försök igen.');
     } finally {
       setLoading(false);
     }
