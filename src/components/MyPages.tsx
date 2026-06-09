@@ -105,7 +105,7 @@ export default function MyPages() {
     const newRole = currentRole === 'owner' ? 'member' : 'owner';
     setLoading(true);
     try {
-      const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', memberId);
+      const { error } = await supabase.rpc('set_user_role', { target_user_id: memberId, new_role: newRole });
       if (error) throw error;
       
       setMembers(members.map(m => m.id === memberId ? { ...m, role: newRole } : m));
