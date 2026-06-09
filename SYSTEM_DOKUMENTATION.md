@@ -1,6 +1,6 @@
 # Ekonomi & Swish - Systemdokumentation
 
-**Version:** 4.0 (Enterprise-uppgradering: Zustand, Zod & Säkerhet)  
+**Version:** 5.6 (Enterprise-uppgradering: Zustand, Zod & Säkerhet)  
 **Plattform:** React + TypeScript + Vite (PWA) | Databas: Supabase (PostgreSQL) | Hosting: Vercel  
 **Uppdaterad:** 2026-06-09
 
@@ -234,6 +234,11 @@ En egen flik (`🔒 Privat`) där varje användare hanterar sina egna, privata u
 - Belopp per månad sparas i `private_month_amounts` (en rad per räkning och månad).
 - Upplåsning sker via `⚙️ Inställningar → 🔒 Lås upp → "Mina Privata Lås"`.
 
+### Hur – Kringgående av RLS vid inställningsändringar (RPC Bypass):
+- Tidigare hanterades ändring av `share_private_economy` via standard PostgreSQL `UPDATE`-kommandon. Dock påverkades detta starkt av RLS-policys, vilket skapade en konflikt (och infinite recursion) vid vissa tabelluppslagningar när policyn försökte kolla i sig själv.
+- Ännu värre var att klienten kraschade tyst i `loadCloud` på grund av saknade databaskolumner (exempelvis `display_name`).
+- Lösningen är nu **"RPC Bypass"**. Appen använder en *Remote Procedure Call* (`toggle_share_private_economy`) som körs med `SECURITY DEFINER` på databasnivån. Detta tillåter appen att ignorera standard-RLS just för detta specifika ändamål, vilket garanterar att datan sparas även i strikt låsta miljöer. Samtidigt använder UI:t e-postadress istället för obefintliga kolumner.
+
 ### Hur – Skapandedatum (`start_month`):
 - När en ny räkning (privat eller gemensam) skapas, stämplas den med den aktuella månaden (`YYYY-MM`) i kolumnen `start_month`.
 - Systemet filtrerar automatiskt bort räkningen från vyer och beräkningar som avser månader före `start_month`. Detta förhindrar att nya utgifter plötsligt dyker upp "bakåt i tiden" i gammal historik.
@@ -322,6 +327,7 @@ Säker och tydlig hantering av vilka som är med i hushållet, vem som får bjud
 
 ### Hur:
 - **Medlemslista & Kick-funktion:** På "Mina Sidor" hämtas hushållets medlemmar asynkront via tabellen `profiles`. Om inloggad användare har rollen `owner`, ges behörighet att klicka på en "Kicka ut"-knapp för vanliga medlemmar. Funktionen skapar ett nytt, tomt hushåll och kastar omedelbart dit den utsparkade medlemmen så att inga krascher uppstår och de förlorar tillgången till er delade data.
+- **Dynamiskt Grundarskydd (Founder Protection):** Ett hushålls grundare (den vars profilrad har det allra äldsta `created_at` i hushållet) är numera helt osårbar. Även om en "owner" försöker, försvinner knapparna för degradering och utsparkning automatiskt i UI:t för Grundaren. Denna logik är inte hårdkodad utan 100% dynamisk baserat på uppkomst i databasen.
 - **Skyddade Inbjudningar:** Inbjudningskoden och blocket för molnsynk visas exklusivt för ägaren. Vanliga medlemmar får enbart en ren informationsvy över att de är med.
 - **Lämna hushåll:** Knappen **"🚪 Lämna och skapa eget hushåll"** kör `handleCreateHousehold()` för användare som frivilligt vill hoppa av. Samma mekanism (nytt UUID via `crypto.randomUUID()`) körs. Den gamla hushållsdatan är orörd för de som är kvar.
 - **GDPR Självradering:** En dedikerad och permanent röd knapp, "Radera mitt konto för alltid", finns placerad oavsett hushållsstatus. Raderingen anropar `delete_user`-funktionen i databasen som rensar autentiseringsidentiteten och låter PostgreSQL:s `ON DELETE CASCADE` radera all profilinformation och privata räkningar.
@@ -399,3 +405,4 @@ Förvandlingen av appen från ett robust hobby-projekt till en fullfjädrad "Ent
 | **5.3** | **2026-06-09** | **Global Delning & Tidslinje: Bytte ut per-räkning delning till ett globalt "Dela hela min privata ekonomi"-reglage i Mina Sidor. Möjlighet att växla mellan medlemmars privata ekonomi via en rullgardinsmeny. Inför- Tidsstämpel `start_month` för alla räkningar förhindrar dem från att skapas och synas bakåt i tiden när de läggs till mitt i året.** |
 | **5.4** | **2026-06-09** | **Ombyggnad av "Automatisk överföring" (`isAutoTransfer`). Kolumnen i databasen bytte typ från `boolean` till `text`. Möjliggör val att antingen undanta ALLA från att föra över manuellt (som förr) ELLER en specifik person. Åtgärdat ett state management-kraschproblem (TypeError: `split` on undefined) orsakat av att lokal cache sparade månadsdata utan internt `monthId` vid "Hämta siffror från förra månaden".** |
 | **5.5** | **2026-06-09** | **Säkerhet och Låsning: Lade till krav på nuvarande lösenord vid ändring av e-post/lösenord. Ändrade Swish/Överföring-knapparna till att låsas omedelbart (disabled) efter ett klick, utan möjlighet att ångra i samma vy. Införde en funktion för Ägare att kunna befordra medlemmar till Ägare via en säker RPC-funktion (`set_user_role`) i databasen, vilket kringgår RLS. Uppdaterade realtidslyssnaren till att även prenumerera på `profiles` för blixtsnabba behörighetsuppdateringar och delningsknappar.** |
+| **5.6** | **2026-06-09** | **Bugghärdning och Grundarskydd: Införde dynamiskt grundarskydd via `created_at` för att garantera att den första personen i hushållet aldrig kan sparkas ut eller degraderas, ens av andra ägare. Fixade ett extremt tyst fel i `store.ts` där en saknad databaskolumn (`display_name`) fick hela profilinladdningen och realtidsuppdateringen att krascha tyst, vilket förstörde Delning av Privat Ekonomi. Bytte även från RLS `UPDATE` till en "RPC Bypass" (`toggle_share_private_economy`) för att garantera att databasuppdateringar för delning alltid släpps igenom.** |
