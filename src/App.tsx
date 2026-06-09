@@ -13,6 +13,12 @@ function App() {
   const { user, householdId, loading } = useAuth();
   const { state, updateBillAmount, addBill, removeBill, updateBill, addAccount, removeAccount, copyFromPreviousMonth, togglePaymentStatus, confirmAnomaly, unlockAccount, updateSettings, updatePrivateBillAmount, addPrivateBill, removePrivateBill, updatePrivateBill, copyPrivateFromPreviousMonth, confirmPrivateAnomaly, togglePrivateLock } = useStore(householdId);
   const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages' | 'privat'>('month');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const navigateTo = (view: 'month' | 'stats' | 'manage' | 'mypages' | 'privat') => {
+    setCurrentView(view);
+    setMobileMenuOpen(false);
+  };
   
   // Defaults to current month YYYY-MM
   const [currentMonth, setCurrentMonth] = useState(() => {
@@ -52,38 +58,72 @@ function App() {
 
   return (
     <div className="container">
-      <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
+      <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem', position: 'relative' }}>
+        {/* Mobile hamburger button - only visible on mobile */}
+        <button
+          className="hamburger-btn"
+          onClick={() => setMobileMenuOpen(prev => !prev)}
+          aria-label="Meny"
+        >
+          {mobileMenuOpen ? '✕' : '☰'}
+        </button>
+
+        {/* Mobile dropdown overlay - only visible on mobile when open */}
+        {mobileMenuOpen && (
+          <>
+            <div className="mobile-menu-backdrop" onClick={() => setMobileMenuOpen(false)} />
+            <div className="mobile-menu-dropdown">
+              {([
+                ['month', '📅 Månadsvy'],
+                ['stats', '📊 EkonomiTB'],
+                ['manage', '⚙️ Inställningar'],
+                ['privat', '🔒 Privat'],
+                ['mypages', '👤 Mina sidor'],
+              ] as Array<[typeof currentView, string]>).map(([view, label]) => (
+                <button
+                  key={view}
+                  onClick={() => navigateTo(view)}
+                  className={`mobile-menu-item ${currentView === view ? 'active' : ''}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
         <div>
           <h1 style={{ margin: 0, marginBottom: '0.5rem' }}>Ekonomi & Swish</h1>
           <p style={{ margin: 0 }}>Automatisk uträkning av hushållets räkningar</p>
         </div>
+        {/* Desktop nav - hidden on mobile via CSS */}
         <nav className="nav-container">
           <button 
-            onClick={() => setCurrentView('month')} 
+            onClick={() => navigateTo('month')} 
             style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'month' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'month' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'month' ? 'bold' : 'normal', transition: 'all 0.2s' }}
           >
             📅 Månadsvy
           </button>
           <button 
-            onClick={() => setCurrentView('stats')} 
+            onClick={() => navigateTo('stats')} 
             style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'stats' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'stats' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'stats' ? 'bold' : 'normal', transition: 'all 0.2s' }}
           >
             📊 EkonomiTB
           </button>
           <button 
-            onClick={() => setCurrentView('manage')} 
+            onClick={() => navigateTo('manage')} 
             style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'manage' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'manage' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'manage' ? 'bold' : 'normal', transition: 'all 0.2s' }}
           >
             ⚙️ Inställningar
           </button>
           <button 
-            onClick={() => setCurrentView('privat')} 
+            onClick={() => navigateTo('privat')} 
             style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'privat' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'privat' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'privat' ? 'bold' : 'normal', transition: 'all 0.2s' }}
           >
             🔒 Privat
           </button>
           <button 
-            onClick={() => setCurrentView('mypages')} 
+            onClick={() => navigateTo('mypages')} 
             style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'mypages' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'mypages' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'mypages' ? 'bold' : 'normal', transition: 'all 0.2s' }}
           >
             👤 Mina sidor

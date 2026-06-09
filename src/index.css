@@ -299,6 +299,19 @@ button.primary:hover {
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+/* Hamburger button - hidden on desktop, shown on mobile */
+.hamburger-btn {
+  display: none;
+}
+
+/* Mobile dropdown menu */
+.mobile-menu-backdrop {
+  display: none;
+}
+.mobile-menu-dropdown {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .grid-2 {
     grid-template-columns: 1fr;
@@ -309,36 +322,111 @@ button.primary:hover {
     gap: 0.5rem;
   }
 
+  /* Hide desktop nav on mobile */
   .nav-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    z-index: 100;
-    border-radius: 0;
-    border: none;
-    border-top: 1px solid var(--border-color);
-    background: rgba(11, 15, 25, 0.95);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: 0.75rem 0.5rem;
-    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
-    justify-content: space-around !important;
+    display: none !important;
   }
 
-  .nav-container button {
-    flex: 1;
-    padding: 0.5rem !important;
-    font-size: 0.8rem !important;
+  /* Show hamburger button on mobile */
+  .hamburger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 200;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 10px;
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: #a5b4fc;
+    font-size: 1.3rem;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+
+  .hamburger-btn:hover {
+    background: rgba(99, 102, 241, 0.4);
+    color: white;
+    transform: none;
+    border: 1px solid rgba(99, 102, 241, 0.6);
+  }
+
+  /* Backdrop overlay */
+  .mobile-menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
+  /* Dropdown menu panel */
+  .mobile-menu-dropdown {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.2rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 75%;
+    max-width: 280px;
+    z-index: 160;
+    background: rgba(11, 15, 25, 0.98);
+    border-right: 1px solid rgba(99, 102, 241, 0.25);
+    padding: 5rem 1rem 2rem 1rem;
+    gap: 0.5rem;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    animation: slideInLeft 0.22s ease-out;
+  }
+
+  @keyframes slideInLeft {
+    from { transform: translateX(-100%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+
+  .mobile-menu-item {
+    width: 100%;
+    padding: 1rem 1.2rem !important;
+    font-size: 1.05rem !important;
+    text-align: left !important;
+    background: transparent !important;
+    color: var(--text-secondary) !important;
+    border: none !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    font-weight: normal !important;
+    transition: all 0.15s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+  }
+
+  .mobile-menu-item:hover {
+    background: rgba(255,255,255,0.06) !important;
+    color: var(--text-primary) !important;
+    transform: none !important;
+  }
+
+  .mobile-menu-item.active {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: #a5b4fc !important;
+    font-weight: bold !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
   }
 
   .container {
-    padding-bottom: 8rem;
+    padding-bottom: 2rem;
+    padding-top: 4rem;
   }
 
   .header h1 {
