@@ -372,6 +372,7 @@ export function useStore(householdId: string | null) {
       if (!prevMonth) return prev;
 
       const currentMonthData = (prev.privateMonths && prev.privateMonths[monthId]) || { monthId, billAmounts: {}, handledPayments: {} };
+      if (currentMonthData.isLocked) return prev;
       const newAmounts = { ...currentMonthData.billAmounts };
 
       (prev.privateBills || []).forEach(bill => {
@@ -391,11 +392,48 @@ export function useStore(householdId: string | null) {
     });
   };
 
+  const confirmPrivateAnomaly = (monthId: string, billId: string) => {
+    setState(prev => {
+      const monthData = (prev.privateMonths && prev.privateMonths[monthId]) || { monthId, billAmounts: {}, handledPayments: {} };
+      const currentConfirmed = monthData.confirmedAnomalies || {};
+      return {
+        ...prev,
+        privateMonths: {
+          ...(prev.privateMonths || {}),
+          [monthId]: {
+            ...monthData,
+            confirmedAnomalies: {
+              ...currentConfirmed,
+              [billId]: true
+            }
+          }
+        }
+      };
+    });
+  };
+
+  const togglePrivateLock = (monthId: string) => {
+    setState(prev => {
+      const monthData = (prev.privateMonths && prev.privateMonths[monthId]) || { monthId, billAmounts: {}, handledPayments: {} };
+      return {
+        ...prev,
+        privateMonths: {
+          ...(prev.privateMonths || {}),
+          [monthId]: {
+            ...monthData,
+            isLocked: !monthData.isLocked
+          }
+        }
+      };
+    });
+  };
+
   return { 
     state, updateBillAmount, addBill, removeBill, updateBill, 
     addAccount, removeAccount, updateAccount, copyFromPreviousMonth, 
     togglePaymentStatus, confirmAnomaly, unlockAccount, updateSettings,
-    updatePrivateBillAmount, addPrivateBill, removePrivateBill, updatePrivateBill, copyPrivateFromPreviousMonth
+    updatePrivateBillAmount, addPrivateBill, removePrivateBill, updatePrivateBill, copyPrivateFromPreviousMonth,
+    confirmPrivateAnomaly, togglePrivateLock
   };
 }
 

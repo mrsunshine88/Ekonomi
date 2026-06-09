@@ -1,22 +1,32 @@
 import { useState } from 'react';
-import type { AppState, BillDefinition, Account, PaymentInterval } from '../types';
+import type { AppState, BillDefinition, Account, PaymentInterval, PrivateBill } from '../types';
+import { useAuth } from '../AuthContext';
 
 interface Props {
   state: AppState;
   onAddBill: (bill: BillDefinition) => void;
   onRemoveBill: (billId: string) => void;
   onUpdateBill: (bill: BillDefinition) => void;
+  onAddPrivateBill: (bill: PrivateBill) => void;
+  onRemovePrivateBill: (billId: string) => void;
+  onUpdatePrivateBill: (bill: PrivateBill) => void;
   onAddAccount: (account: Account) => void;
   onRemoveAccount: (accountId: string) => void;
   onUnlockAccount: (monthId: string, accountId: string) => void;
   onUpdateSettings: (settings: Partial<AppState['settings']>) => void;
 }
 
-export default function ManageBills({ state, onAddBill, onRemoveBill, onUpdateBill, onAddAccount, onRemoveAccount, onUnlockAccount, onUpdateSettings }: Props) {
+export default function ManageBills({ 
+  state, onAddBill, onRemoveBill, onUpdateBill, 
+  onAddPrivateBill, onRemovePrivateBill, onUpdatePrivateBill,
+  onAddAccount, onRemoveAccount, onUnlockAccount, onUpdateSettings 
+}: Props) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'bills' | 'accounts' | 'locks' | 'general'>('bills');
   
   // New/Edit Bill State
   const [editingBillId, setEditingBillId] = useState<string | null>(null);
+  const [newBillScope, setNewBillScope] = useState<'shared' | 'private'>('shared');
   const [newBillName, setNewBillName] = useState('');
   const [newBillAccount, setNewBillAccount] = useState(state.accounts[0]?.id || '');
   const [newBillSplit, setNewBillSplit] = useState('equal');
@@ -31,26 +41,45 @@ export default function ManageBills({ state, onAddBill, onRemoveBill, onUpdateBi
   const [newAccTransferMethod, setNewAccTransferMethod] = useState<'transfer' | 'swish'>('swish');
 
   const handleSaveBill = () => {
-    if (!newBillName.trim() || !newBillAccount) return;
+    if (!newBillName.trim()) return;
+    if (newBillScope === 'shared' && !newBillAccount) return;
     
-    const billData = {
-      id: editingBillId || (newBillName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now()),
-      name: newBillName,
-      accountId: newBillAccount,
-      splitType: newBillSplit,
-      defaultAmount: newBillDefault === '' ? 0 : parseFloat(newBillDefault),
-      interval: newBillInterval,
-      customMonths: newBillInterval === 'custom' ? newBillCustomMonths : undefined,
-      warnIfZero: newBillWarn
-    };
-
-    if (editingBillId) {
-      onUpdateBill(billData);
-      setEditingBillId(null);
+    if (newBillScope === 'private') {
+      if (!user) return;
+      const billData: PrivateBill = {
+        id: editingBillId || ('priv_' + Date.now()),
+        name: newBillName,
+        defaultAmount: newBillDefault === '' ? 0 : parseFloat(newBillDefault),
+        interval: newBillInterval,
+        customMonths: newBillInterval === 'custom' ? newBillCustomMonths : undefined,
+        warnIfZero: newBillWarn,
+        userId: user.id,
+        isShared: false // default, can be toggled in private view
+      };
+      if (editingBillId) {
+        onUpdatePrivateBill(billData);
+      } else {
+        onAddPrivateBill(billData);
+      }
     } else {
-      onAddBill(billData);
+      const billData: BillDefinition = {
+        id: editingBillId || (newBillName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now()),
+        name: newBillName,
+        accountId: newBillAccount,
+        splitType: newBillSplit,
+        defaultAmount: newBillDefault === '' ? 0 : parseFloat(newBillDefault),
+        interval: newBillInterval,
+        customMonths: newBillInterval === 'custom' ? newBillCustomMonths : undefined,
+        warnIfZero: newBillWarn
+      };
+      if (editingBillId) {
+        onUpdateBill(billData);
+      } else {
+        onAddBill(billData);
+      }
     }
     
+    setEditingBillId(null);
     setNewBillName('');
     setNewBillDefault('');
     setNewBillWarn(false);
@@ -60,6 +89,7 @@ export default function ManageBills({ state, onAddBill, onRemoveBill, onUpdateBi
 
   const handleEditBill = (bill: BillDefinition) => {
     setEditingBillId(bill.id);
+    setNewBillScope('shared');
     setNewBillName(bill.name);
     setNewBillAccount(bill.accountId);
     setNewBillSplit(bill.splitType);
@@ -68,14 +98,24 @@ export default function ManageBills({ state, onAddBill, onRemoveBill, onUpdateBi
     setNewBillCustomMonths(bill.customMonths || []);
     setNewBillWarn(bill.warnIfZero || false);
     
-    // Smooth scroll to the form at the bottom
-    setTimeout(() => {
-      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    }, 100);
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  };
+
+  const handleEditPrivateBill = (bill: PrivateBill) => {
+    setEditingBillId(bill.id);
+    setNewBillScope('private');
+    setNewBillName(bill.name);
+    setNewBillDefault(bill.defaultAmount ? bill.defaultAmount.toString() : '');
+    setNewBillInterval(bill.interval || 'all');
+    setNewBillCustomMonths(bill.customMonths || []);
+    setNewBillWarn(bill.warnIfZero || false);
+    
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   };
 
   const handleCancelEdit = () => {
     setEditingBillId(null);
+    setNewBillScope('shared');
     setNewBillName('');
     setNewBillDefault('');
     setNewBillWarn(false);
@@ -249,7 +289,7 @@ export default function ManageBills({ state, onAddBill, onRemoveBill, onUpdateBi
 
       {activeTab === 'bills' && (
         <div>
-          <h3 className="card-title">Befintliga Räkningar</h3>
+          <h3 className="card-title">Gemensamma Räkningar (Månadsvyn)</h3>
           <div className="bill-list" style={{ marginBottom: '2rem' }}>
             {state.bills.map(bill => {
               const account = state.accounts.find(a => a.id === bill.accountId);
@@ -293,8 +333,68 @@ export default function ManageBills({ state, onAddBill, onRemoveBill, onUpdateBi
             })}
           </div>
 
-          <h3 className="card-title">{editingBillId ? 'Ändra räkning' : 'Lägg till ny räkning'}</h3>
+          {(state.privateBills || []).filter(b => b.userId === user?.id).length > 0 && (
+            <>
+              <h3 className="card-title">Mina Privata Räkningar (Privata vyn)</h3>
+              <div className="bill-list" style={{ marginBottom: '2rem' }}>
+                {(state.privateBills || []).filter(b => b.userId === user?.id).map(bill => {
+                  let intervalText = 'Varje månad';
+                  if (bill.interval === 'odd') intervalText = 'Udda månader';
+                  if (bill.interval === 'even') intervalText = 'Jämna månader';
+                  if (bill.interval === 'custom') {
+                    const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+                    intervalText = bill.customMonths && bill.customMonths.length > 0 
+                      ? `Specifika månader: ${bill.customMonths.sort((a,b)=>a-b).map(m => monthNamesShort[m-1]).join(', ')}`
+                      : 'Specifika månader (Inga valda)';
+                  }
+
+                  return (
+                    <div key={bill.id} className="bill-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div className="bill-name">{bill.name} {bill.warnIfZero && '⚠️ Varning'}</div>
+                        <div className="bill-meta">Privat • {intervalText}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button 
+                          onClick={() => handleEditPrivateBill(bill)}
+                          style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          Ändra
+                        </button>
+                        <button 
+                          onClick={() => onRemovePrivateBill(bill.id)}
+                          style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          Ta bort
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          <h3 className="card-title">{editingBillId ? 'Ändra Räkning' : 'Lägg till ny räkning'}</h3>
           <div style={{ display: 'grid', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: editingBillId ? '2px solid var(--accent-color)' : 'none' }}>
+            
+            {!editingBillId && (
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
+                <button 
+                  onClick={() => setNewBillScope('shared')}
+                  style={{ flex: 1, padding: '0.75rem', background: newBillScope === 'shared' ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)', color: newBillScope === 'shared' ? '#fff' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: newBillScope === 'shared' ? 'bold' : 'normal' }}
+                >
+                  Gemensam Räkning
+                </button>
+                <button 
+                  onClick={() => setNewBillScope('private')}
+                  style={{ flex: 1, padding: '0.75rem', background: newBillScope === 'private' ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)', color: newBillScope === 'private' ? '#fff' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: newBillScope === 'private' ? 'bold' : 'normal' }}
+                >
+                  🔒 Privat Räkning
+                </button>
+              </div>
+            )}
+
             <input 
               type="text" 
               placeholder="Namn (t.ex. Bredband)" 
@@ -302,19 +402,23 @@ export default function ManageBills({ state, onAddBill, onRemoveBill, onUpdateBi
               onChange={e => setNewBillName(e.target.value)} 
             />
             
-            <select value={newBillAccount} onChange={e => setNewBillAccount(e.target.value)}>
-              <option value="" disabled>-- Välj vilket konto räkningen dras ifrån --</option>
-              {state.accounts.map(acc => (
-                <option key={acc.id} value={acc.id}>{acc.name}</option>
-              ))}
-            </select>
-            
-            <select value={newBillSplit} onChange={e => setNewBillSplit(e.target.value)}>
-              <option value="equal">Delas lika på alla personer (Gemensam)</option>
-              {state.accounts.filter(a => a.type === 'person').map(acc => (
-                <option key={acc.id} value={acc.id}>{acc.name} betalar 100%</option>
-              ))}
-            </select>
+            {newBillScope === 'shared' && (
+              <>
+                <select value={newBillAccount} onChange={e => setNewBillAccount(e.target.value)}>
+                  <option value="" disabled>-- Välj vilket konto räkningen dras ifrån --</option>
+                  {state.accounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>{acc.name}</option>
+                  ))}
+                </select>
+                
+                <select value={newBillSplit} onChange={e => setNewBillSplit(e.target.value)}>
+                  <option value="equal">Delas lika på alla personer (Gemensam)</option>
+                  {state.accounts.filter(a => a.type === 'person').map(acc => (
+                    <option key={acc.id} value={acc.id}>{acc.name} betalar 100%</option>
+                  ))}
+                </select>
+              </>
+            )}
 
             <select value={newBillInterval} onChange={e => setNewBillInterval(e.target.value as PaymentInterval)}>
               <option value="all">Betalas: Varje månad</option>

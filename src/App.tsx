@@ -11,7 +11,7 @@ import PrivateView from './components/PrivateView';
 
 function App() {
   const { user, householdId, loading } = useAuth();
-  const { state, updateBillAmount, addBill, removeBill, updateBill, addAccount, removeAccount, copyFromPreviousMonth, togglePaymentStatus, confirmAnomaly, unlockAccount, updateSettings, updatePrivateBillAmount, addPrivateBill, removePrivateBill, updatePrivateBill, copyPrivateFromPreviousMonth } = useStore(householdId);
+  const { state, updateBillAmount, addBill, removeBill, updateBill, addAccount, removeAccount, copyFromPreviousMonth, togglePaymentStatus, confirmAnomaly, unlockAccount, updateSettings, updatePrivateBillAmount, addPrivateBill, removePrivateBill, updatePrivateBill, copyPrivateFromPreviousMonth, confirmPrivateAnomaly, togglePrivateLock } = useStore(householdId);
   const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages' | 'privat'>('month');
   
   // Defaults to current month YYYY-MM
@@ -104,6 +104,9 @@ function App() {
             onAddBill={addBill} 
             onRemoveBill={removeBill} 
             onUpdateBill={updateBill} 
+            onAddPrivateBill={addPrivateBill}
+            onRemovePrivateBill={removePrivateBill}
+            onUpdatePrivateBill={updatePrivateBill}
             onAddAccount={addAccount}
             onRemoveAccount={removeAccount}
             onUnlockAccount={unlockAccount}
@@ -136,9 +139,9 @@ function App() {
             state={state} 
             currentMonth={currentMonth}
             onChangeAmount={(billId, amount) => updatePrivateBillAmount(currentMonth, billId, amount)}
-            onAddBill={addPrivateBill}
-            onRemoveBill={removePrivateBill}
             onUpdateBill={updatePrivateBill}
+            onConfirmAnomaly={confirmPrivateAnomaly}
+            onToggleLock={togglePrivateLock}
           />
         </>
       ) : (

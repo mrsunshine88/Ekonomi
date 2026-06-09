@@ -30,6 +30,8 @@ export interface PrivateBill {
   name: string;
   defaultAmount: number;
   interval: PaymentInterval;
+  customMonths?: number[];
+  warnIfZero?: boolean;
   userId: string;
   isShared?: boolean;
 }
@@ -38,6 +40,8 @@ export interface PrivateMonthData {
   monthId: string;
   billAmounts: Record<string, number>;
   handledPayments?: Record<string, boolean>;
+  confirmedAnomalies?: Record<string, boolean>;
+  isLocked?: boolean;
 }
 
 export interface AppState {
