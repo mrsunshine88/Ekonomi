@@ -531,22 +531,14 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ state: { ...state, householdProfiles: updatedProfiles } });
     
     // Update DB
-    const { error, data } = await supabase.rpc('toggle_share_private_economy', { share_status: share });
+    const { error } = await supabase.rpc('toggle_share_private_economy', { share_status: share });
     if (error) {
-      set({ state: prevState });
-      throw error;
-    }
-    
-    // Fallback om rpc inte är skapad ännu - testa vanlig update
-    if (data === null || data === undefined) {
       const fallback = await supabase.from('profiles').update({ share_private_economy: share }).eq('id', userId);
       if (fallback.error) {
         set({ state: prevState });
         throw fallback.error;
       }
     }
-    
-    return { share_private_economy: share };
   },
 
   updatePrivateBillAmount: async (monthId, billId, amount) => {
