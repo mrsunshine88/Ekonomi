@@ -112,10 +112,11 @@ export default function Summary({ currentMonth }: Props) {
                     {amount.toLocaleString('sv-SE', { maximumFractionDigits: 0 })} kr
                   </div>
                   <button 
-                    onClick={() => handleToggle(paymentId)}
-                    style={{ marginTop: '1.5rem', padding: '0.5rem 1.5rem', fontSize: '0.9rem', fontWeight: 600, background: isPaid ? 'var(--success-color)' : 'transparent', color: isPaid ? '#fff' : 'var(--text-secondary)', border: isPaid ? '2px solid var(--success-color)' : '2px solid var(--text-secondary)', borderRadius: '20px', cursor: 'pointer', opacity: missingSharedBills.length > 0 ? 0.6 : 1 }}
+                    onClick={() => { if (!isPaid) handleToggle(paymentId); }}
+                    style={{ marginTop: '1.5rem', padding: '0.5rem 1.5rem', fontSize: '0.9rem', fontWeight: 600, background: isPaid ? 'var(--success-color)' : 'transparent', color: isPaid ? '#fff' : 'var(--text-secondary)', border: isPaid ? '2px solid var(--success-color)' : '2px solid var(--text-secondary)', borderRadius: '20px', cursor: isPaid ? 'default' : 'pointer', opacity: missingSharedBills.length > 0 ? 0.6 : 1 }}
+                    disabled={isPaid}
                   >
-                    {isPaid ? (isTransfer ? '✅ Överfört' : '✅ Swishat') : (isTransfer ? 'Markera som överfört' : 'Markera som Swishat')}
+                    {isPaid ? (isTransfer ? '🔒 Överfört (Låst)' : '🔒 Swishat (Låst)') : (isTransfer ? 'Markera som överfört' : 'Markera som Swishat')}
                   </button>
                 </div>
               );

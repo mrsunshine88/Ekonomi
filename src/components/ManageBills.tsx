@@ -285,14 +285,21 @@ export default function ManageBills() {
                   const lockedAccounts = new Set<string>();
                   Object.keys(handled).forEach(paymentId => {
                     if (handled[paymentId]) {
-                      if (paymentId.startsWith('transfer_') && paymentId.endsWith('_huskonto')) {
-                        const personId = paymentId.split('_')[1];
+                      if (paymentId.startsWith('transfer_')) {
+                        const parts = paymentId.split('_');
+                        const personId = parts[1];
+                        const sharedId = parts.slice(2).join('_');
                         lockedAccounts.add(personId);
-                        lockedAccounts.add('huskonto');
+                        lockedAccounts.add(sharedId);
                       } else if (paymentId.startsWith('swish_')) {
-                        const [, fromId, toId] = paymentId.split('_');
-                        lockedAccounts.add(fromId);
-                        lockedAccounts.add(toId);
+                        const parts = paymentId.split('_');
+                        if (parts.length > 3 && parts[2] === 'to') {
+                            lockedAccounts.add(parts[1]);
+                            lockedAccounts.add(parts.slice(3).join('_'));
+                        } else {
+                            lockedAccounts.add(parts[1]);
+                            lockedAccounts.add(parts[2]);
+                        }
                       }
                     }
                   });
