@@ -94,6 +94,7 @@ export default function ManageBills() {
     setNewBillInterval('all');
     setNewBillCustomMonths([]);
     toast.success(wasEditing ? '✅ Räkning sparad!' : '✅ Räkning tillagd!');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleEditBill = (bill: BillDefinition) => {
