@@ -60,9 +60,12 @@ export async function runRelationalMigration(householdId: string, userId: string
 
     // 4. Mappa Månadsdata (Gemensam)
     if (state.months) {
+      const validSharedBillIds = new Set((state.bills || []).map(b => b.id));
       for (const [monthId, mData] of Object.entries(state.months)) {
         if (mData.billAmounts) {
-          const amounts = Object.entries(mData.billAmounts).map(([billId, amt]) => ({
+          const amounts = Object.entries(mData.billAmounts)
+            .filter(([billId]) => validSharedBillIds.has(billId))
+            .map(([billId, amt]) => ({
             household_id: householdId,
             month_id: monthId,
             bill_id: getUuid(billId),
@@ -86,7 +89,9 @@ export async function runRelationalMigration(householdId: string, userId: string
           }
         }
         if (mData.confirmedAnomalies) {
-          const anoms = Object.entries(mData.confirmedAnomalies).map(([billId, conf]) => ({
+          const anoms = Object.entries(mData.confirmedAnomalies)
+            .filter(([billId]) => validSharedBillIds.has(billId))
+            .map(([billId, conf]) => ({
             household_id: householdId,
             month_id: monthId,
             bill_id: getUuid(billId),
@@ -121,9 +126,12 @@ export async function runRelationalMigration(householdId: string, userId: string
 
     // 6. Privat Månadsdata
     if (state.privateMonths) {
+      const validPrivateBillIds = new Set((state.privateBills || []).map(b => b.id));
       for (const [monthId, mData] of Object.entries(state.privateMonths)) {
         if (mData.billAmounts) {
-          const amounts = Object.entries(mData.billAmounts).map(([billId, amt]) => ({
+          const amounts = Object.entries(mData.billAmounts)
+            .filter(([billId]) => validPrivateBillIds.has(billId))
+            .map(([billId, amt]) => ({
             household_id: householdId,
             user_id: userId,
             month_id: monthId,
@@ -144,7 +152,9 @@ export async function runRelationalMigration(householdId: string, userId: string
           }, { onConflict: 'household_id,user_id,month_id' });
         }
         if (mData.confirmedAnomalies) {
-          const anoms = Object.entries(mData.confirmedAnomalies).map(([billId, conf]) => ({
+          const anoms = Object.entries(mData.confirmedAnomalies)
+            .filter(([billId]) => validPrivateBillIds.has(billId))
+            .map(([billId, conf]) => ({
             household_id: householdId,
             user_id: userId,
             month_id: monthId,

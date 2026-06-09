@@ -91,13 +91,9 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ householdId, userId });
 
     const loadCloud = async () => {
-      // 1. Check if migration needed
-      const { data: accCheck } = await supabase.from('accounts').select('id').eq('household_id', householdId).limit(1);
-      if (!accCheck || accCheck.length === 0) {
-        const { data: hh } = await supabase.from('households').select('state_json').eq('id', householdId).single();
-        if (hh && hh.state_json && Object.keys(hh.state_json).length > 0) {
-           await runRelationalMigration(householdId, userId);
-        }
+      const { data: hh } = await supabase.from('households').select('state_json').eq('id', householdId).single();
+      if (hh && hh.state_json && Object.keys(hh.state_json).length > 0) {
+        await runRelationalMigration(householdId, userId);
       }
 
       // 2. Fetch all relational data
