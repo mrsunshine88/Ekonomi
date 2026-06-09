@@ -68,39 +68,49 @@ Appen är byggd för att vara helt dynamisk och oberoende av vilka personer som 
 
 ---
 
-## 9. Säkerhetslås (Kontolås)
+## 9. Privat Ekonomi (Helt separerad från Swish-logik)
+
+**Hur, Vad och Varför:**
+- **Vad:** En helt ny flik (`🔒 Privat`) där varje användare kan knappa in sina egna, privata utgifter som inte rör hushållet.
+- **Hur:** Datastrukturen `state_json` har utökats med `privateBills` och `privateMonths`. När en privat utgift skapas får den egenskapen `userId: user.id`. Komponent-vyn `PrivateView.tsx` filtrerar sedan fram de räkningar som tillhör den inloggade användaren. Användaren kan också välja att dela en utgift (`isShared: true`); då dyker den upp som en "read-only"-rad hos andra användare i hushållet, under rubriken "Delade utgifter".
+- **Varför:** Hushållsmedlemmar vill ha en komplett bild av *all* sin ekonomi på ett ställe. Genom att separera de privata utgifterna i en egen vy och en egen del av databasen garanteras det att privata kostnader *aldrig* räknas in i den gemensamma Swish-uppgörelsen eller påverkar hushållets netto-balans. 
+
+---
+
+## 10. Säkerhetslås (Kontolås)
 Eftersom matten bygger på gemensamma överföringar fryser appen datan när man betalat.
 - När man klickar "✅ Markera som överfört", låses relaterade konton med en `🔒`-ikon.
 - Det går inte att råka ändra siffrorna i efterhand om man inte manuellt går in i `⚙️ Inställningar -> 🔒 Lås upp` och låser upp den specifika månaden.
 
 ---
 
-## 10. AI-driven Felskrivningskontroll
+## 11. AI-driven Felskrivningskontroll
 För att skydda mot "Fat fingers" (skriva in fel siffra):
 - Systemet tittar på historiken. Om en ny siffra är 50% lägre än det historiska minimumet, eller 50% högre än det historiska maximumet (på räkningar äldre än 3 månader), triggas ett larm.
 - Rutan blir röd och man måste antingen trycka `↩️ Ångra` eller bekräfta att avvikelsen är korrekt (`✅ OK`).
 
 ---
 
-## 11. Analys och Backup
+## 12. Analys och Backup
 - **EkonomiTB:** Tidslinjer och grafer ritade med `recharts` över hur kostnaderna förändrats. Innehåller detaljerade tabeller över månad-till-månad-förändringar.
 - **Excel-Export:** Möjlighet att exportera hela sitt liv till en .xlsx fil, med flikar för räkningar (pivot-vy) och överföringar.
 
 ---
 
-## 12. "Lämna hushåll" & Självläkande profiler (Upsert)
+## 13. "Lämna hushåll" & Självläkande profiler (Upsert)
 - På `Mina sidor` finns knappen **"🚪 Lämna och skapa eget hushåll"**. Denna kör funktionen `handleCreateHousehold()` på nytt, vilket bryter bandet till det gamla Hushålls-ID:t och genererar ett helt nytt, privat UUID för användaren. Resultatet blir en helt ny, blank Ekonomi-app.
 - Vid registrering, skapande av nytt hushåll, eller när man går med via Inbjudningskod, används en Supabase `upsert` (Update/Insert) på användarens `profile`. Detta garanterar att profilen och Hushålls-ID:t sparas korrekt även om triggers/RLS i databasen tidigare fallerat.
 
 ---
 
-## 13. Struktur och Filer
+## 14. Struktur och Filer
 - `src/supabase.ts` & `src/AuthContext.tsx`: Sköter kommunikationen med databasen, registrering, inloggning och sessioner.
-- `src/types.ts`: All datastruktur (inkl. `settings` för UI).
-- `src/store.ts`: Hjärnan. Sköter den komplicerade matematiken (`calculateMonth`), lagring, molnsynkroniseringen (`useStore`) och innehåller den helt "blanka" startmallen för nya hushåll.
-- `src/App.tsx`: Huvudfilen som styr navigering.
+- `src/types.ts`: All datastruktur (inkl. `settings`, `PrivateBill` och `PrivateMonthData`).
+- `src/store.ts`: Hjärnan. Sköter den komplicerade matematiken (`calculateMonth`), lagring, molnsynkroniseringen (`useStore`) samt CRUD-operationer för både gemensamma och privata utgifter.
+- `src/App.tsx`: Huvudfilen som styr navigering (bottenmeny med bl.a. `🔒 Privat`).
 - `src/components/MyPages.tsx`: Hantering av Hushåll, utloggning, inbjudningskoder och "Lämna hushåll".
-- `src/components/MonthView.tsx`: Huvudvyn där siffrorna knappas in.
+- `src/components/MonthView.tsx`: Huvudvyn där de gemensamma siffrorna knappas in.
+- `src/components/PrivateView.tsx`: Vyn för de privata siffrorna, helt separerad från matematiken i MonthView.
 - `src/components/Summary.tsx`: Rutan i botten/toppen med Swish och överföringar.
 - `src/components/ManageBills.tsx`: Inställningspanelen (inkl. Allmänt-fliken).
 - `src/index.css`: Hela appens design, media queries (Mobile First) och mörka glassmorphism-tema med solida mobilmenyer.
