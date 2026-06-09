@@ -540,6 +540,8 @@ export const useStore = create<StoreState>((set, get) => ({
       set({ state: prevState });
       throw new Error("Databasen blockerade ändringen (Databasens RLS-säkerhetsregel hindrade sparandet). Du måste köra SQL-skriptet!");
     }
+    
+    return data[0];
   },
 
   updatePrivateBillAmount: async (monthId, billId, amount) => {

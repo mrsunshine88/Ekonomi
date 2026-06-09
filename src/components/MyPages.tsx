@@ -180,8 +180,8 @@ export default function MyPages() {
   const handleToggleShare = async () => {
     const newState = !isSharingPrivate;
     try {
-      await toggleSharePrivateEconomy(newState);
-      setMsg(newState ? '✅ Din privata ekonomi delas nu med hushållet.' : '✅ Din privata ekonomi är nu privat igen.');
+      const dbRow = await toggleSharePrivateEconomy(newState);
+      setMsg(`✅ Ändrat! Databasen svarade: share_private_economy=${dbRow.share_private_economy}`);
     } catch (e: any) {
       setMsg('❌ Det gick inte att spara: ' + e.message);
     }
