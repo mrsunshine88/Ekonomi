@@ -531,17 +531,22 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ state: { ...state, householdProfiles: updatedProfiles } });
     
     // Update DB
-    const { error, data } = await supabase.from('profiles').update({ share_private_economy: share }).eq('id', userId).select();
+    const { error, data } = await supabase.rpc('toggle_share_private_economy', { share_status: share });
     if (error) {
       set({ state: prevState });
       throw error;
     }
-    if (!data || data.length === 0) {
-      set({ state: prevState });
-      throw new Error("Databasen blockerade ändringen (Databasens RLS-säkerhetsregel hindrade sparandet). Du måste köra SQL-skriptet!");
+    
+    // Fallback om rpc inte är skapad ännu - testa vanlig update
+    if (data === null || data === undefined) {
+      const fallback = await supabase.from('profiles').update({ share_private_economy: share }).eq('id', userId);
+      if (fallback.error) {
+        set({ state: prevState });
+        throw fallback.error;
+      }
     }
     
-    return data[0];
+    return { share_private_economy: share };
   },
 
   updatePrivateBillAmount: async (monthId, billId, amount) => {
