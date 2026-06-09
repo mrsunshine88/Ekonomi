@@ -117,14 +117,26 @@ export default function MyPages() {
     }
   };
 
+  const [currentPassword, setCurrentPassword] = useState('');
+  
+  const verifyCurrentPassword = async () => {
+    if (!user?.email || !currentPassword) {
+      throw new Error("Du måste ange ditt nuvarande lösenord för att göra ändringar.");
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email: user.email, password: currentPassword });
+    if (error) throw new Error("Nuvarande lösenord är felaktigt.");
+  };
+
   const handleUpdateEmail = async () => {
     if (!newEmail) return;
     setLoading(true);
     try {
+      await verifyCurrentPassword();
       const { error } = await supabase.auth.updateUser({ email: newEmail });
       if (error) throw error;
       setMsg('✅ Bekräftelselänk har skickats till både gamla och nya mejlen!');
       setNewEmail('');
+      setCurrentPassword('');
     } catch (e: any) {
       setMsg('❌ ' + e.message);
     } finally {
@@ -136,10 +148,12 @@ export default function MyPages() {
     if (!newPassword) return;
     setLoading(true);
     try {
+      await verifyCurrentPassword();
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
       setMsg('✅ Lösenordet har ändrats!');
       setNewPassword('');
+      setCurrentPassword('');
     } catch (e: any) {
       setMsg('❌ ' + e.message);
     } finally {
@@ -195,6 +209,20 @@ export default function MyPages() {
       <div style={{ marginBottom: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <h3 style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>⚙️ Hantera inloggning</h3>
         
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.9rem' }}>
+          För din säkerhet måste du ange ditt nuvarande lösenord för att byta e-post eller lösenord.
+        </p>
+        
+        <div style={{ marginBottom: '1rem' }}>
+          <input 
+            type="password" 
+            placeholder="Ditt nuvarande lösenord..." 
+            value={currentPassword} 
+            onChange={e => setCurrentPassword(e.target.value)}
+            style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
+          />
+        </div>
+
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
           <input 
             type="email" 
@@ -222,7 +250,7 @@ export default function MyPages() {
         <div style={{ marginBottom: '2rem' }}>
           <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>☁️ Säkra din data i molnet</h3>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-            Din data sparas just nu bara på den här enheten. Klicka på knappen nedan för att ladda upp din ekonomi till ditt säkra moln. Du får då även en kod om du vill bjuda in din sambo i framtiden.
+            Din data sparas just nu bara på den här enheten. Klicka på knappen nedan för att ladda upp din ekonomi till ditt säkra moln. Du får då även en inbjudningskod om du vill bjuda in fler till hushållet.
           </p>
           
           <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
@@ -235,7 +263,7 @@ export default function MyPages() {
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <input 
                 type="text" 
-                placeholder="Klistra in sambons kod..." 
+                placeholder="Klistra in inbjudningskod..." 
                 value={inviteCode} 
                 onChange={e => setInviteCode(e.target.value)}
                 style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
@@ -250,9 +278,9 @@ export default function MyPages() {
         <div style={{ marginBottom: '2rem' }}>
           {role === 'owner' && (
             <>
-              <h3 style={{ color: 'var(--success-color)', marginBottom: '0.5rem' }}>✅ Din app är sparad i molnet</h3>
+              <h3 style={{ color: 'var(--success-color)', marginBottom: '0.5rem' }}>✅ Hushållet är sparat i molnet</h3>
               <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-                För att bjuda in din sambo, be dem registrera sig och klistra in koden nedan:
+                För att bjuda in en medlem, be personen registrera ett eget konto och sedan ange koden nedan:
               </p>
               <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.5)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <code style={{ color: '#fff', fontSize: '1.1rem', wordBreak: 'break-all', marginRight: '1rem' }}>{householdId}</code>
