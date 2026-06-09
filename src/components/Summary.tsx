@@ -19,7 +19,7 @@ export default function Summary({ currentMonth }: Props) {
 
     const amount = monthData.billAmounts[bill.id] !== undefined ? monthData.billAmounts[bill.id] : bill.defaultAmount;
     if (bill.warnIfZero && amount === 0) {
-      const monthNumber = parseInt(monthData.monthId.split('-')[1], 10);
+      const monthNumber = parseInt((monthData.monthId || currentMonth).split('-')[1], 10);
       const isOddMonth = monthNumber % 2 !== 0;
       
       if (bill.interval === 'all') return true;

@@ -434,7 +434,7 @@ export const useStore = create<StoreState>((set, get) => ({
        }
     });
 
-    set({ state: { ...state, months: { ...state.months, [monthId]: { ...(state.months[monthId]||{}), billAmounts: { ...currentMonthData.billAmounts, ...newAmounts } } } } });
+    set({ state: { ...state, months: { ...state.months, [monthId]: { ...currentMonthData, billAmounts: { ...currentMonthData.billAmounts, ...newAmounts } } } } });
 
     if (householdId) {
       const inserts = Object.entries(newAmounts).map(([billId, amt]) => ({ household_id: householdId, month_id: monthId, bill_id: billId, amount: amt }));
