@@ -20,6 +20,7 @@ export interface BillDefinition {
   totalDebt?: number;
   isArchived?: boolean;
   isAutoTransfer?: boolean; // Överföringen till huskontot sker automatiskt – räknas bort från vad man ska föra över manuellt
+  startMonth?: string; // YYYY-MM
 }
 
 export interface MonthData {
@@ -41,6 +42,7 @@ export interface PrivateBill {
   isLoan?: boolean;
   totalDebt?: number;
   isArchived?: boolean;
+  startMonth?: string;
 }
 
 export interface PrivateMonthData {
@@ -51,12 +53,19 @@ export interface PrivateMonthData {
   isLocked?: boolean;
 }
 
+export interface Profile {
+  id: string;
+  display_name?: string;
+  share_private_economy?: boolean;
+}
+
 export interface AppState {
   accounts: Account[];
   bills: BillDefinition[];
   months: Record<string, MonthData>;
   privateBills?: PrivateBill[];
   privateMonths?: Record<string, PrivateMonthData>;
+  householdProfiles?: Profile[];
   settings?: {
     showSummary?: boolean;
   };

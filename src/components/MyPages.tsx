@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
+import { useStore } from '../store';
 import { supabase } from '../supabase';
 
 export default function MyPages() {
   const { user, householdId, role, refreshHousehold } = useAuth();
+  const toggleSharePrivateEconomy = useStore(s => s.toggleSharePrivateEconomy);
+  const householdProfiles = useStore(s => s.state.householdProfiles || []);
+  const myProfile = householdProfiles.find(p => p.id === user?.id);
+  const isSharingPrivate = myProfile?.share_private_economy || false;
   const [members, setMembers] = useState<{id: string, email: string, role: string}[]>([]);
 
   useEffect(() => {
@@ -152,6 +157,24 @@ export default function MyPages() {
       </div>
 
       {msg && <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', borderLeft: '4px solid var(--accent-color)' }}>{msg}</div>}
+
+      {householdId && (
+        <div style={{ marginBottom: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <h3 style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>🔒 Integritet och Delning</h3>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
+            <input 
+              type="checkbox" 
+              checked={isSharingPrivate}
+              onChange={e => toggleSharePrivateEconomy(e.target.checked)}
+              style={{ width: '20px', height: '20px', accentColor: 'var(--accent-color)' }}
+            />
+            <div>
+              <div style={{ fontWeight: 'bold' }}>Dela hela min privata ekonomi</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>Gör så att de andra i hushållet kan välja att se dina privata räkningar.</div>
+            </div>
+          </label>
+        </div>
+      )}
 
       <div style={{ marginBottom: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <h3 style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>⚙️ Hantera inloggning</h3>

@@ -61,6 +61,7 @@ interface StoreState {
   confirmAnomaly: (monthId: string, billId: string) => Promise<void>;
   unlockAccount: (monthId: string, accountId: string) => Promise<void>;
   updateSettings: (settingsUpdates: Partial<AppState['settings']> | undefined) => Promise<void>;
+  toggleSharePrivateEconomy: (share: boolean) => Promise<void>;
   
   updatePrivateBillAmount: (monthId: string, billId: string, amount: number) => Promise<void>;
   addPrivateBill: (bill: PrivateBill) => Promise<void>;
@@ -116,7 +117,8 @@ export const useStore = create<StoreState>((set, get) => ({
         { data: privateMonthAmounts },
         { data: privateMonthLocks },
         { data: privateMonthAnomalies },
-        { data: settings }
+        { data: settings },
+        { data: profiles }
       ] = await Promise.all([
         supabase.from('accounts').select('*').eq('household_id', householdId),
         supabase.from('bills').select('*').eq('household_id', householdId),
@@ -127,7 +129,8 @@ export const useStore = create<StoreState>((set, get) => ({
         supabase.from('private_month_amounts').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
         supabase.from('private_month_locks').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
         supabase.from('private_month_anomalies').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
-        supabase.from('household_settings').select('*').eq('household_id', householdId).maybeSingle()
+        supabase.from('household_settings').select('*').eq('household_id', householdId).maybeSingle(),
+        supabase.from('profiles').select('id, display_name, share_private_economy, household_id').eq('household_id', householdId)
       ]);
 
       // 3. Reconstruct AppState
@@ -137,16 +140,19 @@ export const useStore = create<StoreState>((set, get) => ({
           id: b.id, name: b.name, accountId: b.account_id, splitType: b.split_type,
           defaultAmount: Number(b.default_amount), interval: b.interval, customMonths: b.custom_months,
           warnIfZero: b.warn_if_zero, isLoan: b.is_loan, totalDebt: b.total_debt ? Number(b.total_debt) : undefined,
-          isArchived: b.is_archived, isAutoTransfer: b.is_auto_transfer || false
+          isArchived: b.is_archived, isAutoTransfer: b.is_auto_transfer || false, startMonth: b.start_month
         })) : [],
         months: {},
         privateBills: privateBills ? privateBills.map(b => ({
           id: b.id, userId: b.user_id, name: b.name, defaultAmount: Number(b.default_amount),
           interval: b.interval, customMonths: b.custom_months, warnIfZero: b.warn_if_zero,
           isShared: b.is_shared, isLoan: b.is_loan, totalDebt: b.total_debt ? Number(b.total_debt) : undefined,
-          isArchived: b.is_archived
+          isArchived: b.is_archived, startMonth: b.start_month
         })) : [],
         privateMonths: {},
+        householdProfiles: profiles ? profiles.map(p => ({
+          id: p.id, display_name: p.display_name, share_private_economy: p.share_private_economy
+        })) : [],
         settings: settings ? { showSummary: settings.show_summary } : { showSummary: true }
       };
 
@@ -317,10 +323,14 @@ export const useStore = create<StoreState>((set, get) => ({
     }
     const validBill = parseRes.data as BillDefinition;
 
+    // Sätt start_month för att undvika att räkningen syns bakåt i tiden
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    validBill.startMonth = currentMonth;
+
     const { householdId, state } = get();
     set({ state: { ...state, bills: [...state.bills, validBill] } });
     if (householdId) {
-      await safeDb(supabase.from('bills').insert({ id: validBill.id, household_id: householdId, name: validBill.name, account_id: validBill.accountId, split_type: validBill.splitType, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_loan: validBill.isLoan, total_debt: validBill.totalDebt, is_auto_transfer: validBill.isAutoTransfer || false }));
+      await safeDb(supabase.from('bills').insert({ id: validBill.id, household_id: householdId, name: validBill.name, account_id: validBill.accountId, split_type: validBill.splitType, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_loan: validBill.isLoan, total_debt: validBill.totalDebt, is_auto_transfer: validBill.isAutoTransfer, start_month: validBill.startMonth }));
     }
   },
 
@@ -502,6 +512,19 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
+  toggleSharePrivateEconomy: async (share: boolean) => {
+    const { userId, state } = get();
+    if (!userId) return;
+    
+    // Update local state
+    const profiles = state.householdProfiles || [];
+    const updatedProfiles = profiles.map(p => p.id === userId ? { ...p, share_private_economy: share } : p);
+    set({ state: { ...state, householdProfiles: updatedProfiles } });
+    
+    // Update DB
+    await safeDb(supabase.from('profiles').update({ share_private_economy: share }).eq('id', userId));
+  },
+
   updatePrivateBillAmount: async (monthId, billId, amount) => {
     const parseRes = safeParseAmount(amount);
     if (!parseRes.success) {
@@ -531,10 +554,14 @@ export const useStore = create<StoreState>((set, get) => ({
     }
     const validBill = parseRes.data as PrivateBill;
 
+    // Sätt start_month för att undvika att räkningen syns bakåt i tiden
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    validBill.startMonth = currentMonth;
+
     const { householdId, userId, state } = get();
     set({ state: { ...state, privateBills: [...(state.privateBills||[]), validBill] } });
     if (householdId && userId) {
-      await safeDb(supabase.from('private_bills').insert({ id: validBill.id, household_id: householdId, user_id: userId, name: validBill.name, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_shared: validBill.isShared, is_loan: validBill.isLoan, total_debt: validBill.totalDebt }));
+      await safeDb(supabase.from('private_bills').insert({ id: validBill.id, household_id: householdId, user_id: userId, name: validBill.name, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_shared: validBill.isShared, is_loan: validBill.isLoan, total_debt: validBill.totalDebt, start_month: validBill.startMonth }));
     }
   },
 
@@ -639,6 +666,8 @@ export function calculateMonth(state: AppState, monthId: string): CalculationRes
   });
 
   state.bills.forEach(bill => {
+    if (bill.startMonth && bill.startMonth > monthId) return;
+
     const amount = amounts[bill.id] !== undefined ? amounts[bill.id] : bill.defaultAmount;
     const billAccount = state.accounts.find(a => a.id === bill.accountId);
     

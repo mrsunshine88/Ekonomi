@@ -15,6 +15,8 @@ export default function Summary({ currentMonth }: Props) {
   const handled = monthData.handledPayments || {};
 
   const missingBills = state.bills.filter(bill => {
+    if (bill.startMonth && bill.startMonth > currentMonth) return false;
+
     const amount = monthData.billAmounts[bill.id] !== undefined ? monthData.billAmounts[bill.id] : bill.defaultAmount;
     if (bill.warnIfZero && amount === 0) {
       const monthNumber = parseInt(monthData.monthId.split('-')[1], 10);

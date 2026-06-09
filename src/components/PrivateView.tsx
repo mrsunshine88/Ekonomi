@@ -1,6 +1,6 @@
 
+import { useState } from 'react';
 import { useAuth } from '../AuthContext';
-
 import { useStore } from '../store';
 
 interface Props {
@@ -13,13 +13,24 @@ export default function PrivateView({ currentMonth }: Props) {
   const confirmPrivateAnomaly = useStore(s => s.confirmPrivateAnomaly);
   const togglePrivateLock = useStore(s => s.togglePrivateLock);
   const { user } = useAuth();
+  
+  const [selectedUserId, setSelectedUserId] = useState<string>(user?.id || '');
 
   if (!user) return <div style={{ color: '#fff', textAlign: 'center', marginTop: '2rem' }}>Logga in för att se dina privata utgifter.</div>;
+  if (!selectedUserId) setSelectedUserId(user.id);
+
+  const householdProfiles = state.householdProfiles || [];
+  const visibleProfiles = householdProfiles.filter(p => p.id === user.id || p.share_private_economy);
+  const isViewingOther = selectedUserId !== user.id;
 
   const monthData = state.privateMonths?.[currentMonth] || { monthId: currentMonth, billAmounts: {}, handledPayments: {} };
-  const myBills = (state.privateBills || []).filter(b => b.userId === user.id && (!b.isArchived || monthData.billAmounts[b.id] !== undefined));
-  const sharedBills = (state.privateBills || []).filter(b => b.userId !== user.id && b.isShared && (!b.isArchived || monthData.billAmounts[b.id] !== undefined));
-  const isLocked = monthData.isLocked || false;
+  
+  const myBills = (state.privateBills || []).filter(b => {
+    if (b.startMonth && b.startMonth > currentMonth) return false;
+    return b.userId === selectedUserId && (!b.isArchived || monthData.billAmounts[b.id] !== undefined);
+  });
+  
+  const isLocked = isViewingOther || (monthData.isLocked || false);
 
   // Sort all months for history tracking
   const allMonths = Array.from(new Set([...Object.keys(state.privateMonths || {}), currentMonth])).sort();
@@ -31,13 +42,29 @@ export default function PrivateView({ currentMonth }: Props) {
 
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto', paddingBottom: '2rem' }}>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h2 style={{ color: 'var(--text-primary)', margin: 0, marginBottom: '0.25rem' }}>
-          🔒 Privat Ekonomi {isLocked && <span title="Månaden är låst" style={{ fontSize: '1rem', marginLeft: '0.5rem' }}>🔒</span>}
-        </h2>
-        <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          Dessa utgifter delas inte med hushållet. Du hanterar dem i Inställningar.
+      <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div>
+          <h2 style={{ color: 'var(--text-primary)', margin: 0, marginBottom: '0.25rem' }}>
+            🔒 Privat Ekonomi {!isViewingOther && isLocked && <span title="Månaden är låst" style={{ fontSize: '1rem', marginLeft: '0.5rem' }}>🔒</span>}
+          </h2>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+            Dessa utgifter delas inte automatiskt med hushållet.
+          </div>
         </div>
+        
+        {visibleProfiles.length > 1 && (
+          <select 
+            value={selectedUserId} 
+            onChange={e => setSelectedUserId(e.target.value)}
+            style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff', width: '100%', cursor: 'pointer' }}
+          >
+            {visibleProfiles.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.id === user.id ? 'Min privata ekonomi' : `${p.display_name || 'Okänd'}'s privata ekonomi`}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {myBills.length === 0 ? (
@@ -49,7 +76,9 @@ export default function PrivateView({ currentMonth }: Props) {
       ) : (
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>
-            <h3 className="card-title" style={{ margin: 0, border: 'none', padding: 0 }}>Mina privata kostnader</h3>
+            <h3 className="card-title" style={{ margin: 0, border: 'none', padding: 0 }}>
+              {isViewingOther ? 'Derars privata kostnader' : 'Mina privata kostnader'}
+            </h3>
             <div style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>Totalt: {totalPrivateCost} kr</div>
           </div>
           
@@ -98,21 +127,17 @@ export default function PrivateView({ currentMonth }: Props) {
                     <div className="bill-name" style={{ color: (showWarning || isAnomaly) ? '#f43f5e' : 'inherit' }}>
                       {bill.name}
                     </div>
-                    <div className="bill-meta" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.25rem' }}>
-                      <button 
-                        onClick={() => useStore.getState().updatePrivateBill({...bill, isShared: !bill.isShared})} 
-                        style={{ background: 'transparent', border: 'none', color: bill.isShared ? '#10b981' : 'var(--text-secondary)', cursor: 'pointer', padding: 0, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-                        title={bill.isShared ? "Synlig för hela hushållet (men privat i uträkningen)" : "Helt privat"}
-                      >
-                        {bill.isShared ? '👁️ Delad (Synlig för andra)' : '🔒 Privat (Ingen ser denna)'}
-                      </button>
-                    </div>
-                    <div className="bill-meta">
-                      Delas ej med hushållet
-                      {bill.isShared && <span style={{ display: 'block', marginTop: '4px', color: '#10b981' }}>🤝 Delas med {state.accounts.find(a => a.id !== user.id)?.name || 'Hushållet'}</span>}
-                      {showWarning && <span style={{ color: '#f43f5e', display: 'block', marginTop: '4px', fontWeight: 500 }}>⚠️ Saknas</span>}
-                      {isAnomaly && <span style={{ color: '#f43f5e', display: 'block', marginTop: '4px', fontWeight: 500 }}>🚨 {anomalyText}</span>}
-                    </div>
+                    {!isViewingOther && (
+                      <>
+                        <div className="bill-meta" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.25rem' }}>
+                          {/* isShared är borttaget eftersom det nu styrs globalt på profilen, men vi behåller koden ifall de gamla ligger kvar */}
+                        </div>
+                        <div className="bill-meta">
+                          {showWarning && <span style={{ color: '#f43f5e', display: 'block', marginTop: '4px', fontWeight: 500 }}>⚠️ Saknas</span>}
+                          {isAnomaly && <span style={{ color: '#f43f5e', display: 'block', marginTop: '4px', fontWeight: 500 }}>🚨 {anomalyText}</span>}
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem', flexShrink: 0, paddingTop: isAnomaly ? '0.5rem' : '0' }}>
                     <div className="bill-amount-wrapper">
@@ -164,11 +189,11 @@ export default function PrivateView({ currentMonth }: Props) {
           </div>
 
           <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
-            {isLocked ? (
+            {!isViewingOther && isLocked ? (
               <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
                 🔒 Denna månad är låst. Gå till <strong>Inställningar -&gt; 🔒 Lås upp</strong> för att ändra siffrorna.
               </div>
-            ) : (
+            ) : !isViewingOther && !isLocked ? (
               <>
                 <button 
                   onClick={() => togglePrivateLock(currentMonth)}
@@ -193,32 +218,7 @@ export default function PrivateView({ currentMonth }: Props) {
                   Låser siffrorna så att du inte råkar ändra dem.
                 </div>
               </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {sharedBills.length > 0 && (
-        <div className="card" style={{ marginTop: '2rem', background: 'rgba(255,255,255,0.02)' }}>
-          <h3 className="card-title" style={{ color: 'var(--text-secondary)' }}>Delade utgifter (Från andra i hushållet)</h3>
-          <div className="bill-list">
-            {sharedBills.map(bill => {
-              const amount = monthData.billAmounts[bill.id] !== undefined ? monthData.billAmounts[bill.id] : bill.defaultAmount;
-              
-              return (
-                <div key={bill.id} className="bill-row" style={{ opacity: 0.8 }}>
-                  <div className="bill-info">
-                    <div className="bill-name">{bill.name}</div>
-                    <div className="bill-meta">Skapad av en annan medlem</div>
-                  </div>
-                  <div className="bill-amount-wrapper">
-                    <div style={{ textAlign: 'right', padding: '0.75rem 1rem', paddingRight: '2.5rem', color: 'var(--text-secondary)' }}>
-                      {amount === 0 ? '-' : amount} kr
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            ) : null}
           </div>
         </div>
       )}
