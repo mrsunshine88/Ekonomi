@@ -25,10 +25,27 @@ export interface MonthData {
   confirmedAnomalies?: Record<string, boolean>; // billId -> true/false
 }
 
+export interface PrivateBill {
+  id: string;
+  name: string;
+  defaultAmount: number;
+  interval: PaymentInterval;
+  userId: string;
+  isShared?: boolean;
+}
+
+export interface PrivateMonthData {
+  monthId: string;
+  billAmounts: Record<string, number>;
+  handledPayments?: Record<string, boolean>;
+}
+
 export interface AppState {
   accounts: Account[];
   bills: BillDefinition[];
   months: Record<string, MonthData>;
+  privateBills?: PrivateBill[];
+  privateMonths?: Record<string, PrivateMonthData>;
   settings?: {
     showSummary?: boolean;
   };

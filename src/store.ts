@@ -330,7 +330,73 @@ export function useStore(householdId: string | null) {
     });
   };
 
-  return { state, updateBillAmount, addBill, removeBill, updateBill, addAccount, removeAccount, updateAccount, copyFromPreviousMonth, togglePaymentStatus, confirmAnomaly, unlockAccount, updateSettings };
+  const updatePrivateBillAmount = (monthId: string, billId: string, amount: number) => {
+    setState(prev => {
+      const monthData = (prev.privateMonths && prev.privateMonths[monthId]) || { monthId, billAmounts: {}, handledPayments: {} };
+      return {
+        ...prev,
+        privateMonths: {
+          ...(prev.privateMonths || {}),
+          [monthId]: {
+            ...monthData,
+            billAmounts: {
+              ...monthData.billAmounts,
+              [billId]: amount
+            }
+          }
+        }
+      };
+    });
+  };
+
+  const addPrivateBill = (bill: PrivateBill) => {
+    setState(prev => ({ ...prev, privateBills: [...(prev.privateBills || []), bill] }));
+  };
+
+  const removePrivateBill = (billId: string) => {
+    setState(prev => ({ ...prev, privateBills: (prev.privateBills || []).filter(b => b.id !== billId) }));
+  };
+
+  const updatePrivateBill = (bill: PrivateBill) => {
+    setState(prev => ({ ...prev, privateBills: (prev.privateBills || []).map(b => b.id === bill.id ? bill : b) }));
+  };
+
+  const copyPrivateFromPreviousMonth = (monthId: string) => {
+    setState(prev => {
+      const allMonths = Object.keys(prev.privateMonths || {}).sort();
+      const currentIndex = allMonths.indexOf(monthId);
+      if (currentIndex <= 0) return prev;
+      
+      const prevMonthId = allMonths[currentIndex - 1];
+      const prevMonth = (prev.privateMonths || {})[prevMonthId];
+      if (!prevMonth) return prev;
+
+      const currentMonthData = (prev.privateMonths && prev.privateMonths[monthId]) || { monthId, billAmounts: {}, handledPayments: {} };
+      const newAmounts = { ...currentMonthData.billAmounts };
+
+      (prev.privateBills || []).forEach(bill => {
+         newAmounts[bill.id] = prevMonth.billAmounts[bill.id] !== undefined ? prevMonth.billAmounts[bill.id] : bill.defaultAmount;
+      });
+
+      return {
+        ...prev,
+        privateMonths: {
+          ...(prev.privateMonths || {}),
+          [monthId]: {
+            ...currentMonthData,
+            billAmounts: newAmounts
+          }
+        }
+      };
+    });
+  };
+
+  return { 
+    state, updateBillAmount, addBill, removeBill, updateBill, 
+    addAccount, removeAccount, updateAccount, copyFromPreviousMonth, 
+    togglePaymentStatus, confirmAnomaly, unlockAccount, updateSettings,
+    updatePrivateBillAmount, addPrivateBill, removePrivateBill, updatePrivateBill, copyPrivateFromPreviousMonth
+  };
 }
 
 export function calculateMonth(state: AppState, monthId: string): CalculationResult {

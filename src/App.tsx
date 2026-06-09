@@ -7,11 +7,12 @@ import ManageBills from './components/ManageBills';
 import Statistics from './components/Statistics';
 import LoginScreen from './components/Auth/LoginScreen';
 import MyPages from './components/MyPages';
+import PrivateView from './components/PrivateView';
 
 function App() {
   const { user, householdId, loading } = useAuth();
-  const { state, updateBillAmount, addBill, removeBill, updateBill, addAccount, removeAccount, copyFromPreviousMonth, togglePaymentStatus, confirmAnomaly, unlockAccount, updateSettings } = useStore(householdId);
-  const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages'>('month');
+  const { state, updateBillAmount, addBill, removeBill, updateBill, addAccount, removeAccount, copyFromPreviousMonth, togglePaymentStatus, confirmAnomaly, unlockAccount, updateSettings, updatePrivateBillAmount, addPrivateBill, removePrivateBill, updatePrivateBill, copyPrivateFromPreviousMonth } = useStore(householdId);
+  const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages' | 'privat'>('month');
   
   // Defaults to current month YYYY-MM
   const [currentMonth, setCurrentMonth] = useState(() => {
@@ -76,6 +77,12 @@ function App() {
             ⚙️ Inställningar
           </button>
           <button 
+            onClick={() => setCurrentView('privat')} 
+            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'privat' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'privat' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'privat' ? 'bold' : 'normal', transition: 'all 0.2s' }}
+          >
+            🔒 Privat
+          </button>
+          <button 
             onClick={() => setCurrentView('mypages')} 
             style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'mypages' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'mypages' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'mypages' ? 'bold' : 'normal', transition: 'all 0.2s' }}
           >
@@ -108,6 +115,32 @@ function App() {
           <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Månadsvy</button>
           <Statistics state={state} />
         </div>
+      ) : currentView === 'privat' ? (
+        <>
+          <div className="month-selector">
+            <button onClick={() => changeMonth(-1)}>← Föregående</button>
+            <button className="primary" style={{ cursor: 'default' }}>{getMonthDisplay(currentMonth)}</button>
+            <button onClick={() => changeMonth(1)}>Nästa →</button>
+          </div>
+
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+            <button 
+              onClick={() => copyPrivateFromPreviousMonth(currentMonth)}
+              style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', background: 'var(--surface-color)' }}
+            >
+              📄 Hämta siffror från förra månaden
+            </button>
+          </div>
+
+          <PrivateView 
+            state={state} 
+            currentMonth={currentMonth}
+            onChangeAmount={(billId, amount) => updatePrivateBillAmount(currentMonth, billId, amount)}
+            onAddBill={addPrivateBill}
+            onRemoveBill={removePrivateBill}
+            onUpdateBill={updatePrivateBill}
+          />
+        </>
       ) : (
         <>
           <div className="month-selector">
