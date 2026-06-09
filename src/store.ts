@@ -5,38 +5,14 @@ import type { AppState, BillDefinition, MonthData, CalculationResult, Account, S
 const STORAGE_KEY = 'ekonomiapp_state_v1';
 
 const DEFAULT_ACCOUNTS: Account[] = [
-  { id: 'huskonto', name: 'Hus kontot', type: 'shared', transferMethod: 'transfer' },
-  { id: 'andreas', name: 'Andreas konto', type: 'person', transferMethod: 'swish' },
-  { id: 'helena', name: 'Helenas konto', type: 'person', transferMethod: 'swish' }
+  { id: 'shared_1', name: 'Gemensamt konto', type: 'shared', transferMethod: 'transfer' },
+  { id: 'person_1', name: 'Person 1', type: 'person', transferMethod: 'swish' },
+  { id: 'person_2', name: 'Person 2', type: 'person', transferMethod: 'swish' }
 ];
 
-const DEFAULT_BILLS: BillDefinition[] = [
-  { id: 'eon', name: 'Eon', accountId: 'huskonto', splitType: 'equal', defaultAmount: 0, interval: 'all', warnIfZero: false },
-  { id: 'lf-hypotek', name: 'LF hypotek', accountId: 'huskonto', splitType: 'equal', defaultAmount: 0, interval: 'all', warnIfZero: false },
-  { id: 'bokvar1', name: 'Bokvar', accountId: 'huskonto', splitType: 'equal', defaultAmount: 48, interval: 'all', warnIfZero: false },
-  { id: 'bokvar2', name: 'Bokvar', accountId: 'huskonto', splitType: 'equal', defaultAmount: 48, interval: 'all', warnIfZero: false },
-  { id: 'trygghansa', name: 'Trygghansa', accountId: 'huskonto', splitType: 'equal', defaultAmount: 570, interval: 'all', warnIfZero: false },
-  { id: 'lf-hem', name: 'LF hem', accountId: 'huskonto', splitType: 'equal', defaultAmount: 421, interval: 'all', warnIfZero: false },
-  { id: 'bahnof', name: 'Bahnof', accountId: 'huskonto', splitType: 'equal', defaultAmount: 419, interval: 'all', warnIfZero: false },
-  { id: 'affarsverken', name: 'Affärsverken', accountId: 'huskonto', splitType: 'equal', defaultAmount: 0, interval: 'odd', warnIfZero: true },
-  
-  { id: 'ac', name: 'AC', accountId: 'andreas', splitType: 'equal', defaultAmount: 0, interval: 'all', warnIfZero: false },
-  { id: 'karlskrona-kommun', name: 'Karlskrona kommun', accountId: 'andreas', splitType: 'equal', defaultAmount: 0, interval: 'odd', warnIfZero: true },
-  { id: 'vagforening', name: 'Vägförening', accountId: 'andreas', splitType: 'equal', defaultAmount: 0, interval: 'all', warnIfZero: false },
-  
-  { id: 'kommunen', name: 'Kommunen', accountId: 'helena', splitType: 'equal', defaultAmount: 1231, interval: 'all', warnIfZero: false },
-  { id: 'spotify', name: 'Spotify', accountId: 'helena', splitType: 'equal', defaultAmount: 219, interval: 'all', warnIfZero: false },
-  { id: 'telenor', name: 'Telenor', accountId: 'helena', splitType: 'andreas', defaultAmount: 883, interval: 'all', warnIfZero: false },
-];
+const DEFAULT_BILLS: BillDefinition[] = [];
 
-const SEED_MONTHS: Record<string, MonthData> = {
-  '2026-01': { monthId: '2026-01', billAmounts: { eon: 3005, 'lf-hypotek': 2741, bokvar1: 48, bokvar2: 48, trygghansa: 570, 'lf-hem': 421, bahnof: 419, affarsverken: 631, 'karlskrona-kommun': 1899, kommunen: 1189, spotify: 219, telenor: 783 } },
-  '2026-02': { monthId: '2026-02', billAmounts: { eon: 2947, 'lf-hypotek': 2739, bokvar1: 48, bokvar2: 48, trygghansa: 570, 'lf-hem': 421, bahnof: 419, affarsverken: 0, 'karlskrona-kommun': 0, kommunen: 1231, spotify: 219, telenor: 883 } },
-  '2026-03': { monthId: '2026-03', billAmounts: { eon: 5142, 'lf-hypotek': 1716, bokvar1: 48, bokvar2: 48, trygghansa: 570, 'lf-hem': 421, bahnof: 419, affarsverken: 510, 'karlskrona-kommun': 1763, kommunen: 1231, spotify: 219, telenor: 883 } },
-  '2026-04': { monthId: '2026-04', billAmounts: { eon: 4789, 'lf-hypotek': 2781, bokvar1: 48, bokvar2: 48, trygghansa: 570, 'lf-hem': 421, bahnof: 419, affarsverken: 0, 'karlskrona-kommun': 0, kommunen: 1231, spotify: 219, telenor: 883 } },
-  '2026-05': { monthId: '2026-05', billAmounts: { eon: 2987, 'lf-hypotek': 2779, bokvar1: 48, bokvar2: 48, trygghansa: 570, 'lf-hem': 421, bahnof: 419, affarsverken: 644, 'karlskrona-kommun': 1834, kommunen: 1231, spotify: 219, telenor: 883 } },
-  '2026-06': { monthId: '2026-06', billAmounts: { eon: 2350, 'lf-hypotek': 2777, bokvar1: 48, bokvar2: 48, trygghansa: 570, 'lf-hem': 421, bahnof: 419, affarsverken: 0, 'karlskrona-kommun': 0, kommunen: 1231, spotify: 219, telenor: 883 } },
-};
+const SEED_MONTHS: Record<string, MonthData> = {};
 
 const DEFAULT_STATE: AppState = {
   accounts: DEFAULT_ACCOUNTS,
