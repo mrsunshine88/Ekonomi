@@ -20,16 +20,18 @@ const DEFAULT_STATE: AppState = {
   settings: { showSummary: true }
 };
 
-const safeDb = async (promise: PromiseLike<any>) => {
+const safeDb = async (promise: PromiseLike<any>, rollbackFn?: () => void) => {
   try {
     const { error } = await promise;
     if (error) {
       console.error(error);
-      toast.error('Nätverksfel: Kunde inte spara ändringen till molnet. Data kan gå förlorad om du stänger appen.');
+      toast.error('Kunde inte spara ändringen. Återställer värdet.');
+      if (rollbackFn) rollbackFn();
     }
   } catch (err) {
     console.error(err);
-    toast.error('Nätverksfel: Kunde inte spara ändringen till molnet. Data kan gå förlorad om du stänger appen.');
+    toast.error('Nätverksfel. Återställer värdet.');
+    if (rollbackFn) rollbackFn();
   }
 };
 
@@ -41,6 +43,7 @@ interface StoreState {
   channel: any;
 
   initCloud: (householdId: string | null, userId: string | null) => void;
+  loadYear: (year: string) => Promise<void>;
   cleanup: () => void;
   
   updateBillAmount: (monthId: string, billId: string, amount: number) => Promise<void>;
@@ -98,6 +101,9 @@ export const useStore = create<StoreState>((set, get) => ({
       }
 
       // 2. Fetch all relational data
+      const currentYear = new Date().getFullYear();
+      const lastYearDec = `${currentYear - 1}-12`;
+
       const [
         { data: accounts },
         { data: bills },
@@ -112,13 +118,13 @@ export const useStore = create<StoreState>((set, get) => ({
       ] = await Promise.all([
         supabase.from('accounts').select('*').eq('household_id', householdId),
         supabase.from('bills').select('*').eq('household_id', householdId),
-        supabase.from('month_bill_amounts').select('*').eq('household_id', householdId),
-        supabase.from('month_handled_payments').select('*').eq('household_id', householdId),
-        supabase.from('month_confirmed_anomalies').select('*').eq('household_id', householdId),
+        supabase.from('month_bill_amounts').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
+        supabase.from('month_handled_payments').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
+        supabase.from('month_confirmed_anomalies').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
         supabase.from('private_bills').select('*').eq('household_id', householdId),
-        supabase.from('private_month_amounts').select('*').eq('household_id', householdId),
-        supabase.from('private_month_locks').select('*').eq('household_id', householdId),
-        supabase.from('private_month_anomalies').select('*').eq('household_id', householdId),
+        supabase.from('private_month_amounts').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
+        supabase.from('private_month_locks').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
+        supabase.from('private_month_anomalies').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
         supabase.from('household_settings').select('*').eq('household_id', householdId).single()
       ]);
 
@@ -212,6 +218,75 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ channel });
   },
 
+  loadYear: async (year: string) => {
+    const { householdId, state } = get();
+    if (!householdId) return;
+
+    const start = `${year}-01`;
+    const end = `${year}-12`;
+
+    const [
+      { data: monthBillAmounts },
+      { data: monthHandledPayments },
+      { data: monthConfirmedAnomalies },
+      { data: privateMonthAmounts },
+      { data: privateMonthLocks },
+      { data: privateMonthAnomalies }
+    ] = await Promise.all([
+      supabase.from('month_bill_amounts').select('*').eq('household_id', householdId).gte('month_id', start).lte('month_id', end),
+      supabase.from('month_handled_payments').select('*').eq('household_id', householdId).gte('month_id', start).lte('month_id', end),
+      supabase.from('month_confirmed_anomalies').select('*').eq('household_id', householdId).gte('month_id', start).lte('month_id', end),
+      supabase.from('private_month_amounts').select('*').eq('household_id', householdId).gte('month_id', start).lte('month_id', end),
+      supabase.from('private_month_locks').select('*').eq('household_id', householdId).gte('month_id', start).lte('month_id', end),
+      supabase.from('private_month_anomalies').select('*').eq('household_id', householdId).gte('month_id', start).lte('month_id', end)
+    ]);
+
+    const newState = { ...state, months: { ...state.months }, privateMonths: { ...state.privateMonths } };
+
+    if (monthBillAmounts) {
+      monthBillAmounts.forEach(mba => {
+        if (!newState.months[mba.month_id]) newState.months[mba.month_id] = { monthId: mba.month_id, billAmounts: {}, handledPayments: {}, confirmedAnomalies: {} };
+        newState.months[mba.month_id].billAmounts[mba.bill_id] = Number(mba.amount);
+      });
+    }
+    if (monthHandledPayments) {
+      monthHandledPayments.forEach(mhp => {
+        if (!newState.months[mhp.month_id]) newState.months[mhp.month_id] = { monthId: mhp.month_id, billAmounts: {}, handledPayments: {}, confirmedAnomalies: {} };
+        if (!newState.months[mhp.month_id].handledPayments) newState.months[mhp.month_id].handledPayments = {};
+        newState.months[mhp.month_id].handledPayments![mhp.payment_id] = mhp.is_handled;
+      });
+    }
+    if (monthConfirmedAnomalies) {
+      monthConfirmedAnomalies.forEach(mca => {
+        if (!newState.months[mca.month_id]) newState.months[mca.month_id] = { monthId: mca.month_id, billAmounts: {}, handledPayments: {}, confirmedAnomalies: {} };
+        if (!newState.months[mca.month_id].confirmedAnomalies) newState.months[mca.month_id].confirmedAnomalies = {};
+        newState.months[mca.month_id].confirmedAnomalies![mca.bill_id] = true;
+      });
+    }
+
+    if (privateMonthAmounts) {
+      privateMonthAmounts.forEach(pma => {
+        if (!newState.privateMonths[pma.month_id]) newState.privateMonths[pma.month_id] = { monthId: pma.month_id, billAmounts: {}, isLocked: false, confirmedAnomalies: {} };
+        newState.privateMonths[pma.month_id].billAmounts[pma.bill_id] = Number(pma.amount);
+      });
+    }
+    if (privateMonthLocks) {
+      privateMonthLocks.forEach(pml => {
+        if (!newState.privateMonths[pml.month_id]) newState.privateMonths[pml.month_id] = { monthId: pml.month_id, billAmounts: {}, isLocked: false, confirmedAnomalies: {} };
+        newState.privateMonths[pml.month_id].isLocked = pml.is_locked;
+      });
+    }
+    if (privateMonthAnomalies) {
+      privateMonthAnomalies.forEach(pma => {
+        if (!newState.privateMonths[pma.month_id]) newState.privateMonths[pma.month_id] = { monthId: pma.month_id, billAmounts: {}, isLocked: false, confirmedAnomalies: {} };
+        if (!newState.privateMonths[pma.month_id].confirmedAnomalies) newState.privateMonths[pma.month_id].confirmedAnomalies = {};
+        newState.privateMonths[pma.month_id].confirmedAnomalies![pma.bill_id] = true;
+      });
+    }
+
+    set({ state: newState });
+  },
+
   updateBillAmount: async (monthId, billId, amount) => {
     const parseRes = safeParseAmount(amount);
     if (!parseRes.success) {
@@ -220,11 +295,15 @@ export const useStore = create<StoreState>((set, get) => ({
     }
     const validatedAmount = parseRes.data;
 
+    const prevState = get().state;
     const { householdId, state } = get();
     const monthData = state.months[monthId] || { monthId, billAmounts: {}, handledPayments: {} };
     set({ state: { ...state, months: { ...state.months, [monthId]: { ...monthData, billAmounts: { ...monthData.billAmounts, [billId]: validatedAmount } } } } });
     if (householdId) {
-      await safeDb(supabase.from('month_bill_amounts').upsert({ household_id: householdId, month_id: monthId, bill_id: billId, amount: validatedAmount }, { onConflict: 'household_id,month_id,bill_id' }));
+      await safeDb(
+        supabase.from('month_bill_amounts').upsert({ household_id: householdId, month_id: monthId, bill_id: billId, amount: validatedAmount }, { onConflict: 'household_id,month_id,bill_id' }),
+        () => set({ state: prevState })
+      );
     }
   },
 
@@ -349,13 +428,19 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   togglePaymentStatus: async (monthId, paymentId) => {
+    const prevState = get().state;
     const { householdId, state } = get();
     const monthData = state.months[monthId] || { monthId, billAmounts: {}, handledPayments: {} };
-    const currentHandled = monthData.handledPayments || {};
-    const newVal = !currentHandled[paymentId];
-    set({ state: { ...state, months: { ...state.months, [monthId]: { ...monthData, handledPayments: { ...currentHandled, [paymentId]: newVal } } } } });
+    const handled = monthData.handledPayments || {};
+    const newStatus = !handled[paymentId];
+    
+    set({ state: { ...state, months: { ...state.months, [monthId]: { ...monthData, handledPayments: { ...handled, [paymentId]: newStatus } } } } });
+    
     if (householdId) {
-      await safeDb(supabase.from('month_handled_payments').upsert({ household_id: householdId, month_id: monthId, payment_id: paymentId, is_handled: newVal }, { onConflict: 'household_id,month_id,payment_id' }));
+      await safeDb(
+        supabase.from('month_handled_payments').upsert({ household_id: householdId, month_id: monthId, payment_id: paymentId, is_handled: newStatus }, { onConflict: 'household_id,month_id,payment_id' }),
+        () => set({ state: prevState })
+      );
     }
   },
 
@@ -423,12 +508,16 @@ export const useStore = create<StoreState>((set, get) => ({
     }
     const validatedAmount = parseRes.data;
 
+    const prevState = get().state;
     const { householdId, userId, state } = get();
     const pMonths = state.privateMonths || {};
     const mData = pMonths[monthId] || { monthId, billAmounts: {} };
     set({ state: { ...state, privateMonths: { ...pMonths, [monthId]: { ...mData, billAmounts: { ...mData.billAmounts, [billId]: validatedAmount } } } } });
     if (householdId && userId) {
-      await safeDb(supabase.from('private_month_amounts').upsert({ household_id: householdId, user_id: userId, month_id: monthId, bill_id: billId, amount: validatedAmount }, { onConflict: 'household_id,user_id,month_id,bill_id' }));
+      await safeDb(
+        supabase.from('private_month_amounts').upsert({ household_id: householdId, user_id: userId, month_id: monthId, bill_id: billId, amount: validatedAmount }, { onConflict: 'household_id,user_id,month_id,bill_id' }),
+        () => set({ state: prevState })
+      );
     }
   },
 
@@ -511,13 +600,18 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   togglePrivateLock: async (monthId) => {
+    const prevState = get().state;
     const { householdId, userId, state } = get();
     const pMonths = state.privateMonths || {};
     const mData = pMonths[monthId] || { monthId, billAmounts: {} };
-    const newVal = !mData.isLocked;
-    set({ state: { ...state, privateMonths: { ...pMonths, [monthId]: { ...mData, isLocked: newVal } } } });
+    const newStatus = !mData.isLocked;
+    
+    set({ state: { ...state, privateMonths: { ...pMonths, [monthId]: { ...mData, isLocked: newStatus } } } });
     if (householdId && userId) {
-      await safeDb(supabase.from('private_month_locks').upsert({ household_id: householdId, user_id: userId, month_id: monthId, is_locked: newVal }, { onConflict: 'household_id,user_id,month_id' }));
+      await safeDb(
+        supabase.from('private_month_locks').upsert({ household_id: householdId, user_id: userId, month_id: monthId, is_locked: newStatus }, { onConflict: 'household_id,user_id,month_id' }),
+        () => set({ state: prevState })
+      );
     }
   }
 

@@ -51,9 +51,16 @@ function App() {
     setCurrentMonth(newId);
   };
 
+  const loadYear = useStore(s => s.loadYear);
+  const [loadedYears, setLoadedYears] = useState<Set<string>>(new Set([String(new Date().getFullYear())]));
+
   useEffect(() => {
-    // Solo mode: no redirect needed if no householdId
-  }, [user, householdId, currentView]);
+    const year = currentMonth.split('-')[0];
+    if (!loadedYears.has(year)) {
+      setLoadedYears(prev => new Set(prev).add(year));
+      loadYear(year);
+    }
+  }, [currentMonth, loadedYears, loadYear]);
 
   if (loading) return <div style={{ color: 'white', padding: '2rem', textAlign: 'center' }}>Laddar...</div>;
 

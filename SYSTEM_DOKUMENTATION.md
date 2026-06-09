@@ -1,6 +1,6 @@
 # Ekonomi & Swish - Systemdokumentation
 
-**Version:** 3.0 (Relationsdatabas, Krockfri Synkronisering)  
+**Version:** 4.0 (Enterprise-uppgradering: Zustand, Zod & Säkerhet)  
 **Plattform:** React + TypeScript + Vite (PWA) | Databas: Supabase (PostgreSQL) | Hosting: Vercel  
 **Uppdaterad:** 2026-06-09
 
@@ -346,6 +346,26 @@ Det ska alltid gå att ångra. Om man råkat gå med i fel hushåll via en felak
 
 ---
 
+## 18. Enterprise-uppgradering (Fas 1-3)
+### Vad:
+Förvandlingen av appen från ett robust hobby-projekt till en fullfjädrad "Enterprise" SaaS-produkt. 
+
+### Hur (De 3 Faserna):
+**Fas 1: Tydlig Felhantering & Code Splitting (React Suspense)**
+- Alla databasanrop hanteras av en global wrapper (`safeDb`) som fångar fel och visar snygga, icke-blockerande popups (React Hot Toast) om t.ex. nätverket bryts. Inga "tysta fel" existerar längre.
+- Tunga vyer som `Statistics.tsx` laddas med `React.lazy()` och `<Suspense>`. Det gör att appen startar omedelbart, och statistikmodulen hämtas enbart när användaren klickar på fliken "EkonomiTB".
+
+**Fas 2: Modern Tillståndshantering (Zustand)**
+- Gammal "Prop Drilling" (där variabler skickas genom lager på lager av komponenter) är helt eliminerad. 
+- Appens tillstånd hanteras nu av `Zustand` (en state manager). Varje komponent prenumererar direkt på exakt den data den behöver. Detta gör appen blixtsnabb att bygga och skala, och tar bort enorma mängder överflödig kod i `App.tsx`.
+- Säkerhetshöjning för versionshantering: Den kritiska `.env`-filen som innehåller Supabase-nycklar har raderats från Git-historiken för att skydda databasen.
+
+**Fas 3: "Bulletproof" Backend-Säkerhet (Zod & SQL Constraints)**
+- All inmatning från användaren valideras nu på klientnivå via biblioteket `Zod`. Det kontrollerar form och orimliga värden (exempelvis att ett räkningsnamn inte är tomt och att belopp alltid är $\ge$ 0) *innan* det sparas. 
+- Som ett extra lås har vi lagt in `CHECK Constraints` på databasnivå i Supabase. Även om klientkoden ignoreras eller hackas kommer databasen att totalvägra att registrera felaktig data (t.ex. negativa skulder eller obefintliga namn).
+
+---
+
 ## 18. Versionshistorik
 
 | Version | Datum | Vad som förändrades |
@@ -354,4 +374,5 @@ Det ska alltid gå att ångra. Om man råkat gå med i fel hushåll via en felak
 | 1.5 | 2026-05 | Supabase-integration, realtidssynk, PWA-stöd. |
 | 2.0 | 2026-06-01 | Privat ekonomi, skulder/lån, EkonomiTB, Excel-export, anomalidetektion. |
 | 2.1 | 2026-06-09 | Hamburgermeny på mobil, dropdown i Inställningar, ny menyordning. |
-| **3.0** | **2026-06-09** | **Fullständig migrering till relationsdatabas. Krockfri synkronisering. Automatisk datamigrering. Realtidslyssnare på alla tabeller.** |
+| 3.0 | 2026-06-09 | Fullständig migrering till relationsdatabas. Krockfri synkronisering. Automatisk datamigrering. Realtidslyssnare på alla tabeller. |
+| **4.0** | **2026-06-09** | **Enterprise-uppgradering: Zustand, Zod validering, lazy-loading, och säkerhetshärdning i databas (Constraints).** |
