@@ -75,10 +75,10 @@ function App() {
             <div className="mobile-menu-dropdown">
               {([
                 ['month', '📅 Månadsvy'],
-                ['stats', '📊 EkonomiTB'],
-                ['manage', '⚙️ Inställningar'],
                 ['privat', '🔒 Privat'],
+                ['stats', '📊 EkonomiTB'],
                 ['mypages', '👤 Mina sidor'],
+                ['manage', '⚙️ Inställningar'],
               ] as Array<[typeof currentView, string]>).map(([view, label]) => (
                 <button
                   key={view}
@@ -105,28 +105,28 @@ function App() {
             📅 Månadsvy
           </button>
           <button 
-            onClick={() => navigateTo('stats')} 
-            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'stats' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'stats' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'stats' ? 'bold' : 'normal', transition: 'all 0.2s' }}
-          >
-            📊 EkonomiTB
-          </button>
-          <button 
-            onClick={() => navigateTo('manage')} 
-            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'manage' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'manage' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'manage' ? 'bold' : 'normal', transition: 'all 0.2s' }}
-          >
-            ⚙️ Inställningar
-          </button>
-          <button 
             onClick={() => navigateTo('privat')} 
             style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'privat' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'privat' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'privat' ? 'bold' : 'normal', transition: 'all 0.2s' }}
           >
             🔒 Privat
           </button>
           <button 
+            onClick={() => navigateTo('stats')} 
+            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'stats' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'stats' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'stats' ? 'bold' : 'normal', transition: 'all 0.2s' }}
+          >
+            📊 EkonomiTB
+          </button>
+          <button 
             onClick={() => navigateTo('mypages')} 
             style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'mypages' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'mypages' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'mypages' ? 'bold' : 'normal', transition: 'all 0.2s' }}
           >
             👤 Mina sidor
+          </button>
+          <button 
+            onClick={() => navigateTo('manage')} 
+            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'manage' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'manage' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'manage' ? 'bold' : 'normal', transition: 'all 0.2s' }}
+          >
+            ⚙️ Inställningar
           </button>
         </nav>
       </header>
