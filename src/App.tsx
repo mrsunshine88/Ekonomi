@@ -10,7 +10,7 @@ import MyPages from './components/MyPages';
 
 function App() {
   const { user, householdId, loading } = useAuth();
-  const { state, updateBillAmount, addBill, removeBill, updateBill, addAccount, removeAccount, updateAccount, copyFromPreviousMonth, togglePaymentStatus, confirmAnomaly, unlockAccount } = useStore(householdId);
+  const { state, updateBillAmount, addBill, removeBill, updateBill, addAccount, removeAccount, copyFromPreviousMonth, togglePaymentStatus, confirmAnomaly, unlockAccount } = useStore(householdId);
   const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages'>('month');
   
   // Defaults to current month YYYY-MM
@@ -99,7 +99,6 @@ function App() {
             onUpdateBill={updateBill} 
             onAddAccount={addAccount}
             onRemoveAccount={removeAccount}
-            onUpdateAccount={updateAccount}
             onUnlockAccount={unlockAccount}
           />
         </div>

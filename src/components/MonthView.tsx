@@ -29,8 +29,7 @@ export default function MonthView({ state, currentMonth, onChangeAmount, onConfi
 
   // Sort all months including the current one, so we can always find the previous month
   const allMonths = Array.from(new Set([...Object.keys(state.months), currentMonth])).sort();
-  const currentIndex = allMonths.indexOf(currentMonth);
-  const currentIndex = allMonths.indexOf(currentMonth);
+
 
   const renderCategory = (account: Account) => {
     const categoryBills = state.bills.filter(b => b.accountId === account.id);

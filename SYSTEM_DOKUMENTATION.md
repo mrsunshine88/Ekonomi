@@ -17,32 +17,58 @@ Från att ha varit en helt lokal app är den nu en **fullskalig molntjänst** up
 ---
 
 ## 3. Mobilapp och PWA (Progressive Web App)
-Appen är fullt anpassad för mobila enheter (Mobile First) och fungerar som en äkta app.
-- **Ladda ner som App:** Appen använder `vite-plugin-pwa`. När man surfar in på sidan via mobilen (iOS/Android) får man valet att "Lägga till på hemskärmen". Den får då en app-ikon och startar i fullskärm (helt utan Safari/Chrome-adressfält).
-- **Botten-meny:** På mobila enheter flyttas toppmenyn ner till botten av skärmen för att vara lättare att nå med tummen.
-- **Smarta Tillbaka-knappar:** När appen körs i fullskärm på mobilen försvinner webbläsarens egna "bakåt"-knapp. Appen har därför egna "← Tillbaka till Månadsvy"-knappar inbyggda överallt i Inställningar och Mina sidor.
+
+**Hur, Vad och Varför:**
+- **Vad:** Appen fungerar precis som en äkta app på mobilen. Man kan ladda ner den till hemskärmen, och den öppnas i fullskärm utan att Chrome/Safari:s adressfält tar plats. Den har också en dynamisk bottenmeny speciellt för mobiler.
+- **Hur:** Vi använder `vite-plugin-pwa` i `vite.config.ts` med `devOptions: { enabled: true }` aktiverat för utvecklingsläget. Appen har en `manifest.json` och ikoner i public-mappen. Bottenmenyn styrs via `index.css` med en `@media (max-width: 768px)` regel och `position: fixed`.
+- **Varför:** En ekonomiapp används oftast på språng, i mataffären eller hemma i soffan. Att tvingas ha en klumpig webbläsare öppen drar ner upplevelsen. PWA-tekniken ger en premiumkänsla, och bottenmenyn säkerställer att navigationen alltid finns nära tummen.
 
 ---
 
-## 4. Dynamiska Konton & Räkningar
-Du kan skapa hur många konton du vill under Inställningar. De delas in i två typer:
-1. **Gemensamt konto (Shared):** T.ex. Huskonto, Matkonto. Hit samlas pengar. Ingen "swishar" hit, man "för över".
-2. **Personligt konto (Person):** T.ex. Andreas, Helena. Hit kan man Swisha om en person har lagt ut mer pengar än en annan.
+## 4. Supabase & Row-Level Security (RLS)
 
-### Smarta Intervaller & Varningar
-Räkningar kan ha smarta intervall (Månadsvis, Jämna/Udda, eller Valfria kryssrutor för specifika månader, t.ex. bara Mars och Augusti). 
-Om en räkning ska betalas men står på `0 kr`, lyser rutan rött och appen **spärrar överföringsknapparna**.
+**Hur, Vad och Varför:**
+- **Vad:** Appen använder en avancerad säkerhetsmodell där användare bara kan läsa och skriva data som tillhör deras eget "hushåll".
+- **Hur:** Databasen (PostgreSQL) körs på Supabase. Tabellerna `households` och `profiles` skyddas med `Row Level Security` (RLS). Ett problem med `INSERT` löstes genom att generera unika Hushålls-ID:n (UUID) via `crypto.randomUUID()` direkt i webbläsaren *innan* de skickas till Supabase, vilket förhindrar en krock mellan `INSERT` och `SELECT` reglerna i Supabase under registreringen.
+- **Varför:** Om man loggar in med sin e-post vill man inte riskera att någon annan användare kan se ens privata utgifter. RLS är en försäkring på databasnivå, vilket betyder att även om någon skulle försöka manipulera koden, vägrar databasen att släppa ifrån sig datan.
 
 ---
 
-## 5. Säkerhetslås (Kontolås)
+## 5. Delning & "Mina Sidor"
+
+**Hur, Vad och Varför:**
+- **Vad:** En hubb där man hanterar sitt konto: Byta mejl, byta lösenord, och framförallt – bjuda in andra.
+- **Hur:** `MyPages.tsx` pratar med `supabase.auth` för kontohantering. Om man vill bjuda in en sambo kopierar man sitt Hushålls-ID. Sambon skapar ett konto och klistrar in koden, varpå deras `profile` uppdateras till att peka på samma Hushålls-ID.
+- **Varför:** Vi vill undvika komplicerade inbjudningslänkar via e-post. En copy-paste-kod är idiotsäkert och kräver inget avancerat mejlutskick-system.
+
+---
+
+## 6. Uträkningar (Splitwise-logik)
+
+**Hur, Vad och Varför:**
+- **Vad:** Appen räknar automatiskt ut vem som ska betala vem, så att det blir rättvist oavsett hur många konton eller personer som är inblandade.
+- **Hur:** All matematik sker i `calculateMonth()` inuti `store.ts`. Systemet identifierar vilka utgifter som är knutna till gemensamma konton och vilka som är knutna till personliga konton. Om differensen är negativ skapas en "Swish-rekommendation".
+- **Varför:** Detta är kärnan i hela appen! Det eliminerar allt behov av excel-ark eller manuella miniräknare vid köksbordet. Oavsett om sambon tog elräkningen och du tog hyran, fixar appen nettobeloppet på en bråkdel av en sekund.
+
+---
+
+## 7. Typning & Vercel (Lansering)
+
+**Hur, Vad och Varför:**
+- **Vad:** Hela kodbasen är "Strictly Typed" via TypeScript för att kunna byggas felfritt och lanseras publikt via Vercel.
+- **Hur:** Vi har rensat bort alla oanvända variabler och imports (`import React`) för att `tsc -b` ska kompilera med 0 varningar. Vi använder globala interface för `AppState`, `BillDefinition`, `Account` i filen `types.ts`.
+- **Varför:** Tjänster som Vercel är stenhårda; minsta lilla slarv (en variabel som skapas men inte används) stoppar hela bygget. Genom att ha extremt hög kodkvalitet säkerställer vi att appen är blixtsnabb, buggfri och framtidssäker när den väl är publicerad.
+
+---
+
+## 8. Säkerhetslås (Kontolås)
 Eftersom matten bygger på gemensamma överföringar fryser appen datan när man betalat.
 - När man klickar "✅ Markera som överfört", låses relaterade konton med en `🔒`-ikon.
 - Det går inte att råka ändra siffrorna i efterhand om man inte manuellt går in i `⚙️ Inställningar -> 🔒 Lås upp` och låser upp den specifika månaden.
 
 ---
 
-## 6. AI-driven Felskrivningskontroll
+## 9. AI-driven Felskrivningskontroll
 För att skydda mot "Fat fingers" (skriva in fel siffra):
 - Systemet tittar på historiken. Om en ny siffra är 50% lägre än det historiska minimumet, eller 50% högre än det historiska maximumet (på räkningar äldre än 3 månader), triggas ett larm.
 - Rutan blir röd och man måste antingen trycka `↩️ Ångra` eller bekräfta att avvikelsen är korrekt (`✅ OK`).
