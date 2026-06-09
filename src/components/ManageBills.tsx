@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { BillDefinition, PaymentInterval, PrivateBill } from '../types';
 import { useStore } from '../store';
 import { useAuth } from '../AuthContext';
+import toast from 'react-hot-toast';
 
 export default function ManageBills() {
   const { user, role } = useAuth();
@@ -82,6 +83,7 @@ export default function ManageBills() {
       }
     }
     
+    const wasEditing = !!editingBillId;
     setEditingBillId(null);
     setNewBillName('');
     setNewBillDefault('');
@@ -91,6 +93,7 @@ export default function ManageBills() {
     setNewBillAutoTransfer(false);
     setNewBillInterval('all');
     setNewBillCustomMonths([]);
+    toast.success(wasEditing ? '✅ Räkning sparad!' : '✅ Räkning tillagd!');
   };
 
   const handleEditBill = (bill: BillDefinition) => {
