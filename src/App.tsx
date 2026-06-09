@@ -111,6 +111,7 @@ function App() {
             onRemoveAccount={removeAccount}
             onUnlockAccount={unlockAccount}
             onUpdateSettings={updateSettings}
+            onUnlockPrivateMonth={togglePrivateLock}
           />
         </div>
       ) : currentView === 'stats' ? (

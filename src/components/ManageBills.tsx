@@ -14,12 +14,13 @@ interface Props {
   onRemoveAccount: (accountId: string) => void;
   onUnlockAccount: (monthId: string, accountId: string) => void;
   onUpdateSettings: (settings: Partial<AppState['settings']>) => void;
+  onUnlockPrivateMonth: (monthId: string) => void;
 }
 
 export default function ManageBills({ 
   state, onAddBill, onRemoveBill, onUpdateBill, 
   onAddPrivateBill, onRemovePrivateBill, onUpdatePrivateBill,
-  onAddAccount, onRemoveAccount, onUnlockAccount, onUpdateSettings 
+  onAddAccount, onRemoveAccount, onUnlockAccount, onUpdateSettings, onUnlockPrivateMonth 
 }: Props) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'bills' | 'accounts' | 'locks' | 'general'>('bills');
@@ -228,61 +229,94 @@ export default function ManageBills({
 
       {activeTab === 'locks' && (
         <div>
-          <h3 className="card-title">Lås upp stängda konton</h3>
+          <h3 className="card-title">Lås upp stängda månader/konton</h3>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-            När du trycker på "Markera som överfört" så låses det kontot för den månaden. Här kan du låsa upp konton om du behöver rätta till något. (Detta avmarkerar knappen i Månadsvyn).
+            När du trycker på "Markera som överfört" eller "Markera som klar" så låses siffrorna för den månaden. Här kan du låsa upp konton och månader om du behöver rätta till något.
           </p>
 
-          <div className="bill-list">
-            {Object.keys(state.months).sort().reverse().map(monthId => {
-              const monthData = state.months[monthId];
-              const handled = monthData.handledPayments || {};
-              
-              // Kalkylera vilka konton som faktiskt ÄR låsta denna månaden
-              const lockedAccounts = new Set<string>();
-              Object.keys(handled).forEach(paymentId => {
-                if (handled[paymentId]) {
-                  if (paymentId.startsWith('transfer_') && paymentId.endsWith('_huskonto')) {
-                    const personId = paymentId.split('_')[1];
-                    lockedAccounts.add(personId);
-                    lockedAccounts.add('huskonto');
-                  } else if (paymentId.startsWith('swish_')) {
-                    const [, fromId, toId] = paymentId.split('_');
-                    lockedAccounts.add(fromId);
-                    lockedAccounts.add(toId);
-                  }
-                }
-              });
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+            <div>
+              <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Gemensam Månadsvy</h4>
+              <div className="bill-list">
+                {Object.keys(state.months).sort().reverse().map(monthId => {
+                  const monthData = state.months[monthId];
+                  const handled = monthData.handledPayments || {};
+                  
+                  // Kalkylera vilka konton som faktiskt ÄR låsta denna månaden
+                  const lockedAccounts = new Set<string>();
+                  Object.keys(handled).forEach(paymentId => {
+                    if (handled[paymentId]) {
+                      if (paymentId.startsWith('transfer_') && paymentId.endsWith('_huskonto')) {
+                        const personId = paymentId.split('_')[1];
+                        lockedAccounts.add(personId);
+                        lockedAccounts.add('huskonto');
+                      } else if (paymentId.startsWith('swish_')) {
+                        const [, fromId, toId] = paymentId.split('_');
+                        lockedAccounts.add(fromId);
+                        lockedAccounts.add(toId);
+                      }
+                    }
+                  });
 
-              if (lockedAccounts.size === 0) return null;
+                  if (lockedAccounts.size === 0) return null;
 
-              return (
-                <div key={monthId} className="card" style={{ marginBottom: '1rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)' }}>
-                  <h4 style={{ marginBottom: '1rem', color: 'var(--accent-color)' }}>{monthId}</h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                    {state.accounts.map(acc => {
-                      const isLocked = lockedAccounts.has(acc.id);
-                      if (!isLocked) return null;
-                      return (
-                        <div key={acc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-color)', padding: '0.75rem', borderRadius: '8px' }}>
-                          <span>{acc.name} 🔒</span>
-                          <button 
-                            onClick={() => onUnlockAccount(monthId, acc.id)}
-                            style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', border: '1px solid #3b82f6', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
-                          >
-                            🔓 Lås upp
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-            
-            {Object.keys(state.months).length === 0 || !Object.values(state.months).some(m => Object.values(m.handledPayments || {}).some(v => v)) ? (
-               <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Inga låsta konton hittades.</div>
-            ) : null}
+                  return (
+                    <div key={monthId} className="card" style={{ marginBottom: '1rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', padding: '1rem' }}>
+                      <h4 style={{ margin: '0 0 1rem 0', color: 'var(--accent-color)' }}>{monthId}</h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {state.accounts.map(acc => {
+                          const isLocked = lockedAccounts.has(acc.id);
+                          if (!isLocked) return null;
+                          return (
+                            <div key={acc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-color)', padding: '0.75rem', borderRadius: '8px' }}>
+                              <span>{acc.name} 🔒</span>
+                              <button 
+                                onClick={() => onUnlockAccount(monthId, acc.id)}
+                                style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', border: '1px solid #3b82f6', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                              >
+                                🔓 Lås upp
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                {Object.keys(state.months).length === 0 || !Object.values(state.months).some(m => Object.values(m.handledPayments || {}).some(v => v)) ? (
+                  <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>Inga låsta konton hittades i månadsvyn.</div>
+                ) : null}
+              </div>
+            </div>
+
+            <div>
+              <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Mina Privata Lås</h4>
+              <div className="bill-list">
+                {Object.keys(state.privateMonths || {}).sort().reverse().map(monthId => {
+                  const mData = state.privateMonths![monthId];
+                  if (!mData.isLocked) return null;
+
+                  return (
+                    <div key={monthId} className="card" style={{ marginBottom: '1rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', padding: '1rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h4 style={{ margin: 0, color: 'var(--accent-color)' }}>{monthId} 🔒</h4>
+                        <button 
+                          onClick={() => onUnlockPrivateMonth(monthId)}
+                          style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', border: '1px solid #3b82f6', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                        >
+                          🔓 Lås upp
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {Object.keys(state.privateMonths || {}).length === 0 || !Object.values(state.privateMonths || {}).some(m => m.isLocked) ? (
+                  <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>Inga låsta privata månader hittades.</div>
+                ) : null}
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -164,29 +164,35 @@ export default function PrivateView({ state, currentMonth, onChangeAmount, onUpd
           </div>
 
           <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
-            <button 
-              onClick={() => onToggleLock(currentMonth)}
-              style={{
-                background: isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(16, 185, 129, 0.15)',
-                color: isLocked ? 'var(--text-secondary)' : '#34d399',
-                border: `1px solid ${isLocked ? 'var(--border-color)' : 'rgba(16, 185, 129, 0.3)'}`,
-                padding: '0.75rem 1.5rem',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                margin: '0 auto',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              {isLocked ? '🔓 Lås upp månaden' : '✅ Markera månad som klar'}
-            </button>
-            {!isLocked && (
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                Låser siffrorna så att du inte råkar ändra dem.
+            {isLocked ? (
+              <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--text-secondary)' }}>
+                🔒 Denna månad är låst. Gå till <strong>Inställningar -&gt; 🔒 Lås upp</strong> för att ändra siffrorna.
               </div>
+            ) : (
+              <>
+                <button 
+                  onClick={() => onToggleLock(currentMonth)}
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    color: '#34d399',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    margin: '0 auto',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  ✅ Markera månad som klar
+                </button>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                  Låser siffrorna så att du inte råkar ändra dem.
+                </div>
+              </>
             )}
           </div>
         </div>
