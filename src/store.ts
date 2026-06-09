@@ -20,18 +20,21 @@ const DEFAULT_STATE: AppState = {
   settings: { showSummary: true }
 };
 
-const safeDb = async (promise: PromiseLike<any>, rollbackFn?: () => void) => {
+export const safeDb = async (promise: PromiseLike<any>, rollbackFn?: () => void) => {
   try {
     const { error } = await promise;
     if (error) {
-      console.error(error);
-      toast.error('Kunde inte spara ändringen. Återställer värdet.');
+      console.error('Supabase error:', error);
+      toast.error(`Databasfel: ${error.message || error.details || 'Okänt fel'}`);
       if (rollbackFn) rollbackFn();
+      return { error };
     }
+    return { error: null };
   } catch (err) {
-    console.error(err);
-    toast.error('Nätverksfel. Återställer värdet.');
+    console.error('Unexpected error:', err);
+    toast.error('Nätverksfel. Försök igen.');
     if (rollbackFn) rollbackFn();
+    return { error: err };
   }
 };
 
