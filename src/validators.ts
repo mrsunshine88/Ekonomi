@@ -27,7 +27,8 @@ export const billBaseSchema = z.object({
 
 export const billSchema = billBaseSchema.extend({
   accountId: z.string().min(1, "Ett konto måste väljas"),
-  splitType: z.string().min(1)
+  splitType: z.string().min(1),
+  isAutoTransfer: z.boolean().optional()
 });
 
 export const privateBillSchema = billBaseSchema.extend({
