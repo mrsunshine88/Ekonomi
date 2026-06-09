@@ -307,19 +307,17 @@ Att se sin ekonomi som grafer och tabeller ger en känsla av kontroll. Utan hist
 
 ---
 
-## 16. "Lämna hushåll" & Självläkande profiler
+## 16. Hushållsadministration & GDPR
 
 ### Vad:
-En säkerhetsventil om man råkat hamna i fel hushåll, eller vill börja om helt.
+Säker och tydlig hantering av vilka som är med i hushållet, vem som får bjuda in, samt verktyg för att radera all personlig data (GDPR-efterlevnad).
 
 ### Hur:
-- Knappen **"🚪 Lämna och skapa eget hushåll"** på `Mina sidor` kör `handleCreateHousehold()`.
-- Skapar ett nytt UUID via `crypto.randomUUID()`, ett nytt hushåll i Supabase, och uppdaterar `profile.household_id` via `upsert`.
-- All data i det *gamla* hushållet är orörd (Helena och eventuella andra påverkas inte).
-- Alla hushållsoperationer använder `upsert` – idempotent, förhindrar dubbletter om nätverket krånglar.
-
-### Varför:
-Det ska alltid gå att ångra. Om man råkat gå med i fel hushåll via en felaktig kod ska man enkelt kunna lämna och starta om.
+- **Medlemslista & Kick-funktion:** På "Mina Sidor" hämtas hushållets medlemmar asynkront via tabellen `profiles`. Om inloggad användare har rollen `owner`, ges behörighet att klicka på en "Kicka ut"-knapp för vanliga medlemmar. Funktionen skapar ett nytt, tomt hushåll och kastar omedelbart dit den utsparkade medlemmen så att inga krascher uppstår och de förlorar tillgången till er delade data.
+- **Skyddade Inbjudningar:** Inbjudningskoden och blocket för molnsynk visas exklusivt för ägaren. Vanliga medlemmar får enbart en ren informationsvy över att de är med.
+- **Lämna hushåll:** Knappen **"🚪 Lämna och skapa eget hushåll"** kör `handleCreateHousehold()` för användare som frivilligt vill hoppa av. Samma mekanism (nytt UUID via `crypto.randomUUID()`) körs. Den gamla hushållsdatan är orörd för de som är kvar.
+- **GDPR Självradering:** En dedikerad och permanent röd knapp, "Radera mitt konto för alltid", finns placerad oavsett hushållsstatus. Raderingen anropar `delete_user`-funktionen i databasen som rensar autentiseringsidentiteten och låter PostgreSQL:s `ON DELETE CASCADE` radera all profilinformation och privata räkningar.
+- **Säker Minnesrensning (Zustand Wipe):** Vid `signOut` triggas appens globala `cleanup()`-funktion. Förutom att kasta inloggningstoken, tvångsåterställer den omedelbart React-appens hela in-memory state till `DEFAULT_STATE`. Detta hindrar att skärmen dröjer kvar med känslig data om en ny användare direkt registrerar sig i samma webbläsarfönster.
 
 ---
 
@@ -385,4 +383,5 @@ Förvandlingen av appen från ett robust hobby-projekt till en fullfjädrad "Ent
 | 2.1 | 2026-06-09 | Hamburgermeny på mobil, dropdown i Inställningar, ny menyordning. |
 | 3.0 | 2026-06-09 | Fullständig migrering till relationsdatabas. Krockfri synkronisering. Automatisk datamigrering. Realtidslyssnare på alla tabeller. |
 | 4.0 | 2026-06-09 | Enterprise-uppgradering: Zustand, Zod validering, lazy-loading, skalbar paginering, och säkerhetshärdning i databas (Constraints). |
-| **5.0** | **2026-06-09** | **The Final Polish: Behörighetsnivåer (RBAC), GDPR-efterlevnad (Självradering) och Automatiserade enhetstester (Vitest integrerat i byggflödet).** |
+| 5.0 | 2026-06-09 | The Final Polish: Behörighetsnivåer (RBAC), GDPR-efterlevnad (Självradering) och Automatiserade enhetstester (Vitest integrerat i byggflödet). |
+| **5.1** | **2026-06-09** | **Hushållsadministration & UX: Visuell skillnad på logga in/skapa konto, medlemslistor, kick-funktion för ägare, fixat minnesläckage i Zustand vid utloggning, och förfinad RLS för att medlemmar ska se varandra.** |
