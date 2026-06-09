@@ -210,7 +210,6 @@ export default function MyPages() {
               Gå med
             </button>
           </div>
-          </div>
         </div>
       )}
 
