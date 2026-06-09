@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import type { CalculationResult, MonthData, AppState } from '../types';
+import { useStore, calculateMonth } from '../store';
 
 interface Props {
-  state: AppState;
-  result: CalculationResult;
-  monthData: MonthData;
-  onToggleStatus: (paymentId: string) => void;
+  currentMonth: string;
 }
 
-export default function Summary({ state, result, monthData, onToggleStatus }: Props) {
+export default function Summary({ currentMonth }: Props) {
+  const state = useStore(s => s.state);
+  const togglePaymentStatus = useStore(s => s.togglePaymentStatus);
+  const monthData = state.months[currentMonth] || { monthId: currentMonth, billAmounts: {}, handledPayments: {} };
+  const result = calculateMonth(state, currentMonth);
+
   const [warningModal, setWarningModal] = useState<{ visible: boolean; bills: typeof state.bills }>({ visible: false, bills: [] });
   const handled = monthData.handledPayments || {};
 
@@ -48,7 +50,7 @@ export default function Summary({ state, result, monthData, onToggleStatus }: Pr
       setWarningModal({ visible: true, bills: relevantBills });
       return;
     }
-    onToggleStatus(paymentId);
+    togglePaymentStatus(currentMonth,paymentId);
   };
 
   return (

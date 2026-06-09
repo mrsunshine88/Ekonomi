@@ -1,13 +1,14 @@
-import type { Account, AppState } from '../types';
+import type { Account } from '../types';
+import { useStore } from '../store';
 
 interface Props {
-  state: AppState;
   currentMonth: string;
-  onChangeAmount: (billId: string, amount: number) => void;
-  onConfirmAnomaly: (billId: string) => void;
 }
 
-export default function MonthView({ state, currentMonth, onChangeAmount, onConfirmAnomaly }: Props) {
+export default function MonthView({ currentMonth }: Props) {
+  const state = useStore(s => s.state);
+  const updateBillAmount = useStore(s => s.updateBillAmount);
+  const confirmAnomalyStore = useStore(s => s.confirmAnomaly);
   const monthData = state.months[currentMonth] || { monthId: currentMonth, billAmounts: {}, handledPayments: {} };
   
   // Calculate locked accounts
@@ -111,7 +112,7 @@ export default function MonthView({ state, currentMonth, onChangeAmount, onConfi
                         value={amount === 0 ? '' : amount} 
                         onChange={(e) => {
                           const val = e.target.value;
-                          onChangeAmount(bill.id, val === '' ? 0 : parseFloat(val));
+                          updateBillAmount(currentMonth, bill.id, val === '' ? 0 : parseFloat(val));
                         }}
                         min="0"
                         style={{ 
@@ -125,14 +126,14 @@ export default function MonthView({ state, currentMonth, onChangeAmount, onConfi
                   {isAnomaly && (
                     <div style={{ display: 'flex', gap: '0.4rem' }}>
                       <button 
-                        onClick={() => onChangeAmount(bill.id, latestPaid)}
+                        onClick={() => updateBillAmount(currentMonth, bill.id, latestPaid)}
                         style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '6px', padding: '0.2rem 0.5rem', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                         title={`Återställ till ${latestPaid} kr`}
                       >
                         ↩️ Ångra
                       </button>
                       <button 
-                        onClick={() => onConfirmAnomaly(bill.id)}
+                        onClick={() => confirmAnomalyStore(currentMonth, bill.id)}
                         style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '6px', padding: '0.2rem 0.5rem', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                         title="Godkänn beloppet"
                       >

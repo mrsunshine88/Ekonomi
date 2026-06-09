@@ -1,28 +1,22 @@
 import { useState } from 'react';
-import type { AppState, BillDefinition, Account, PaymentInterval, PrivateBill } from '../types';
+import type { BillDefinition, PaymentInterval, PrivateBill } from '../types';
+import { useStore } from '../store';
 import { useAuth } from '../AuthContext';
 
-interface Props {
-  state: AppState;
-  onAddBill: (bill: BillDefinition) => void;
-  onRemoveBill: (billId: string) => void;
-  onUpdateBill: (bill: BillDefinition) => void;
-  onAddPrivateBill: (bill: PrivateBill) => void;
-  onRemovePrivateBill: (billId: string) => void;
-  onUpdatePrivateBill: (bill: PrivateBill) => void;
-  onAddAccount: (account: Account) => void;
-  onRemoveAccount: (accountId: string) => void;
-  onUnlockAccount: (monthId: string, accountId: string) => void;
-  onUpdateSettings: (settings: Partial<AppState['settings']>) => void;
-  onUnlockPrivateMonth: (monthId: string) => void;
-}
-
-export default function ManageBills({ 
-  state, onAddBill, onRemoveBill, onUpdateBill, 
-  onAddPrivateBill, onRemovePrivateBill, onUpdatePrivateBill,
-  onAddAccount, onRemoveAccount, onUnlockAccount, onUpdateSettings, onUnlockPrivateMonth 
-}: Props) {
+export default function ManageBills() {
   const { user } = useAuth();
+  const state = useStore(s => s.state);
+  const onAddBill = useStore(s => s.addBill);
+  const onRemoveBill = useStore(s => s.removeBill);
+  const onUpdateBill = useStore(s => s.updateBill);
+  const onAddPrivateBill = useStore(s => s.addPrivateBill);
+  const onRemovePrivateBill = useStore(s => s.removePrivateBill);
+  const onUpdatePrivateBill = useStore(s => s.updatePrivateBill);
+  const onAddAccount = useStore(s => s.addAccount);
+  const onRemoveAccount = useStore(s => s.removeAccount);
+  const onUnlockAccount = useStore(s => s.unlockAccount);
+  const onUpdateSettings = useStore(s => s.updateSettings);
+  const onUnlockPrivateMonth = useStore(s => s.togglePrivateLock);
   const [activeTab, setActiveTab] = useState<'bills' | 'accounts' | 'locks' | 'general'>('bills');
   
   // New/Edit Bill State

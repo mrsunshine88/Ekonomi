@@ -1,17 +1,17 @@
 
-import type { AppState, PrivateBill } from '../types';
 import { useAuth } from '../AuthContext';
 
+import { useStore } from '../store';
+
 interface Props {
-  state: AppState;
   currentMonth: string;
-  onChangeAmount: (billId: string, amount: number) => void;
-  onUpdateBill: (bill: PrivateBill) => void;
-  onConfirmAnomaly: (monthId: string, billId: string) => void;
-  onToggleLock: (monthId: string) => void;
 }
 
-export default function PrivateView({ state, currentMonth, onChangeAmount, onUpdateBill, onConfirmAnomaly, onToggleLock }: Props) {
+export default function PrivateView({ currentMonth }: Props) {
+  const state = useStore(s => s.state);
+  const updatePrivateBillAmount = useStore(s => s.updatePrivateBillAmount);
+  const confirmPrivateAnomaly = useStore(s => s.confirmPrivateAnomaly);
+  const togglePrivateLock = useStore(s => s.togglePrivateLock);
   const { user } = useAuth();
 
   if (!user) return <div style={{ color: '#fff', textAlign: 'center', marginTop: '2rem' }}>Logga in för att se dina privata utgifter.</div>;
@@ -100,19 +100,19 @@ export default function PrivateView({ state, currentMonth, onChangeAmount, onUpd
                     </div>
                     <div className="bill-meta" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.25rem' }}>
                       <button 
-                        onClick={() => onUpdateBill({...bill, isShared: !bill.isShared})} 
+                        onClick={() => useStore.getState().updatePrivateBill({...bill, isShared: !bill.isShared})} 
                         style={{ background: 'transparent', border: 'none', color: bill.isShared ? '#10b981' : 'var(--text-secondary)', cursor: 'pointer', padding: 0, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                         title={bill.isShared ? "Synlig för hela hushållet (men privat i uträkningen)" : "Helt privat"}
                       >
                         {bill.isShared ? '👁️ Delad (Synlig för andra)' : '🔒 Privat (Ingen ser denna)'}
                       </button>
                     </div>
-                    {(showWarning || isAnomaly) && (
-                      <div className="bill-meta" style={{ marginTop: '0.5rem' }}>
-                        {showWarning && <span style={{ color: '#f43f5e', display: 'block', fontWeight: 500 }}>⚠️ Saknas</span>}
-                        {isAnomaly && <span style={{ color: '#f43f5e', display: 'block', fontWeight: 500 }}>🚨 {anomalyText}</span>}
-                      </div>
-                    )}
+                    <div className="bill-meta">
+                      Delas ej med hushållet
+                      {bill.isShared && <span style={{ display: 'block', marginTop: '4px', color: '#10b981' }}>🤝 Delas med {state.accounts.find(a => a.id !== user.id)?.name || 'Hushållet'}</span>}
+                      {showWarning && <span style={{ color: '#f43f5e', display: 'block', marginTop: '4px', fontWeight: 500 }}>⚠️ Saknas</span>}
+                      {isAnomaly && <span style={{ color: '#f43f5e', display: 'block', marginTop: '4px', fontWeight: 500 }}>🚨 {anomalyText}</span>}
+                    </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem', flexShrink: 0, paddingTop: isAnomaly ? '0.5rem' : '0' }}>
                     <div className="bill-amount-wrapper">
@@ -126,7 +126,7 @@ export default function PrivateView({ state, currentMonth, onChangeAmount, onUpd
                           value={amount === 0 ? '' : amount} 
                           onChange={(e) => {
                             const val = e.target.value;
-                            onChangeAmount(bill.id, val === '' ? 0 : parseFloat(val));
+                            updatePrivateBillAmount(currentMonth, bill.id, val === '' ? 0 : parseFloat(val));
                           }}
                           min="0"
                           style={{ 
@@ -142,19 +142,19 @@ export default function PrivateView({ state, currentMonth, onChangeAmount, onUpd
                     {isAnomaly && (
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
                         <button 
-                          onClick={() => onChangeAmount(bill.id, latestPaid)}
-                          style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '6px', padding: '0.2rem 0.5rem', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-                          title={`Återställ till ${latestPaid} kr`}
-                        >
-                          ↩️ Ångra
-                        </button>
-                        <button 
-                          onClick={() => onConfirmAnomaly(currentMonth, bill.id)}
-                          style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '6px', padding: '0.2rem 0.5rem', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-                          title="Godkänn beloppet"
-                        >
-                          ✅ OK
-                        </button>
+                        onClick={() => updatePrivateBillAmount(currentMonth, bill.id, latestPaid)}
+                        style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '6px', padding: '0.2rem 0.5rem', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                        title={`Återställ till ${latestPaid} kr`}
+                      >
+                        ↩️ Ångra
+                      </button>
+                      <button 
+                        onClick={() => confirmPrivateAnomaly(currentMonth, bill.id)}
+                        style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '6px', padding: '0.2rem 0.5rem', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                        title="Godkänn beloppet"
+                      >
+                        ✅ OK
+                      </button>
                       </div>
                     )}
                   </div>
@@ -171,7 +171,7 @@ export default function PrivateView({ state, currentMonth, onChangeAmount, onUpd
             ) : (
               <>
                 <button 
-                  onClick={() => onToggleLock(currentMonth)}
+                  onClick={() => togglePrivateLock(currentMonth)}
                   style={{
                     background: 'rgba(16, 185, 129, 0.15)',
                     color: '#34d399',

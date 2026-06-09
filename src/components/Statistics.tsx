@@ -1,13 +1,10 @@
 import { useState } from 'react';
-import type { AppState } from '../types';
 import { calculateMonth } from '../store';
 import { useAuth } from '../AuthContext';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { exportToExcel } from '../excel';
 
-interface Props {
-  state: AppState;
-}
+import { useStore } from '../store';
 
 const COLORS = ['#10b981', '#3b82f6', '#a855f7', '#f59e0b', '#f43f5e', '#06b6d4'];
 
@@ -17,7 +14,8 @@ const formatMonthName = (monthId: string) => {
   return `${monthNames[parseInt(month, 10) - 1]} ${year}`;
 };
 
-export default function Statistics({ state }: Props) {
+export default function Statistics() {
+  const state = useStore(s => s.state);
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState<'shared' | 'private'>('shared');
 

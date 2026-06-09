@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { useStore, calculateMonth } from './store';
+import { useStore } from './store';
 import { useAuth } from './AuthContext';
 import MonthView from './components/MonthView';
 import Summary from './components/Summary';
@@ -12,7 +12,13 @@ import PrivateView from './components/PrivateView';
 
 function App() {
   const { user, householdId, loading } = useAuth();
-  const { state, updateBillAmount, addBill, removeBill, updateBill, addAccount, removeAccount, copyFromPreviousMonth, togglePaymentStatus, confirmAnomaly, unlockAccount, updateSettings, updatePrivateBillAmount, addPrivateBill, removePrivateBill, updatePrivateBill, copyPrivateFromPreviousMonth, confirmPrivateAnomaly, togglePrivateLock } = useStore(householdId);
+  const initCloud = useStore(s => s.initCloud);
+  const state = useStore(s => s.state);
+  
+  useEffect(() => {
+    initCloud(householdId, user?.id || null);
+  }, [householdId, user?.id, initCloud]);
+
   const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages' | 'privat'>('month');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -44,8 +50,6 @@ function App() {
     const newId = `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, '0')}`;
     setCurrentMonth(newId);
   };
-
-  const calcResult = calculateMonth(state, currentMonth);
 
   useEffect(() => {
     // Solo mode: no redirect needed if no householdId
@@ -140,27 +144,13 @@ function App() {
         </div>
       ) : currentView === 'manage' ? (
         <div>
-          <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Månadsvy</button>
-          <ManageBills 
-            state={state} 
-            onAddBill={addBill} 
-            onRemoveBill={removeBill} 
-            onUpdateBill={updateBill} 
-            onAddPrivateBill={addPrivateBill}
-            onRemovePrivateBill={removePrivateBill}
-            onUpdatePrivateBill={updatePrivateBill}
-            onAddAccount={addAccount}
-            onRemoveAccount={removeAccount}
-            onUnlockAccount={unlockAccount}
-            onUpdateSettings={updateSettings}
-            onUnlockPrivateMonth={togglePrivateLock}
-          />
+          <ManageBills />
         </div>
       ) : currentView === 'stats' ? (
         <div>
           <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Månadsvy</button>
           <Suspense fallback={<div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Laddar statistik...</div>}>
-            <Statistics state={state} />
+            <Statistics />
           </Suspense>
         </div>
       ) : currentView === 'privat' ? (
@@ -173,21 +163,14 @@ function App() {
 
           <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
             <button 
-              onClick={() => copyPrivateFromPreviousMonth(currentMonth)}
+              onClick={() => useStore.getState().copyPrivateFromPreviousMonth(currentMonth)}
               style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', background: 'var(--surface-color)' }}
             >
               📄 Hämta siffror från förra månaden
             </button>
           </div>
 
-          <PrivateView 
-            state={state} 
-            currentMonth={currentMonth}
-            onChangeAmount={(billId, amount) => updatePrivateBillAmount(currentMonth, billId, amount)}
-            onUpdateBill={updatePrivateBill}
-            onConfirmAnomaly={confirmPrivateAnomaly}
-            onToggleLock={togglePrivateLock}
-          />
+          <PrivateView currentMonth={currentMonth} />
         </>
       ) : (
         <>
@@ -198,12 +181,7 @@ function App() {
           </div>
 
           {state.settings?.showSummary !== false && (
-            <Summary 
-              state={state}
-              result={calcResult} 
-              monthData={state.months[currentMonth] || { monthId: currentMonth, billAmounts: {} }}
-              onToggleStatus={(paymentId) => togglePaymentStatus(currentMonth, paymentId)}
-            />
+            <Summary currentMonth={currentMonth} />
           )}
 
           <div style={{ textAlign: 'center', marginBottom: '1.5rem', marginTop: state.settings?.showSummary !== false ? '0' : '1.5rem' }}>
@@ -213,7 +191,7 @@ function App() {
               </div>
             ) : (
               <button 
-                onClick={() => copyFromPreviousMonth(currentMonth)}
+                onClick={() => useStore.getState().copyFromPreviousMonth(currentMonth)}
                 style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', background: 'var(--surface-color)' }}
               >
                 📄 Hämta siffror från förra månaden
@@ -221,12 +199,7 @@ function App() {
             )}
           </div>
 
-          <MonthView 
-            state={state}
-            currentMonth={currentMonth}
-            onChangeAmount={(billId, amount) => updateBillAmount(currentMonth, billId, amount)} 
-            onConfirmAnomaly={(billId) => confirmAnomaly(currentMonth, billId)}
-          />
+          <MonthView currentMonth={currentMonth} />
         </>
       )}
     </div>
