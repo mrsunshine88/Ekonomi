@@ -166,6 +166,12 @@ export default function ManageBills() {
           >
             📋 Räkningar
           </button>
+          <button 
+            onClick={() => setActiveTab('locks')}
+            style={{ background: activeTab === 'locks' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'locks' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'locks' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'locks' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
+          >
+            🔓 Lås upp
+          </button>
           {role === 'owner' && (
             <>
               <button 
