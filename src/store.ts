@@ -531,10 +531,14 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ state: { ...state, householdProfiles: updatedProfiles } });
     
     // Update DB
-    const { error } = await supabase.from('profiles').update({ share_private_economy: share }).eq('id', userId);
+    const { error, data } = await supabase.from('profiles').update({ share_private_economy: share }).eq('id', userId).select();
     if (error) {
       set({ state: prevState });
       throw error;
+    }
+    if (!data || data.length === 0) {
+      set({ state: prevState });
+      throw new Error("Databasen blockerade ändringen (Databasens RLS-säkerhetsregel hindrade sparandet). Du måste köra SQL-skriptet!");
     }
   },
 
