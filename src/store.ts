@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
-import type { AppState, BillDefinition, MonthData, CalculationResult, Account, SwishTransfer, PrivateBill } from './types';
-
-const STORAGE_KEY = 'ekonomiapp_state_v1';
+import type { AppState, BillDefinition, CalculationResult, Account, SwishTransfer, PrivateBill } from './types';
+import { runRelationalMigration } from './migrateToRelational';
+import { useAuth } from './AuthContext'; // Need userId for migration
 
 const DEFAULT_ACCOUNTS: Account[] = [
   { id: 'shared_1', name: 'Gemensamt konto', type: 'shared', transferMethod: 'transfer' },
@@ -10,99 +10,22 @@ const DEFAULT_ACCOUNTS: Account[] = [
   { id: 'person_2', name: 'Person 2', type: 'person', transferMethod: 'swish' }
 ];
 
-const DEFAULT_BILLS: BillDefinition[] = [];
-
-const SEED_MONTHS: Record<string, MonthData> = {};
-
 const DEFAULT_STATE: AppState = {
   accounts: DEFAULT_ACCOUNTS,
-  bills: DEFAULT_BILLS,
-  months: SEED_MONTHS,
+  bills: [],
+  months: {},
+  privateBills: [],
+  privateMonths: {},
+  settings: { showSummary: true }
 };
 
 export function useStore(householdId: string | null) {
-  const [state, setState] = useState<AppState>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        
-        // Migration logic for older bills
-        let migratedBills = parsed.bills || DEFAULT_STATE.bills;
-        migratedBills = migratedBills.map((b: any) => {
-          let n = { ...b };
-          if (n.category) {
-            n.accountId = n.category === 'Huskonto' ? 'huskonto' : n.category === 'Andreas' ? 'andreas' : 'helena';
-            delete n.category;
-          }
-          if (n.splitType === '50/50') n.splitType = 'equal';
-          if (n.splitType === 'Andreas100') n.splitType = 'andreas';
-          if (n.splitType === 'Helena100') n.splitType = 'helena';
-          if (!n.interval || n._migratedIntervals !== true) {
-            if (n.id === 'affarsverken' || n.id === 'karlskrona-kommun') {
-              n.interval = 'odd';
-            } else if (!n.interval) {
-              n.interval = 'all';
-            }
-            n._migratedIntervals = true;
-          }
-          if (n.interval === 'custom' && !n.customMonths) {
-            n.customMonths = [];
-          }
-          if (n.warnIfZero === undefined || n._migratedWarnings !== true) {
-            if (n.id === 'affarsverken' || n.id === 'karlskrona-kommun') {
-              n.warnIfZero = true;
-            } else if (n.warnIfZero === undefined) {
-              n.warnIfZero = false;
-            }
-            n._migratedWarnings = true;
-          }
-          return n;
-        });
-
-        const mergedMonths = { ...(parsed.months || {}) };
-        Object.keys(SEED_MONTHS).forEach(key => {
-          const existing = mergedMonths[key] || {};
-          const hasNoBills = !existing.billAmounts || Object.keys(existing.billAmounts).length === 0;
-          if (hasNoBills) {
-            mergedMonths[key] = { ...SEED_MONTHS[key], ...existing, billAmounts: SEED_MONTHS[key].billAmounts };
-          }
-        });
-
-        Object.values(mergedMonths).forEach((m: any) => {
-          if (!m.handledPayments) m.handledPayments = {};
-          if (m.andreasPaidHuskonto) { m.handledPayments['transfer_andreas_huskonto'] = true; delete m.andreasPaidHuskonto; }
-          if (m.helenaPaidHuskonto) { m.handledPayments['transfer_helena_huskonto'] = true; delete m.helenaPaidHuskonto; }
-          if (m.swishPaid) { m.handledPayments['swish_andreas_helena'] = true; delete m.swishPaid; }
-        });
-        
-        let migratedAccounts = parsed.accounts || DEFAULT_ACCOUNTS;
-        migratedAccounts = migratedAccounts.map((a: any) => {
-          if (!a.transferMethod) {
-            a.transferMethod = a.type === 'shared' ? 'transfer' : 'swish';
-          }
-          return a;
-        });
-        
-        return {
-          ...parsed,
-          accounts: migratedAccounts,
-          bills: migratedBills,
-          months: mergedMonths
-        };
-      }
-    } catch (e) {
-      console.error('Failed to parse state from localStorage', e);
-    }
-    return DEFAULT_STATE;
-  });
-
+  const [state, setState] = useState<AppState>(DEFAULT_STATE);
   const [isCloudLoaded, setIsCloudLoaded] = useState(false);
-  const stateRef = useRef(state);
-  stateRef.current = state;
+  const { user } = useAuth();
 
   useEffect(() => {
-    if (!householdId) {
+    if (!householdId || !user) {
       setIsCloudLoaded(false);
       return;
     }
@@ -110,181 +33,262 @@ export function useStore(householdId: string | null) {
     let mounted = true;
 
     const loadCloud = async () => {
-      const { data } = await supabase.from('households').select('state_json').eq('id', householdId).single();
-      if (!mounted) return;
-      
-      if (data && data.state_json && Object.keys(data.state_json).length > 0) {
-        setState(data.state_json as AppState);
-      } else {
-        await supabase.from('households').update({ state_json: stateRef.current }).eq('id', householdId);
+      // 1. Check if migration needed
+      const { data: accCheck } = await supabase.from('accounts').select('id').eq('household_id', householdId).limit(1);
+      if (!accCheck || accCheck.length === 0) {
+        const { data: hh } = await supabase.from('households').select('state_json').eq('id', householdId).single();
+        if (hh && hh.state_json && Object.keys(hh.state_json).length > 0) {
+           await runRelationalMigration(householdId, user.id);
+        }
       }
+
+      // 2. Fetch all relational data
+      const [
+        { data: accounts },
+        { data: bills },
+        { data: monthBillAmounts },
+        { data: monthHandledPayments },
+        { data: monthConfirmedAnomalies },
+        { data: privateBills },
+        { data: privateMonthAmounts },
+        { data: privateMonthLocks },
+        { data: privateMonthAnomalies },
+        { data: settings }
+      ] = await Promise.all([
+        supabase.from('accounts').select('*').eq('household_id', householdId),
+        supabase.from('bills').select('*').eq('household_id', householdId),
+        supabase.from('month_bill_amounts').select('*').eq('household_id', householdId),
+        supabase.from('month_handled_payments').select('*').eq('household_id', householdId),
+        supabase.from('month_confirmed_anomalies').select('*').eq('household_id', householdId),
+        supabase.from('private_bills').select('*').eq('household_id', householdId),
+        supabase.from('private_month_amounts').select('*').eq('household_id', householdId),
+        supabase.from('private_month_locks').select('*').eq('household_id', householdId),
+        supabase.from('private_month_anomalies').select('*').eq('household_id', householdId),
+        supabase.from('household_settings').select('*').eq('household_id', householdId).single()
+      ]);
+
+      if (!mounted) return;
+
+      // 3. Reconstruct AppState
+      const newState: AppState = {
+        accounts: accounts ? accounts.map(a => ({ id: a.id, name: a.name, type: a.type, transferMethod: a.transfer_method })) : DEFAULT_ACCOUNTS,
+        bills: bills ? bills.map(b => ({
+          id: b.id, name: b.name, accountId: b.account_id, splitType: b.split_type,
+          defaultAmount: Number(b.default_amount), interval: b.interval, customMonths: b.custom_months,
+          warnIfZero: b.warn_if_zero, isLoan: b.is_loan, totalDebt: b.total_debt ? Number(b.total_debt) : undefined
+        })) : [],
+        months: {},
+        privateBills: privateBills ? privateBills.map(b => ({
+          id: b.id, userId: b.user_id, name: b.name, defaultAmount: Number(b.default_amount),
+          interval: b.interval, customMonths: b.custom_months, warnIfZero: b.warn_if_zero,
+          isShared: b.is_shared, isLoan: b.is_loan, totalDebt: b.total_debt ? Number(b.total_debt) : undefined
+        })) : [],
+        privateMonths: {},
+        settings: settings ? { showSummary: settings.show_summary } : { showSummary: true }
+      };
+
+      // Populate months
+      if (monthBillAmounts) {
+        monthBillAmounts.forEach(mba => {
+          if (!newState.months[mba.month_id]) newState.months[mba.month_id] = { monthId: mba.month_id, billAmounts: {}, handledPayments: {}, confirmedAnomalies: {} };
+          newState.months[mba.month_id].billAmounts[mba.bill_id] = Number(mba.amount);
+        });
+      }
+      if (monthHandledPayments) {
+        monthHandledPayments.forEach(mhp => {
+          if (!newState.months[mhp.month_id]) newState.months[mhp.month_id] = { monthId: mhp.month_id, billAmounts: {}, handledPayments: {}, confirmedAnomalies: {} };
+          newState.months[mhp.month_id].handledPayments![mhp.payment_id] = mhp.is_handled;
+        });
+      }
+      if (monthConfirmedAnomalies) {
+        monthConfirmedAnomalies.forEach(mca => {
+          if (!newState.months[mca.month_id]) newState.months[mca.month_id] = { monthId: mca.month_id, billAmounts: {}, handledPayments: {}, confirmedAnomalies: {} };
+          newState.months[mca.month_id].confirmedAnomalies![mca.bill_id] = mca.is_confirmed;
+        });
+      }
+
+      // Populate private months
+      if (privateMonthAmounts) {
+        privateMonthAmounts.forEach(pma => {
+          if (!newState.privateMonths![pma.month_id]) newState.privateMonths![pma.month_id] = { monthId: pma.month_id, billAmounts: {}, handledPayments: {}, confirmedAnomalies: {} };
+          newState.privateMonths![pma.month_id].billAmounts[pma.bill_id] = Number(pma.amount);
+        });
+      }
+      if (privateMonthLocks) {
+        privateMonthLocks.forEach(pml => {
+          if (!newState.privateMonths![pml.month_id]) newState.privateMonths![pml.month_id] = { monthId: pml.month_id, billAmounts: {}, handledPayments: {}, confirmedAnomalies: {} };
+          newState.privateMonths![pml.month_id].isLocked = pml.is_locked;
+        });
+      }
+      if (privateMonthAnomalies) {
+        privateMonthAnomalies.forEach(pma => {
+          if (!newState.privateMonths![pma.month_id]) newState.privateMonths![pma.month_id] = { monthId: pma.month_id, billAmounts: {}, handledPayments: {}, confirmedAnomalies: {} };
+          newState.privateMonths![pma.month_id].confirmedAnomalies![pma.bill_id] = pma.is_confirmed;
+        });
+      }
+
+      setState(newState);
       setIsCloudLoaded(true);
     };
 
     loadCloud();
 
+    // 4. Realtime subscriptions (Reload everything on any change for simplicity to ensure consistency)
+    // To avoid massive state-merging logic, a change triggers a full refetch. 
+    // Since Supabase fetches are fast, this guarantees zero client divergence.
+    let debounceTimer: ReturnType<typeof setTimeout>;
+    const handleRealtimeUpdate = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        if (mounted) loadCloud();
+      }, 500);
+    };
+
     const channel = supabase.channel(`household_${householdId}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'households', filter: `id=eq.${householdId}` }, (payload) => {
-        if (mounted && payload.new.state_json) {
-           setState(payload.new.state_json as AppState);
-        }
-      }).subscribe();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'accounts', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bills', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'month_bill_amounts', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'month_handled_payments', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'month_confirmed_anomalies', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'private_bills', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'private_month_amounts', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'private_month_locks', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'private_month_anomalies', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'household_settings', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
+      .subscribe();
 
     return () => {
       mounted = false;
       supabase.removeChannel(channel);
+      clearTimeout(debounceTimer);
     };
-  }, [householdId]);
+  }, [householdId, user]);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    
-    if (!householdId || !isCloudLoaded) return;
-    
-    const timeout = setTimeout(() => {
-      supabase.from('households').update({ state_json: state }).eq('id', householdId);
-    }, 500);
-    
-    return () => clearTimeout(timeout);
-  }, [state, householdId, isCloudLoaded]);
+  // MUTATIONS (Optimistic UI + Supabase Push)
 
-  const updateBillAmount = (monthId: string, billId: string, amount: number) => {
+  const updateBillAmount = async (monthId: string, billId: string, amount: number) => {
     setState(prev => {
       const monthData = prev.months[monthId] || { monthId, billAmounts: {}, handledPayments: {} };
-      return {
-        ...prev,
-        months: {
-          ...prev.months,
-          [monthId]: {
-            ...monthData,
-            billAmounts: {
-              ...monthData.billAmounts,
-              [billId]: amount
-            }
-          }
-        }
-      };
+      return { ...prev, months: { ...prev.months, [monthId]: { ...monthData, billAmounts: { ...monthData.billAmounts, [billId]: amount } } } };
     });
+    if (householdId) {
+      await supabase.from('month_bill_amounts').upsert({ household_id: householdId, month_id: monthId, bill_id: billId, amount }, { onConflict: 'household_id,month_id,bill_id' });
+    }
   };
 
-  const addBill = (bill: BillDefinition) => {
+  const addBill = async (bill: BillDefinition) => {
     setState(prev => ({ ...prev, bills: [...prev.bills, bill] }));
+    if (householdId) {
+      await supabase.from('bills').insert({ id: bill.id, household_id: householdId, name: bill.name, account_id: bill.accountId, split_type: bill.splitType, default_amount: bill.defaultAmount, interval: bill.interval, custom_months: bill.customMonths || [], warn_if_zero: bill.warnIfZero, is_loan: bill.isLoan, total_debt: bill.totalDebt });
+    }
   };
 
-  const removeBill = (billId: string) => {
+  const removeBill = async (billId: string) => {
     setState(prev => ({ ...prev, bills: prev.bills.filter(b => b.id !== billId) }));
+    if (householdId) {
+      await supabase.from('bills').delete().eq('id', billId).eq('household_id', householdId);
+    }
   };
 
-  const updateBill = (bill: BillDefinition) => {
+  const updateBill = async (bill: BillDefinition) => {
     setState(prev => ({ ...prev, bills: prev.bills.map(b => b.id === bill.id ? bill : b) }));
+    if (householdId) {
+      await supabase.from('bills').update({ name: bill.name, account_id: bill.accountId, split_type: bill.splitType, default_amount: bill.defaultAmount, interval: bill.interval, custom_months: bill.customMonths || [], warn_if_zero: bill.warnIfZero, is_loan: bill.isLoan, total_debt: bill.totalDebt }).eq('id', bill.id).eq('household_id', householdId);
+    }
   };
 
-  const addAccount = (account: Account) => {
+  const addAccount = async (account: Account) => {
     setState(prev => ({ ...prev, accounts: [...prev.accounts, account] }));
+    if (householdId) {
+      await supabase.from('accounts').insert({ id: account.id, household_id: householdId, name: account.name, type: account.type, transfer_method: account.transferMethod });
+    }
   };
 
-  const removeAccount = (accountId: string) => {
+  const removeAccount = async (accountId: string) => {
     setState(prev => ({ ...prev, accounts: prev.accounts.filter(a => a.id !== accountId) }));
+    if (householdId) {
+      await supabase.from('accounts').delete().eq('id', accountId).eq('household_id', householdId);
+    }
   };
 
-  const updateAccount = (account: Account) => {
+  const updateAccount = async (account: Account) => {
     setState(prev => ({ ...prev, accounts: prev.accounts.map(a => a.id === account.id ? account : a) }));
+    if (householdId) {
+      await supabase.from('accounts').update({ name: account.name, type: account.type, transfer_method: account.transferMethod }).eq('id', account.id).eq('household_id', householdId);
+    }
   };
 
-  const copyFromPreviousMonth = (monthId: string) => {
-    setState(prev => {
-      const allMonths = Object.keys(prev.months).sort();
-      const currentIndex = allMonths.indexOf(monthId);
-      if (currentIndex <= 0) return prev;
-      
-      const prevMonthId = allMonths[currentIndex - 1];
-      const prevMonth = prev.months[prevMonthId];
-      if (!prevMonth) return prev;
+  const copyFromPreviousMonth = async (monthId: string) => {
+    // Client-side logic for simplicity, pushing each amount to DB
+    const allMonths = Object.keys(state.months).sort();
+    const currentIndex = allMonths.indexOf(monthId);
+    if (currentIndex <= 0) return;
+    
+    const prevMonthId = allMonths[currentIndex - 1];
+    const prevMonth = state.months[prevMonthId];
+    if (!prevMonth) return;
 
-      const currentMonthData = prev.months[monthId] || { monthId, billAmounts: {}, handledPayments: {} };
-      const newAmounts = { ...currentMonthData.billAmounts };
-
-      // Calculate locks
-      const handled = currentMonthData.handledPayments || {};
-      const lockedAccounts = new Set<string>();
-      Object.keys(handled).forEach(paymentId => {
-        if (handled[paymentId]) {
-          if (paymentId.startsWith('transfer_')) {
-            const parts = paymentId.split('_');
-            if (parts.length >= 3) {
-              const personId = parts[1];
-              const sharedId = parts[2];
-              lockedAccounts.add(personId);
-              lockedAccounts.add(sharedId);
-            }
-          } else if (paymentId.startsWith('swish_')) {
-            const [, fromId, toId] = paymentId.split('_');
-            lockedAccounts.add(fromId);
-            lockedAccounts.add(toId);
+    const currentMonthData = state.months[monthId] || { monthId, billAmounts: {}, handledPayments: {} };
+    const handled = currentMonthData.handledPayments || {};
+    const lockedAccounts = new Set<string>();
+    Object.keys(handled).forEach(paymentId => {
+      if (handled[paymentId]) {
+        if (paymentId.startsWith('transfer_')) {
+          const parts = paymentId.split('_');
+          if (parts.length >= 3) {
+            lockedAccounts.add(parts[1]); lockedAccounts.add(parts[2]);
           }
+        } else if (paymentId.startsWith('swish_')) {
+          const [, fromId, toId] = paymentId.split('_');
+          lockedAccounts.add(fromId); lockedAccounts.add(toId);
         }
-      });
-
-      prev.bills.forEach(bill => {
-         if (!lockedAccounts.has(bill.accountId)) {
-           newAmounts[bill.id] = prevMonth.billAmounts[bill.id] !== undefined ? prevMonth.billAmounts[bill.id] : bill.defaultAmount;
-         }
-      });
-
-      return {
-        ...prev,
-        months: {
-          ...prev.months,
-          [monthId]: {
-            ...currentMonthData,
-            billAmounts: newAmounts
-          }
-        }
-      };
+      }
     });
+
+    const newAmounts: Record<string, number> = {};
+    state.bills.forEach(bill => {
+       if (!lockedAccounts.has(bill.accountId)) {
+         newAmounts[bill.id] = prevMonth.billAmounts[bill.id] !== undefined ? prevMonth.billAmounts[bill.id] : bill.defaultAmount;
+       }
+    });
+
+    setState(prev => {
+      return { ...prev, months: { ...prev.months, [monthId]: { ...(prev.months[monthId]||{}), billAmounts: { ...currentMonthData.billAmounts, ...newAmounts } } } };
+    });
+
+    if (householdId) {
+      const inserts = Object.entries(newAmounts).map(([billId, amt]) => ({ household_id: householdId, month_id: monthId, bill_id: billId, amount: amt }));
+      if (inserts.length > 0) {
+        await supabase.from('month_bill_amounts').upsert(inserts, { onConflict: 'household_id,month_id,bill_id' });
+      }
+    }
   };
 
-  const togglePaymentStatus = (monthId: string, paymentId: string) => {
+  const togglePaymentStatus = async (monthId: string, paymentId: string) => {
+    let newVal = false;
     setState(prev => {
       const monthData = prev.months[monthId] || { monthId, billAmounts: {}, handledPayments: {} };
       const currentHandled = monthData.handledPayments || {};
-      return {
-        ...prev,
-        months: {
-          ...prev.months,
-          [monthId]: {
-            ...monthData,
-            handledPayments: {
-              ...currentHandled,
-              [paymentId]: !currentHandled[paymentId]
-            }
-          }
-        }
-      };
+      newVal = !currentHandled[paymentId];
+      return { ...prev, months: { ...prev.months, [monthId]: { ...monthData, handledPayments: { ...currentHandled, [paymentId]: newVal } } } };
     });
+    if (householdId) {
+      await supabase.from('month_handled_payments').upsert({ household_id: householdId, month_id: monthId, payment_id: paymentId, is_handled: newVal }, { onConflict: 'household_id,month_id,payment_id' });
+    }
   };
 
-  const confirmAnomaly = (monthId: string, billId: string) => {
+  const confirmAnomaly = async (monthId: string, billId: string) => {
     setState(prev => {
       const monthData = prev.months[monthId] || { monthId, billAmounts: {}, handledPayments: {} };
-      const currentConfirmed = monthData.confirmedAnomalies || {};
-      return {
-        ...prev,
-        months: {
-          ...prev.months,
-          [monthId]: {
-            ...monthData,
-            confirmedAnomalies: {
-              ...currentConfirmed,
-              [billId]: true
-            }
-          }
-        }
-      };
+      return { ...prev, months: { ...prev.months, [monthId]: { ...monthData, confirmedAnomalies: { ...(monthData.confirmedAnomalies||{}), [billId]: true } } } };
     });
+    if (householdId) {
+      await supabase.from('month_confirmed_anomalies').upsert({ household_id: householdId, month_id: monthId, bill_id: billId, is_confirmed: true }, { onConflict: 'household_id,month_id,bill_id' });
+    }
   };
 
-  const unlockAccount = (monthId: string, accountId: string) => {
+  const unlockAccount = async (monthId: string, accountId: string) => {
+    let unhandledPayments: string[] = [];
     setState(prev => {
       const monthData = prev.months[monthId];
       if (!monthData || !monthData.handledPayments) return prev;
@@ -300,144 +304,146 @@ export function useStore(householdId: string | null) {
               const sharedId = parts[2];
               if (accountId === sharedId || accountId === personId) {
                 newHandled[paymentId] = false;
+                unhandledPayments.push(paymentId);
               }
             }
           } else if (paymentId.startsWith('swish_')) {
             const [, fromId, toId] = paymentId.split('_');
             if (accountId === fromId || accountId === toId) {
               newHandled[paymentId] = false;
+              unhandledPayments.push(paymentId);
             }
           }
         }
       });
 
-      return {
-        ...prev,
-        months: {
-          ...prev.months,
-          [monthId]: {
-            ...monthData,
-            handledPayments: newHandled
-          }
-        }
-      };
+      return { ...prev, months: { ...prev.months, [monthId]: { ...monthData, handledPayments: newHandled } } };
     });
+
+    if (householdId && unhandledPayments.length > 0) {
+      const updates = unhandledPayments.map(pid => ({ household_id: householdId, month_id: monthId, payment_id: pid, is_handled: false }));
+      await supabase.from('month_handled_payments').upsert(updates, { onConflict: 'household_id,month_id,payment_id' });
+    }
   };
 
-  const updateSettings = (newSettings: Partial<AppState['settings']>) => {
+  const updateSettings = async (settingsUpdates: Partial<AppState['settings']> | undefined) => {
+    if (!settingsUpdates) return;
+    setState(prev => ({ ...prev, settings: { ...prev.settings, ...settingsUpdates } }));
+    if (householdId) {
+      await supabase.from('household_settings').upsert({ household_id: householdId, show_summary: settingsUpdates.showSummary !== false }, { onConflict: 'household_id' });
+    }
+  };
+
+  // Private methods
+  const updatePrivateBillAmount = async (monthId: string, billId: string, amount: number) => {
     setState(prev => {
-      const updated = { ...prev, settings: { ...prev.settings, ...newSettings } };
-      return updated;
+      const pMonths = prev.privateMonths || {};
+      const mData = pMonths[monthId] || { monthId, billAmounts: {} };
+      return { ...prev, privateMonths: { ...pMonths, [monthId]: { ...mData, billAmounts: { ...mData.billAmounts, [billId]: amount } } } };
     });
+    if (householdId && user) {
+      await supabase.from('private_month_amounts').upsert({ household_id: householdId, user_id: user.id, month_id: monthId, bill_id: billId, amount }, { onConflict: 'household_id,user_id,month_id,bill_id' });
+    }
   };
 
-  const updatePrivateBillAmount = (monthId: string, billId: string, amount: number) => {
+  const addPrivateBill = async (bill: PrivateBill) => {
+    setState(prev => ({ ...prev, privateBills: [...(prev.privateBills||[]), bill] }));
+    if (householdId && user) {
+      await supabase.from('private_bills').insert({ id: bill.id, household_id: householdId, user_id: user.id, name: bill.name, default_amount: bill.defaultAmount, interval: bill.interval, custom_months: bill.customMonths || [], warn_if_zero: bill.warnIfZero, is_shared: bill.isShared, is_loan: bill.isLoan, total_debt: bill.totalDebt });
+    }
+  };
+
+  const removePrivateBill = async (billId: string) => {
+    setState(prev => ({ ...prev, privateBills: (prev.privateBills||[]).filter(b => b.id !== billId) }));
+    if (householdId && user) {
+      await supabase.from('private_bills').delete().eq('id', billId).eq('household_id', householdId).eq('user_id', user.id);
+    }
+  };
+
+  const updatePrivateBill = async (bill: PrivateBill) => {
+    setState(prev => ({ ...prev, privateBills: (prev.privateBills||[]).map(b => b.id === bill.id ? bill : b) }));
+    if (householdId && user) {
+      await supabase.from('private_bills').update({ name: bill.name, default_amount: bill.defaultAmount, interval: bill.interval, custom_months: bill.customMonths || [], warn_if_zero: bill.warnIfZero, is_shared: bill.isShared, is_loan: bill.isLoan, total_debt: bill.totalDebt }).eq('id', bill.id).eq('household_id', householdId).eq('user_id', user.id);
+    }
+  };
+
+  const copyPrivateFromPreviousMonth = async (monthId: string) => {
+    const allMonths = Object.keys(state.privateMonths || {}).sort();
+    const currentIndex = allMonths.indexOf(monthId);
+    if (currentIndex <= 0) return;
+    
+    const prevMonthId = allMonths[currentIndex - 1];
+    const prevMonth = (state.privateMonths || {})[prevMonthId];
+    if (!prevMonth) return;
+
+    const currentMonthData = (state.privateMonths && state.privateMonths[monthId]) || { monthId, billAmounts: {}, handledPayments: {} };
+    if (currentMonthData.isLocked) return;
+    const newAmounts: Record<string, number> = {};
+
+    (state.privateBills || []).forEach(bill => {
+      newAmounts[bill.id] = prevMonth.billAmounts[bill.id] !== undefined ? prevMonth.billAmounts[bill.id] : bill.defaultAmount;
+    });
+
     setState(prev => {
-      const monthData = (prev.privateMonths && prev.privateMonths[monthId]) || { monthId, billAmounts: {}, handledPayments: {} };
-      return {
-        ...prev,
-        privateMonths: {
-          ...(prev.privateMonths || {}),
-          [monthId]: {
-            ...monthData,
-            billAmounts: {
-              ...monthData.billAmounts,
-              [billId]: amount
-            }
-          }
-        }
-      };
+      return { ...prev, privateMonths: { ...(prev.privateMonths || {}), [monthId]: { ...currentMonthData, billAmounts: { ...currentMonthData.billAmounts, ...newAmounts } } } };
     });
+
+    if (householdId && user) {
+      const inserts = Object.entries(newAmounts).map(([billId, amt]) => ({ household_id: householdId, user_id: user.id, month_id: monthId, bill_id: billId, amount: amt }));
+      if (inserts.length > 0) {
+        await supabase.from('private_month_amounts').upsert(inserts, { onConflict: 'household_id,user_id,month_id,bill_id' });
+      }
+    }
   };
 
-  const addPrivateBill = (bill: PrivateBill) => {
-    setState(prev => ({ ...prev, privateBills: [...(prev.privateBills || []), bill] }));
-  };
-
-  const removePrivateBill = (billId: string) => {
-    setState(prev => ({ ...prev, privateBills: (prev.privateBills || []).filter(b => b.id !== billId) }));
-  };
-
-  const updatePrivateBill = (bill: PrivateBill) => {
-    setState(prev => ({ ...prev, privateBills: (prev.privateBills || []).map(b => b.id === bill.id ? bill : b) }));
-  };
-
-  const copyPrivateFromPreviousMonth = (monthId: string) => {
+  const confirmPrivateAnomaly = async (monthId: string, billId: string) => {
     setState(prev => {
-      const allMonths = Object.keys(prev.privateMonths || {}).sort();
-      const currentIndex = allMonths.indexOf(monthId);
-      if (currentIndex <= 0) return prev;
-      
-      const prevMonthId = allMonths[currentIndex - 1];
-      const prevMonth = (prev.privateMonths || {})[prevMonthId];
-      if (!prevMonth) return prev;
-
-      const currentMonthData = (prev.privateMonths && prev.privateMonths[monthId]) || { monthId, billAmounts: {}, handledPayments: {} };
-      if (currentMonthData.isLocked) return prev;
-      const newAmounts = { ...currentMonthData.billAmounts };
-
-      (prev.privateBills || []).forEach(bill => {
-         newAmounts[bill.id] = prevMonth.billAmounts[bill.id] !== undefined ? prevMonth.billAmounts[bill.id] : bill.defaultAmount;
-      });
-
-      return {
-        ...prev,
-        privateMonths: {
-          ...(prev.privateMonths || {}),
-          [monthId]: {
-            ...currentMonthData,
-            billAmounts: newAmounts
-          }
-        }
-      };
+      const pMonths = prev.privateMonths || {};
+      const mData = pMonths[monthId] || { monthId, billAmounts: {} };
+      return { ...prev, privateMonths: { ...pMonths, [monthId]: { ...mData, confirmedAnomalies: { ...(mData.confirmedAnomalies||{}), [billId]: true } } } };
     });
+    if (householdId && user) {
+      await supabase.from('private_month_anomalies').upsert({ household_id: householdId, user_id: user.id, month_id: monthId, bill_id: billId, is_confirmed: true }, { onConflict: 'household_id,user_id,month_id,bill_id' });
+    }
   };
 
-  const confirmPrivateAnomaly = (monthId: string, billId: string) => {
+  const togglePrivateLock = async (monthId: string) => {
+    let newVal = false;
     setState(prev => {
-      const monthData = (prev.privateMonths && prev.privateMonths[monthId]) || { monthId, billAmounts: {}, handledPayments: {} };
-      const currentConfirmed = monthData.confirmedAnomalies || {};
-      return {
-        ...prev,
-        privateMonths: {
-          ...(prev.privateMonths || {}),
-          [monthId]: {
-            ...monthData,
-            confirmedAnomalies: {
-              ...currentConfirmed,
-              [billId]: true
-            }
-          }
-        }
-      };
+      const pMonths = prev.privateMonths || {};
+      const mData = pMonths[monthId] || { monthId, billAmounts: {} };
+      newVal = !mData.isLocked;
+      return { ...prev, privateMonths: { ...pMonths, [monthId]: { ...mData, isLocked: newVal } } };
     });
+    if (householdId && user) {
+      await supabase.from('private_month_locks').upsert({ household_id: householdId, user_id: user.id, month_id: monthId, is_locked: newVal }, { onConflict: 'household_id,user_id,month_id' });
+    }
   };
 
-  const togglePrivateLock = (monthId: string) => {
-    setState(prev => {
-      const monthData = (prev.privateMonths && prev.privateMonths[monthId]) || { monthId, billAmounts: {}, handledPayments: {} };
-      return {
-        ...prev,
-        privateMonths: {
-          ...(prev.privateMonths || {}),
-          [monthId]: {
-            ...monthData,
-            isLocked: !monthData.isLocked
-          }
-        }
-      };
-    });
-  };
-
-  return { 
-    state, updateBillAmount, addBill, removeBill, updateBill, 
-    addAccount, removeAccount, updateAccount, copyFromPreviousMonth, 
-    togglePaymentStatus, confirmAnomaly, unlockAccount, updateSettings,
-    updatePrivateBillAmount, addPrivateBill, removePrivateBill, updatePrivateBill, copyPrivateFromPreviousMonth,
-    confirmPrivateAnomaly, togglePrivateLock
+  return {
+    state,
+    isCloudLoaded,
+    updateBillAmount,
+    addBill,
+    removeBill,
+    updateBill,
+    addAccount,
+    removeAccount,
+    updateAccount,
+    copyFromPreviousMonth,
+    togglePaymentStatus,
+    confirmAnomaly,
+    unlockAccount,
+    updateSettings,
+    updatePrivateBillAmount,
+    addPrivateBill,
+    removePrivateBill,
+    updatePrivateBill,
+    copyPrivateFromPreviousMonth,
+    confirmPrivateAnomaly,
+    togglePrivateLock
   };
 }
-
 export function calculateMonth(state: AppState, monthId: string): CalculationResult {
   const monthData = state.months[monthId];
   const amounts = monthData?.billAmounts || {};
