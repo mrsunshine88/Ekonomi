@@ -9,11 +9,11 @@ export default function MyPages() {
   const householdProfiles = useStore(s => s.state.householdProfiles || []);
   const myProfile = householdProfiles.find(p => p.id === user?.id);
   const isSharingPrivate = myProfile?.share_private_economy || false;
-  const [members, setMembers] = useState<{id: string, email: string, role: string}[]>([]);
+  const [members, setMembers] = useState<{id: string, email: string, role: string, created_at?: string}[]>([]);
 
   useEffect(() => {
     if (householdId) {
-      supabase.from('profiles').select('id, email, role').eq('household_id', householdId)
+      supabase.from('profiles').select('id, email, role, created_at').eq('household_id', householdId).order('created_at', { ascending: true })
         .then(({ data }) => {
           if (data) setMembers(data);
         });
@@ -304,13 +304,15 @@ export default function MyPages() {
 
           <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem', marginTop: '1.5rem' }}>👥 Hushållets medlemmar</h3>
           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '8px', overflow: 'hidden' }}>
-            {members.map(m => (
+            {members.map((m, index) => {
+              const isFounder = index === 0;
+              return (
               <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div>
-                  <div style={{ color: '#fff' }}>{m.email} {m.id === user?.id && '(Du)'} {m.email === 'apersson508@gmail.com' && '👑 (Grundare)'}</div>
+                  <div style={{ color: '#fff' }}>{m.email} {m.id === user?.id && '(Du)'} {isFounder && '👑 (Grundare)'}</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{m.role === 'owner' ? 'Medägare' : 'Medlem'}</div>
                 </div>
-                {role === 'owner' && m.id !== user?.id && m.email !== 'apersson508@gmail.com' && (
+                {role === 'owner' && m.id !== user?.id && !isFounder && (
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                     <button 
                       onClick={() => handleToggleRole(m.id, m.role)}
@@ -329,7 +331,7 @@ export default function MyPages() {
                   </div>
                 )}
               </div>
-            ))}
+            )})}
           </div>
         </div>
       )}
