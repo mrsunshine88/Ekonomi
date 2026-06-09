@@ -347,7 +347,14 @@ export function useStore(householdId: string | null) {
     });
   };
 
-  return { state, updateBillAmount, addBill, removeBill, updateBill, addAccount, removeAccount, updateAccount, copyFromPreviousMonth, togglePaymentStatus, confirmAnomaly, unlockAccount };
+  const updateSettings = (newSettings: Partial<AppState['settings']>) => {
+    setState(prev => {
+      const updated = { ...prev, settings: { ...prev.settings, ...newSettings } };
+      return updated;
+    });
+  };
+
+  return { state, updateBillAmount, addBill, removeBill, updateBill, addAccount, removeAccount, updateAccount, copyFromPreviousMonth, togglePaymentStatus, confirmAnomaly, unlockAccount, updateSettings };
 }
 
 export function calculateMonth(state: AppState, monthId: string): CalculationResult {

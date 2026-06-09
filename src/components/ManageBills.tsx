@@ -9,10 +9,11 @@ interface Props {
   onAddAccount: (account: Account) => void;
   onRemoveAccount: (accountId: string) => void;
   onUnlockAccount: (monthId: string, accountId: string) => void;
+  onUpdateSettings: (settings: Partial<AppState['settings']>) => void;
 }
 
-export default function ManageBills({ state, onAddBill, onRemoveBill, onUpdateBill, onAddAccount, onRemoveAccount, onUnlockAccount }: Props) {
-  const [activeTab, setActiveTab] = useState<'bills' | 'accounts' | 'locks'>('bills');
+export default function ManageBills({ state, onAddBill, onRemoveBill, onUpdateBill, onAddAccount, onRemoveAccount, onUnlockAccount, onUpdateSettings }: Props) {
+  const [activeTab, setActiveTab] = useState<'bills' | 'accounts' | 'locks' | 'general'>('bills');
   
   // New/Edit Bill State
   const [editingBillId, setEditingBillId] = useState<string | null>(null);
@@ -114,7 +115,33 @@ export default function ManageBills({ state, onAddBill, onRemoveBill, onUpdateBi
         >
           🔒 Lås upp
         </button>
+        <button 
+          onClick={() => setActiveTab('general')}
+          style={{ background: 'transparent', border: 'none', color: activeTab === 'general' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'general' ? 'bold' : 'normal', fontSize: '1.1rem', cursor: 'pointer', marginLeft: 'auto' }}
+        >
+          ⚙️ Allmänt
+        </button>
       </div>
+
+      {activeTab === 'general' && (
+        <div>
+          <h3 className="card-title">Allmänna inställningar</h3>
+          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', fontSize: '1rem', color: 'var(--text-primary)' }}>
+              <input 
+                type="checkbox" 
+                checked={state.settings?.showSummary !== false} 
+                onChange={(e) => onUpdateSettings({ showSummary: e.target.checked })}
+                style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
+              />
+              Visa sammanställning (Swish & Överföringar) högst upp i månadsvyn
+            </label>
+            <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', marginLeft: '2.5rem', fontSize: '0.9rem' }}>
+              Om du stänger av detta döljs rutorna som räknar ut vem som ska betala vad. Appen fungerar då mer som en klassisk utgiftskoll utan Swish-funktion.
+            </p>
+          </div>
+        </div>
+      )}
 
       {activeTab === 'accounts' && (
         <div>

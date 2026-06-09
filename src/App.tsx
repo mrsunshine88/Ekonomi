@@ -10,7 +10,7 @@ import MyPages from './components/MyPages';
 
 function App() {
   const { user, householdId, loading } = useAuth();
-  const { state, updateBillAmount, addBill, removeBill, updateBill, addAccount, removeAccount, copyFromPreviousMonth, togglePaymentStatus, confirmAnomaly, unlockAccount } = useStore(householdId);
+  const { state, updateBillAmount, addBill, removeBill, updateBill, addAccount, removeAccount, copyFromPreviousMonth, togglePaymentStatus, confirmAnomaly, unlockAccount, updateSettings } = useStore(householdId);
   const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages'>('month');
   
   // Defaults to current month YYYY-MM
@@ -100,6 +100,7 @@ function App() {
             onAddAccount={addAccount}
             onRemoveAccount={removeAccount}
             onUnlockAccount={unlockAccount}
+            onUpdateSettings={updateSettings}
           />
         </div>
       ) : currentView === 'stats' ? (
@@ -115,14 +116,16 @@ function App() {
             <button onClick={() => changeMonth(1)}>Nästa →</button>
           </div>
 
-          <Summary 
-            state={state}
-            result={calcResult} 
-            monthData={state.months[currentMonth] || { monthId: currentMonth, billAmounts: {} }}
-            onToggleStatus={(paymentId) => togglePaymentStatus(currentMonth, paymentId)}
-          />
+          {state.settings?.showSummary !== false && (
+            <Summary 
+              state={state}
+              result={calcResult} 
+              monthData={state.months[currentMonth] || { monthId: currentMonth, billAmounts: {} }}
+              onToggleStatus={(paymentId) => togglePaymentStatus(currentMonth, paymentId)}
+            />
+          )}
 
-          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem', marginTop: state.settings?.showSummary !== false ? '0' : '1.5rem' }}>
             {Object.values(state.months[currentMonth]?.handledPayments || {}).some(v => v) ? (
               <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'inline-block' }}>
                 🔒 Vissa betalningar är låsta. Lås upp för att kunna hämta historik.

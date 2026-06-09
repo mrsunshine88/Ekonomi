@@ -29,6 +29,9 @@ export interface AppState {
   accounts: Account[];
   bills: BillDefinition[];
   months: Record<string, MonthData>;
+  settings?: {
+    showSummary?: boolean;
+  };
 }
 
 export interface SwishTransfer {
