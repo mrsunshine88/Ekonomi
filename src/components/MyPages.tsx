@@ -307,10 +307,10 @@ export default function MyPages() {
             {members.map(m => (
               <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div>
-                  <div style={{ color: '#fff' }}>{m.email} {m.id === user?.id && '(Du)'}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{m.role === 'owner' ? '👑 Ägare' : 'Medlem'}</div>
+                  <div style={{ color: '#fff' }}>{m.email} {m.id === user?.id && '(Du)'} {m.email === 'apersson508@gmail.com' && '👑 (Grundare)'}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{m.role === 'owner' ? 'Medägare' : 'Medlem'}</div>
                 </div>
-                {role === 'owner' && m.id !== user?.id && (
+                {role === 'owner' && m.id !== user?.id && m.email !== 'apersson508@gmail.com' && (
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                     <button 
                       onClick={() => handleToggleRole(m.id, m.role)}
