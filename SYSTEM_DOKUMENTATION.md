@@ -1,6 +1,6 @@
 # Ekonomi & Swish - Systemdokumentation
 
-**Version:** 5.6 (Enterprise-uppgradering: Zustand, Zod & Säkerhet)  
+**Version:** 5.7 (Enterprise-uppgradering: UI/UX & PWA-optimering)  
 **Plattform:** React + TypeScript + Vite (PWA) | Databas: Supabase (PostgreSQL) | Hosting: Vercel  
 **Uppdaterad:** 2026-06-09
 
@@ -126,10 +126,12 @@ Ekonomidata är känslig. Även om någon skulle lyckas dekompilera JavaScript-k
 ### Vad:
 Appen fungerar precis som en äkta app på mobilen. Man kan lägga till den på hemskärmen och den öppnas i fullskärm utan adressfält eller webbläsarkontroller.
 
-### Hur – PWA-teknik:
+### Hur – PWA-teknik & Installation:
 `vite-plugin-pwa` i `vite.config.ts` genererar automatiskt:
-- **Service Worker (`sw.js`):** Cachar appens filer lokalt. Appen laddas snabbt även vid dålig signal och fungerar i offline-läge.
-- **Web App Manifest (`manifest.webmanifest`):** Berättar för telefonen att appen är installationsbar. Definierar ikon, namn och fullskärmsläge.
+- **Service Worker (`sw.js`):** Cachar appens filer lokalt. Appen laddas snabbt även vid dålig signal och fungerar i offline-läge. Appen uppdaterar sig själv automatiskt i bakgrunden när ny kod laddas upp (`autoUpdate`).
+- **Web App Manifest (`manifest.webmanifest`):** Berättar för telefonen att appen är installationsbar.
+- **Ikon-optimering:** Ikonerna (192x192 och 512x512) är utskrivna som solida, opaka fyrkanter (lila gradient-bakgrund). Detta görs för att Android (Adaptive Icons) och iOS ska kunna applicera sin egen mask (t.ex. rundade hörn) utan att bakgrunds-UI lyser igenom transparenta kanter.
+- **Custom Install Prompt:** Appen innehåller en egen, designad installationsruta (`InstallPrompt.tsx`) som visas för nya användare. På Android lyssnar den på `beforeinstallprompt` och fångar eventet för att installera direkt via ett klick. På iOS detekteras enheten via User Agent och istället visas en steg-för-steg-guide hur man installerar appen via Safaris Dela-meny, eftersom Apple inte stödjer API:et fullt ut.
 
 ### Hur – Responsiv Navigering (`src/App.tsx` + `src/index.css`):
 - **På datorn (>768px):** Alla fem flikar visas som knappar i en fast header längst upp på sidan.
@@ -233,6 +235,10 @@ En egen flik (`🔒 Privat`) där varje användare hanterar sina egna, privata u
 - En grön **"✅ Markera månad som klar"**-knapp kör `togglePrivateLock(monthId)` → `upsert` i `private_month_locks`. Stänger månaden och förhindrar vidare redigering.
 - Belopp per månad sparas i `private_month_amounts` (en rad per räkning och månad).
 - Upplåsning sker via `⚙️ Inställningar → 🔒 Lås upp → "Mina Privata Lås"`.
+
+### Hur – Arkivering (Papperskorgen):
+- Raderade räkningar tas aldrig bort från databasen. Istället sätts flaggan `is_archived = true`.
+- För att förhindra att gamla, raderade räkningar smutsar ner framtida månader tillämpas en smart filter-logik i UI:t: Om en räkning är arkiverad visas den **enbart** i månader där den redan har ett sparat belopp som är **större än 0 kr**. Detta gör att all historik och matematik bibehålls för gamla månader, medan räkningen är permanent osynlig i nya månader.
 
 ### Hur – Kringgående av RLS vid inställningsändringar (RPC Bypass):
 - Tidigare hanterades ändring av `share_private_economy` via standard PostgreSQL `UPDATE`-kommandon. Dock påverkades detta starkt av RLS-policys, vilket skapade en konflikt (och infinite recursion) vid vissa tabelluppslagningar när policyn försökte kolla i sig själv.
@@ -353,6 +359,7 @@ Säker och tydlig hantering av vilka som är med i hushållet, vem som får bjud
 | `src/components/ManageBills.tsx` | Inställningspanelen: Räkningar (inkl. Lån-kryssruta och Automatisk överföring-kryssruta), Konton, Lås upp (uppdelat Gemensam/Privat), Allmänt. Responsiv flik-layout (knappar på dator, `<select>`-rullgardin på mobil). |
 | `src/components/MyPages.tsx` | Mina sidor: e-post/lösenordsändring, hushållskod, lämna hushåll. |
 | `src/index.css` | Hela appens design: mörkt glassmorphism-tema, CSS-variabler, mobilmedia-queries, hamburgermeny-animationer, `.settings-tabs-desktop` / `.settings-tabs-mobile`-klasser. |
+| `src/components/InstallPrompt.tsx` | Custom installationsruta (PWA A2HS) som fångar Android-installationer och guidar iOS-användare. |
 | `vite.config.ts` | Vite + PWA-konfiguration (Service Worker, manifest, caching-strategi). |
 | `SYSTEM_DOKUMENTATION.md` | Denna fil. Fullständig teknisk och funktionell dokumentation av hela systemet. |
 
@@ -406,3 +413,4 @@ Förvandlingen av appen från ett robust hobby-projekt till en fullfjädrad "Ent
 | **5.4** | **2026-06-09** | **Ombyggnad av "Automatisk överföring" (`isAutoTransfer`). Kolumnen i databasen bytte typ från `boolean` till `text`. Möjliggör val att antingen undanta ALLA från att föra över manuellt (som förr) ELLER en specifik person. Åtgärdat ett state management-kraschproblem (TypeError: `split` on undefined) orsakat av att lokal cache sparade månadsdata utan internt `monthId` vid "Hämta siffror från förra månaden".** |
 | **5.5** | **2026-06-09** | **Säkerhet och Låsning: Lade till krav på nuvarande lösenord vid ändring av e-post/lösenord. Ändrade Swish/Överföring-knapparna till att låsas omedelbart (disabled) efter ett klick, utan möjlighet att ångra i samma vy. Införde en funktion för Ägare att kunna befordra medlemmar till Ägare via en säker RPC-funktion (`set_user_role`) i databasen, vilket kringgår RLS. Uppdaterade realtidslyssnaren till att även prenumerera på `profiles` för blixtsnabba behörighetsuppdateringar och delningsknappar.** |
 | **5.6** | **2026-06-09** | **Bugghärdning och Grundarskydd: Införde dynamiskt grundarskydd via `created_at` för att garantera att den första personen i hushållet aldrig kan sparkas ut eller degraderas, ens av andra ägare. Fixade ett extremt tyst fel i `store.ts` där en saknad databaskolumn (`display_name`) fick hela profilinladdningen och realtidsuppdateringen att krascha tyst, vilket förstörde Delning av Privat Ekonomi. Bytte även från RLS `UPDATE` till en "RPC Bypass" (`toggle_share_private_economy`) för att garantera att databasuppdateringar för delning alltid släpps igenom.** |
+| **5.7** | **2026-06-09** | **UI/UX & PWA Optimering: Implementerade en "Custom Install Prompt" (Add-To-Home-Screen) med egen design som fångar Android-eventet och fungerar som fall-back-guide på iOS. Fyllde ut app-ikonernas (PWA) transparenta bakgrunder med en solid gradient för att förhindra grafiska buggar (bakgrundslysläge) i Androids Adaptive Icons och iOS Icon Masks. Ändrade CSS-centreringen på raderingsmodalen från Flexbox till `position: absolute` för att förbigå buggar där vissa mobila webbläsare tryckte ner modalen ur bild. Utvecklade logiken för Arkiverade räkningar (`is_archived` fixat i SQL cache): arkiverade räkningar visas numera ENBART i historiken om de har en faktiskt inmatad siffra > 0 kr. Tomma auto-kopieringar från gamla månader exkluderas.** |
