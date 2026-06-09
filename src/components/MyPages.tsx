@@ -180,6 +180,23 @@ export default function MyPages() {
               Gå med
             </button>
           </div>
+          <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)' }}>
+            <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Lämna hushållet</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.9rem' }}>
+              Om du vill starta om på nytt med en helt egen privat ekonomi kan du lämna det här hushållet. Du får då en helt tom app.
+            </p>
+            <button 
+              onClick={() => {
+                if(window.confirm('Är du säker på att du vill lämna hushållet? Du får då en helt tom app för dig själv.')) {
+                  handleCreateHousehold();
+                }
+              }} 
+              disabled={loading} 
+              style={{ padding: '0.75rem 1rem', background: 'rgba(0,0,0,0.2)', color: 'var(--text-primary)', border: '1px solid var(--text-secondary)', borderRadius: '8px', cursor: 'pointer' }}
+            >
+              🚪 Lämna och skapa eget hushåll
+            </button>
+          </div>
         </div>
       )}
 
