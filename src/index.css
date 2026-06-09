@@ -283,6 +283,17 @@ button.primary:hover {
   gap: 1.5rem;
 }
 
+.nav-container {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  background: rgba(255,255,255,0.03);
+  padding: 0.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
 @media (max-width: 768px) {
   .grid-2 {
     grid-template-columns: 1fr;
@@ -359,17 +370,6 @@ button.primary:hover {
     border: none;
     color: var(--text-primary);
   }
-}
-
-.nav-container {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: center;
-  background: rgba(255,255,255,0.03);
-  padding: 0.5rem;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.05);
 }
 
 .back-button {
