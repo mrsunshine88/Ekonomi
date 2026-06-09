@@ -23,7 +23,8 @@ export async function runRelationalMigration(householdId: string, userId: string
         type: a.type,
         transfer_method: a.transferMethod || null
       }));
-      await supabase.from('accounts').upsert(accountsToInsert, { onConflict: 'id' });
+      const { error } = await supabase.from('accounts').upsert(accountsToInsert, { onConflict: 'id' });
+      if (error) console.error("Accounts migration error:", error);
     }
 
     // 3. Mappa och infoga Gemensamma Räkningar
@@ -41,7 +42,8 @@ export async function runRelationalMigration(householdId: string, userId: string
         is_loan: b.isLoan || false,
         total_debt: b.totalDebt || null
       }));
-      await supabase.from('bills').upsert(billsToInsert, { onConflict: 'id' });
+      const { error } = await supabase.from('bills').upsert(billsToInsert, { onConflict: 'id' });
+      if (error) console.error("Bills migration error:", error);
     }
 
     // 4. Mappa Månadsdata (Gemensam)
@@ -55,7 +57,8 @@ export async function runRelationalMigration(householdId: string, userId: string
             amount: amt
           }));
           if (amounts.length > 0) {
-            await supabase.from('month_bill_amounts').upsert(amounts, { onConflict: 'household_id,month_id,bill_id' });
+            const { error } = await supabase.from('month_bill_amounts').upsert(amounts, { onConflict: 'household_id,month_id,bill_id' });
+            if (error) console.error("month_bill_amounts error:", error);
           }
         }
         if (mData.handledPayments) {
@@ -66,7 +69,8 @@ export async function runRelationalMigration(householdId: string, userId: string
             is_handled: handled
           }));
           if (payments.length > 0) {
-            await supabase.from('month_handled_payments').upsert(payments, { onConflict: 'household_id,month_id,payment_id' });
+            const { error } = await supabase.from('month_handled_payments').upsert(payments, { onConflict: 'household_id,month_id,payment_id' });
+            if (error) console.error("month_handled_payments error:", error);
           }
         }
         if (mData.confirmedAnomalies) {

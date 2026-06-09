@@ -368,6 +368,11 @@ Förvandlingen av appen från ett robust hobby-projekt till en fullfjädrad "Ent
 - **Paginering / Lazy Loading:** Istället för att ladda ner hela hushållets historik på en gång vid uppstart, hämtas initialt enbart transaktioner för det *innevarande året* (plus december förra året för övergångar). Om användaren skrollar tillbaka till ett tidigare år triggas en asynkron bakgrundsladdning (`loadYear`). Appen behåller sin supersnabba uppstartstid ($\sim$ 0.1s) även med 20 års data.
 - **Optimistic UI Rollbacks:** Om en nätverkssparning (`safeDb`) misslyckas efter att en användare klickat (t.ex. på grund av brutet internet eller att SQL-reglerna blockerade en felaktig siffra), kör appen automatiskt en rollback. Siffran på skärmen "hoppar tillbaka" till sitt ursprungliga värde, vilket helt eliminerar risken för att användargränssnittet och databasen hamnar i osynk.
 
+**Fas 5: "The Final Polish" (Tester, Behörigheter & GDPR)**
+- **Behörighetsnivåer (RBAC):** Istället för att alla användare i ett hushåll är administratörer ("owner") har appen nu ett rollsystem. Den som skapar hushållet blir `owner` och får ensamrätt på att radera gemensamma konton, räkningar och ändra inställningar. Sambos som loggar in via inbjudningskoden blir `member` och kan lägga till nya gemensamma utgifter, men får ett avskalat, säkert gränssnitt utan farliga knappar.
+- **GDPR / Självradering:** Ett SQL-skript (`delete_user`) körs i Supabase som gör att användare, med ett enda klick från "Mina Sidor", kan radera sitt eget inlogg. Tack vare SQL Cascade raderas samtidigt alla kopplingar, profildata och privata räkningar kopplade till detta inlogg från databasen. Inga spår lämnas kvar.
+- **Automatiserade Tester (Vitest):** En testrobot verifierar logiken i appens beräkningar (t.ex. Splitwise-matematiken). Testerna körs obligatoriskt vid bygget (`npm run build`). Om framtida kodändringar skulle leda till ett räknefel på ett öre, vägrar systemet att kompilera koden, vilket garanterar att en trasig applikation aldrig kan släppas.
+
 ---
 
 ## 19. Versionshistorik
@@ -379,4 +384,5 @@ Förvandlingen av appen från ett robust hobby-projekt till en fullfjädrad "Ent
 | 2.0 | 2026-06-01 | Privat ekonomi, skulder/lån, EkonomiTB, Excel-export, anomalidetektion. |
 | 2.1 | 2026-06-09 | Hamburgermeny på mobil, dropdown i Inställningar, ny menyordning. |
 | 3.0 | 2026-06-09 | Fullständig migrering till relationsdatabas. Krockfri synkronisering. Automatisk datamigrering. Realtidslyssnare på alla tabeller. |
-| **4.0** | **2026-06-09** | **Enterprise-uppgradering: Zustand, Zod validering, lazy-loading, skalbar paginering, och säkerhetshärdning i databas (Constraints).** |
+| 4.0 | 2026-06-09 | Enterprise-uppgradering: Zustand, Zod validering, lazy-loading, skalbar paginering, och säkerhetshärdning i databas (Constraints). |
+| **5.0** | **2026-06-09** | **The Final Polish: Behörighetsnivåer (RBAC), GDPR-efterlevnad (Självradering) och Automatiserade enhetstester (Vitest integrerat i byggflödet).** |

@@ -125,7 +125,7 @@ export const useStore = create<StoreState>((set, get) => ({
         supabase.from('private_month_amounts').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
         supabase.from('private_month_locks').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
         supabase.from('private_month_anomalies').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
-        supabase.from('household_settings').select('*').eq('household_id', householdId).single()
+        supabase.from('household_settings').select('*').eq('household_id', householdId).maybeSingle()
       ]);
 
       // 3. Reconstruct AppState
