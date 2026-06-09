@@ -209,19 +209,23 @@ export default function MyPages() {
         </div>
       ) : (
         <div style={{ marginBottom: '2rem' }}>
-          <h3 style={{ color: 'var(--success-color)', marginBottom: '0.5rem' }}>✅ Din app är sparad i molnet</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-            För att bjuda in din sambo, be dem registrera sig och klistra in koden nedan:
-          </p>
-          <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.5)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-            <code style={{ color: '#fff', fontSize: '1.1rem', wordBreak: 'break-all', marginRight: '1rem' }}>{householdId}</code>
-            <button 
-              onClick={() => { navigator.clipboard.writeText(householdId); setMsg('Kopierat till urklipp!'); }}
-              style={{ background: 'var(--accent-color)', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}
-            >
-              Kopiera
-            </button>
-          </div>
+          {role === 'owner' && (
+            <>
+              <h3 style={{ color: 'var(--success-color)', marginBottom: '0.5rem' }}>✅ Din app är sparad i molnet</h3>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                För att bjuda in din sambo, be dem registrera sig och klistra in koden nedan:
+              </p>
+              <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.5)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <code style={{ color: '#fff', fontSize: '1.1rem', wordBreak: 'break-all', marginRight: '1rem' }}>{householdId}</code>
+                <button 
+                  onClick={() => { navigator.clipboard.writeText(householdId); setMsg('Kopierat till urklipp!'); }}
+                  style={{ background: 'var(--accent-color)', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                >
+                  Kopiera
+                </button>
+              </div>
+            </>
+          )}
 
           <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem', marginTop: '1.5rem' }}>👥 Hushållets medlemmar</h3>
           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '8px', overflow: 'hidden' }}>
