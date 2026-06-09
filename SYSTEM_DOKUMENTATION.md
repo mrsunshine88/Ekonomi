@@ -12,12 +12,12 @@ Det är en webb-applikation (byggd i React, TypeScript och Vite) som automatiskt
 
 Appen stöder ett obegränsat antal gemensamma konton och personliga konton, och hanterar avancerad Splitwise-matematik i bakgrunden.
 
-**Appens fyra huvudvyer:**
+**Appens fem huvudvyer (i ordning):**
 - `📅 Månadsvy` – Gemensamma räkningar, mata in belopp, markera som överförda.
-- `📊 EkonomiTB` – Historisk statistik, grafer, skuld-avbetalningskontroll.
-- `⚙️ Inställningar` – Hantera räkningar, konton, lås och allmänna inställningar.
 - `🔒 Privat` – Personliga utgifter och privata lån, synliga enbart för dig.
+- `📊 EkonomiTB` – Historisk statistik, grafer, skuld-avbetalningskontroll.
 - `👤 Mina sidor` – Kontoinformation, hushållskod och lämna-hushåll.
+- `⚙️ Inställningar` – Hantera räkningar, konton, lås och allmänna inställningar.
 
 ---
 
@@ -41,9 +41,11 @@ Appen stöder ett obegränsat antal gemensamma konton och personliga konton, och
 
 **Vad:** Appen fungerar precis som en äkta app på mobilen. Man kan ladda ner den till hemskärmen och öppnar i fullskärm utan adressfält.
 
-**Hur:** `vite-plugin-pwa` i `vite.config.ts` genererar en Service Worker (`sw.js`) och en `manifest.webmanifest`. Bottenmenyn (`position: fixed; bottom: 0`) visas enbart på skärmar ≤768px via `@media (max-width: 768px)` i `index.css`. Menyn är helt solid och opak (bakgrundsfärg `#0d0d1a`) för att vara läsbar.
+**Hur:** `vite-plugin-pwa` i `vite.config.ts` genererar en Service Worker (`sw.js`) och en `manifest.webmanifest`. Den responsiva designen (via `@media` i `index.css`) säkerställer att appen ser perfekt ut överallt:
+- **Navigering:** På datorn syns alla flikar längst upp. På mobilen (`≤768px`) döljs dessa och ersätts av en yteffektiv in-glidande Hamburgermeny (`☰`) uppe till vänster.
+- **Inställningar (UX):** För att undvika att menyval döljs utanför skärmen på mobila enheter omvandlas flikarna i Inställningar (Räkningar, Konton, Lås upp, Allmänt) automatiskt till en infödd rullgardinsmeny (`<select>`) på små skärmar, medan de bibehålls som en knapprad på datorn.
 
-**Varför:** En ekonomiapp används mest på språng. PWA-tekniken ger en premiumkänsla och bottenmenyn placerar navigationen nära tummen.
+**Varför:** En ekonomiapp används oftast på språng. PWA-tekniken tillsammans med mobilanpassade UI-mönster (hamburgermeny och infödda rullgardiner) ger en exklusiv native-app-känsla och garanterar att användaren hittar alla funktioner direkt utan att behöva scrolla i sidled.
 
 ---
 
@@ -233,8 +235,8 @@ Appen stöder ett obegränsat antal gemensamma konton och personliga konton, och
 | `src/components/PrivateView.tsx` | Privat vy: filtrerar `privateBills` på `userId`, inmatning, låsning av privata månader. |
 | `src/components/Summary.tsx` | Sammanfattningsrutan med Swish- och Överföringsrekommendationer. |
 | `src/components/Statistics.tsx` | EkonomiTB: grafer (recharts), skuld-progress-bars, Excel-knapp, Gemensam/Privat-växel. |
-| `src/components/ManageBills.tsx` | Inställningspanelen: Räkningar (inkl. Lån-kryssruta), Konton, Lås upp (uppdelat Gemensam/Privat), Allmänt. |
+| `src/components/ManageBills.tsx` | Inställningspanelen: Räkningar (inkl. Lån-kryssruta), Konton, Lås upp (uppdelat Gemensam/Privat), Allmänt. Använder en responsiv flik-layout (knappar på dator, rullgardin på mobil) för maximal användarvänlighet. |
 | `src/components/MyPages.tsx` | Mina sidor: e-post/lösenordsändring, hushållskod, lämna hushåll. |
-| `src/index.css` | Hela appens design: mörkt glassmorphism-tema, CSS-variabler, mobilmedia-queries, solid bottenmeny. |
+| `src/index.css` | Hela appens design: mörkt glassmorphism-tema, CSS-variabler, mobilmedia-queries, hamburgermeny-logik och dölj/visa-klasser. |
 | `vite.config.ts` | Vite + PWA-konfiguration (Service Worker, manifest). |
 | `SYSTEM_DOKUMENTATION.md` | Denna fil. Fullständig teknisk och funktionell dokumentation av hela systemet. |
