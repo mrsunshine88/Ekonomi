@@ -63,16 +63,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (!mounted) return;
       setSession(newSession);
       setUser(newSession?.user ?? null);
       if (newSession?.user) {
-        setLoading(true);
+        if (event === 'SIGNED_IN') {
+          setLoading(true);
+        }
         await fetchHousehold(newSession.user.id);
         setLoading(false);
       } else {
         setHouseholdId(null);
+        setLoading(false);
       }
     });
 
@@ -84,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ user, session, householdId, role, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) } }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }
