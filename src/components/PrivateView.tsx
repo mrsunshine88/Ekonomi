@@ -58,9 +58,9 @@ export default function PrivateView({ currentMonth }: Props) {
             onChange={e => setSelectedUserId(e.target.value)}
             style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff', width: '100%', cursor: 'pointer' }}
           >
-            {visibleProfiles.map(p => (
+            {visibleProfiles.map((p: any) => (
               <option key={p.id} value={p.id}>
-                {p.id === user.id ? 'Min privata ekonomi' : `${p.display_name || 'Okänd'}'s privata ekonomi`}
+                {p.id === user.id ? 'Min privata ekonomi' : `${p.email ? p.email.split('@')[0] : 'Hushållsmedlem'}s privata ekonomi`}
               </option>
             ))}
           </select>

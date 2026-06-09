@@ -130,7 +130,7 @@ export const useStore = create<StoreState>((set, get) => ({
         supabase.from('private_month_locks').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
         supabase.from('private_month_anomalies').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
         supabase.from('household_settings').select('*').eq('household_id', householdId).maybeSingle(),
-        supabase.from('profiles').select('id, share_private_economy, household_id').eq('household_id', householdId)
+        supabase.from('profiles').select('id, email, share_private_economy, household_id').eq('household_id', householdId)
       ]);
 
       // 3. Reconstruct AppState
@@ -151,7 +151,7 @@ export const useStore = create<StoreState>((set, get) => ({
         })) : [],
         privateMonths: {},
         householdProfiles: profiles ? profiles.map(p => ({
-          id: p.id, share_private_economy: p.share_private_economy
+          id: p.id, email: p.email, share_private_economy: p.share_private_economy
         })) : [],
         settings: settings ? { showSummary: settings.show_summary } : { showSummary: true }
       };

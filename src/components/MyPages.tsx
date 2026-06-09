@@ -10,6 +10,8 @@ export default function MyPages() {
   const myProfile = householdProfiles.find(p => p.id === user?.id);
   const isSharingPrivate = myProfile?.share_private_economy || false;
   const [members, setMembers] = useState<{id: string, email: string, role: string, created_at?: string}[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState('');
 
   useEffect(() => {
     if (householdId) {
@@ -39,8 +41,6 @@ export default function MyPages() {
     }
   };
   const [inviteCode, setInviteCode] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState('');
   
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -181,9 +181,7 @@ export default function MyPages() {
     const newState = !isSharingPrivate;
     try {
       await toggleSharePrivateEconomy(newState);
-      // Extra sanity check mot databasen
-      const { data } = await supabase.from('profiles').select('share_private_economy').eq('id', user?.id).single();
-      setMsg(newState ? `✅ Ändrat! DB värde nu: ${data?.share_private_economy}` : `✅ Stängt! DB värde nu: ${data?.share_private_economy}`);
+      setMsg(newState ? '✅ Din privata ekonomi delas nu med hushållet.' : '✅ Din privata ekonomi är nu privat igen.');
     } catch (e: any) {
       setMsg('❌ Fel: ' + e.message);
     }
@@ -202,15 +200,6 @@ export default function MyPages() {
       {householdId && (
         <div style={{ marginBottom: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <h3 style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>🔒 Integritet och Delning</h3>
-          
-          {/* FELSÖKNING */}
-          <div style={{ background: '#222', color: '#0f0', padding: '1rem', fontFamily: 'monospace', fontSize: '10px', marginBottom: '1rem' }}>
-            DEBUG INFO:<br/>
-            userId: {user?.id}<br/>
-            myProfile id: {myProfile?.id}<br/>
-            myProfile share_private_economy: {myProfile?.share_private_economy ? 'TRUE' : 'FALSE'}<br/>
-            isSharingPrivate variabel: {isSharingPrivate ? 'TRUE' : 'FALSE'}
-          </div>
 
           <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
