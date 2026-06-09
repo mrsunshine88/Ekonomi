@@ -10,7 +10,7 @@ export default defineConfig({
       devOptions: {
         enabled: true
       },
-      includeAssets: ['favicon.svg', 'icon-192x192.png', 'icon-512x512.png'],
+      includeAssets: ['favicon.png', 'icon-192x192.png', 'icon-512x512.png'],
       manifest: {
         name: 'Ekonomi & Swish',
         short_name: 'Ekonomi',
