@@ -167,7 +167,6 @@ export default function MyPages() {
     if (!window.confirm("Är du HELT säker? Detta kommer radera ditt inlogg, din profil och alla dina privata räkningar för alltid. Detta går inte att ångra.")) return;
     setLoading(true);
     try {
-      // Vi förlitar oss på att en rpc 'delete_user' är skapad i databasen via SQL-skriptet, eller att vi triggar radering
       const { error } = await supabase.rpc('delete_user');
       if (error) throw error;
       
@@ -175,6 +174,15 @@ export default function MyPages() {
     } catch (e: any) {
       setMsg('❌ ' + e.message);
       setLoading(false);
+    }
+  };
+
+  const handleToggleShare = async (checked: boolean) => {
+    try {
+      await toggleSharePrivateEconomy(checked);
+      setMsg(checked ? '✅ Din privata ekonomi delas nu med hushållet.' : '✅ Din privata ekonomi är nu privat igen.');
+    } catch (e: any) {
+      setMsg('❌ Det gick inte att spara: ' + e.message);
     }
   };
 
@@ -195,7 +203,7 @@ export default function MyPages() {
             <input 
               type="checkbox" 
               checked={isSharingPrivate}
-              onChange={e => toggleSharePrivateEconomy(e.target.checked)}
+              onChange={e => handleToggleShare(e.target.checked)}
               style={{ width: '20px', height: '20px', accentColor: 'var(--accent-color)' }}
             />
             <div>

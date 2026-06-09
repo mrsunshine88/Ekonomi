@@ -522,13 +522,20 @@ export const useStore = create<StoreState>((set, get) => ({
     const { userId, state } = get();
     if (!userId) return;
     
+    // Save previous state for rollback
+    const prevState = state;
+
     // Update local state
     const profiles = state.householdProfiles || [];
     const updatedProfiles = profiles.map(p => p.id === userId ? { ...p, share_private_economy: share } : p);
     set({ state: { ...state, householdProfiles: updatedProfiles } });
     
     // Update DB
-    await safeDb(supabase.from('profiles').update({ share_private_economy: share }).eq('id', userId));
+    const { error } = await supabase.from('profiles').update({ share_private_economy: share }).eq('id', userId);
+    if (error) {
+      set({ state: prevState });
+      throw error;
+    }
   },
 
   updatePrivateBillAmount: async (monthId, billId, amount) => {
