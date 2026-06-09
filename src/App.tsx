@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useStore, calculateMonth } from './store';
 import { useAuth } from './AuthContext';
 import MonthView from './components/MonthView';
 import Summary from './components/Summary';
 import ManageBills from './components/ManageBills';
-import Statistics from './components/Statistics';
+import { Toaster } from 'react-hot-toast';
+const Statistics = lazy(() => import('./components/Statistics'));
 import LoginScreen from './components/Auth/LoginScreen';
 import MyPages from './components/MyPages';
 import PrivateView from './components/PrivateView';
@@ -58,6 +59,7 @@ function App() {
 
   return (
     <div className="container">
+      <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
       <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem', position: 'relative' }}>
         {/* Mobile hamburger button - only visible on mobile */}
         <button
@@ -157,7 +159,9 @@ function App() {
       ) : currentView === 'stats' ? (
         <div>
           <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Månadsvy</button>
-          <Statistics state={state} />
+          <Suspense fallback={<div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Laddar statistik...</div>}>
+            <Statistics state={state} />
+          </Suspense>
         </div>
       ) : currentView === 'privat' ? (
         <>
