@@ -16,11 +16,26 @@ export default function MyPages() {
     setLoading(true);
     setMsg('');
     try {
-      const { data: hh, error: hhErr } = await supabase.from('households').select('id').eq('id', inviteCode.trim()).single();
-      if (hhErr || !hh) throw new Error('Kunde inte hitta koden. Är den rättstavad?');
+      const code = inviteCode.trim();
+      
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(code)) {
+         throw new Error('Ogiltigt format på koden.');
+      }
 
-      const { error } = await supabase.from('profiles').upsert([{ id: user?.id, email: user?.email, household_id: hh.id, role: 'member' }]);
-      if (error) throw error;
+      const { error } = await supabase.from('profiles').upsert([{ 
+        id: user?.id, 
+        email: user?.email, 
+        household_id: code, 
+        role: 'member' 
+      }]);
+      
+      if (error) {
+        if (error.code === '23503') {
+          throw new Error('Kunde inte hitta koden. Är den rättstavad?');
+        }
+        throw error;
+      }
 
       await refreshHousehold();
       setMsg('✅ Du har gått med i hushållet!');
@@ -195,36 +210,40 @@ export default function MyPages() {
               Gå med
             </button>
           </div>
-          <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)' }}>
-            <h3 style={{ color: '#f43f5e', marginBottom: '0.5rem' }}>Farlig zon</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.9rem' }}>
-              Dessa åtgärder kan inte ångras.
-            </p>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <button 
-                onClick={() => {
-                  if(window.confirm('Är du säker på att du vill lämna hushållet? Du får då en helt tom app för dig själv.')) {
-                    handleCreateHousehold();
-                  }
-                }} 
-                disabled={loading} 
-                style={{ padding: '0.75rem 1rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer' }}
-              >
-                🚪 Lämna och skapa eget hushåll
-              </button>
-
-              <button 
-                onClick={handleDeleteAccount} 
-                disabled={loading} 
-                style={{ padding: '0.75rem 1rem', background: '#f43f5e', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
-              >
-                🗑️ Radera mitt konto för alltid
-              </button>
-            </div>
           </div>
         </div>
       )}
+
+      <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)' }}>
+        <h3 style={{ color: '#f43f5e', marginBottom: '0.5rem' }}>Farlig zon</h3>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.9rem' }}>
+          Dessa åtgärder kan inte ångras.
+        </p>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {householdId && (
+            <button 
+              onClick={() => {
+                if(window.confirm('Är du säker på att du vill lämna hushållet? Du får då en helt tom app för dig själv.')) {
+                  handleCreateHousehold();
+                }
+              }} 
+              disabled={loading} 
+              style={{ padding: '0.75rem 1rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer' }}
+            >
+              🚪 Lämna och skapa eget hushåll
+            </button>
+          )}
+
+          <button 
+            onClick={handleDeleteAccount} 
+            disabled={loading} 
+            style={{ padding: '0.75rem 1rem', background: '#f43f5e', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            🗑️ Radera mitt konto för alltid
+          </button>
+        </div>
+      </div>
 
       <button onClick={handleSignOut} style={{ width: '100%', padding: '1rem', background: 'transparent', border: '1px solid var(--text-secondary)', color: 'var(--text-secondary)', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '2rem' }}>
         Logga ut

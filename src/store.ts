@@ -80,7 +80,7 @@ export const useStore = create<StoreState>((set, get) => ({
     if (channel) {
       supabase.removeChannel(channel);
     }
-    set({ channel: null, isCloudLoaded: false, householdId: null, userId: null });
+    set({ state: DEFAULT_STATE, channel: null, isCloudLoaded: false, householdId: null, userId: null });
   },
 
   initCloud: async (householdId, userId) => {
