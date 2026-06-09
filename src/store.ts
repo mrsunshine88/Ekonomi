@@ -690,15 +690,24 @@ export function calculateMonth(state: AppState, monthId: string): CalculationRes
     }
 
     if (billAccount?.type === 'shared') {
-      // isAutoTransfer: 'all' = ingen förs över manuellt. Person-ID = bara den personen slipper föra över manuellt.
       Object.keys(liabilities).forEach(personId => {
-        const isAutoForThisPerson = bill.isAutoTransfer === 'all' || bill.isAutoTransfer === personId;
-        if (!isAutoForThisPerson) {
-          if (transfersToShared[personId] !== undefined && transfersToShared[personId][billAccount.id] !== undefined) {
-            transfersToShared[personId][billAccount.id] += liabilities[personId];
-          }
+        if (transfersToShared[personId] !== undefined && transfersToShared[personId][billAccount.id] !== undefined) {
+          transfersToShared[personId][billAccount.id] += liabilities[personId];
         }
       });
+
+      if (bill.isAutoTransfer === 'all') {
+        Object.keys(liabilities).forEach(personId => {
+          if (transfersToShared[personId] !== undefined && transfersToShared[personId][billAccount.id] !== undefined) {
+            transfersToShared[personId][billAccount.id] -= liabilities[personId];
+          }
+        });
+      } else if (bill.isAutoTransfer && bill.isAutoTransfer !== '') {
+        const payerId = bill.isAutoTransfer;
+        if (transfersToShared[payerId] !== undefined && transfersToShared[payerId][billAccount.id] !== undefined) {
+          transfersToShared[payerId][billAccount.id] -= amount;
+        }
+      }
     } else if (billAccount?.type === 'person') {
       if (balances[billAccount.id] !== undefined) balances[billAccount.id] += amount;
       Object.keys(liabilities).forEach(personId => {
