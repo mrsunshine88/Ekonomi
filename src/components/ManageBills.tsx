@@ -84,15 +84,19 @@ export default function ManageBills() {
     }
     
     const wasEditing = !!editingBillId;
-    setEditingBillId(null);
-    setNewBillName('');
-    setNewBillDefault('');
-    setNewBillWarn(false);
-    setNewBillIsLoan(false);
-    setNewBillTotalDebt('');
-    setNewBillAutoTransfer(false);
-    setNewBillInterval('all');
-    setNewBillCustomMonths([]);
+    
+    if (!wasEditing) {
+      setEditingBillId(null);
+      setNewBillName('');
+      setNewBillDefault('');
+      setNewBillWarn(false);
+      setNewBillIsLoan(false);
+      setNewBillTotalDebt('');
+      setNewBillAutoTransfer(false);
+      setNewBillInterval('all');
+      setNewBillCustomMonths([]);
+    }
+
     toast.success(wasEditing ? '✅ Räkning sparad!' : '✅ Räkning tillagd!');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
