@@ -200,6 +200,49 @@ export default function Statistics({ state }: Props) {
     return null;
   };
 
+  const loanStats = activeBills.filter(b => b.isLoan && b.totalDebt !== undefined).map(loan => {
+    let paidSoFar = 0;
+    sortedMonths.forEach(monthId => {
+      const m = activeMonthsObj[monthId];
+      let isHandled = false;
+      if (isPrivate) {
+         isHandled = (m as any).isLocked === true;
+      } else {
+         const accountId = (loan as any).accountId;
+         const handled = m.handledPayments || {};
+         // Check if this account is locked
+         Object.keys(handled).forEach(paymentId => {
+           if (handled[paymentId]) {
+              if (paymentId.startsWith('transfer_')) {
+                 const parts = paymentId.split('_');
+                 if (parts.length >= 3 && (accountId === parts[1] || accountId === parts[2])) isHandled = true;
+              } else if (paymentId.startsWith('swish_')) {
+                 const [, fromId, toId] = paymentId.split('_');
+                 if (accountId === fromId || accountId === toId) isHandled = true;
+              }
+           }
+         });
+         
+         // If we couldn't determine account lock, but ANY payment is handled, we'll tentatively count it
+         if (!isHandled && Object.values(handled).some(v => v)) {
+           isHandled = true;
+         }
+      }
+      
+      if (isHandled) {
+        const amt = (m.billAmounts && m.billAmounts[loan.id]) !== undefined ? m.billAmounts[loan.id] : loan.defaultAmount;
+        paidSoFar += amt;
+      }
+    });
+    
+    return {
+       ...loan,
+       paidSoFar,
+       remaining: Math.max(0, loan.totalDebt! - paidSoFar),
+       progress: Math.min(100, (paidSoFar / loan.totalDebt!) * 100)
+    };
+  });
+
   const tableHeaderStyle = { padding: '1rem', borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)', textAlign: 'left' as const, fontWeight: 'bold' };
   const tableCellStyle = { padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' };
 
@@ -229,6 +272,38 @@ export default function Statistics({ state }: Props) {
           🔒 Privat Statistik
         </button>
       </div>
+
+      {loanStats.length > 0 && (
+        <div className="card" style={{ marginBottom: '2rem' }}>
+          <h3 className="card-title">💳 Skulder & Lån</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+            Här ser du hur mycket som har betalats av på dina lån totalt (inkluderar endast låsta/hanterade månader).
+          </p>
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            {loanStats.map(loan => (
+              <div key={loan.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{ fontWeight: 'bold' }}>{loan.name}</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                    {Math.round(loan.paidSoFar).toLocaleString('sv-SE')} kr betalt av {Math.round(loan.totalDebt!).toLocaleString('sv-SE')} kr
+                  </span>
+                </div>
+                <div style={{ width: '100%', height: '12px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', overflow: 'hidden' }}>
+                  <div style={{ 
+                    height: '100%', 
+                    width: `${loan.progress}%`, 
+                    background: loan.progress >= 100 ? 'var(--success-color)' : 'var(--accent-gradient)',
+                    transition: 'width 0.5s ease-out'
+                  }}></div>
+                </div>
+                <div style={{ textAlign: 'right', marginTop: '0.5rem', fontWeight: 'bold', color: loan.progress >= 100 ? 'var(--success-color)' : 'var(--accent-color)' }}>
+                  {loan.progress >= 100 ? '🎉 Fullt betald!' : `${Math.round(loan.remaining).toLocaleString('sv-SE')} kr kvar`}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {!isPrivate && history.length > 0 && (
         <div className="card">

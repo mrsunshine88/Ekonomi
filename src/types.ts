@@ -16,6 +16,8 @@ export interface BillDefinition {
   interval: PaymentInterval;
   customMonths?: number[]; // Array of 1-12
   warnIfZero: boolean;
+  isLoan?: boolean;
+  totalDebt?: number;
 }
 
 export interface MonthData {
@@ -34,6 +36,8 @@ export interface PrivateBill {
   warnIfZero?: boolean;
   userId: string;
   isShared?: boolean;
+  isLoan?: boolean;
+  totalDebt?: number;
 }
 
 export interface PrivateMonthData {

@@ -35,6 +35,8 @@ export default function ManageBills({
   const [newBillInterval, setNewBillInterval] = useState<PaymentInterval>('all');
   const [newBillCustomMonths, setNewBillCustomMonths] = useState<number[]>([]);
   const [newBillWarn, setNewBillWarn] = useState(false);
+  const [newBillIsLoan, setNewBillIsLoan] = useState(false);
+  const [newBillTotalDebt, setNewBillTotalDebt] = useState('');
 
   // New Account State
   const [newAccName, setNewAccName] = useState('');
@@ -55,7 +57,9 @@ export default function ManageBills({
         customMonths: newBillInterval === 'custom' ? newBillCustomMonths : undefined,
         warnIfZero: newBillWarn,
         userId: user.id,
-        isShared: false // default, can be toggled in private view
+        isShared: false, // default, can be toggled in private view
+        isLoan: newBillIsLoan,
+        totalDebt: newBillTotalDebt === '' ? undefined : parseFloat(newBillTotalDebt)
       };
       if (editingBillId) {
         onUpdatePrivateBill(billData);
@@ -71,7 +75,9 @@ export default function ManageBills({
         defaultAmount: newBillDefault === '' ? 0 : parseFloat(newBillDefault),
         interval: newBillInterval,
         customMonths: newBillInterval === 'custom' ? newBillCustomMonths : undefined,
-        warnIfZero: newBillWarn
+        warnIfZero: newBillWarn,
+        isLoan: newBillIsLoan,
+        totalDebt: newBillTotalDebt === '' ? undefined : parseFloat(newBillTotalDebt)
       };
       if (editingBillId) {
         onUpdateBill(billData);
@@ -84,6 +90,8 @@ export default function ManageBills({
     setNewBillName('');
     setNewBillDefault('');
     setNewBillWarn(false);
+    setNewBillIsLoan(false);
+    setNewBillTotalDebt('');
     setNewBillInterval('all');
     setNewBillCustomMonths([]);
   };
@@ -98,6 +106,8 @@ export default function ManageBills({
     setNewBillInterval(bill.interval || 'all');
     setNewBillCustomMonths(bill.customMonths || []);
     setNewBillWarn(bill.warnIfZero || false);
+    setNewBillIsLoan(bill.isLoan || false);
+    setNewBillTotalDebt(bill.totalDebt !== undefined ? bill.totalDebt.toString() : '');
     
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   };
@@ -110,6 +120,8 @@ export default function ManageBills({
     setNewBillInterval(bill.interval || 'all');
     setNewBillCustomMonths(bill.customMonths || []);
     setNewBillWarn(bill.warnIfZero || false);
+    setNewBillIsLoan(bill.isLoan || false);
+    setNewBillTotalDebt(bill.totalDebt !== undefined ? bill.totalDebt.toString() : '');
     
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   };
@@ -120,6 +132,8 @@ export default function ManageBills({
     setNewBillName('');
     setNewBillDefault('');
     setNewBillWarn(false);
+    setNewBillIsLoan(false);
+    setNewBillTotalDebt('');
     setNewBillInterval('all');
     setNewBillCustomMonths([]);
   };
@@ -345,7 +359,9 @@ export default function ManageBills({
               return (
                 <div key={bill.id} className="bill-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div className="bill-name">{bill.name} {bill.warnIfZero && '⚠️ Varning'}</div>
+                    <div className="bill-name">
+                      {bill.name} {bill.isLoan && '💳 Lån'} {bill.warnIfZero && '⚠️ Varning'}
+                    </div>
                     <div className="bill-meta">{account?.name} • {splitText} • {intervalText}</div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -385,7 +401,9 @@ export default function ManageBills({
                   return (
                     <div key={bill.id} className="bill-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div className="bill-name">{bill.name} {bill.warnIfZero && '⚠️ Varning'}</div>
+                        <div className="bill-name">
+                          {bill.name} {bill.isLoan && '💳 Lån'} {bill.warnIfZero && '⚠️ Varning'}
+                        </div>
                         <div className="bill-meta">Privat • {intervalText}</div>
                       </div>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -507,6 +525,34 @@ export default function ManageBills({
               />
               Varna med röd färg om jag glömmer fylla i denna (När den förväntas)
             </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)', marginTop: '0.5rem' }}>
+              <input 
+                type="checkbox" 
+                checked={newBillIsLoan} 
+                onChange={e => {
+                  setNewBillIsLoan(e.target.checked);
+                  if (!e.target.checked) setNewBillTotalDebt('');
+                }} 
+                style={{ width: 'auto' }}
+              />
+              💳 Detta är en skuld/ett lån som ska betalas av över tid
+            </label>
+
+            {newBillIsLoan && (
+              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid var(--accent-color)' }}>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                  Ange den <strong>ursprungliga totala skulden</strong> här. Appen kommer automatiskt att räkna ihop alla inmatade belopp över alla låsta månader och visa hur mycket du har betalat av i EkonomiTB.
+                </p>
+                <input 
+                  type="number" 
+                  placeholder="Total ursprunglig skuld (t.ex. 15000)" 
+                  value={newBillTotalDebt} 
+                  onChange={e => setNewBillTotalDebt(e.target.value)} 
+                  style={{ width: '100%', marginBottom: 0 }}
+                />
+              </div>
+            )}
 
             <input 
               type="number" 
