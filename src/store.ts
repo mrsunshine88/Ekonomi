@@ -134,7 +134,7 @@ export const useStore = create<StoreState>((set, get) => ({
           id: b.id, name: b.name, accountId: b.account_id, splitType: b.split_type,
           defaultAmount: Number(b.default_amount), interval: b.interval, customMonths: b.custom_months,
           warnIfZero: b.warn_if_zero, isLoan: b.is_loan, totalDebt: b.total_debt ? Number(b.total_debt) : undefined,
-          isArchived: b.is_archived
+          isArchived: b.is_archived, isAutoTransfer: b.is_auto_transfer || false
         })) : [],
         months: {},
         privateBills: privateBills ? privateBills.map(b => ({
@@ -317,7 +317,7 @@ export const useStore = create<StoreState>((set, get) => ({
     const { householdId, state } = get();
     set({ state: { ...state, bills: [...state.bills, validBill] } });
     if (householdId) {
-      await safeDb(supabase.from('bills').insert({ id: validBill.id, household_id: householdId, name: validBill.name, account_id: validBill.accountId, split_type: validBill.splitType, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_loan: validBill.isLoan, total_debt: validBill.totalDebt }));
+      await safeDb(supabase.from('bills').insert({ id: validBill.id, household_id: householdId, name: validBill.name, account_id: validBill.accountId, split_type: validBill.splitType, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_loan: validBill.isLoan, total_debt: validBill.totalDebt, is_auto_transfer: validBill.isAutoTransfer || false }));
     }
   },
 
@@ -340,7 +340,7 @@ export const useStore = create<StoreState>((set, get) => ({
     const { householdId, state } = get();
     set({ state: { ...state, bills: state.bills.map(b => b.id === validBill.id ? validBill : b) } });
     if (householdId) {
-      await safeDb(supabase.from('bills').update({ name: validBill.name, account_id: validBill.accountId, split_type: validBill.splitType, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_loan: validBill.isLoan, total_debt: validBill.totalDebt }).eq('id', validBill.id).eq('household_id', householdId));
+      await safeDb(supabase.from('bills').update({ name: validBill.name, account_id: validBill.accountId, split_type: validBill.splitType, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_loan: validBill.isLoan, total_debt: validBill.totalDebt, is_auto_transfer: validBill.isAutoTransfer || false }).eq('id', validBill.id).eq('household_id', householdId));
     }
   },
 
@@ -648,11 +648,14 @@ export function calculateMonth(state: AppState, monthId: string): CalculationRes
     }
 
     if (billAccount?.type === 'shared') {
-      Object.keys(liabilities).forEach(personId => {
-        if (transfersToShared[personId] !== undefined && transfersToShared[personId][billAccount.id] !== undefined) {
-          transfersToShared[personId][billAccount.id] += liabilities[personId];
-        }
-      });
+      // Om automatisk överföring är ibockad: räkningen räknas med i totalen men INTE i vad som ska föras över manuellt
+      if (!bill.isAutoTransfer) {
+        Object.keys(liabilities).forEach(personId => {
+          if (transfersToShared[personId] !== undefined && transfersToShared[personId][billAccount.id] !== undefined) {
+            transfersToShared[personId][billAccount.id] += liabilities[personId];
+          }
+        });
+      }
     } else if (billAccount?.type === 'person') {
       if (balances[billAccount.id] !== undefined) balances[billAccount.id] += amount;
       Object.keys(liabilities).forEach(personId => {

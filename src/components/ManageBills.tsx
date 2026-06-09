@@ -31,6 +31,7 @@ export default function ManageBills() {
   const [newBillWarn, setNewBillWarn] = useState(false);
   const [newBillIsLoan, setNewBillIsLoan] = useState(false);
   const [newBillTotalDebt, setNewBillTotalDebt] = useState('');
+  const [newBillAutoTransfer, setNewBillAutoTransfer] = useState(false);
 
   // New Account State
   const [newAccName, setNewAccName] = useState('');
@@ -71,7 +72,8 @@ export default function ManageBills() {
         customMonths: newBillInterval === 'custom' ? newBillCustomMonths : undefined,
         warnIfZero: newBillWarn,
         isLoan: newBillIsLoan,
-        totalDebt: newBillTotalDebt === '' ? undefined : parseFloat(newBillTotalDebt)
+        totalDebt: newBillTotalDebt === '' ? undefined : parseFloat(newBillTotalDebt),
+        isAutoTransfer: newBillAutoTransfer
       };
       if (editingBillId) {
         onUpdateBill(billData);
@@ -86,6 +88,7 @@ export default function ManageBills() {
     setNewBillWarn(false);
     setNewBillIsLoan(false);
     setNewBillTotalDebt('');
+    setNewBillAutoTransfer(false);
     setNewBillInterval('all');
     setNewBillCustomMonths([]);
   };
@@ -102,6 +105,7 @@ export default function ManageBills() {
     setNewBillWarn(bill.warnIfZero || false);
     setNewBillIsLoan(bill.isLoan || false);
     setNewBillTotalDebt(bill.totalDebt !== undefined ? bill.totalDebt.toString() : '');
+    setNewBillAutoTransfer(bill.isAutoTransfer || false);
     
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   };
@@ -128,6 +132,7 @@ export default function ManageBills() {
     setNewBillWarn(false);
     setNewBillIsLoan(false);
     setNewBillTotalDebt('');
+    setNewBillAutoTransfer(false);
     setNewBillInterval('all');
     setNewBillCustomMonths([]);
   };
@@ -366,7 +371,7 @@ export default function ManageBills() {
                 <div key={bill.id} className="bill-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div className="bill-name">
-                      {bill.name} {bill.isLoan && '💳 Lån'} {bill.warnIfZero && '⚠️ Varning'}
+                      {bill.name} {bill.isLoan && '💳 Lån'} {bill.warnIfZero && '⚠️ Varning'} {bill.isAutoTransfer && <span style={{ color: '#34d399', fontSize: '0.8rem' }}>↩️ Auto-överföring</span>}
                     </div>
                     <div className="bill-meta">{account?.name} • {splitText} • {intervalText}</div>
                   </div>
@@ -548,6 +553,18 @@ export default function ManageBills() {
               />
               💳 Detta är en skuld/ett lån som ska betalas av över tid
             </label>
+
+            {newBillScope === 'shared' && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)', marginTop: '0.5rem' }}>
+                <input 
+                  type="checkbox" 
+                  checked={newBillAutoTransfer} 
+                  onChange={e => setNewBillAutoTransfer(e.target.checked)} 
+                  style={{ width: 'auto' }}
+                />
+                ↩️ Automatisk överföring (pengarna förs över till huskontot automatiskt – räknas bort ur vad du ska föra över manuellt)
+              </label>
+            )}
 
             {newBillIsLoan && (
               <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid var(--accent-color)' }}>

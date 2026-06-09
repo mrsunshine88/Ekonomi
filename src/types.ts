@@ -19,6 +19,7 @@ export interface BillDefinition {
   isLoan?: boolean;
   totalDebt?: number;
   isArchived?: boolean;
+  isAutoTransfer?: boolean; // Överföringen till huskontot sker automatiskt – räknas bort från vad man ska föra över manuellt
 }
 
 export interface MonthData {
