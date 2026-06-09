@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { AppState, PrivateBill } from '../types';
 import { useAuth } from '../AuthContext';
 

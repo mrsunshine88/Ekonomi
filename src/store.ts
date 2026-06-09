@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabase';
-import type { AppState, BillDefinition, MonthData, CalculationResult, Account, SwishTransfer } from './types';
+import type { AppState, BillDefinition, MonthData, CalculationResult, Account, SwishTransfer, PrivateBill } from './types';
 
 const STORAGE_KEY = 'ekonomiapp_state_v1';
 
