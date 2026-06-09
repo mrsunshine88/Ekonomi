@@ -570,24 +570,37 @@ export default function ManageBills() {
 
             {newBillScope === 'shared' && (
               <div style={{ marginTop: '0.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.4rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>↩️ Automatisk överföring till huskontot</label>
-                <select 
-                  value={newBillAutoTransfer} 
-                  onChange={e => setNewBillAutoTransfer(e.target.value)}
-                >
-                  <option value="">Manuell – Förs över manuellt av alla</option>
-                  <option value="all">Automatisk – Förs automatiskt av ALLA (räknas bort för alla)</option>
-                  {state.accounts.filter(a => a.type === 'person').map(acc => (
-                    <option key={acc.id} value={acc.id}>
-                      Automatisk – Bara {acc.name} förs automatiskt (räknas bort enbart för {acc.name})
-                    </option>
-                  ))}
-                </select>
-                <div style={{ marginTop: '0.3rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  {newBillAutoTransfer === '' && 'Alla måste föra över sin andel manuellt varje månad.'}
-                  {newBillAutoTransfer === 'all' && '✅ Ingen behöver föra över – allt sköts automatiskt.'}
-                  {newBillAutoTransfer !== '' && newBillAutoTransfer !== 'all' && `✅ Bara ${state.accounts.find(a => a.id === newBillAutoTransfer)?.name || '?'} slipper föra över sin andel – de andra måste fortfarande göra det manuellt.`}
-                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={newBillAutoTransfer !== ''} 
+                    onChange={e => setNewBillAutoTransfer(e.target.checked ? 'all' : '')} 
+                    style={{ width: 'auto' }}
+                  />
+                  ↩️ Automatisk överföring (räknas bort från summan "att föra över")
+                </label>
+                
+                {newBillAutoTransfer !== '' && (
+                  <div style={{ marginTop: '0.8rem', marginLeft: '2rem', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', borderLeft: '2px solid var(--accent-color)' }}>
+                    <label style={{ display: 'block', marginBottom: '0.4rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Vem har autogiro / vem gäller detta för?</label>
+                    <select 
+                      value={newBillAutoTransfer} 
+                      onChange={e => setNewBillAutoTransfer(e.target.value)}
+                      style={{ marginBottom: '0.5rem' }}
+                    >
+                      <option value="all">Alla (Pengarna räknas bort för alla)</option>
+                      {state.accounts.filter(a => a.type === 'person').map(acc => (
+                        <option key={acc.id} value={acc.id}>
+                          Bara {acc.name} (Räknas endast bort för {acc.name})
+                        </option>
+                      ))}
+                    </select>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      {newBillAutoTransfer === 'all' && '✅ Ingen behöver föra över – allt sköts automatiskt.'}
+                      {newBillAutoTransfer !== 'all' && `✅ Bara ${state.accounts.find(a => a.id === newBillAutoTransfer)?.name || '?'} slipper föra över sin andel – de andra måste fortfarande göra det manuellt.`}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
