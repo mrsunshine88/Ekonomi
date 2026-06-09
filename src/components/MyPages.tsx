@@ -177,10 +177,11 @@ export default function MyPages() {
     }
   };
 
-  const handleToggleShare = async (checked: boolean) => {
+  const handleToggleShare = async () => {
+    const newState = !isSharingPrivate;
     try {
-      await toggleSharePrivateEconomy(checked);
-      setMsg(checked ? '✅ Din privata ekonomi delas nu med hushållet.' : '✅ Din privata ekonomi är nu privat igen.');
+      await toggleSharePrivateEconomy(newState);
+      setMsg(newState ? '✅ Din privata ekonomi delas nu med hushållet.' : '✅ Din privata ekonomi är nu privat igen.');
     } catch (e: any) {
       setMsg('❌ Det gick inte att spara: ' + e.message);
     }
@@ -199,18 +200,31 @@ export default function MyPages() {
       {householdId && (
         <div style={{ marginBottom: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <h3 style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>🔒 Integritet och Delning</h3>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
-            <input 
-              type="checkbox" 
-              checked={isSharingPrivate}
-              onChange={e => handleToggleShare(e.target.checked)}
-              style={{ width: '20px', height: '20px', accentColor: 'var(--accent-color)' }}
-            />
+          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
-              <div style={{ fontWeight: 'bold' }}>Dela hela min privata ekonomi</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>Gör så att de andra i hushållet kan välja att se dina privata räkningar.</div>
+              <div style={{ fontWeight: 'bold' }}>Delning av privat ekonomi</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                {isSharingPrivate 
+                  ? 'Din privata ekonomi är just nu synlig för andra i hushållet.' 
+                  : 'Gör så att andra i hushållet kan välja att se dina privata räkningar.'}
+              </div>
             </div>
-          </label>
+            <button 
+              onClick={handleToggleShare}
+              style={{ 
+                background: isSharingPrivate ? 'transparent' : 'var(--success-color)', 
+                color: isSharingPrivate ? '#f43f5e' : '#fff',
+                border: isSharingPrivate ? '1px solid #f43f5e' : 'none',
+                padding: '0.75rem 1rem', 
+                borderRadius: '8px', 
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {isSharingPrivate ? 'Sluta dela privat ekonomi' : 'Dela min privata ekonomi'}
+            </button>
+          </div>
         </div>
       )}
 
