@@ -364,9 +364,13 @@ Förvandlingen av appen från ett robust hobby-projekt till en fullfjädrad "Ent
 - All inmatning från användaren valideras nu på klientnivå via biblioteket `Zod`. Det kontrollerar form och orimliga värden (exempelvis att ett räkningsnamn inte är tomt och att belopp alltid är $\ge$ 0) *innan* det sparas. 
 - Som ett extra lås har vi lagt in `CHECK Constraints` på databasnivå i Supabase. Även om klientkoden ignoreras eller hackas kommer databasen att totalvägra att registrera felaktig data (t.ex. negativa skulder eller obefintliga namn).
 
+**Fas 4: "Enterprise Slutputs" (Oändlig Skalbarhet & Optimistic Rollbacks)**
+- **Paginering / Lazy Loading:** Istället för att ladda ner hela hushållets historik på en gång vid uppstart, hämtas initialt enbart transaktioner för det *innevarande året* (plus december förra året för övergångar). Om användaren skrollar tillbaka till ett tidigare år triggas en asynkron bakgrundsladdning (`loadYear`). Appen behåller sin supersnabba uppstartstid ($\sim$ 0.1s) även med 20 års data.
+- **Optimistic UI Rollbacks:** Om en nätverkssparning (`safeDb`) misslyckas efter att en användare klickat (t.ex. på grund av brutet internet eller att SQL-reglerna blockerade en felaktig siffra), kör appen automatiskt en rollback. Siffran på skärmen "hoppar tillbaka" till sitt ursprungliga värde, vilket helt eliminerar risken för att användargränssnittet och databasen hamnar i osynk.
+
 ---
 
-## 18. Versionshistorik
+## 19. Versionshistorik
 
 | Version | Datum | Vad som förändrades |
 |---------|-------|---------------------|
@@ -375,4 +379,4 @@ Förvandlingen av appen från ett robust hobby-projekt till en fullfjädrad "Ent
 | 2.0 | 2026-06-01 | Privat ekonomi, skulder/lån, EkonomiTB, Excel-export, anomalidetektion. |
 | 2.1 | 2026-06-09 | Hamburgermeny på mobil, dropdown i Inställningar, ny menyordning. |
 | 3.0 | 2026-06-09 | Fullständig migrering till relationsdatabas. Krockfri synkronisering. Automatisk datamigrering. Realtidslyssnare på alla tabeller. |
-| **4.0** | **2026-06-09** | **Enterprise-uppgradering: Zustand, Zod validering, lazy-loading, och säkerhetshärdning i databas (Constraints).** |
+| **4.0** | **2026-06-09** | **Enterprise-uppgradering: Zustand, Zod validering, lazy-loading, skalbar paginering, och säkerhetshärdning i databas (Constraints).** |

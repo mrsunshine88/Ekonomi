@@ -4,7 +4,7 @@ import { useStore } from '../store';
 import { useAuth } from '../AuthContext';
 
 export default function ManageBills() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const state = useStore(s => s.state);
   const onAddBill = useStore(s => s.addBill);
   const onRemoveBill = useStore(s => s.removeBill);
@@ -153,24 +153,22 @@ export default function ManageBills() {
           >
             📋 Räkningar
           </button>
-          <button 
-            onClick={() => setActiveTab('accounts')}
-            style={{ background: activeTab === 'accounts' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'accounts' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'accounts' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'accounts' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
-          >
-            🏦 Konton
-          </button>
-          <button 
-            onClick={() => setActiveTab('locks')}
-            style={{ background: activeTab === 'locks' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'locks' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'locks' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'locks' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
-          >
-            🔒 Lås upp
-          </button>
-          <button 
-            onClick={() => setActiveTab('general')}
-            style={{ background: activeTab === 'general' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'general' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'general' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'general' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
-          >
-            ⚙️ Allmänt
-          </button>
+          {role === 'owner' && (
+            <>
+              <button 
+                onClick={() => setActiveTab('accounts')}
+                style={{ background: activeTab === 'accounts' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'accounts' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'accounts' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'accounts' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
+              >
+                🏦 Konton
+              </button>
+              <button 
+                onClick={() => setActiveTab('general')}
+                style={{ background: activeTab === 'general' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'general' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'general' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'general' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
+              >
+                ⚙️ Allmänt
+              </button>
+            </>
+          )}
         </div>
         <div className="settings-tabs-mobile" style={{ marginBottom: '1.5rem' }}>
           <select 
@@ -179,9 +177,9 @@ export default function ManageBills() {
             style={{ width: '100%', padding: '0.8rem', fontSize: '1.05rem', background: 'rgba(0,0,0,0.4)', color: 'var(--text-primary)', border: '1px solid var(--accent-color)', borderRadius: '8px', cursor: 'pointer', appearance: 'auto' }}
           >
             <option value="bills">📋 Hantera Räkningar</option>
-            <option value="accounts">🏦 Hantera Konton</option>
             <option value="locks">🔒 Lås upp månader</option>
-            <option value="general">⚙️ Allmänna inställningar</option>
+            {role === 'owner' && <option value="accounts">🏦 Hantera Konton</option>}
+            {role === 'owner' && <option value="general">⚙️ Allmänna inställningar</option>}
           </select>
         </div>
       </div>
@@ -373,18 +371,22 @@ export default function ManageBills() {
                     <div className="bill-meta">{account?.name} • {splitText} • {intervalText}</div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button 
-                      onClick={() => handleEditBill(bill)}
-                      style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
-                    >
-                      Ändra
-                    </button>
-                    <button 
-                      onClick={() => onRemoveBill(bill.id)}
-                      style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
-                    >
-                      Ta bort
-                    </button>
+                    {role === 'owner' && (
+                      <>
+                        <button 
+                          onClick={() => handleEditBill(bill)}
+                          style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          Ändra
+                        </button>
+                        <button 
+                          onClick={() => onRemoveBill(bill.id)}
+                          style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          Ta bort
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               );

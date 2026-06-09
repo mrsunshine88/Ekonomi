@@ -19,7 +19,7 @@ export default function MyPages() {
       const { data: hh, error: hhErr } = await supabase.from('households').select('id').eq('id', inviteCode.trim()).single();
       if (hhErr || !hh) throw new Error('Kunde inte hitta koden. Är den rättstavad?');
 
-      const { error } = await supabase.from('profiles').upsert([{ id: user?.id, email: user?.email, household_id: hh.id }]);
+      const { error } = await supabase.from('profiles').upsert([{ id: user?.id, email: user?.email, household_id: hh.id, role: 'member' }]);
       if (error) throw error;
 
       await refreshHousehold();
@@ -39,7 +39,7 @@ export default function MyPages() {
       const { error: hhErr } = await supabase.from('households').insert([{ id: newHouseholdId }]);
       if (hhErr) throw hhErr;
       
-      const { error } = await supabase.from('profiles').upsert([{ id: user.id, email: user.email, household_id: newHouseholdId }]);
+      const { error } = await supabase.from('profiles').upsert([{ id: user.id, email: user.email, household_id: newHouseholdId, role: 'owner' }]);
       if (error) throw error;
       
       await refreshHousehold();
@@ -83,6 +83,21 @@ export default function MyPages() {
   };
 
   const handleSignOut = () => supabase.auth.signOut();
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("Är du HELT säker? Detta kommer radera ditt inlogg, din profil och alla dina privata räkningar för alltid. Detta går inte att ångra.")) return;
+    setLoading(true);
+    try {
+      // Vi förlitar oss på att en rpc 'delete_user' är skapad i databasen via SQL-skriptet, eller att vi triggar radering
+      const { error } = await supabase.rpc('delete_user');
+      if (error) throw error;
+      
+      await supabase.auth.signOut();
+    } catch (e: any) {
+      setMsg('❌ ' + e.message);
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="card" style={{ maxWidth: '600px', margin: '0 auto', marginTop: '2rem' }}>
@@ -181,26 +196,37 @@ export default function MyPages() {
             </button>
           </div>
           <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)' }}>
-            <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Lämna hushållet</h3>
+            <h3 style={{ color: '#f43f5e', marginBottom: '0.5rem' }}>Farlig zon</h3>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.9rem' }}>
-              Om du vill starta om på nytt med en helt egen privat ekonomi kan du lämna det här hushållet. Du får då en helt tom app.
+              Dessa åtgärder kan inte ångras.
             </p>
-            <button 
-              onClick={() => {
-                if(window.confirm('Är du säker på att du vill lämna hushållet? Du får då en helt tom app för dig själv.')) {
-                  handleCreateHousehold();
-                }
-              }} 
-              disabled={loading} 
-              style={{ padding: '0.75rem 1rem', background: 'rgba(0,0,0,0.2)', color: 'var(--text-primary)', border: '1px solid var(--text-secondary)', borderRadius: '8px', cursor: 'pointer' }}
-            >
-              🚪 Lämna och skapa eget hushåll
-            </button>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <button 
+                onClick={() => {
+                  if(window.confirm('Är du säker på att du vill lämna hushållet? Du får då en helt tom app för dig själv.')) {
+                    handleCreateHousehold();
+                  }
+                }} 
+                disabled={loading} 
+                style={{ padding: '0.75rem 1rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer' }}
+              >
+                🚪 Lämna och skapa eget hushåll
+              </button>
+
+              <button 
+                onClick={handleDeleteAccount} 
+                disabled={loading} 
+                style={{ padding: '0.75rem 1rem', background: '#f43f5e', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                🗑️ Radera mitt konto för alltid
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      <button onClick={handleSignOut} style={{ width: '100%', padding: '1rem', background: 'transparent', border: '1px solid #f43f5e', color: '#f43f5e', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '2rem' }}>
+      <button onClick={handleSignOut} style={{ width: '100%', padding: '1rem', background: 'transparent', border: '1px solid var(--text-secondary)', color: 'var(--text-secondary)', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '2rem' }}>
         Logga ut
       </button>
     </div>

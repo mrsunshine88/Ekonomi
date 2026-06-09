@@ -6,6 +6,7 @@ interface AuthState {
   user: User | null;
   session: Session | null;
   householdId: string | null;
+  role: 'owner' | 'member' | null;
   loading: boolean;
   refreshHousehold: () => Promise<void>;
 }
@@ -14,6 +15,7 @@ const AuthContext = createContext<AuthState>({
   user: null,
   session: null,
   householdId: null,
+  role: null,
   loading: true,
   refreshHousehold: async () => {}
 });
@@ -24,19 +26,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [householdId, setHouseholdId] = useState<string | null>(null);
+  const [role, setRole] = useState<'owner' | 'member' | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchHousehold = async (userId: string) => {
     try {
-      const { data } = await supabase.from('profiles').select('household_id').eq('id', userId).single();
+      const { data } = await supabase.from('profiles').select('household_id, role').eq('id', userId).single();
       if (data?.household_id) {
         setHouseholdId(data.household_id);
+        setRole(data.role || 'member');
       } else {
         setHouseholdId(null);
+        setRole(null);
       }
     } catch (e) {
       console.error(e);
       setHouseholdId(null);
+      setRole(null);
     }
   };
 
@@ -77,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, householdId, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) } }}>
+    <AuthContext.Provider value={{ user, session, householdId, role, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) } }}>
       {!loading && children}
     </AuthContext.Provider>
   );

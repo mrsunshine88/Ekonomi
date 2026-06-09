@@ -34,7 +34,7 @@ export default function LoginScreen() {
           const newHouseholdId = crypto.randomUUID();
           const { error: hhErr } = await supabase.from('households').insert([{ id: newHouseholdId }]);
           if (!hhErr) {
-             await supabase.from('profiles').update({ household_id: newHouseholdId }).eq('id', data.user.id);
+             await supabase.from('profiles').update({ household_id: newHouseholdId, role: 'owner' }).eq('id', data.user.id);
           }
           
           if (data.session) {
