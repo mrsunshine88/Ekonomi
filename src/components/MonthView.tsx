@@ -40,7 +40,7 @@ export default function MonthView({ currentMonth }: Props) {
 
 
   const renderCategory = (account: Account) => {
-    const categoryBills = state.bills.filter(b => b.accountId === account.id && (!b.isArchived || monthData.billAmounts[b.id] !== undefined));
+    const categoryBills = state.bills.filter(b => b.accountId === account.id && (!b.isArchived || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0)));
     if (categoryBills.length === 0) return null;
 
     return (

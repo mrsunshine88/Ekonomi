@@ -27,7 +27,7 @@ export default function PrivateView({ currentMonth }: Props) {
   
   const myBills = (state.privateBills || []).filter(b => {
     if (b.startMonth && b.startMonth > currentMonth) return false;
-    return b.userId === selectedUserId && (!b.isArchived || monthData.billAmounts[b.id] !== undefined);
+    return b.userId === selectedUserId && (!b.isArchived || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0));
   });
   
   const isLocked = isViewingOther || (monthData.isLocked || false);
