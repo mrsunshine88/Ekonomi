@@ -225,14 +225,18 @@ En egen flik (`🔒 Privat`) där varje användare hanterar sina egna, privata u
 ### Hur:
 - Privata räkningar lagras i tabellen `private_bills` med `user_id: user.id` (inloggad användares UUID).
 - Privata räkningar skapas på *samma* ställe som gemensamma (`⚙️ Inställningar → Räkningar`), men med växeln **"🔒 Privat Räkning"** istället för "Gemensam Räkning".
-- `PrivateView.tsx` visar bara räkningar där `bill.userId === user.id` (klientfiltrering utöver RLS).
-- En räkning kan markeras som delad (`isShared: true`), varpå den visas som "read-only" hos övriga hushållsmedlemmar under "Delade utgifter".
+- Varje användare kan ställa in **"Dela hela min privata ekonomi"** i "Mina Sidor". Detta sätter flaggan `share_private_economy = true` på deras profil i databasen.
+- `PrivateView.tsx` visar en "dropdown"-lista högst upp där användare kan välja vilkens privata ekonomi de vill titta på (förutsatt att personen har delat sin). Siffrorna för någon annans ekonomi är alltid låsta för redigering (skrivskyddade).
 - En grön **"✅ Markera månad som klar"**-knapp kör `togglePrivateLock(monthId)` → `upsert` i `private_month_locks`. Stänger månaden och förhindrar vidare redigering.
 - Belopp per månad sparas i `private_month_amounts` (en rad per räkning och månad).
 - Upplåsning sker via `⚙️ Inställningar → 🔒 Lås upp → "Mina Privata Lås"`.
 
+### Hur – Skapandedatum (`start_month`):
+- När en ny räkning (privat eller gemensam) skapas, stämplas den med den aktuella månaden (`YYYY-MM`) i kolumnen `start_month`.
+- Systemet filtrerar automatiskt bort räkningen från vyer och beräkningar som avser månader före `start_month`. Detta förhindrar att nya utgifter plötsligt dyker upp "bakåt i tiden" i gammal historik.
+
 ### Varför:
-Hushållsmedlemmar vill ha en komplett bild av *all* sin ekonomi på ett ställe. Privata kostnader ska *aldrig* räknas in i den gemensamma Swish-uppgörelsen.
+Hushållsmedlemmar vill ha en komplett bild av *all* sin ekonomi på ett ställe. Privata kostnader ska *aldrig* räknas in i den gemensamma Swish-uppgörelsen. Global delning ger transparens för par som vill se varandras helhetsbild, utan att blanda ihop matematiken.
 
 ---
 
@@ -386,4 +390,5 @@ Förvandlingen av appen från ett robust hobby-projekt till en fullfjädrad "Ent
 | 4.0 | 2026-06-09 | Enterprise-uppgradering: Zustand, Zod validering, lazy-loading, skalbar paginering, och säkerhetshärdning i databas (Constraints). |
 | 5.0 | 2026-06-09 | The Final Polish: Behörighetsnivåer (RBAC), GDPR-efterlevnad (Självradering) och Automatiserade enhetstester (Vitest integrerat i byggflödet). |
 | 5.1 | 2026-06-09 | Hushållsadministration & UX: Visuell skillnad på logga in/skapa konto, medlemslistor, kick-funktion för ägare, fixat minnesläckage i Zustand vid utloggning, och förfinad RLS för att medlemmar ska se varandra. |
-| **5.2** | **2026-06-09** | **Automatisk Överföring: Ny `isAutoTransfer`-flagga på gemensamma räkningar. När aktiverad exkluderas räkningens belopp från vad man manuellt ska föra över till huskontot. Kryssrutan finns under ⋯ Inställningar → Räkningar → Ändra. Räkningar med flaggan visas med grön ↩️ Auto-överföring-etikett i listan.** |
+| 5.2 | 2026-06-09 | Automatisk Överföring: Ny `isAutoTransfer`-flagga på gemensamma räkningar. När aktiverad exkluderas räkningens belopp från vad man manuellt ska föra över till huskontot. Kryssrutan finns under ⋯ Inställningar → Räkningar → Ändra. Räkningar med flaggan visas med grön ↩️ Auto-överföring-etikett i listan. |
+| **5.3** | **2026-06-09** | **Global Delning & Tidslinje: Bytte ut per-räkning delning till ett globalt "Dela hela min privata ekonomi"-reglage i Mina Sidor. Möjlighet att växla mellan medlemmars privata ekonomi via en rullgardinsmeny. Införde `start_month` på alla räkningar så att nyskapade räkningar inte längre läggs in bakåt i tiden i historiken.** |
