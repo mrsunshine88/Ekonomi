@@ -152,10 +152,11 @@ export default function Summary({ currentMonth }: Props) {
                 </div>
                 <div className="swish-amount">{swish.amount.toLocaleString('sv-SE', { maximumFractionDigits: 0 })} kr</div>
                 <button 
-                  onClick={() => handleToggle(paymentId)}
-                  style={{ marginTop: '1.5rem', padding: '0.5rem 1.5rem', fontSize: '0.9rem', fontWeight: 600, background: isPaid ? 'var(--success-color)' : 'transparent', color: isPaid ? '#fff' : 'inherit', border: isPaid ? '2px solid var(--success-color)' : '2px solid currentColor', borderRadius: '20px', cursor: 'pointer', opacity: missingPersonBills.length > 0 ? 0.6 : 1 }}
+                  onClick={() => { if (!isPaid) handleToggle(paymentId); }}
+                  style={{ marginTop: '1.5rem', padding: '0.5rem 1.5rem', fontSize: '0.9rem', fontWeight: 600, background: isPaid ? 'var(--success-color)' : 'transparent', color: isPaid ? '#fff' : 'inherit', border: isPaid ? '2px solid var(--success-color)' : '2px solid currentColor', borderRadius: '20px', cursor: isPaid ? 'default' : 'pointer', opacity: missingPersonBills.length > 0 ? 0.6 : 1 }}
+                  disabled={isPaid}
                 >
-                  {isPaid ? (toPerson?.transferMethod === 'transfer' ? '✅ Överfört & Klart' : '✅ Swishat & Klart') : (toPerson?.transferMethod === 'transfer' ? 'Markera som Överfört' : 'Markera som Swishat')}
+                  {isPaid ? (toPerson?.transferMethod === 'transfer' ? '🔒 Överfört (Låst)' : '🔒 Swishat (Låst)') : (toPerson?.transferMethod === 'transfer' ? 'Markera som Överfört' : 'Markera som Swishat')}
                 </button>
               </div>
             );

@@ -101,6 +101,22 @@ export default function MyPages() {
     }
   };
 
+  const handleToggleRole = async (memberId: string, currentRole: string) => {
+    const newRole = currentRole === 'owner' ? 'member' : 'owner';
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', memberId);
+      if (error) throw error;
+      
+      setMembers(members.map(m => m.id === memberId ? { ...m, role: newRole } : m));
+      setMsg(`✅ Behörighet ändrad! Personen är nu ${newRole === 'owner' ? 'Medägare (full tillgång till gemensamma räkningar)' : 'Medlem (Låst läge)'}.`);
+    } catch (e: any) {
+      setMsg('❌ ' + e.message + '. (Tips: Kör SQL-skriptet för behörigheter om databasen blockerar)');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleUpdateEmail = async () => {
     if (!newEmail) return;
     setLoading(true);
@@ -259,13 +275,22 @@ export default function MyPages() {
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{m.role === 'owner' ? '👑 Ägare' : 'Medlem'}</div>
                 </div>
                 {role === 'owner' && m.id !== user?.id && (
-                  <button 
-                    onClick={() => handleKickMember(m.id, m.email)}
-                    disabled={loading}
-                    style={{ background: '#f43f5e', color: '#fff', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
-                  >
-                    Kicka ut
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    <button 
+                      onClick={() => handleToggleRole(m.id, m.role)}
+                      disabled={loading}
+                      style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                    >
+                      {m.role === 'owner' ? 'Lås läge (Gör till Medlem)' : 'Lås upp (Gör till Medägare)'}
+                    </button>
+                    <button 
+                      onClick={() => handleKickMember(m.id, m.email)}
+                      disabled={loading}
+                      style={{ background: '#f43f5e', color: '#fff', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                    >
+                      Kicka ut
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
