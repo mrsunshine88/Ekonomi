@@ -4,6 +4,7 @@ import { supabase } from '../../supabase';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -13,6 +14,12 @@ export default function LoginScreen() {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
+
+    if (!isLogin && password !== confirmPassword) {
+      setError('Lösenorden matchar inte.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -55,7 +62,11 @@ export default function LoginScreen() {
     <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
       <div className="card" style={{ maxWidth: '400px', width: '100%', margin: '0 1rem' }}>
         <h1 style={{ textAlign: 'center', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>Ekonomi & Swish</h1>
-        <h2 style={{ textAlign: 'center', marginBottom: '2rem', color: 'var(--text-secondary)' }}>{isLogin ? 'Logga in' : 'Skapa Konto'}</h2>
+        <h2 style={{ textAlign: 'center', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>{isLogin ? 'Logga in' : 'Skapa Konto'}</h2>
+        
+        <p style={{ textAlign: 'center', marginBottom: '2rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          {isLogin ? 'Välkommen tillbaka!' : 'Kom igång gratis och synka din ekonomi i molnet.'}
+        </p>
         
         {error && <div style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>{error}</div>}
         {successMsg && <div style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>{successMsg}</div>}
@@ -77,6 +88,16 @@ export default function LoginScreen() {
             required
             style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
           />
+          {!isLogin && (
+            <input 
+              type="password" 
+              placeholder="Bekräfta lösenord" 
+              value={confirmPassword} 
+              onChange={e => setConfirmPassword(e.target.value)}
+              required
+              style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
+            />
+          )}
           <button 
             type="submit" 
             disabled={loading}
