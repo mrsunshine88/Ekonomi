@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 import type { AppState, BillDefinition, CalculationResult, Account, SwishTransfer, PrivateBill } from './types';
 import toast from 'react-hot-toast';
 import { runRelationalMigration } from './migrateToRelational';
+import { safeParseAmount, safeParseBill, safeParseAccount, safeParsePrivateBill } from './validators';
 
 const DEFAULT_ACCOUNTS: Account[] = [
   { id: 'shared_1', name: 'Gemensamt konto', type: 'shared', transferMethod: 'transfer' },
@@ -212,19 +213,33 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updateBillAmount: async (monthId, billId, amount) => {
+    const parseRes = safeParseAmount(amount);
+    if (!parseRes.success) {
+      toast.error(parseRes.error.issues[0].message);
+      return;
+    }
+    const validatedAmount = parseRes.data;
+
     const { householdId, state } = get();
     const monthData = state.months[monthId] || { monthId, billAmounts: {}, handledPayments: {} };
-    set({ state: { ...state, months: { ...state.months, [monthId]: { ...monthData, billAmounts: { ...monthData.billAmounts, [billId]: amount } } } } });
+    set({ state: { ...state, months: { ...state.months, [monthId]: { ...monthData, billAmounts: { ...monthData.billAmounts, [billId]: validatedAmount } } } } });
     if (householdId) {
-      await safeDb(supabase.from('month_bill_amounts').upsert({ household_id: householdId, month_id: monthId, bill_id: billId, amount }, { onConflict: 'household_id,month_id,bill_id' }));
+      await safeDb(supabase.from('month_bill_amounts').upsert({ household_id: householdId, month_id: monthId, bill_id: billId, amount: validatedAmount }, { onConflict: 'household_id,month_id,bill_id' }));
     }
   },
 
   addBill: async (bill) => {
+    const parseRes = safeParseBill(bill);
+    if (!parseRes.success) {
+      toast.error(parseRes.error.issues[0].message);
+      return;
+    }
+    const validBill = parseRes.data as BillDefinition;
+
     const { householdId, state } = get();
-    set({ state: { ...state, bills: [...state.bills, bill] } });
+    set({ state: { ...state, bills: [...state.bills, validBill] } });
     if (householdId) {
-      await safeDb(supabase.from('bills').insert({ id: bill.id, household_id: householdId, name: bill.name, account_id: bill.accountId, split_type: bill.splitType, default_amount: bill.defaultAmount, interval: bill.interval, custom_months: bill.customMonths || [], warn_if_zero: bill.warnIfZero, is_loan: bill.isLoan, total_debt: bill.totalDebt }));
+      await safeDb(supabase.from('bills').insert({ id: validBill.id, household_id: householdId, name: validBill.name, account_id: validBill.accountId, split_type: validBill.splitType, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_loan: validBill.isLoan, total_debt: validBill.totalDebt }));
     }
   },
 
@@ -237,18 +252,32 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updateBill: async (bill) => {
+    const parseRes = safeParseBill(bill);
+    if (!parseRes.success) {
+      toast.error(parseRes.error.issues[0].message);
+      return;
+    }
+    const validBill = parseRes.data as BillDefinition;
+
     const { householdId, state } = get();
-    set({ state: { ...state, bills: state.bills.map(b => b.id === bill.id ? bill : b) } });
+    set({ state: { ...state, bills: state.bills.map(b => b.id === validBill.id ? validBill : b) } });
     if (householdId) {
-      await safeDb(supabase.from('bills').update({ name: bill.name, account_id: bill.accountId, split_type: bill.splitType, default_amount: bill.defaultAmount, interval: bill.interval, custom_months: bill.customMonths || [], warn_if_zero: bill.warnIfZero, is_loan: bill.isLoan, total_debt: bill.totalDebt }).eq('id', bill.id).eq('household_id', householdId));
+      await safeDb(supabase.from('bills').update({ name: validBill.name, account_id: validBill.accountId, split_type: validBill.splitType, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_loan: validBill.isLoan, total_debt: validBill.totalDebt }).eq('id', validBill.id).eq('household_id', householdId));
     }
   },
 
   addAccount: async (account) => {
+    const parseRes = safeParseAccount(account);
+    if (!parseRes.success) {
+      toast.error(parseRes.error.issues[0].message);
+      return;
+    }
+    const validAcc = parseRes.data as Account;
+
     const { householdId, state } = get();
-    set({ state: { ...state, accounts: [...state.accounts, account] } });
+    set({ state: { ...state, accounts: [...state.accounts, validAcc] } });
     if (householdId) {
-      await safeDb(supabase.from('accounts').insert({ id: account.id, household_id: householdId, name: account.name, type: account.type, transfer_method: account.transferMethod }));
+      await safeDb(supabase.from('accounts').insert({ id: validAcc.id, household_id: householdId, name: validAcc.name, type: validAcc.type, transfer_method: validAcc.transferMethod }));
     }
   },
 
@@ -261,10 +290,17 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updateAccount: async (account) => {
+    const parseRes = safeParseAccount(account);
+    if (!parseRes.success) {
+      toast.error(parseRes.error.issues[0].message);
+      return;
+    }
+    const validAcc = parseRes.data as Account;
+
     const { householdId, state } = get();
-    set({ state: { ...state, accounts: state.accounts.map(a => a.id === account.id ? account : a) } });
+    set({ state: { ...state, accounts: state.accounts.map(a => a.id === validAcc.id ? validAcc : a) } });
     if (householdId) {
-      await safeDb(supabase.from('accounts').update({ name: account.name, type: account.type, transfer_method: account.transferMethod }).eq('id', account.id).eq('household_id', householdId));
+      await safeDb(supabase.from('accounts').update({ name: validAcc.name, type: validAcc.type, transfer_method: validAcc.transferMethod }).eq('id', validAcc.id).eq('household_id', householdId));
     }
   },
 
@@ -380,20 +416,34 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updatePrivateBillAmount: async (monthId, billId, amount) => {
+    const parseRes = safeParseAmount(amount);
+    if (!parseRes.success) {
+      toast.error(parseRes.error.issues[0].message);
+      return;
+    }
+    const validatedAmount = parseRes.data;
+
     const { householdId, userId, state } = get();
     const pMonths = state.privateMonths || {};
     const mData = pMonths[monthId] || { monthId, billAmounts: {} };
-    set({ state: { ...state, privateMonths: { ...pMonths, [monthId]: { ...mData, billAmounts: { ...mData.billAmounts, [billId]: amount } } } } });
+    set({ state: { ...state, privateMonths: { ...pMonths, [monthId]: { ...mData, billAmounts: { ...mData.billAmounts, [billId]: validatedAmount } } } } });
     if (householdId && userId) {
-      await safeDb(supabase.from('private_month_amounts').upsert({ household_id: householdId, user_id: userId, month_id: monthId, bill_id: billId, amount }, { onConflict: 'household_id,user_id,month_id,bill_id' }));
+      await safeDb(supabase.from('private_month_amounts').upsert({ household_id: householdId, user_id: userId, month_id: monthId, bill_id: billId, amount: validatedAmount }, { onConflict: 'household_id,user_id,month_id,bill_id' }));
     }
   },
 
   addPrivateBill: async (bill) => {
+    const parseRes = safeParsePrivateBill(bill);
+    if (!parseRes.success) {
+      toast.error(parseRes.error.issues[0].message);
+      return;
+    }
+    const validBill = parseRes.data as PrivateBill;
+
     const { householdId, userId, state } = get();
-    set({ state: { ...state, privateBills: [...(state.privateBills||[]), bill] } });
+    set({ state: { ...state, privateBills: [...(state.privateBills||[]), validBill] } });
     if (householdId && userId) {
-      await safeDb(supabase.from('private_bills').insert({ id: bill.id, household_id: householdId, user_id: userId, name: bill.name, default_amount: bill.defaultAmount, interval: bill.interval, custom_months: bill.customMonths || [], warn_if_zero: bill.warnIfZero, is_shared: bill.isShared, is_loan: bill.isLoan, total_debt: bill.totalDebt }));
+      await safeDb(supabase.from('private_bills').insert({ id: validBill.id, household_id: householdId, user_id: userId, name: validBill.name, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_shared: validBill.isShared, is_loan: validBill.isLoan, total_debt: validBill.totalDebt }));
     }
   },
 
@@ -406,10 +456,17 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updatePrivateBill: async (bill) => {
+    const parseRes = safeParsePrivateBill(bill);
+    if (!parseRes.success) {
+      toast.error(parseRes.error.issues[0].message);
+      return;
+    }
+    const validBill = parseRes.data as PrivateBill;
+
     const { householdId, userId, state } = get();
-    set({ state: { ...state, privateBills: (state.privateBills||[]).map(b => b.id === bill.id ? bill : b) } });
+    set({ state: { ...state, privateBills: (state.privateBills||[]).map(b => b.id === validBill.id ? validBill : b) } });
     if (householdId && userId) {
-      await safeDb(supabase.from('private_bills').update({ name: bill.name, default_amount: bill.defaultAmount, interval: bill.interval, custom_months: bill.customMonths || [], warn_if_zero: bill.warnIfZero, is_shared: bill.isShared, is_loan: bill.isLoan, total_debt: bill.totalDebt }).eq('id', bill.id).eq('household_id', householdId).eq('user_id', userId));
+      await safeDb(supabase.from('private_bills').update({ name: validBill.name, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_shared: validBill.isShared, is_loan: validBill.isLoan, total_debt: validBill.totalDebt }).eq('id', validBill.id).eq('household_id', householdId).eq('user_id', userId));
     }
   },
 
