@@ -32,7 +32,7 @@ export default function ManageBills() {
   const [newBillWarn, setNewBillWarn] = useState(false);
   const [newBillIsLoan, setNewBillIsLoan] = useState(false);
   const [newBillTotalDebt, setNewBillTotalDebt] = useState('');
-  const [newBillAutoTransfer, setNewBillAutoTransfer] = useState(false);
+  const [newBillAutoTransfer, setNewBillAutoTransfer] = useState<string>('');
 
   // New Account State
   const [newAccName, setNewAccName] = useState('');
@@ -74,7 +74,7 @@ export default function ManageBills() {
         warnIfZero: newBillWarn,
         isLoan: newBillIsLoan,
         totalDebt: newBillTotalDebt === '' ? undefined : parseFloat(newBillTotalDebt),
-        isAutoTransfer: newBillAutoTransfer
+        isAutoTransfer: newBillAutoTransfer || undefined
       };
       if (editingBillId) {
         onUpdateBill(billData);
@@ -92,7 +92,7 @@ export default function ManageBills() {
       setNewBillWarn(false);
       setNewBillIsLoan(false);
       setNewBillTotalDebt('');
-      setNewBillAutoTransfer(false);
+      setNewBillAutoTransfer('');
       setNewBillInterval('all');
       setNewBillCustomMonths([]);
     }
@@ -113,7 +113,7 @@ export default function ManageBills() {
     setNewBillWarn(bill.warnIfZero || false);
     setNewBillIsLoan(bill.isLoan || false);
     setNewBillTotalDebt(bill.totalDebt !== undefined ? bill.totalDebt.toString() : '');
-    setNewBillAutoTransfer(bill.isAutoTransfer || false);
+    setNewBillAutoTransfer(bill.isAutoTransfer || '');
     
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   };
@@ -140,7 +140,7 @@ export default function ManageBills() {
     setNewBillWarn(false);
     setNewBillIsLoan(false);
     setNewBillTotalDebt('');
-    setNewBillAutoTransfer(false);
+    setNewBillAutoTransfer('');
     setNewBillInterval('all');
     setNewBillCustomMonths([]);
   };
@@ -569,15 +569,26 @@ export default function ManageBills() {
             </label>
 
             {newBillScope === 'shared' && (
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)', marginTop: '0.5rem' }}>
-                <input 
-                  type="checkbox" 
-                  checked={newBillAutoTransfer} 
-                  onChange={e => setNewBillAutoTransfer(e.target.checked)} 
-                  style={{ width: 'auto' }}
-                />
-                ↩️ Automatisk överföring (pengarna förs över till huskontot automatiskt – räknas bort ur vad du ska föra över manuellt)
-              </label>
+              <div style={{ marginTop: '0.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.4rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>↩️ Automatisk överföring till huskontot</label>
+                <select 
+                  value={newBillAutoTransfer} 
+                  onChange={e => setNewBillAutoTransfer(e.target.value)}
+                >
+                  <option value="">Manuell – Förs över manuellt av alla</option>
+                  <option value="all">Automatisk – Förs automatiskt av ALLA (räknas bort för alla)</option>
+                  {state.accounts.filter(a => a.type === 'person').map(acc => (
+                    <option key={acc.id} value={acc.id}>
+                      Automatisk – Bara {acc.name} förs automatiskt (räknas bort enbart för {acc.name})
+                    </option>
+                  ))}
+                </select>
+                <div style={{ marginTop: '0.3rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  {newBillAutoTransfer === '' && 'Alla måste föra över sin andel manuellt varje månad.'}
+                  {newBillAutoTransfer === 'all' && '✅ Ingen behöver föra över – allt sköts automatiskt.'}
+                  {newBillAutoTransfer !== '' && newBillAutoTransfer !== 'all' && `✅ Bara ${state.accounts.find(a => a.id === newBillAutoTransfer)?.name || '?'} slipper föra över sin andel – de andra måste fortfarande göra det manuellt.`}
+                </div>
+              </div>
             )}
 
             {newBillIsLoan && (

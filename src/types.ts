@@ -19,7 +19,7 @@ export interface BillDefinition {
   isLoan?: boolean;
   totalDebt?: number;
   isArchived?: boolean;
-  isAutoTransfer?: boolean; // Överföringen till huskontot sker automatiskt – räknas bort från vad man ska föra över manuellt
+  isAutoTransfer?: string; // 'all' = hela räkningen, eller ett personkonto-ID = bara den personen förs automatiskt. Undefined/'' = manuell.
   startMonth?: string; // YYYY-MM
 }
 
