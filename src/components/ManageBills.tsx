@@ -46,7 +46,7 @@ export default function ManageBills() {
     if (newBillScope === 'private') {
       if (!user) return;
       const billData: PrivateBill = {
-        id: editingBillId || ('priv_' + Date.now()),
+        id: editingBillId || crypto.randomUUID(),
         name: newBillName,
         defaultAmount: newBillDefault === '' ? 0 : parseFloat(newBillDefault),
         interval: newBillInterval,
@@ -64,7 +64,7 @@ export default function ManageBills() {
       }
     } else {
       const billData: BillDefinition = {
-        id: editingBillId || (newBillName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now()),
+        id: editingBillId || crypto.randomUUID(),
         name: newBillName,
         accountId: newBillAccount,
         splitType: newBillSplit,
@@ -148,7 +148,7 @@ export default function ManageBills() {
   const handleAddAccount = () => {
     if (!newAccName.trim()) return;
     onAddAccount({
-      id: newAccName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now(),
+      id: crypto.randomUUID(),
       name: newAccName,
       type: newAccType,
       transferMethod: newAccTransferMethod
