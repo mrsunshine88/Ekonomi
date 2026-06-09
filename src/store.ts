@@ -397,11 +397,16 @@ export const useStore = create<StoreState>((set, get) => ({
 
   copyFromPreviousMonth: async (monthId) => {
     const { householdId, state } = get();
-    const allMonths = Object.keys(state.months).sort();
-    const currentIndex = allMonths.indexOf(monthId);
-    if (currentIndex <= 0) return;
     
-    const prevMonthId = allMonths[currentIndex - 1];
+    const [yStr, mStr] = monthId.split('-');
+    let y = parseInt(yStr, 10);
+    let m = parseInt(mStr, 10);
+    m -= 1;
+    if (m === 0) {
+      m = 12;
+      y -= 1;
+    }
+    const prevMonthId = `${y}-${m.toString().padStart(2, '0')}`;
     const prevMonth = state.months[prevMonthId];
     if (!prevMonth) return;
 
@@ -590,11 +595,16 @@ export const useStore = create<StoreState>((set, get) => ({
 
   copyPrivateFromPreviousMonth: async (monthId) => {
     const { householdId, userId, state } = get();
-    const allMonths = Object.keys(state.privateMonths || {}).sort();
-    const currentIndex = allMonths.indexOf(monthId);
-    if (currentIndex <= 0) return;
     
-    const prevMonthId = allMonths[currentIndex - 1];
+    const [yStr, mStr] = monthId.split('-');
+    let y = parseInt(yStr, 10);
+    let m = parseInt(mStr, 10);
+    m -= 1;
+    if (m === 0) {
+      m = 12;
+      y -= 1;
+    }
+    const prevMonthId = `${y}-${m.toString().padStart(2, '0')}`;
     const prevMonth = (state.privateMonths || {})[prevMonthId];
     if (!prevMonth) return;
 
