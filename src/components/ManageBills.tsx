@@ -34,6 +34,9 @@ export default function ManageBills() {
   const [newBillTotalDebt, setNewBillTotalDebt] = useState('');
   const [newBillAutoTransfer, setNewBillAutoTransfer] = useState<string>('');
 
+  // Raderingsbekräftelse
+  const [billToDelete, setBillToDelete] = useState<{ id: string, type: 'shared' | 'private' } | null>(null);
+
   // New Account State
   const [newAccName, setNewAccName] = useState('');
   const [newAccType, setNewAccType] = useState<'shared' | 'person'>('person');
@@ -130,6 +133,17 @@ export default function ManageBills() {
     setNewBillTotalDebt(bill.totalDebt !== undefined ? bill.totalDebt.toString() : '');
     
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!billToDelete) return;
+    if (billToDelete.type === 'shared') {
+      onRemoveBill(billToDelete.id);
+    } else {
+      onRemovePrivateBill(billToDelete.id);
+    }
+    setBillToDelete(null);
+    toast.success('✅ Räkning borttagen!');
   };
 
   const handleCancelEdit = () => {
@@ -406,7 +420,7 @@ export default function ManageBills() {
                           Ändra
                         </button>
                         <button 
-                          onClick={() => onRemoveBill(bill.id)}
+                          onClick={() => setBillToDelete({ id: bill.id, type: 'shared' })}
                           style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
                         >
                           Ta bort
@@ -450,7 +464,7 @@ export default function ManageBills() {
                           Ändra
                         </button>
                         <button 
-                          onClick={() => onRemovePrivateBill(bill.id)}
+                          onClick={() => setBillToDelete({ id: bill.id, type: 'private' })}
                           style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
                         >
                           Ta bort
@@ -646,6 +660,35 @@ export default function ManageBills() {
           </div>
         </div>
       )}
+
+      {/* Raderingsmodal */}
+      {billToDelete && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div className="card" style={{ maxWidth: '400px', width: '100%', border: '1px solid #f43f5e', background: '#111' }}>
+            <h3 style={{ color: '#f43f5e', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>⚠️</span> Är du säker?
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              När du raderar denna räkning kommer den att döljas för alla framtida månader, men historiken sparas så att gamla grafer och sammanställningar fortfarande stämmer.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              <button 
+                onClick={() => setBillToDelete(null)}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Avbryt
+              </button>
+              <button 
+                onClick={handleConfirmDelete}
+                style={{ flex: 1, background: '#f43f5e', color: '#fff', border: 'none', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Ja, radera den
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
