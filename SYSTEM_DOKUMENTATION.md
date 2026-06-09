@@ -61,42 +61,46 @@ Från att ha varit en helt lokal app är den nu en **fullskalig molntjänst** up
 
 ---
 
-## 8. Säkerhetslås (Kontolås)
+## 8. Flexibilitet & "Allmänna Inställningar"
+Appen är byggd för att vara helt dynamisk och oberoende av vilka personer som använder den.
+- **Valbar Sammanställning:** I `⚙️ Inställningar -> Allmänt` kan man kryssa ur "Visa sammanställning". Då fungerar appen som en renodlad utgiftskoll, utan att räkna ut Swish-krav eller överföringar.
+- **Dynamiska konton:** Man kan radera gemensamma konton helt och bara ha personliga (vilket ger renodlade Swish-uträkningar) eller bara ha gemensamma. All matematik i `calculateMonth()` anpassar sig i realtid.
+
+---
+
+## 9. Säkerhetslås (Kontolås)
 Eftersom matten bygger på gemensamma överföringar fryser appen datan när man betalat.
 - När man klickar "✅ Markera som överfört", låses relaterade konton med en `🔒`-ikon.
 - Det går inte att råka ändra siffrorna i efterhand om man inte manuellt går in i `⚙️ Inställningar -> 🔒 Lås upp` och låser upp den specifika månaden.
 
 ---
 
-## 9. AI-driven Felskrivningskontroll
+## 10. AI-driven Felskrivningskontroll
 För att skydda mot "Fat fingers" (skriva in fel siffra):
 - Systemet tittar på historiken. Om en ny siffra är 50% lägre än det historiska minimumet, eller 50% högre än det historiska maximumet (på räkningar äldre än 3 månader), triggas ett larm.
 - Rutan blir röd och man måste antingen trycka `↩️ Ångra` eller bekräfta att avvikelsen är korrekt (`✅ OK`).
 
 ---
 
-## 7. Uträkningsmotorn (Splitwise-algoritmen)
-Appens hjärna ligger i `src/store.ts` (`calculateMonth`).
-1. **Liabilities:** Delar upp räkningens kostnad på de som är kopplade till den.
-2. **Krediter:** Den som "lägger ut" pengar från sitt personliga konto får pluspoäng.
-3. **Gemensamma Skulder:** Skulder till gemensamma konton sorteras in i olika högar ("Överför till Huskonto", "Överför till Matkonto" etc).
-4. **Netto-balans & Swish:** Personernas personliga plus och minus slås ihop, och motorn skapar den mest effektiva Swish-uträkningen mellan parterna.
-
----
-
-## 8. Analys och Backup
+## 11. Analys och Backup
 - **EkonomiTB:** Tidslinjer och grafer ritade med `recharts` över hur kostnaderna förändrats. Innehåller detaljerade tabeller över månad-till-månad-förändringar.
 - **Excel-Export:** Möjlighet att exportera hela sitt liv till en .xlsx fil, med flikar för räkningar (pivot-vy) och överföringar.
 
 ---
 
-## 9. Struktur och Filer
+## 12. "Lämna hushåll" & Självläkande profiler (Upsert)
+- På `Mina sidor` finns knappen **"🚪 Lämna och skapa eget hushåll"**. Denna kör funktionen `handleCreateHousehold()` på nytt, vilket bryter bandet till det gamla Hushålls-ID:t och genererar ett helt nytt, privat UUID för användaren. Resultatet blir en helt ny, blank Ekonomi-app.
+- Vid registrering, skapande av nytt hushåll, eller när man går med via Inbjudningskod, används en Supabase `upsert` (Update/Insert) på användarens `profile`. Detta garanterar att profilen och Hushålls-ID:t sparas korrekt även om triggers/RLS i databasen tidigare fallerat.
+
+---
+
+## 13. Struktur och Filer
 - `src/supabase.ts` & `src/AuthContext.tsx`: Sköter kommunikationen med databasen, registrering, inloggning och sessioner.
-- `src/types.ts`: All datastruktur.
-- `src/store.ts`: Hjärnan. Sköter den komplicerade matematiken (`calculateMonth`), lagring och molnsynkroniseringen (`useStore`).
-- `src/App.tsx`: Huvudfilen som styr navigering (Botten-menyn).
-- `src/components/MyPages.tsx`: Hantering av Hushåll, utloggning och inbjudningskoder.
+- `src/types.ts`: All datastruktur (inkl. `settings` för UI).
+- `src/store.ts`: Hjärnan. Sköter den komplicerade matematiken (`calculateMonth`), lagring, molnsynkroniseringen (`useStore`) och innehåller den helt "blanka" startmallen för nya hushåll.
+- `src/App.tsx`: Huvudfilen som styr navigering.
+- `src/components/MyPages.tsx`: Hantering av Hushåll, utloggning, inbjudningskoder och "Lämna hushåll".
 - `src/components/MonthView.tsx`: Huvudvyn där siffrorna knappas in.
-- `src/components/Summary.tsx`: Rutan i botten med Swish och överföringar.
-- `src/components/ManageBills.tsx`: Inställningspanelen.
-- `src/index.css`: Hela appens design, media queries (Mobile First) och mörka glassmorphism-tema.
+- `src/components/Summary.tsx`: Rutan i botten/toppen med Swish och överföringar.
+- `src/components/ManageBills.tsx`: Inställningspanelen (inkl. Allmänt-fliken).
+- `src/index.css`: Hela appens design, media queries (Mobile First) och mörka glassmorphism-tema med solida mobilmenyer.
