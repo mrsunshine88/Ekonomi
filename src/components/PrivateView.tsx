@@ -16,9 +16,9 @@ export default function PrivateView({ state, currentMonth, onChangeAmount, onUpd
 
   if (!user) return <div style={{ color: '#fff', textAlign: 'center', marginTop: '2rem' }}>Logga in för att se dina privata utgifter.</div>;
 
-  const myBills = (state.privateBills || []).filter(b => b.userId === user.id);
-  const sharedBills = (state.privateBills || []).filter(b => b.userId !== user.id && b.isShared);
   const monthData = state.privateMonths?.[currentMonth] || { monthId: currentMonth, billAmounts: {}, handledPayments: {} };
+  const myBills = (state.privateBills || []).filter(b => b.userId === user.id && (!b.isArchived || monthData.billAmounts[b.id] !== undefined));
+  const sharedBills = (state.privateBills || []).filter(b => b.userId !== user.id && b.isShared && (!b.isArchived || monthData.billAmounts[b.id] !== undefined));
   const isLocked = monthData.isLocked || false;
 
   // Sort all months for history tracking

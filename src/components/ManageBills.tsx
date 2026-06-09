@@ -353,7 +353,7 @@ export default function ManageBills({
         <div>
           <h3 className="card-title">Gemensamma Räkningar (Månadsvyn)</h3>
           <div className="bill-list" style={{ marginBottom: '2rem' }}>
-            {state.bills.map(bill => {
+            {state.bills.filter(b => !b.isArchived).map(bill => {
               const account = state.accounts.find(a => a.id === bill.accountId);
               let splitText = 'Delas lika';
               if (bill.splitType !== 'equal') {
@@ -397,11 +397,11 @@ export default function ManageBills({
             })}
           </div>
 
-          {(state.privateBills || []).filter(b => b.userId === user?.id).length > 0 && (
+          {(state.privateBills || []).filter(b => b.userId === user?.id && !b.isArchived).length > 0 && (
             <>
-              <h3 className="card-title">Mina Privata Räkningar (Privata vyn)</h3>
+              <h3 className="card-title">Privata Räkningar</h3>
               <div className="bill-list" style={{ marginBottom: '2rem' }}>
-                {(state.privateBills || []).filter(b => b.userId === user?.id).map(bill => {
+                {(state.privateBills || []).filter(b => b.userId === user?.id && !b.isArchived).map(bill => {
                   let intervalText = 'Varje månad';
                   if (bill.interval === 'odd') intervalText = 'Udda månader';
                   if (bill.interval === 'even') intervalText = 'Jämna månader';

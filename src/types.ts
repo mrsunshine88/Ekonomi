@@ -18,6 +18,7 @@ export interface BillDefinition {
   warnIfZero: boolean;
   isLoan?: boolean;
   totalDebt?: number;
+  isArchived?: boolean;
 }
 
 export interface MonthData {
@@ -38,6 +39,7 @@ export interface PrivateBill {
   isShared?: boolean;
   isLoan?: boolean;
   totalDebt?: number;
+  isArchived?: boolean;
 }
 
 export interface PrivateMonthData {

@@ -75,13 +75,15 @@ export function useStore(householdId: string | null) {
         bills: bills ? bills.map(b => ({
           id: b.id, name: b.name, accountId: b.account_id, splitType: b.split_type,
           defaultAmount: Number(b.default_amount), interval: b.interval, customMonths: b.custom_months,
-          warnIfZero: b.warn_if_zero, isLoan: b.is_loan, totalDebt: b.total_debt ? Number(b.total_debt) : undefined
+          warnIfZero: b.warn_if_zero, isLoan: b.is_loan, totalDebt: b.total_debt ? Number(b.total_debt) : undefined,
+          isArchived: b.is_archived
         })) : [],
         months: {},
         privateBills: privateBills ? privateBills.map(b => ({
           id: b.id, userId: b.user_id, name: b.name, defaultAmount: Number(b.default_amount),
           interval: b.interval, customMonths: b.custom_months, warnIfZero: b.warn_if_zero,
-          isShared: b.is_shared, isLoan: b.is_loan, totalDebt: b.total_debt ? Number(b.total_debt) : undefined
+          isShared: b.is_shared, isLoan: b.is_loan, totalDebt: b.total_debt ? Number(b.total_debt) : undefined,
+          isArchived: b.is_archived
         })) : [],
         privateMonths: {},
         settings: settings ? { showSummary: settings.show_summary } : { showSummary: true }
@@ -184,9 +186,9 @@ export function useStore(householdId: string | null) {
   };
 
   const removeBill = async (billId: string) => {
-    setState(prev => ({ ...prev, bills: prev.bills.filter(b => b.id !== billId) }));
+    setState(prev => ({ ...prev, bills: prev.bills.map(b => b.id === billId ? { ...b, isArchived: true } : b) }));
     if (householdId) {
-      await supabase.from('bills').delete().eq('id', billId).eq('household_id', householdId);
+      await supabase.from('bills').update({ is_archived: true }).eq('id', billId).eq('household_id', householdId);
     }
   };
 
@@ -247,7 +249,7 @@ export function useStore(householdId: string | null) {
 
     const newAmounts: Record<string, number> = {};
     state.bills.forEach(bill => {
-       if (!lockedAccounts.has(bill.accountId)) {
+       if (!bill.isArchived && !lockedAccounts.has(bill.accountId)) {
          newAmounts[bill.id] = prevMonth.billAmounts[bill.id] !== undefined ? prevMonth.billAmounts[bill.id] : bill.defaultAmount;
        }
     });
@@ -354,9 +356,9 @@ export function useStore(householdId: string | null) {
   };
 
   const removePrivateBill = async (billId: string) => {
-    setState(prev => ({ ...prev, privateBills: (prev.privateBills||[]).filter(b => b.id !== billId) }));
+    setState(prev => ({ ...prev, privateBills: (prev.privateBills||[]).map(b => b.id === billId ? { ...b, isArchived: true } : b) }));
     if (householdId && user) {
-      await supabase.from('private_bills').delete().eq('id', billId).eq('household_id', householdId).eq('user_id', user.id);
+      await supabase.from('private_bills').update({ is_archived: true }).eq('id', billId).eq('household_id', householdId).eq('user_id', user.id);
     }
   };
 
@@ -381,7 +383,9 @@ export function useStore(householdId: string | null) {
     const newAmounts: Record<string, number> = {};
 
     (state.privateBills || []).forEach(bill => {
-      newAmounts[bill.id] = prevMonth.billAmounts[bill.id] !== undefined ? prevMonth.billAmounts[bill.id] : bill.defaultAmount;
+      if (!bill.isArchived) {
+        newAmounts[bill.id] = prevMonth.billAmounts[bill.id] !== undefined ? prevMonth.billAmounts[bill.id] : bill.defaultAmount;
+      }
     });
 
     setState(prev => {

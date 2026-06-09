@@ -32,7 +32,7 @@ export default function MonthView({ state, currentMonth, onChangeAmount, onConfi
 
 
   const renderCategory = (account: Account) => {
-    const categoryBills = state.bills.filter(b => b.accountId === account.id);
+    const categoryBills = state.bills.filter(b => b.accountId === account.id && (!b.isArchived || monthData.billAmounts[b.id] !== undefined));
     if (categoryBills.length === 0) return null;
 
     return (
