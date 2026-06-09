@@ -1,5 +1,4 @@
-import React from 'react';
-import type { BillDefinition, MonthData, Account, AppState } from '../types';
+import type { Account, AppState } from '../types';
 
 interface Props {
   state: AppState;
@@ -31,8 +30,7 @@ export default function MonthView({ state, currentMonth, onChangeAmount, onConfi
   // Sort all months including the current one, so we can always find the previous month
   const allMonths = Array.from(new Set([...Object.keys(state.months), currentMonth])).sort();
   const currentIndex = allMonths.indexOf(currentMonth);
-  let prevMonthId = currentIndex > 0 ? allMonths[currentIndex - 1] : null;
-  const prevMonthData = prevMonthId ? state.months[prevMonthId] : null;
+  const currentIndex = allMonths.indexOf(currentMonth);
 
   const renderCategory = (account: Account) => {
     const categoryBills = state.bills.filter(b => b.accountId === account.id);
@@ -88,7 +86,7 @@ export default function MonthView({ state, currentMonth, onChangeAmount, onConfi
                const p = state.accounts.find(a => a.id === bill.splitType);
                if (p) splitText = `${p.name} betalar 100%`;
             }
-            const intervalText = bill.interval === 'every' ? 'Varje månad' : (bill.interval === 'odd' ? 'Udda månader' : 'Jämna månader');
+
 
             return (
               <div key={bill.id} className="bill-row" style={{ alignItems: isAnomaly ? 'flex-start' : 'center' }}>

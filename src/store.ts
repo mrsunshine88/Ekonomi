@@ -369,7 +369,6 @@ export function calculateMonth(state: AppState, monthId: string): CalculationRes
     });
   });
 
-  let totalSharedCosts = 0;
 
   state.bills.forEach(bill => {
     const amount = amounts[bill.id] !== undefined ? amounts[bill.id] : bill.defaultAmount;

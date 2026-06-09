@@ -6,7 +6,7 @@ export const exportToExcel = (state: AppState) => {
   const sortedMonths = Object.keys(state.months).sort();
   
   // -- BLAD 1: RÄKNINGAR --
-  const headerRow = ["Räkning", "Konto", ...sortedMonths];
+  const headerRow: (string | number)[] = ["Räkning", "Konto", ...sortedMonths];
   const billRows = state.bills.map(bill => {
     const account = state.accounts.find(a => a.id === bill.accountId)?.name || 'Okänt konto';
     const row: any[] = [bill.name, account];
@@ -20,7 +20,7 @@ export const exportToExcel = (state: AppState) => {
   });
 
   // Calculate totals per month
-  const totalRow = ["TOTALT", "Alla konton"];
+  const totalRow: (string | number)[] = ["TOTALT", "Alla konton"];
   sortedMonths.forEach(monthId => {
     const monthData = state.months[monthId];
     let total = 0;

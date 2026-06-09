@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore, calculateMonth } from './store';
 import { useAuth } from './AuthContext';
 import MonthView from './components/MonthView';

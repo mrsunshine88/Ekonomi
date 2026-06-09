@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { AppState, BillDefinition, Account, PaymentInterval } from '../types';
 
 interface Props {
@@ -8,11 +8,10 @@ interface Props {
   onUpdateBill: (bill: BillDefinition) => void;
   onAddAccount: (account: Account) => void;
   onRemoveAccount: (accountId: string) => void;
-  onUpdateAccount: (account: Account) => void;
   onUnlockAccount: (monthId: string, accountId: string) => void;
 }
 
-export default function ManageBills({ state, onAddBill, onRemoveBill, onUpdateBill, onAddAccount, onRemoveAccount, onUpdateAccount, onUnlockAccount }: Props) {
+export default function ManageBills({ state, onAddBill, onRemoveBill, onUpdateBill, onAddAccount, onRemoveAccount, onUnlockAccount }: Props) {
   const [activeTab, setActiveTab] = useState<'bills' | 'accounts' | 'locks'>('bills');
   
   // New/Edit Bill State

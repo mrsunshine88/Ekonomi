@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchHousehold = async (userId: string) => {
     try {
-      const { data, error } = await supabase.from('profiles').select('household_id').eq('id', userId).single();
+      const { data } = await supabase.from('profiles').select('household_id').eq('id', userId).single();
       if (data?.household_id) {
         setHouseholdId(data.household_id);
       } else {

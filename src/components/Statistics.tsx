@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+
 import type { AppState } from '../types';
 import { calculateMonth } from '../store';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
