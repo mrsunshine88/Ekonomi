@@ -71,16 +71,16 @@ Appen är byggd för att vara helt dynamisk och oberoende av vilka personer som 
 ## 9. Privat Ekonomi (Helt separerad från Swish-logik)
 
 **Hur, Vad och Varför:**
-- **Vad:** En helt ny flik (`🔒 Privat`) där varje användare kan knappa in sina egna, privata utgifter som inte rör hushållet.
-- **Hur:** Datastrukturen `state_json` har utökats med `privateBills` och `privateMonths`. När en privat utgift skapas får den egenskapen `userId: user.id`. Komponent-vyn `PrivateView.tsx` filtrerar sedan fram de räkningar som tillhör den inloggade användaren. Användaren kan också välja att dela en utgift (`isShared: true`); då dyker den upp som en "read-only"-rad hos andra användare i hushållet, under rubriken "Delade utgifter".
-- **Varför:** Hushållsmedlemmar vill ha en komplett bild av *all* sin ekonomi på ett ställe. Genom att separera de privata utgifterna i en egen vy och en egen del av databasen garanteras det att privata kostnader *aldrig* räknas in i den gemensamma Swish-uppgörelsen eller påverkar hushållets netto-balans. 
+- **Vad:** En helt ny flik (`🔒 Privat`) där varje användare hanterar sina egna, privata utgifter som inte rör hushållet.
+- **Hur:** Datastrukturen `state_json` har utökats med `privateBills` och `privateMonths`. För att hålla appen enhetlig skapas privata räkningar på precis samma ställe som gemensamma (`⚙️ Inställningar -> Räkningar`). Där väljer man om räkningen är "Gemensam" eller "Privat". Privata räkningar "stämplas" med din inloggning (`userId`) och får samma superkrafter (valbara intervaller, felskrivningslarm m.m.) som gemensamma. I den privata vyn kan man även stänga och låsa sin egen månad med en grön "Klar"-knapp (som sen blir till en blå "Lås upp"-knapp).
+- **Varför:** Genom att skapa alla räkningar på samma ställe blir appen renare och kodbasen återanvänds effektivt. Hushållsmedlemmar får en komplett bild av *all* sin ekonomi, med 100% garanti för att privata kostnader *aldrig* räknas in i den gemensamma Swish-uppgörelsen.
 
 ---
 
 ## 10. Säkerhetslås (Kontolås)
 Eftersom matten bygger på gemensamma överföringar fryser appen datan när man betalat.
 - När man klickar "✅ Markera som överfört", låses relaterade konton med en `🔒`-ikon.
-- Det går inte att råka ändra siffrorna i efterhand om man inte manuellt går in i `⚙️ Inställningar -> 🔒 Lås upp` och låser upp den specifika månaden.
+- Det går inte att råka ändra siffrorna i efterhand om man inte manuellt går in i `⚙️ Inställningar -> 🔒 Lås upp` och låser upp den specifika månaden. (I den Privata vyn finns en motsvarande "Klar"-knapp som låser hela din privata månad på samma sätt, och upplåsningen sker direkt i vyn).
 
 ---
 
@@ -88,12 +88,13 @@ Eftersom matten bygger på gemensamma överföringar fryser appen datan när man
 För att skydda mot "Fat fingers" (skriva in fel siffra):
 - Systemet tittar på historiken. Om en ny siffra är 50% lägre än det historiska minimumet, eller 50% högre än det historiska maximumet (på räkningar äldre än 3 månader), triggas ett larm.
 - Rutan blir röd och man måste antingen trycka `↩️ Ångra` eller bekräfta att avvikelsen är korrekt (`✅ OK`).
+- Larmet fungerar identiskt i både den Gemensamma och den Privata vyn.
 
 ---
 
 ## 12. Analys och Backup
-- **EkonomiTB:** Tidslinjer och grafer ritade med `recharts` över hur kostnaderna förändrats. Innehåller detaljerade tabeller över månad-till-månad-förändringar.
-- **Excel-Export:** Möjlighet att exportera hela sitt liv till en .xlsx fil, med flikar för räkningar (pivot-vy) och överföringar.
+- **EkonomiTB:** Tidslinjer och grafer ritade med `recharts` över hur kostnaderna förändrats. EkonomiTB har två vyer: "Gemensam Statistik" och "Privat Statistik". Den privata statistiken filtrerar bort alla inblandade och ger en total inblick i dina egna kostnader (med grafer och "Största förändringarna").
+- **Excel-Export:** Möjlighet att exportera hela sitt liv till en .xlsx fil. Excel-filen innehåller tre flikar: Gemensamma Räkningar, Swish & Överföringar, och Mina Privata Räkningar.
 
 ---
 

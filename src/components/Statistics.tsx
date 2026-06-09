@@ -1,6 +1,7 @@
-
+import { useState } from 'react';
 import type { AppState } from '../types';
 import { calculateMonth } from '../store';
+import { useAuth } from '../AuthContext';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { exportToExcel } from '../excel';
 
@@ -17,24 +18,41 @@ const formatMonthName = (monthId: string) => {
 };
 
 export default function Statistics({ state }: Props) {
-  const sortedMonths = Object.keys(state.months).sort();
+  const { user } = useAuth();
+  const [viewMode, setViewMode] = useState<'shared' | 'private'>('shared');
+
+  const isPrivate = viewMode === 'private';
+  const activeMonthsObj = isPrivate ? (state.privateMonths || {}) : state.months;
+  const sortedMonths = Object.keys(activeMonthsObj).sort();
+  const activeBills = isPrivate 
+    ? (state.privateBills || []).filter(b => b.userId === user?.id) 
+    : state.bills;
 
   // 1. Time Series Data (for Bar & Line charts)
   const timeData = sortedMonths.map(monthId => {
-    const m = state.months[monthId];
+    const m = activeMonthsObj[monthId];
     const amounts = m.billAmounts || {};
     
     const accountTotals: Record<string, number> = {};
-    state.accounts.forEach(acc => accountTotals[acc.name] = 0);
+    if (!isPrivate) {
+      state.accounts.forEach(acc => accountTotals[acc.name] = 0);
+    } else {
+      accountTotals['Privat'] = 0;
+    }
     
     let total = 0;
     const billMap: any = {};
     
-    state.bills.forEach(b => {
+    activeBills.forEach(b => {
       const amt = amounts[b.id] !== undefined ? amounts[b.id] : b.defaultAmount;
-      const acc = state.accounts.find(a => a.id === b.accountId);
-      if (acc) {
-        accountTotals[acc.name] += amt;
+      if (!isPrivate) {
+        // @ts-ignore - accountId exists on shared bills
+        const acc = state.accounts.find(a => a.id === b.accountId);
+        if (acc) {
+          accountTotals[acc.name] += amt;
+        }
+      } else {
+        accountTotals['Privat'] += amt;
       }
       total += amt;
       billMap[b.name] = amt;
@@ -54,11 +72,11 @@ export default function Statistics({ state }: Props) {
   });
 
   // 2. Find most volatile bills for Line Chart (ignore months where it's 0)
-  const volatileBills = state.bills.map(b => {
+  const volatileBills = activeBills.map(b => {
     let min = Infinity;
     let max = -Infinity;
     sortedMonths.forEach(mId => {
-      const amounts = state.months[mId].billAmounts || {};
+      const amounts = activeMonthsObj[mId].billAmounts || {};
       const amt = amounts[b.id] !== undefined ? amounts[b.id] : b.defaultAmount;
       if (amt > 0) { // Only calculate volatility when the bill is actually paid
         if (amt < min) min = amt;
@@ -72,10 +90,10 @@ export default function Statistics({ state }: Props) {
   // 3. Calculate Movers (Real price changes between the last two times the bill was paid)
   let moversData: any[] = [];
   
-  const diffs = state.bills.map(b => {
+  const diffs = activeBills.map(b => {
     // Find all amounts for this bill over time
     const paidHistory = sortedMonths.map(mId => {
-      const amounts = state.months[mId].billAmounts || {};
+      const amounts = activeMonthsObj[mId].billAmounts || {};
       return amounts[b.id] !== undefined ? amounts[b.id] : b.defaultAmount;
     }).filter(amt => amt > 0); // Only keep months where it was actually paid
     
@@ -97,44 +115,59 @@ export default function Statistics({ state }: Props) {
   moversData = [...topIncreases, ...topDecreases];
 
   // 4. Calculate Average Pie Chart (Total Distribution)
-  const pieData = state.accounts.map(acc => {
-    let sum = 0;
-    if (timeData.length > 0) {
-      sum = timeData.reduce((accTotal, d) => accTotal + ((d as any)[acc.name] || 0), 0) / timeData.length;
-    }
-    return { name: acc.name, value: sum };
-  }).filter(p => p.value > 0);
+  let pieData: {name: string, value: number}[] = [];
+  if (!isPrivate) {
+    pieData = state.accounts.map(acc => {
+      let sum = 0;
+      if (timeData.length > 0) {
+        sum = timeData.reduce((accTotal, d) => accTotal + ((d as any)[acc.name] || 0), 0) / timeData.length;
+      }
+      return { name: acc.name, value: sum };
+    }).filter(p => p.value > 0);
+  } else {
+    // For private, let's just make a pie of the top 5 bills by average cost
+    pieData = activeBills.map(b => {
+      let sum = 0;
+      if (timeData.length > 0) {
+        sum = timeData.reduce((accTotal, d) => accTotal + ((d as any)[b.name] || 0), 0) / timeData.length;
+      }
+      return { name: b.name, value: sum };
+    }).sort((a, b) => b.value - a.value).slice(0, 5).filter(p => p.value > 0);
+  }
 
-  // 5. History Tables Data
-  const history = sortedMonths.map((monthId, idx) => {
-    const result = calculateMonth(state, monthId);
-    
-    let totalShared = 0;
-    Object.values(result.transfersToShared).forEach(targetAcc => {
-      Object.values(targetAcc).forEach(amt => totalShared += amt);
-    });
-    
-    // compare to previous month's total shared
-    let prevTotalShared = 0;
-    if (idx > 0) {
-      const prevResult = calculateMonth(state, sortedMonths[idx - 1]);
-      Object.values(prevResult.transfersToShared).forEach(targetAcc => {
-        Object.values(targetAcc).forEach(amt => prevTotalShared += amt);
+  // 5. History Tables Data (Only for shared)
+  let history: any[] = [];
+  if (!isPrivate) {
+    history = sortedMonths.map((monthId, idx) => {
+      const result = calculateMonth(state, monthId);
+      
+      let totalShared = 0;
+      Object.values(result.transfersToShared).forEach(targetAcc => {
+        Object.values(targetAcc).forEach(amt => totalShared += amt);
       });
-    }
-    const sharedDiff = idx > 0 ? totalShared - prevTotalShared : 0;
+      
+      // compare to previous month's total shared
+      let prevTotalShared = 0;
+      if (idx > 0) {
+        const prevResult = calculateMonth(state, sortedMonths[idx - 1]);
+        Object.values(prevResult.transfersToShared).forEach(targetAcc => {
+          Object.values(targetAcc).forEach(amt => prevTotalShared += amt);
+        });
+      }
+      const sharedDiff = idx > 0 ? totalShared - prevTotalShared : 0;
 
-    return {
-      monthId,
-      result,
-      totalShared,
-      sharedDiff
-    };
-  }).reverse(); // Newest first
+      return {
+        monthId,
+        result,
+        totalShared,
+        sharedDiff
+      };
+    }).reverse(); // Newest first
+  }
 
-  const detailedBills = state.bills.map(b => {
+  const detailedBills = activeBills.map(b => {
     const paidHistory = sortedMonths.map(mId => {
-      const amounts = state.months[mId].billAmounts || {};
+      const amounts = activeMonthsObj[mId].billAmounts || {};
       return amounts[b.id] !== undefined ? amounts[b.id] : b.defaultAmount;
     }).filter(amt => amt > 0);
 
@@ -172,170 +205,208 @@ export default function Statistics({ state }: Props) {
 
   return (
     <div style={{ padding: '0 1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <h2 style={{ margin: 0 }}>EkonomiTB - Historisk Data</h2>
         <button 
-          onClick={() => exportToExcel(state)}
+          onClick={() => exportToExcel(state, user?.id)}
           style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.6rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)' }}
         >
           💾 Ladda ner Excel
         </button>
       </div>
 
-      <div className="card">
-        <h3 className="card-title">Huskonto & Swish - Månad för Månad</h3>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>En tydlig tabell över hur stora överföringarna varit historiskt, och exakt vem som swishade vem.</p>
-        
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
-            <thead>
-              <tr>
-                <th style={tableHeaderStyle}>Månad</th>
-                <th style={tableHeaderStyle}>Summa till Huskonto</th>
-                <th style={tableHeaderStyle}>Förändring</th>
-                <th style={tableHeaderStyle}>Swishar</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.map((h) => (
-                <tr key={h.monthId} style={{ transition: 'background 0.2s' }} className="table-row-hover">
-                  <td style={{ ...tableCellStyle, fontWeight: 'bold' }}>{formatMonthName(h.monthId)}</td>
-                  <td style={tableCellStyle}>{h.totalShared.toLocaleString('sv-SE')} kr</td>
-                  <td style={{ ...tableCellStyle, color: h.sharedDiff > 0 ? '#f43f5e' : h.sharedDiff < 0 ? '#10b981' : 'var(--text-secondary)', fontWeight: 'bold' }}>
-                    {h.sharedDiff > 0 ? '+' : ''}{h.sharedDiff !== 0 ? `${h.sharedDiff.toLocaleString('sv-SE')} kr` : '-'}
-                  </td>
-                  <td style={tableCellStyle}>
-                    {h.result.swishes.length > 0 ? h.result.swishes.map((s, j) => {
-                      const fromPerson = state.accounts.find(a => a.id === s.fromId);
-                      const toPerson = state.accounts.find(a => a.id === s.toId);
-                      return (
-                        <div key={j} style={{ textTransform: 'capitalize' }}>
-                           {fromPerson?.name.replace(/ kontot?|konto/gi, '').trim()} swishade {toPerson?.name.replace(/ kontot?|konto/gi, '').trim()}: <strong style={{ color: 'var(--accent-color)' }}>{s.amount.toLocaleString('sv-SE')} kr</strong>
-                        </div>
-                      );
-                    }) : <span style={{ color: 'var(--text-secondary)' }}>Inga swishar</span>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+        <button 
+          onClick={() => setViewMode('shared')}
+          style={{ flex: 1, padding: '0.75rem', background: viewMode === 'shared' ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)', color: viewMode === 'shared' ? '#fff' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: viewMode === 'shared' ? 'bold' : 'normal' }}
+        >
+          Gemensam Statistik
+        </button>
+        <button 
+          onClick={() => setViewMode('private')}
+          style={{ flex: 1, padding: '0.75rem', background: viewMode === 'private' ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)', color: viewMode === 'private' ? '#fff' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: viewMode === 'private' ? 'bold' : 'normal' }}
+        >
+          🔒 Privat Statistik
+        </button>
       </div>
 
-      <div className="card">
-        <h3 className="card-title">Alla Räkningar - Ökar eller Sjunker?</h3>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Jämförelse mellan räkningens två senaste faktiska belopp. Sorterad på de som ökat mest.</p>
-        
-        <div style={{ overflowX: 'auto', maxHeight: '500px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
-            <thead style={{ position: 'sticky', top: 0, background: 'var(--card-bg)', zIndex: 1 }}>
-              <tr>
-                <th style={tableHeaderStyle}>Räkning</th>
-                <th style={tableHeaderStyle}>Senaste belopp</th>
-                <th style={tableHeaderStyle}>Föregående belopp</th>
-                <th style={tableHeaderStyle}>Prisskillnad</th>
-              </tr>
-            </thead>
-            <tbody>
-              {detailedBills.map((b, i) => (
-                <tr key={i} style={{ transition: 'background 0.2s' }} className="table-row-hover">
-                  <td style={{ ...tableCellStyle, fontWeight: 'bold' }}>{b.name}</td>
-                  <td style={tableCellStyle}>{b.latest.toLocaleString('sv-SE')} kr</td>
-                  <td style={{ ...tableCellStyle, color: 'var(--text-secondary)' }}>{b.previous > 0 ? `${b.previous.toLocaleString('sv-SE')} kr` : '-'}</td>
-                  <td style={{ 
-                    ...tableCellStyle, 
-                    fontWeight: 'bold',
-                    color: b.diff > 0 ? '#f43f5e' : b.diff < 0 ? '#10b981' : 'var(--text-secondary)' 
-                  }}>
-                    <span style={{ 
-                      background: b.diff > 0 ? 'rgba(244, 63, 94, 0.15)' : b.diff < 0 ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
-                      padding: b.diff !== 0 ? '0.2rem 0.6rem' : '0',
-                      borderRadius: '4px'
-                    }}>
-                      {b.diff > 0 ? '+' : ''}{b.diff !== 0 ? `${b.diff.toLocaleString('sv-SE')} kr` : 'Oförändrad'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Månadens Vinnare & Förlorare (Grafer) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-        {moversData.length > 0 && (
-          <div className="card">
-            <h3 className="card-title">Snabb-överblick: Största skillnaderna</h3>
-            <div style={{ width: '100%', height: 250 }}>
-              <ResponsiveContainer>
-                <BarChart data={moversData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
-                  <XAxis type="number" stroke="var(--text-secondary)" tickFormatter={(val) => `${val > 0 ? '+' : ''}${val} kr`} />
-                  <YAxis dataKey="name" type="category" stroke="var(--text-secondary)" width={120} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                  <Bar dataKey="Skillnad" radius={[0, 4, 4, 0]}>
-                    {moversData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.Skillnad > 0 ? '#f43f5e' : '#10b981'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {/* Genomsnittlig Fördelning */}
+      {!isPrivate && history.length > 0 && (
         <div className="card">
-          <h3 className="card-title">Snittfördelning över året</h3>
-          <div style={{ width: '100%', height: 250 }}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={90}
-                  paddingAngle={5}
-                  dataKey="value"
-                  label={({ percent }) => percent !== undefined ? `${(percent * 100).toFixed(0)}%` : ''}
-                  labelLine={false}
-                >
-                  <Cell fill="#10b981" />
-                  <Cell fill="#3b82f6" />
-                  <Cell fill="#a855f7" />
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      {/* Rörliga Räkningar Trend */}
-      {volatileBills.length > 0 && (
-        <div className="card">
-          <h3 className="card-title">De Mest Rörliga Räkningarna (Trend)</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Följ prisutvecklingen för de utgifter som varierar mest (t.ex. elen).</p>
-          <div style={{ width: '100%', height: 350 }}>
-            <ResponsiveContainer>
-              <LineChart data={timeData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="name" stroke="var(--text-secondary)" />
-                <YAxis stroke="var(--text-secondary)" tickFormatter={(value) => `${value.toLocaleString('sv-SE')}`} width={80} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                {volatileBills.map((bill, index) => (
-                  <Line key={bill.name} type="monotone" dataKey={bill.name} stroke={COLORS[index % COLORS.length]} strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 8 }} />
+          <h3 className="card-title">Huskonto & Swish - Månad för Månad</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>En tydlig tabell över hur stora överföringarna varit historiskt, och exakt vem som swishade vem.</p>
+          
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
+              <thead>
+                <tr>
+                  <th style={tableHeaderStyle}>Månad</th>
+                  <th style={tableHeaderStyle}>Summa till Huskonto</th>
+                  <th style={tableHeaderStyle}>Förändring</th>
+                  <th style={tableHeaderStyle}>Swishar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((h) => (
+                  <tr key={h.monthId}>
+                    <td style={{ ...tableCellStyle, fontWeight: 'bold' }}>{formatMonthName(h.monthId)}</td>
+                    <td style={tableCellStyle}>{Math.round(h.totalShared).toLocaleString('sv-SE')} kr</td>
+                    <td style={{ ...tableCellStyle, color: h.sharedDiff > 0 ? '#f43f5e' : (h.sharedDiff < 0 ? '#10b981' : 'inherit') }}>
+                      {h.sharedDiff > 0 ? '+' : ''}{Math.round(h.sharedDiff).toLocaleString('sv-SE')} kr
+                    </td>
+                    <td style={tableCellStyle}>
+                      {h.result.swishes.map((s: any, i: number) => {
+                        const fromName = state.accounts.find(a => a.id === s.fromId)?.name || s.fromId;
+                        const toName = state.accounts.find(a => a.id === s.toId)?.name || s.toId;
+                        return (
+                          <div key={i} style={{ fontSize: '0.85rem' }}>
+                            <span style={{ color: '#3b82f6' }}>{fromName}</span> swishade <span style={{ color: '#10b981' }}>{toName}</span>: {Math.round(s.amount).toLocaleString('sv-SE')} kr
+                          </div>
+                        );
+                      })}
+                      {h.result.swishes.length === 0 && <span style={{ color: 'var(--text-secondary)' }}>Inga</span>}
+                    </td>
+                  </tr>
                 ))}
-              </LineChart>
-            </ResponsiveContainer>
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
+      {timeData.length > 0 && (
+        <>
+          <div className="card" style={{ marginBottom: '2rem' }}>
+            <h3 className="card-title">Kostnadsutveckling över tid</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Hur dina totala utgifter har utvecklats månad för månad.</p>
+            <div style={{ height: 300, width: '100%', marginTop: '1rem' }}>
+              <ResponsiveContainer>
+                <BarChart data={timeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                  <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                  <Legend iconType="circle" wrapperStyle={{ paddingTop: '1rem' }} />
+                  {!isPrivate ? (
+                    state.accounts.map((acc, index) => (
+                      <Bar key={acc.id} dataKey={acc.name} stackId="a" fill={COLORS[index % COLORS.length]} radius={index === state.accounts.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+                    ))
+                  ) : (
+                    <Bar dataKey="Privat" stackId="a" fill={COLORS[0]} radius={[4, 4, 0, 0]} />
+                  )}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+            <div className="card">
+              <h3 className="card-title">Mest instabila kostnaderna</h3>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>De 5 räkningarna som pendlar mest i pris (baserat på differensen mellan billigast och dyrast historiskt).</p>
+              {volatileBills.length > 0 ? (
+                <div style={{ height: 250, width: '100%', marginLeft: '-15px' }}>
+                  <ResponsiveContainer>
+                    <LineChart data={timeData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                      <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke="var(--text-secondary)" fontSize={10} tickLine={false} axisLine={false} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend iconType="plainline" iconSize={14} wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                      {volatileBills.map((b, index) => (
+                        <Line key={b.name} type="monotone" dataKey={b.name} stroke={COLORS[index % COLORS.length]} strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Finns inte tillräckligt med historik ännu.</div>
+              )}
+            </div>
+
+            <div className="card">
+              <h3 className="card-title">Genomsnittlig fördelning</h3>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Snittet per månad historiskt.</p>
+              {pieData.length > 0 ? (
+                <div style={{ height: 250, width: '100%' }}>
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                        {pieData.map((_entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0.2)" strokeWidth={2} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: any) => `${Math.round(value || 0).toLocaleString('sv-SE')} kr / mån`} contentStyle={{ background: 'rgba(0,0,0,0.85)', border: '1px solid var(--border-color)', borderRadius: '8px' }} />
+                      <Legend iconType="circle" />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Finns inte tillräckligt med historik ännu.</div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {moversData.length > 0 && (
+        <div className="card" style={{ marginBottom: '2rem' }}>
+          <h3 className="card-title">Största förändringarna (Movers)</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Jämförelse mellan de <strong>två senaste gångerna</strong> en specifik räkning betalades. Listar de som blivit dyrast och de som blivit billigast.</p>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
+            <div>
+              <h4 style={{ color: '#f43f5e', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📈 Största ökningarna</h4>
+              {topIncreases.length > 0 ? topIncreases.map((m, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(244, 63, 94, 0.05)', borderRadius: '8px', marginBottom: '0.5rem', border: '1px solid rgba(244, 63, 94, 0.1)' }}>
+                  <span style={{ fontWeight: 'bold' }}>{m.name}</span>
+                  <span style={{ color: '#f43f5e', fontWeight: 'bold' }}>+{Math.round(m.Skillnad).toLocaleString('sv-SE')} kr</span>
+                </div>
+              )) : <div style={{ color: 'var(--text-secondary)' }}>Inga ökningar registrerade.</div>}
+            </div>
+            
+            <div>
+              <h4 style={{ color: '#10b981', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📉 Största minskningarna</h4>
+              {topDecreases.length > 0 ? topDecreases.map((m, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '8px', marginBottom: '0.5rem', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
+                  <span style={{ fontWeight: 'bold' }}>{m.name}</span>
+                  <span style={{ color: '#10b981', fontWeight: 'bold' }}>{Math.round(m.Skillnad).toLocaleString('sv-SE')} kr</span>
+                </div>
+              )) : <div style={{ color: 'var(--text-secondary)' }}>Inga minskningar registrerade.</div>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {detailedBills.length > 0 && (
+        <div className="card">
+          <h3 className="card-title">Detaljerad Historik - Alla {isPrivate ? 'Privata ' : ''}Räkningar</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Sökbar tabell över alla räkningar och hur mycket de kostade senaste gången vs gången innan det.</p>
+          
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
+              <thead>
+                <tr>
+                  <th style={tableHeaderStyle}>Räkning</th>
+                  <th style={tableHeaderStyle}>Senast Betald</th>
+                  <th style={tableHeaderStyle}>Gången Innan</th>
+                  <th style={tableHeaderStyle}>Differens</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detailedBills.map((b, i) => (
+                  <tr key={i}>
+                    <td style={{ ...tableCellStyle, fontWeight: 'bold' }}>{b.name}</td>
+                    <td style={tableCellStyle}>{b.latest > 0 ? `${Math.round(b.latest).toLocaleString('sv-SE')} kr` : '-'}</td>
+                    <td style={tableCellStyle}>{b.previous > 0 ? `${Math.round(b.previous).toLocaleString('sv-SE')} kr` : '-'}</td>
+                    <td style={{ ...tableCellStyle, color: b.diff > 0 ? '#f43f5e' : (b.diff < 0 ? '#10b981' : 'inherit') }}>
+                      {b.diff > 0 ? '+' : ''}{Math.round(b.diff).toLocaleString('sv-SE')} kr
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

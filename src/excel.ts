@@ -2,7 +2,7 @@ import * as XLSX from 'xlsx';
 import type { AppState } from './types';
 import { calculateMonth } from './store';
 
-export const exportToExcel = (state: AppState) => {
+export const exportToExcel = (state: AppState, userId?: string) => {
   const sortedMonths = Object.keys(state.months).sort();
   
   // -- BLAD 1: RÄKNINGAR --
@@ -77,8 +77,44 @@ export const exportToExcel = (state: AppState) => {
 
   // Build workbook
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws1, "Räkningar (Per Månad)");
+  XLSX.utils.book_append_sheet(wb, ws1, "Gemensamma Räkningar");
   XLSX.utils.book_append_sheet(wb, ws2, "Överföringar & Swish");
+
+  // -- BLAD 3: PRIVATA RÄKNINGAR --
+  if (userId) {
+    const privateMonths = Object.keys(state.privateMonths || {}).sort();
+    if (privateMonths.length > 0) {
+      const myPrivateBills = (state.privateBills || []).filter(b => b.userId === userId);
+      const privHeaderRow: (string | number)[] = ["Privat Räkning", ...privateMonths];
+      const privBillRows = myPrivateBills.map(bill => {
+        const row: any[] = [bill.name];
+        privateMonths.forEach(monthId => {
+          const mData = state.privateMonths![monthId];
+          const amount = mData.billAmounts[bill.id] !== undefined ? mData.billAmounts[bill.id] : bill.defaultAmount;
+          row.push(amount);
+        });
+        return row;
+      });
+
+      const privTotalRow: (string | number)[] = ["TOTALT"];
+      privateMonths.forEach(monthId => {
+        const mData = state.privateMonths![monthId];
+        let total = 0;
+        myPrivateBills.forEach(bill => {
+          const amount = mData.billAmounts[bill.id] !== undefined ? mData.billAmounts[bill.id] : bill.defaultAmount;
+          total += amount;
+        });
+        privTotalRow.push(total);
+      });
+
+      const ws3 = XLSX.utils.aoa_to_sheet([privHeaderRow, ...privBillRows, [], privTotalRow]);
+      ws3['!cols'] = [
+        { wch: 20 },
+        ...privateMonths.map(() => ({ wch: 10 }))
+      ];
+      XLSX.utils.book_append_sheet(wb, ws3, "Mina Privata Räkningar");
+    }
+  }
 
   // Download
   XLSX.writeFile(wb, "EkonomiTB_Sammanstallning.xlsx");
