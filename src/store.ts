@@ -85,6 +85,7 @@ export function useStore(householdId: string | null) {
         });
         
         return {
+          ...parsed,
           accounts: migratedAccounts,
           bills: migratedBills,
           months: mergedMonths
