@@ -13,11 +13,23 @@ export async function runRelationalMigration(householdId: string, userId: string
     if (fetchErr || !household || !household.state_json) return;
 
     const state = household.state_json as AppState;
+    const idMap = new Map<string, string>();
+
+    const getUuid = (oldId: string): string => {
+      if (!oldId) return crypto.randomUUID();
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(oldId)) {
+        return oldId;
+      }
+      if (!idMap.has(oldId)) {
+        idMap.set(oldId, crypto.randomUUID());
+      }
+      return idMap.get(oldId)!;
+    };
 
     // 2. Mappa och infoga Konton
     if (state.accounts && state.accounts.length > 0) {
       const accountsToInsert = state.accounts.map(a => ({
-        id: a.id,
+        id: getUuid(a.id),
         household_id: householdId,
         name: a.name,
         type: a.type,
@@ -30,10 +42,10 @@ export async function runRelationalMigration(householdId: string, userId: string
     // 3. Mappa och infoga Gemensamma Räkningar
     if (state.bills && state.bills.length > 0) {
       const billsToInsert = state.bills.map(b => ({
-        id: b.id,
+        id: getUuid(b.id),
         household_id: householdId,
         name: b.name,
-        account_id: b.accountId,
+        account_id: getUuid(b.accountId),
         split_type: b.splitType,
         default_amount: b.defaultAmount || 0,
         interval: b.interval || 'all',
@@ -53,7 +65,7 @@ export async function runRelationalMigration(householdId: string, userId: string
           const amounts = Object.entries(mData.billAmounts).map(([billId, amt]) => ({
             household_id: householdId,
             month_id: monthId,
-            bill_id: billId,
+            bill_id: getUuid(billId),
             amount: amt
           }));
           if (amounts.length > 0) {
@@ -65,7 +77,7 @@ export async function runRelationalMigration(householdId: string, userId: string
           const payments = Object.entries(mData.handledPayments).map(([paymentId, handled]) => ({
             household_id: householdId,
             month_id: monthId,
-            payment_id: paymentId,
+            payment_id: getUuid(paymentId),
             is_handled: handled
           }));
           if (payments.length > 0) {
@@ -77,11 +89,12 @@ export async function runRelationalMigration(householdId: string, userId: string
           const anoms = Object.entries(mData.confirmedAnomalies).map(([billId, conf]) => ({
             household_id: householdId,
             month_id: monthId,
-            bill_id: billId,
+            bill_id: getUuid(billId),
             is_confirmed: conf
           }));
           if (anoms.length > 0) {
-            await supabase.from('month_confirmed_anomalies').upsert(anoms, { onConflict: 'household_id,month_id,bill_id' });
+            const { error } = await supabase.from('month_confirmed_anomalies').upsert(anoms, { onConflict: 'household_id,month_id,bill_id' });
+            if (error) console.error("month_confirmed_anomalies error:", error);
           }
         }
       }
@@ -90,7 +103,7 @@ export async function runRelationalMigration(householdId: string, userId: string
     // 5. Privata Räkningar
     if (state.privateBills && state.privateBills.length > 0) {
       const pBills = state.privateBills.map(b => ({
-        id: b.id,
+        id: getUuid(b.id),
         household_id: householdId,
         user_id: b.userId,
         name: b.name,
@@ -102,7 +115,8 @@ export async function runRelationalMigration(householdId: string, userId: string
         is_loan: b.isLoan || false,
         total_debt: b.totalDebt || null
       }));
-      await supabase.from('private_bills').upsert(pBills, { onConflict: 'id' });
+      const { error } = await supabase.from('private_bills').upsert(pBills, { onConflict: 'id' });
+      if (error) console.error("Private bills error:", error);
     }
 
     // 6. Privat Månadsdata
@@ -113,11 +127,12 @@ export async function runRelationalMigration(householdId: string, userId: string
             household_id: householdId,
             user_id: userId,
             month_id: monthId,
-            bill_id: billId,
+            bill_id: getUuid(billId),
             amount: amt
           }));
           if (amounts.length > 0) {
-            await supabase.from('private_month_amounts').upsert(amounts, { onConflict: 'household_id,user_id,month_id,bill_id' });
+            const { error } = await supabase.from('private_month_amounts').upsert(amounts, { onConflict: 'household_id,user_id,month_id,bill_id' });
+            if (error) console.error("private_month_amounts error:", error);
           }
         }
         if (mData.isLocked) {
@@ -133,11 +148,12 @@ export async function runRelationalMigration(householdId: string, userId: string
             household_id: householdId,
             user_id: userId,
             month_id: monthId,
-            bill_id: billId,
+            bill_id: getUuid(billId),
             is_confirmed: conf
           }));
           if (anoms.length > 0) {
-            await supabase.from('private_month_anomalies').upsert(anoms, { onConflict: 'household_id,user_id,month_id,bill_id' });
+            const { error } = await supabase.from('private_month_anomalies').upsert(anoms, { onConflict: 'household_id,user_id,month_id,bill_id' });
+            if (error) console.error("private_month_anomalies error:", error);
           }
         }
       }
