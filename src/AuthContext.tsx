@@ -49,6 +49,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    // Failsafe: Tvinga bort "Laddar..."-skärmen efter 4 sekunder oavsett vad som händer
+    const failsafeTimer = setTimeout(() => {
+      if (mounted) {
+        setLoading(false);
+      }
+    }, 4000);
+
     const initAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -67,6 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } finally {
         if (mounted) {
           setLoading(false);
+          clearTimeout(failsafeTimer);
         }
       }
     };
@@ -81,6 +89,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (newSession?.user) {
           if (event === 'SIGNED_IN') {
             setLoading(true);
+            // Sätt en failsafe även här ifall fetchHousehold hänger sig
+            setTimeout(() => { if (mounted) setLoading(false); }, 4000);
           }
           await fetchHousehold(newSession.user.id);
         } else {
@@ -97,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
+      clearTimeout(failsafeTimer);
       subscription.unsubscribe();
     };
   }, []);
