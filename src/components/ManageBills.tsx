@@ -221,19 +221,42 @@ export default function ManageBills() {
       {activeTab === 'general' && (
         <div>
           <h3 className="card-title">Allmänna inställningar</h3>
-          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', fontSize: '1rem', color: 'var(--text-primary)' }}>
+          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', fontSize: '1rem', color: 'var(--text-primary)' }}>
+                <input 
+                  type="checkbox" 
+                  checked={state.settings?.showSummary !== false} 
+                  onChange={(e) => onUpdateSettings({ showSummary: e.target.checked })}
+                  style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
+                />
+                Visa sammanställning (Swish & Överföringar) högst upp i månadsvyn
+              </label>
+              <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', marginLeft: '2.5rem', fontSize: '0.9rem' }}>
+                Om du stänger av detta döljs rutorna som räknar ut vem som ska betala vad. Appen fungerar då mer som en klassisk utgiftskoll utan Swish-funktion.
+              </p>
+            </div>
+
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                🔔 Gemensamt datum för påminnelse (1-31)
+              </label>
               <input 
-                type="checkbox" 
-                checked={state.settings?.showSummary !== false} 
-                onChange={(e) => onUpdateSettings({ showSummary: e.target.checked })}
-                style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
+                type="number" 
+                min="1" 
+                max="31" 
+                placeholder="T.ex. 27"
+                value={state.settings?.reminderDay || ''} 
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  onUpdateSettings({ reminderDay: isNaN(val) ? undefined : val });
+                }}
+                style={{ width: '150px', marginBottom: 0 }}
               />
-              Visa sammanställning (Swish & Överföringar) högst upp i månadsvyn
-            </label>
-            <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', marginLeft: '2.5rem', fontSize: '0.9rem' }}>
-              Om du stänger av detta döljs rutorna som räknar ut vem som ska betala vad. Appen fungerar då mer som en klassisk utgiftskoll utan Swish-funktion.
-            </p>
+              <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                Vilket datum varje månad ska hushållet få en push-notis om ni har obetalda räkningar? (Varje person måste även aktivera notiser för sin enhet under "Mina sidor").
+              </p>
+            </div>
           </div>
         </div>
       )}

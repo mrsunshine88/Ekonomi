@@ -68,6 +68,7 @@ export interface AppState {
   householdProfiles?: Profile[];
   settings?: {
     showSummary?: boolean;
+    reminderDay?: number;
   };
 }
 

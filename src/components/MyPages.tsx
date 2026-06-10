@@ -12,6 +12,18 @@ export default function MyPages() {
   const [members, setMembers] = useState<{id: string, email: string, role: string, created_at?: string}[]>([]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
+  const [isPushEnabled, setIsPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.pushManager.getSubscription().then(sub => {
+          if (sub) setIsPushEnabled(true);
+        });
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (householdId) {
@@ -187,6 +199,75 @@ export default function MyPages() {
     }
   };
 
+  const handleTogglePush = async () => {
+    setPushLoading(true);
+    setMsg('');
+    try {
+      if (isPushEnabled) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await sub.unsubscribe();
+          await supabase.from('push_subscriptions').delete().eq('user_id', user?.id).contains('subscription', { endpoint: sub.endpoint });
+        }
+        setIsPushEnabled(false);
+        setMsg('✅ Push-notiser avaktiverade.');
+      } else {
+        const result = await Notification.requestPermission();
+        if (result === 'granted') {
+          const reg = await navigator.serviceWorker.ready;
+          const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+          if (!vapidKey) throw new Error("VAPID-nyckel saknas i .env filen (VITE_VAPID_PUBLIC_KEY).");
+          
+          const urlBase64ToUint8Array = (base64String: string) => {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+              outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+          };
+
+          const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidKey)
+          });
+          
+          await supabase.from('push_subscriptions').insert([{
+            user_id: user?.id,
+            subscription: JSON.parse(JSON.stringify(sub))
+          }]);
+          
+          setIsPushEnabled(true);
+          setMsg('✅ Push-notiser är nu aktiverade på denna enhet!');
+        } else {
+          setMsg('❌ Du nekade tillåtelse för notiser i webbläsaren.');
+        }
+      }
+    } catch (e: any) {
+      setMsg('❌ Fel: ' + e.message);
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
+  const handleTestPush = async () => {
+    if (!('serviceWorker' in navigator)) return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification('Testnotis från Ekonomiappen 💸', {
+        body: 'Det fungerar! Denna enhet kan nu ta emot påminnelser.',
+        icon: '/icon-192x192.png',
+        badge: '/icon-192x192.png'
+      });
+      setMsg('✅ Skickade en testnotis!');
+    } catch (e: any) {
+      setMsg('❌ Fel vid test av notis: ' + e.message);
+    }
+  };
+
   return (
     <div className="card" style={{ maxWidth: '600px', margin: '0 auto', marginTop: '2rem' }}>
       <h2 style={{ marginBottom: '1.5rem' }}>Mina Sidor</h2>
@@ -201,7 +282,7 @@ export default function MyPages() {
         <div style={{ marginBottom: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <h3 style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>🔒 Integritet och Delning</h3>
 
-          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
             <div>
               <div style={{ fontWeight: 'bold' }}>Delning av privat ekonomi</div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -225,6 +306,53 @@ export default function MyPages() {
             >
               {isSharingPrivate ? 'Sluta dela privat ekonomi' : 'Dela min privata ekonomi'}
             </button>
+          </div>
+
+          <h3 style={{ color: 'var(--text-primary)', marginBottom: '1rem', marginTop: '1.5rem' }}>🔔 Påminnelser (Push-notiser)</h3>
+          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <div style={{ fontWeight: 'bold' }}>Få en notis på denna enhet</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                {isPushEnabled 
+                  ? 'Du får notiser till denna enhet när hushållet har obetalda räkningar (Gäller det datum som är valt i Allmänna inställningar).' 
+                  : 'Slå på detta för att telefonen/datorn ska plinga om ni glömt låsa månaden.'}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {isPushEnabled && (
+                <button 
+                  onClick={handleTestPush}
+                  style={{ 
+                    background: 'rgba(255,255,255,0.1)', 
+                    color: '#fff',
+                    border: '1px solid var(--border-color)',
+                    padding: '0.75rem 1rem', 
+                    borderRadius: '8px', 
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  🔔 Testa Notis
+                </button>
+              )}
+              <button 
+                onClick={handleTogglePush}
+                disabled={pushLoading}
+                style={{ 
+                  background: isPushEnabled ? 'transparent' : 'var(--accent-gradient)', 
+                  color: isPushEnabled ? '#f43f5e' : '#fff',
+                  border: isPushEnabled ? '1px solid #f43f5e' : 'none',
+                  padding: '0.75rem 1rem', 
+                  borderRadius: '8px', 
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {pushLoading ? 'Laddar...' : (isPushEnabled ? 'Stäng av notiser' : 'Aktivera Push-notiser')}
+              </button>
+            </div>
           </div>
         </div>
       )}

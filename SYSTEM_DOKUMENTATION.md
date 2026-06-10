@@ -1,8 +1,8 @@
 # Ekonomi & Swish - Systemdokumentation
 
-**Version:** 5.7 (Enterprise-uppgradering: UI/UX & PWA-optimering)  
+**Version:** 5.8 (Schemalagda Push-notiser & Påminnelser)  
 **Plattform:** React + TypeScript + Vite (PWA) | Databas: Supabase (PostgreSQL) | Hosting: Vercel  
-**Uppdaterad:** 2026-06-09
+**Uppdaterad:** 2026-06-10
 
 ---
 
@@ -396,7 +396,27 @@ Förvandlingen av appen från ett robust hobby-projekt till en fullfjädrad "Ent
 
 ---
 
-## 19. Versionshistorik
+## 19. Schemalagda Push-notiser & Påminnelser
+
+### Vad:
+Ett system för att skicka ut push-notiser till användarnas telefoner/datorer via webbläsarens Push API. Appen påminner hushållets medlemmar om att betala och markera sina gemensamma räkningar som klara.
+
+### Hur:
+- **Databas & Inställningar:** Tabellen `household_settings` har en kolumn `reminder_day` (1-31) där hela hushållet enas om vilket datum notisen ska skickas ut.
+- **Service Worker (`push-sw.js`):** En PWA Service Worker ligger i bakgrunden och lyssnar på `push`-event för att väcka enheten och visa notisen (titel, ikon och body) även om appen är helt nedstängd.
+- **Prenumerationer (VAPID):** Användaren klickar på "Aktivera Push-notiser" under Mina Sidor. Klienten ber webbläsaren om tillåtelse, skapar en säker VAPID-prenumeration och sparar denna JSON i databastabellen `push_subscriptions` kopplad till `user_id`. (RLS ser till att man bara kan läsa/skriva sina egna notiser). Ett "Testa notis"-verktyg skapades även för direkt verifikation lokalt i Service Workern.
+- **Bakgrundskörning (Vercel Cron):** En Serverless Function i Vercel (`api/cron.js`) körs schemalagt varje dag (t.ex. klockan 10:00) enligt `vercel.json`. Koden:
+  1. Kontrollerar dagens datum och hämtar alla hushåll som har `reminder_day == idag`.
+  2. Kollar om månaden är låst/klar (`month_handled_payments` har `is_handled = true`).
+  3. Om de INTE är klara, hämtas alla prenumerationer för användarna i det hushållet.
+  4. Node-paketet `web-push` skickar ut notisen med hjälp av den privata VAPID-nyckeln (som ligger dold i Vercel Environment Variables). Döda prenumerationer (t.ex. om användaren bytt telefon) fångas via 404/410-statuskoder och städas automatiskt bort från databasen.
+
+### Varför:
+PWA:er har ofta brustit i förmågan att "väcka" användaren likt native-appar. Genom att integrera Web Push, Service Workers och Vercel Cron får appen samma proaktiva egenskaper som vilken Bank-app som helst, vilket säkerställer att ingen i hushållet "glömmer" att hantera sina räkningar i tid.
+
+---
+
+## 20. Versionshistorik
 
 | Version | Datum | Vad som förändrades |
 |---------|-------|---------------------|
@@ -414,3 +434,4 @@ Förvandlingen av appen från ett robust hobby-projekt till en fullfjädrad "Ent
 | **5.5** | **2026-06-09** | **Säkerhet och Låsning: Lade till krav på nuvarande lösenord vid ändring av e-post/lösenord. Ändrade Swish/Överföring-knapparna till att låsas omedelbart (disabled) efter ett klick, utan möjlighet att ångra i samma vy. Införde en funktion för Ägare att kunna befordra medlemmar till Ägare via en säker RPC-funktion (`set_user_role`) i databasen, vilket kringgår RLS. Uppdaterade realtidslyssnaren till att även prenumerera på `profiles` för blixtsnabba behörighetsuppdateringar och delningsknappar.** |
 | **5.6** | **2026-06-09** | **Bugghärdning och Grundarskydd: Införde dynamiskt grundarskydd via `created_at` för att garantera att den första personen i hushållet aldrig kan sparkas ut eller degraderas, ens av andra ägare. Fixade ett extremt tyst fel i `store.ts` där en saknad databaskolumn (`display_name`) fick hela profilinladdningen och realtidsuppdateringen att krascha tyst, vilket förstörde Delning av Privat Ekonomi. Bytte även från RLS `UPDATE` till en "RPC Bypass" (`toggle_share_private_economy`) för att garantera att databasuppdateringar för delning alltid släpps igenom.** |
 | **5.7** | **2026-06-09** | **UI/UX & PWA Optimering: Implementerade en "Custom Install Prompt" (Add-To-Home-Screen) med egen design som fångar Android-eventet och fungerar som fall-back-guide på iOS. Fyllde ut app-ikonernas (PWA) transparenta bakgrunder med en solid gradient för att förhindra grafiska buggar (bakgrundslysläge) i Androids Adaptive Icons och iOS Icon Masks. Ändrade CSS-centreringen på raderingsmodalen från Flexbox till `position: absolute` för att förbigå buggar där vissa mobila webbläsare tryckte ner modalen ur bild. Utvecklade logiken för Arkiverade räkningar (`is_archived` fixat i SQL cache): arkiverade räkningar visas numera ENBART i historiken om de har en faktiskt inmatad siffra > 0 kr. Tomma auto-kopieringar från gamla månader exkluderas.** |
+| **5.8** | **2026-06-10** | **Schemalagda Push-notiser: Utökade `household_settings` med `reminder_day`. Implementerade VAPID-baserad Web Push-registrering i Mina Sidor. Skapade en ny Service Worker (`push-sw.js`) via vite-pwa importScripts för att hantera bakgrundsnotiser. Byggde en Vercel Serverless Function (`api/cron.js`) som agerar som Cron Job (`vercel.json`) för att dagligen utvärdera obetalda hushåll och trigga utskick automatiskt.** |

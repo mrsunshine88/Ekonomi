@@ -10,6 +10,9 @@ export default defineConfig({
       devOptions: {
         enabled: true
       },
+      workbox: {
+        importScripts: ['/push-sw.js']
+      },
       includeAssets: ['favicon.png', 'icon-192x192.png', 'icon-512x512.png'],
       manifest: {
         name: 'Ekonomi & Swish',
