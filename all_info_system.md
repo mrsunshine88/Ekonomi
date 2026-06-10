@@ -19,7 +19,7 @@
 ## 3. Betalvägg & SaaS Infrastruktur
 *   **Faktureringsenhet:** Betalning (59 kr/mån) hanteras per Hushåll, inte per användare.
 *   **Master Switch:** Tabellen `global_settings` styr boolean `paywall_active`. Om aktiverad tvingas obetalande hushåll till `<PaywallModal />`.
-*   **VIP-hantering:** Sökning i Admin-panel sätter `stripe_status = 'vip'` i `households` tabellen via RPC. Undviker betalvägg helt.
+*   **VIP-hantering & Admin-Bypass:** Sökning i Admin-panel sätter `stripe_status = 'vip'` i `households` tabellen via RPC. Admin kan hämta en komplett lista över alla aktiva VIP-kunder (`get_vip_emails` RPC) och dra in VIP-status per användare (`revoke_household_vip_by_email`). Administratörens egen inloggning (`apersson508@gmail.com`) förbigår alltid betalväggen internt för att garantera att de inte låser ute sig själva vid aktivering av Master Switchen.
 *   **Serverless API (Vercel):**
     *   `/api/create-checkout.js`: Skapar en Stripe Checkout Session (hämtar Price ID och Secret från Supabase).
     *   `/api/create-portal.js`: Dirigerar aktiv kund till Stripes kundportal för korthantering.
