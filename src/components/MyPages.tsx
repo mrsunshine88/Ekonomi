@@ -14,6 +14,9 @@ export default function MyPages() {
   const [msg, setMsg] = useState('');
   const [isPushEnabled, setIsPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{ visible: boolean; title: string; message: string; onConfirm: () => void }>({ visible: false, title: '', message: '', onConfirm: () => {} });
+
+  const isMeFounder = members.length > 0 && members[0].id === user?.id;
 
   useEffect(() => {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
@@ -36,21 +39,28 @@ export default function MyPages() {
     }
   }, [householdId]);
 
-  const handleKickMember = async (memberId: string, memberEmail: string) => {
-    if (!window.confirm(`Är du säker på att du vill ta bort ${memberEmail} från hushållet?`)) return;
-    setLoading(true);
-    try {
-      const newHouseholdId = crypto.randomUUID();
-      await supabase.from('households').insert([{ id: newHouseholdId }]);
-      await supabase.from('profiles').update({ household_id: newHouseholdId, role: 'owner' }).eq('id', memberId);
-      
-      setMembers(prev => prev.filter(m => m.id !== memberId));
-      setMsg(`✅ ${memberEmail} har tagits bort från hushållet.`);
-    } catch (e: any) {
-      setMsg('❌ Kunde inte ta bort medlem: ' + e.message);
-    } finally {
-      setLoading(false);
-    }
+  const handleKickMember = (memberId: string, memberEmail: string) => {
+    setConfirmModal({
+      visible: true,
+      title: 'Kicka ut medlem',
+      message: `Är du säker på att du vill ta bort ${memberEmail} från hushållet?`,
+      onConfirm: async () => {
+        setLoading(true);
+        try {
+          const newHouseholdId = crypto.randomUUID();
+          await supabase.from('households').insert([{ id: newHouseholdId }]);
+          await supabase.from('profiles').update({ household_id: newHouseholdId, role: 'owner' }).eq('id', memberId);
+          
+          setMembers(prev => prev.filter(m => m.id !== memberId));
+          setMsg(`✅ ${memberEmail} har tagits bort från hushållet.`);
+        } catch (e: any) {
+          setMsg('❌ Kunde inte ta bort medlem: ' + e.message);
+        } finally {
+          setLoading(false);
+          setConfirmModal({ visible: false, title: '', message: '', onConfirm: () => {} });
+        }
+      }
+    });
   };
   const [inviteCode, setInviteCode] = useState('');
   
@@ -175,18 +185,25 @@ export default function MyPages() {
 
   const handleSignOut = () => supabase.auth.signOut();
 
-  const handleDeleteAccount = async () => {
-    if (!window.confirm("Är du HELT säker? Detta kommer radera ditt inlogg, din profil och alla dina privata räkningar för alltid. Detta går inte att ångra.")) return;
-    setLoading(true);
-    try {
-      const { error } = await supabase.rpc('delete_user');
-      if (error) throw error;
-      
-      await supabase.auth.signOut();
-    } catch (e: any) {
-      setMsg('❌ ' + e.message);
-      setLoading(false);
-    }
+  const handleDeleteAccount = () => {
+    setConfirmModal({
+      visible: true,
+      title: 'Radera konto',
+      message: 'Är du HELT säker? Detta kommer radera ditt inlogg, din profil och alla dina privata räkningar för alltid. Detta går inte att ångra.',
+      onConfirm: async () => {
+        setLoading(true);
+        try {
+          const { error } = await supabase.rpc('delete_user');
+          if (error) throw error;
+          
+          await supabase.auth.signOut();
+        } catch (e: any) {
+          setMsg('❌ ' + e.message);
+          setLoading(false);
+          setConfirmModal({ visible: false, title: '', message: '', onConfirm: () => {} });
+        }
+      }
+    });
   };
 
   const handleToggleShare = async () => {
@@ -269,7 +286,36 @@ export default function MyPages() {
   };
 
   return (
-    <div className="card" style={{ maxWidth: '600px', margin: '0 auto', marginTop: '2rem' }}>
+    <div className="card" style={{ maxWidth: '600px', margin: '0 auto', marginTop: '2rem', position: 'relative' }}>
+      
+      {confirmModal.visible && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(11, 15, 25, 0.95)', backdropFilter: 'blur(8px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '2rem', textAlign: 'center'
+        }}>
+          <div style={{ background: 'rgba(30, 41, 59, 0.9)', border: '1px solid rgba(244, 63, 94, 0.3)', borderRadius: '16px', padding: '2rem', maxWidth: '400px', width: '100%', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+            <h3 style={{ color: '#f43f5e', fontSize: '1.5rem', marginBottom: '1rem' }}>{confirmModal.title}</h3>
+            <p style={{ color: '#f1f5f9', marginBottom: '2rem', fontSize: '1rem', lineHeight: '1.5' }}>{confirmModal.message}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <button 
+                onClick={confirmModal.onConfirm}
+                style={{ background: '#f43f5e', color: 'white', padding: '0.75rem 2.5rem', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', boxShadow: '0 4px 15px rgba(244, 63, 94, 0.4)' }}
+              >
+                Ja, jag är säker
+              </button>
+              <button 
+                onClick={() => setConfirmModal({ visible: false, title: '', message: '', onConfirm: () => {} })}
+                style={{ background: 'transparent', color: 'var(--text-secondary)', padding: '0.75rem', border: '1px solid var(--text-secondary)', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}
+              >
+                Avbryt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <h2 style={{ marginBottom: '1.5rem' }}>Mina Sidor</h2>
       
       <div style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
@@ -487,17 +533,32 @@ export default function MyPages() {
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {householdId && (
-            <button 
-              onClick={() => {
-                if(window.confirm('Är du säker på att du vill lämna hushållet? Du får då en helt tom app för dig själv.')) {
-                  handleCreateHousehold();
-                }
-              }} 
-              disabled={loading} 
-              style={{ padding: '0.75rem 1rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer' }}
-            >
-              🚪 Lämna och skapa eget hushåll
-            </button>
+            isMeFounder ? (
+              <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid var(--accent-color)' }}>
+                <strong style={{ color: '#fff', fontSize: '1.1rem' }}>👑 Ditt hushåll</strong>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: 1.5 }}>
+                  Eftersom du är grundare av detta hushåll så äger du datan. Därför kan du inte lämna hushållet. Om du vill bli ensam i appen igen kan du gå upp till medlemslistan och kicka ut de övriga.
+                </p>
+              </div>
+            ) : (
+              <button 
+                onClick={() => {
+                  setConfirmModal({
+                    visible: true,
+                    title: 'Lämna hushåll',
+                    message: 'Är du säker på att du vill lämna hushållet? Du får då en helt tom app för dig själv.',
+                    onConfirm: () => {
+                      handleCreateHousehold();
+                      setConfirmModal({ visible: false, title: '', message: '', onConfirm: () => {} });
+                    }
+                  });
+                }} 
+                disabled={loading} 
+                style={{ padding: '0.75rem 1rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer' }}
+              >
+                🚪 Lämna och skapa eget hushåll
+              </button>
+            )
           )}
 
           <button 
