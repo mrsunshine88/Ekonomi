@@ -41,6 +41,21 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleRevokeVip = async () => {
+    if (!vipEmail) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.rpc('revoke_household_vip_by_email', { target_email: vipEmail });
+      if (error) throw error;
+      setMsg(`📉 VIP-status borttagen för ${vipEmail}. De kommer nu att fastna i betalväggen!`);
+      setVipEmail('');
+    } catch (e: any) {
+      setMsg('❌ Admin Fel: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSaveSecrets = async () => {
     setLoading(true);
     try {
@@ -89,14 +104,14 @@ export default function AdminDashboard() {
 
       <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
         <h3 style={{ marginBottom: '0.5rem' }}>VIP-Kunder</h3>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Ge ett hushåll gratis tillgång för alltid (går förbi betalväggen).</p>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Ge ett hushåll gratis tillgång för alltid, eller ta bort det.</p>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <input 
             type="email" 
             placeholder="E-postadress..." 
             value={vipEmail} 
             onChange={e => setVipEmail(e.target.value)}
-            style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
+            style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff', minWidth: '200px' }}
           />
           <button 
             onClick={handleGrantVip} 
@@ -104,6 +119,13 @@ export default function AdminDashboard() {
             style={{ padding: '0.75rem 1.5rem', background: 'var(--accent-gradient)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
           >
             Ge VIP
+          </button>
+          <button 
+            onClick={handleRevokeVip} 
+            disabled={loading || !vipEmail} 
+            style={{ padding: '0.75rem 1.5rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            Ta bort VIP
           </button>
         </div>
       </div>
