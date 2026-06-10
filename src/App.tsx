@@ -73,7 +73,8 @@ function App() {
   }
 
   const needsOnboarding = state.accounts.length === 0;
-  const isPaywallBlocked = state.paywallActive && state.stripeStatus !== 'vip' && state.stripeStatus !== 'active';
+  const isAdmin = user?.email?.toLowerCase() === 'apersson508@gmail.com';
+  const isPaywallBlocked = state.paywallActive && state.stripeStatus !== 'vip' && state.stripeStatus !== 'active' && !isAdmin;
 
   return (
     <div className="container">
