@@ -24,6 +24,7 @@ export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const userRef = React.useRef<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [role, setRole] = useState<'owner' | 'member' | null>(null);
@@ -64,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         if (mounted) {
           setSession(session);
+          userRef.current = session?.user ?? null;
           setUser(session?.user ?? null);
           if (session?.user) {
             await fetchHousehold(session.user.id);
@@ -84,12 +86,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (!mounted) return;
       try {
+        const currentUserWasNull = !userRef.current; // Kollar ref för att undvika stale state i useEffect-closure
         setSession(newSession);
+        userRef.current = newSession?.user ?? null;
         setUser(newSession?.user ?? null);
+        
         if (newSession?.user) {
-          if (event === 'SIGNED_IN') {
+          // Visa bara "Laddar..." om vi aktivt precis loggade in från Login-skärmen
+          if (event === 'SIGNED_IN' && currentUserWasNull) {
             setLoading(true);
-            // Sätt en failsafe även här ifall fetchHousehold hänger sig
             setTimeout(() => { if (mounted) setLoading(false); }, 4000);
           }
           await fetchHousehold(newSession.user.id);
