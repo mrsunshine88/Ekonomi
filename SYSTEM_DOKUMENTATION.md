@@ -407,7 +407,7 @@ Ett system för att skicka ut push-notiser till användarnas telefoner/datorer v
 - **Prenumerationer (VAPID):** Användaren klickar på "Aktivera Push-notiser" under Mina Sidor. Klienten ber webbläsaren om tillåtelse, skapar en säker VAPID-prenumeration och sparar denna JSON i databastabellen `push_subscriptions` kopplad till `user_id`. (RLS ser till att man bara kan läsa/skriva sina egna notiser). Ett "Testa notis"-verktyg skapades även för direkt verifikation lokalt i Service Workern.
 - **Bakgrundskörning (Vercel Cron):** En Serverless Function i Vercel (`api/cron.js`) körs schemalagt varje dag (t.ex. klockan 10:00) enligt `vercel.json`. Koden:
   1. Kontrollerar dagens datum och hämtar alla hushåll som har `reminder_day == idag`.
-  2. Kollar om månaden är låst/klar (`month_handled_payments` har `is_handled = true`).
+  2. Kollar om *mål-månaden* är låst/klar (`month_handled_payments` har `is_handled = true`). Mål-månaden räknas ut smart: Om datumet är 20:e eller senare kollar den nästkommande kalendermånad (eftersom lönen används till nästa månads räkningar). Om datumet är tidigt på månaden kollar den innevarande månad.
   3. Om de INTE är klara, hämtas alla prenumerationer för användarna i det hushållet.
   4. Node-paketet `web-push` skickar ut notisen med hjälp av den privata VAPID-nyckeln (som ligger dold i Vercel Environment Variables). Döda prenumerationer (t.ex. om användaren bytt telefon) fångas via 404/410-statuskoder och städas automatiskt bort från databasen.
 

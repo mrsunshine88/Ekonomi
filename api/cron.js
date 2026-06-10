@@ -37,7 +37,16 @@ export default async function handler(req, res) {
       return res.status(200).json({ message: "Inga hushåll att påminna idag." });
     }
 
-    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+    const todayObj = new Date();
+    const currentDay = todayObj.getDate();
+    
+    // Om vi är sent i månaden (>= 20) ska vi kontrollera nästa månad.
+    let targetDate = new Date(todayObj);
+    if (currentDay >= 20) {
+      targetDate.setMonth(targetDate.getMonth() + 1);
+    }
+    const targetMonthId = targetDate.toISOString().slice(0, 7); // Ex: "2026-07"
+    
     let sentCount = 0;
 
     for (const hh of households) {
@@ -45,7 +54,7 @@ export default async function handler(req, res) {
         .from('month_handled_payments')
         .select('is_handled')
         .eq('household_id', hh.household_id)
-        .eq('month_id', currentMonth)
+        .eq('month_id', targetMonthId)
         .eq('is_handled', true)
         .limit(1);
 
