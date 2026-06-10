@@ -70,6 +70,8 @@ export interface AppState {
     showSummary?: boolean;
     reminderDay?: number;
   };
+  stripeStatus?: 'free' | 'active' | 'canceled' | 'vip' | 'past_due';
+  paywallActive?: boolean;
 }
 
 export interface SwishTransfer {

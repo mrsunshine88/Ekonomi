@@ -10,6 +10,8 @@ import LoginScreen from './components/Auth/LoginScreen';
 import MyPages from './components/MyPages';
 import PrivateView from './components/PrivateView';
 import InstallPrompt from './components/InstallPrompt';
+import Onboarding from './components/Onboarding';
+import PaywallModal from './components/PaywallModal';
 
 function App() {
   const { user, householdId, loading } = useAuth();
@@ -69,10 +71,16 @@ function App() {
     return <LoginScreen />;
   }
 
+  const needsOnboarding = state.accounts.length === 0;
+  const isPaywallBlocked = state.paywallActive && state.stripeStatus !== 'vip' && state.stripeStatus !== 'active';
+
   return (
     <div className="container">
       <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
       <InstallPrompt />
+      {needsOnboarding && <Onboarding />}
+      {!needsOnboarding && isPaywallBlocked && <PaywallModal />}
+      
       <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem', position: 'relative' }}>
         {/* Mobile hamburger button - only visible on mobile */}
         <button

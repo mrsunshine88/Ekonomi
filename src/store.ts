@@ -118,7 +118,9 @@ export const useStore = create<StoreState>((set, get) => ({
         { data: privateMonthLocks },
         { data: privateMonthAnomalies },
         { data: settings },
-        { data: profiles }
+        { data: profiles },
+        { data: householdData },
+        { data: globalSettings }
       ] = await Promise.all([
         supabase.from('accounts').select('*').eq('household_id', householdId),
         supabase.from('bills').select('*').eq('household_id', householdId),
@@ -130,11 +132,15 @@ export const useStore = create<StoreState>((set, get) => ({
         supabase.from('private_month_locks').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
         supabase.from('private_month_anomalies').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
         supabase.from('household_settings').select('*').eq('household_id', householdId).maybeSingle(),
-        supabase.from('profiles').select('id, email, share_private_economy, household_id').eq('household_id', householdId)
+        supabase.from('profiles').select('id, email, share_private_economy, household_id').eq('household_id', householdId),
+        supabase.from('households').select('stripe_status').eq('id', householdId).maybeSingle(),
+        supabase.from('global_settings').select('value').eq('key', 'paywall_active').maybeSingle()
       ]);
 
       // 3. Reconstruct AppState
       const newState: AppState = {
+        stripeStatus: householdData?.stripe_status || 'free',
+        paywallActive: globalSettings?.value === 'true',
         accounts: accounts ? accounts.map(a => ({ id: a.id, name: a.name, type: a.type, transferMethod: a.transfer_method })) : DEFAULT_ACCOUNTS,
         bills: bills ? bills.map(b => ({
           id: b.id, name: b.name, accountId: b.account_id, splitType: b.split_type,

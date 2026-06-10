@@ -14,6 +14,13 @@ export default function MyPages() {
   const [msg, setMsg] = useState('');
   const [isPushEnabled, setIsPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  
+  // Admin SaaS State
+  const paywallActive = useStore(s => s.state.paywallActive);
+  const isAdmin = user?.email === 'apersson508@gmail.com';
+  const [vipSearchEmail, setVipSearchEmail] = useState('');
+  const [adminLoading, setAdminLoading] = useState(false);
+
   const [confirmModal, setConfirmModal] = useState<{ visible: boolean; title: string; message: string; onConfirm: () => void }>({ visible: false, title: '', message: '', onConfirm: () => {} });
 
   const isMeFounder = members.length > 0 && members[0].id === user?.id;
@@ -285,6 +292,35 @@ export default function MyPages() {
     }
   };
 
+  const handleTogglePaywall = async () => {
+    setAdminLoading(true);
+    try {
+      const { error } = await supabase.rpc('toggle_paywall', { is_active: !paywallActive });
+      if (error) throw error;
+      useStore.setState(s => ({ state: { ...s.state, paywallActive: !paywallActive } }));
+      setMsg(paywallActive ? '✅ Betalväggen är nu AV. Appen är gratis.' : '🚨 Betalväggen är nu PÅ! Alla nya (och icke-VIP) kommer att tvingas betala 59 kr/mån.');
+    } catch (e: any) {
+      setMsg('❌ Admin Fel: ' + e.message);
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
+  const handleGrantVip = async () => {
+    if (!vipSearchEmail) return;
+    setAdminLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('set_household_vip_by_email', { target_email: vipSearchEmail });
+      if (error) throw error;
+      setMsg(`👑 ${vipSearchEmail} har nu VIP-status (Gratis för alltid)!`);
+      setVipSearchEmail('');
+    } catch (e: any) {
+      setMsg('❌ Admin Fel: ' + e.message);
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
   return (
     <>
       {confirmModal.visible && (
@@ -324,6 +360,59 @@ export default function MyPages() {
       </div>
 
       {msg && <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', borderLeft: '4px solid var(--accent-color)' }}>{msg}</div>}
+
+      {isAdmin && (
+        <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(244, 63, 94, 0.1)', borderRadius: '12px', border: '1px solid rgba(244, 63, 94, 0.3)' }}>
+          <h3 style={{ color: '#f43f5e', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>👑 Admin Kontroll</h3>
+          
+          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <div style={{ fontWeight: 'bold' }}>Master Switch: Betalvägg (59 kr/mån)</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                {paywallActive 
+                  ? 'PÅ! Alla som inte är VIP kommer att krävas på 59 kr för att använda appen.' 
+                  : 'AV! Appen är för tillfället helt gratis för hela världen.'}
+              </div>
+            </div>
+            <button 
+              onClick={handleTogglePaywall}
+              disabled={adminLoading}
+              style={{ 
+                background: paywallActive ? 'var(--success-color)' : '#f43f5e', 
+                color: '#fff',
+                border: 'none',
+                padding: '0.75rem 1.5rem', 
+                borderRadius: '8px', 
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              {adminLoading ? '...' : (paywallActive ? 'Avaktivera Betalvägg' : 'Aktivera Betalvägg')}
+            </button>
+          </div>
+
+          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>VIP-Sökning (Gör hushåll gratis)</div>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Skriv in e-postadressen till en vän för att ge hela deras hushåll gratis VIP-access för alltid (går förbi betalväggen).</p>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <input 
+                type="email" 
+                placeholder="Vännens inloggnings-mejl..." 
+                value={vipSearchEmail} 
+                onChange={e => setVipSearchEmail(e.target.value)}
+                style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
+              />
+              <button 
+                onClick={handleGrantVip} 
+                disabled={adminLoading || !vipSearchEmail} 
+                style={{ padding: '0.75rem 1.5rem', background: 'var(--accent-gradient)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Ge VIP
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {householdId && (
         <div style={{ marginBottom: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
