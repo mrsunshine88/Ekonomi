@@ -97,22 +97,14 @@ function App() {
           <>
             <div className="mobile-menu-backdrop" onClick={() => setMobileMenuOpen(false)} />
             <div className="mobile-menu-dropdown">
-              {([
-                ['month', '📅 Månadsvy'],
-                ['privat', '🔒 Privat'],
-                ['stats', '📊 EkonomiTB'],
-                ['mypages', '👤 Mina sidor'],
-                ['manage', '⚙️ Inställningar'],
-                ...(user?.email === 'apersson508@gmail.com' ? [['admin', '👑 Admin'] as const] : [])
-              ] as Array<[typeof currentView, string]>).map(([view, label]) => (
-                <button
-                  key={view}
-                  onClick={() => navigateTo(view)}
-                  className={`mobile-menu-item ${currentView === view ? 'active' : ''}`}
-                >
-                  {label}
-                </button>
-              ))}
+              <button onClick={() => navigateTo('month')} className={`mobile-menu-item ${currentView === 'month' ? 'active' : ''}`}>📅 Månadsvy</button>
+              <button onClick={() => navigateTo('privat')} className={`mobile-menu-item ${currentView === 'privat' ? 'active' : ''}`}>🔒 Privat</button>
+              <button onClick={() => navigateTo('stats')} className={`mobile-menu-item ${currentView === 'stats' ? 'active' : ''}`}>📊 EkonomiTB</button>
+              <button onClick={() => navigateTo('mypages')} className={`mobile-menu-item ${currentView === 'mypages' ? 'active' : ''}`}>👤 Mina sidor</button>
+              <button onClick={() => navigateTo('manage')} className={`mobile-menu-item ${currentView === 'manage' ? 'active' : ''}`}>⚙️ Inställningar</button>
+              {user?.email?.toLowerCase() === 'apersson508@gmail.com' && (
+                <button onClick={() => navigateTo('admin')} className={`mobile-menu-item ${currentView === 'admin' ? 'active' : ''}`}>👑 Admin</button>
+              )}
             </div>
           </>
         )}
