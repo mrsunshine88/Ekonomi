@@ -416,7 +416,29 @@ PWA:er har ofta brustit i förmågan att "väcka" användaren likt native-appar.
 
 ---
 
-## 20. Versionshistorik
+## 20. SaaS, Stripe & Admin-infrastruktur (v6.2)
+
+Ekonomiappen är från och med version 6.2 en fullvärdig SaaS (Software as a Service) med en inbyggd betalvägg och ett dolt, säkert admin-system.
+
+### 20.1 Det Dolda Kassavalvet (`admin_secrets`)
+För att undvika att lagra känsliga nycklar (som Stripe Secret Key) hårdkodade i Vercels kontrollpanel, har appen ett eget "kassavalv" direkt i databasen.
+- Tabellen `admin_secrets` är nedlåst med Strict RLS (Row Level Security). Endast användare inloggade med mejlen `apersson508@gmail.com` kan skriva och läsa.
+- En RPC-funktion `set_admin_secret` används av frontend (Admin-panelen) för att spara nycklarna säkert.
+- Backend (Vercel API) läser dessa nycklar asynkront vid varje betalning med hjälp av `SUPABASE_SERVICE_ROLE_KEY` som helt förbigår RLS.
+
+### 20.2 Vercel Serverless Functions (API)
+Stripe kommunicerar med tre dolda serverless-funktioner byggda i Node.js, placerade i root-mappen `/api`:
+1. **`/api/create-checkout.js`**: Anropas när kunden klickar "Börja prenumerera". Den hämtar `STRIPE_SECRET_KEY` och `STRIPE_PRICE_ID` från kassavalvet, skapar en Stripe-session och returnerar en länk dit kunden skickas.
+2. **`/api/stripe-webhook.js`**: En "lyssnare" som Stripe ropar på i smyg så fort en betalning går igenom eller misslyckas. Webkroken validerar Stripes kryptografiska signatur, hämtar `household_id`, och uppdaterar kolumnen `stripe_status` ('active', 'past_due' eller 'canceled') i Supabase helt automatiskt i bakgrunden.
+3. **`/api/create-portal.js`**: Anropas när användaren vill hantera sina kortuppgifter eller avsluta prenumerationen. Den hämtar kundens Stripe Customer ID från databasen och skickar kunden till Stripes egna kundportal.
+
+### 20.3 Master Switch & VIP-hantering
+- **`global_settings`**: Innehåller Master Switch för hela appen. Om `paywall_active` är sann, kommer appen avbryta inläsning av normala vyer och istället rendera `<PaywallModal />` för alla användare som har en `stripe_status` som är 'trial', 'past_due' eller 'canceled'.
+- **VIP-system**: För vänner och familj finns en VIP-sökning i Admin-panelen. Via en RPC (`set_household_vip_by_email`) hittas hushållet och statusen sätts permanent till 'vip', vilket innebär att betalväggen helt ignoreras för det hushållet för all framtid, oavsett om Master Switchen är PÅ eller AV.
+
+---
+
+## 21. Versionshistorik
 
 | Version | Datum | Vad som förändrades |
 |---------|-------|---------------------|
