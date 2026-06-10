@@ -8,6 +8,7 @@ import { Toaster } from 'react-hot-toast';
 const Statistics = lazy(() => import('./components/Statistics'));
 import LoginScreen from './components/Auth/LoginScreen';
 import MyPages from './components/MyPages';
+import AdminDashboard from './components/AdminDashboard';
 import PrivateView from './components/PrivateView';
 import InstallPrompt from './components/InstallPrompt';
 import Onboarding from './components/Onboarding';
@@ -22,10 +23,10 @@ function App() {
     initCloud(householdId, user?.id || null);
   }, [householdId, user?.id, initCloud]);
 
-  const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages' | 'privat'>('month');
+  const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin'>('month');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navigateTo = (view: 'month' | 'stats' | 'manage' | 'mypages' | 'privat') => {
+  const navigateTo = (view: 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin') => {
     setCurrentView(view);
     setMobileMenuOpen(false);
   };
@@ -102,6 +103,7 @@ function App() {
                 ['stats', '📊 EkonomiTB'],
                 ['mypages', '👤 Mina sidor'],
                 ['manage', '⚙️ Inställningar'],
+                ...(user?.email === 'apersson508@gmail.com' ? [['admin', '👑 Admin'] as const] : [])
               ] as Array<[typeof currentView, string]>).map(([view, label]) => (
                 <button
                   key={view}
@@ -151,10 +153,23 @@ function App() {
           >
             ⚙️ Inställningar
           </button>
+          {user?.email === 'apersson508@gmail.com' && (
+            <button 
+              onClick={() => navigateTo('admin')} 
+              style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'admin' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'admin' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'admin' ? 'bold' : 'normal', transition: 'all 0.2s' }}
+            >
+              👑 Admin
+            </button>
+          )}
         </nav>
       </header>
 
-      {currentView === 'mypages' ? (
+      {currentView === 'admin' ? (
+        <div>
+          <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Månadsvy</button>
+          <AdminDashboard />
+        </div>
+      ) : currentView === 'mypages' ? (
         <div>
           <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Månadsvy</button>
           <MyPages />

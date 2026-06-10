@@ -6,18 +6,28 @@ export default function PaywallModal() {
   const [loading, setLoading] = useState(false);
   const householdId = useStore(s => s.householdId);
 
-  const handleSimulatePayment = async () => {
+  const handleCheckout = async () => {
     setLoading(true);
     try {
-      // Simulate Stripe checkout success
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      await supabase.from('households').update({ stripe_status: 'active' }).eq('id', householdId);
+      const { data: { session } } = await supabase.auth.getSession();
       
-      // Update local state
-      useStore.setState(s => ({ state: { ...s.state, stripeStatus: 'active' } }));
-    } catch (e) {
+      const res = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          householdId,
+          customerEmail: session?.user?.email
+        })
+      });
+      
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      
+      // Redirect to Stripe
+      window.location.href = data.url;
+    } catch (e: any) {
+      alert('Kunde inte starta betalning: ' + e.message);
       console.error(e);
-    } finally {
       setLoading(false);
     }
   };
@@ -56,7 +66,7 @@ export default function PaywallModal() {
         </div>
 
         <button 
-          onClick={handleSimulatePayment}
+          onClick={handleCheckout}
           disabled={loading}
           style={{ 
             background: 'var(--success-color)', 
@@ -71,7 +81,7 @@ export default function PaywallModal() {
             boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)' 
           }}
         >
-          {loading ? 'Bearbetar...' : 'Kortbetalning (Simulering)'}
+          {loading ? 'Laddar Stripe...' : 'Gå till betalning'}
         </button>
       </div>
     </div>
