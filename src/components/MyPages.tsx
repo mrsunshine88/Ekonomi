@@ -286,14 +286,13 @@ export default function MyPages() {
   };
 
   return (
-    <div className="card" style={{ maxWidth: '600px', margin: '0 auto', marginTop: '2rem', position: 'relative' }}>
-      
+    <>
       {confirmModal.visible && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(11, 15, 25, 0.95)', backdropFilter: 'blur(8px)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          zIndex: 1000, padding: '2rem', textAlign: 'center'
+          zIndex: 9999, padding: '2rem', textAlign: 'center'
         }}>
           <div style={{ background: 'rgba(30, 41, 59, 0.9)', border: '1px solid rgba(244, 63, 94, 0.3)', borderRadius: '16px', padding: '2rem', maxWidth: '400px', width: '100%', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
             <h3 style={{ color: '#f43f5e', fontSize: '1.5rem', marginBottom: '1rem' }}>{confirmModal.title}</h3>
@@ -315,6 +314,8 @@ export default function MyPages() {
           </div>
         </div>
       )}
+
+      <div className="card" style={{ maxWidth: '600px', margin: '0 auto', marginTop: '2rem' }}>
 
       <h2 style={{ marginBottom: '1.5rem' }}>Mina Sidor</h2>
       
@@ -492,6 +493,20 @@ export default function MyPages() {
           )}
 
           <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem', marginTop: '1.5rem' }}>👥 Hushållets medlemmar</h3>
+          
+          <div style={{ padding: '1rem', background: isMeFounder ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.05)', borderRadius: '8px', borderLeft: isMeFounder ? '4px solid var(--success-color)' : '4px solid var(--text-secondary)', marginBottom: '1rem' }}>
+            {isMeFounder ? (
+              <>
+                <strong style={{ color: 'var(--success-color)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>👑 Detta är ditt hushåll</strong>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Du är grundaren och äger därmed datan. Du har full kontroll över vilka som får vara med.</p>
+              </>
+            ) : (
+              <>
+                <strong style={{ color: '#fff', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🏠 Inbjuden medlem</strong>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Du är en inbjuden medlem i detta hushåll.</p>
+              </>
+            )}
+          </div>
           <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '8px', overflow: 'hidden' }}>
             {members.map((m, index) => {
               const isFounder = index === 0;
@@ -575,5 +590,6 @@ export default function MyPages() {
         Logga ut
       </button>
     </div>
+    </>
   );
 }
