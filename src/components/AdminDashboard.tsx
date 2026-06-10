@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import { supabase } from '../supabase';
 
@@ -11,6 +11,21 @@ export default function AdminDashboard() {
   const [stripeWebhook, setStripeWebhook] = useState('');
   const [stripePriceId, setStripePriceId] = useState('');
   const [vipEmail, setVipEmail] = useState('');
+  const [vipList, setVipList] = useState<string[]>([]);
+
+  const fetchVipList = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_vip_emails');
+      if (error) throw error;
+      setVipList((data || []).map((row: any) => row.email));
+    } catch (e: any) {
+      console.error("Kunde inte hämta VIP-lista", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchVipList();
+  }, []);
 
   const handleTogglePaywall = async () => {
     setLoading(true);
@@ -34,6 +49,7 @@ export default function AdminDashboard() {
       if (error) throw error;
       setMsg(`👑 ${vipEmail} har nu VIP-status (Gratis för alltid)!`);
       setVipEmail('');
+      await fetchVipList();
     } catch (e: any) {
       setMsg('❌ Admin Fel: ' + e.message);
     } finally {
@@ -41,14 +57,15 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleRevokeVip = async () => {
-    if (!vipEmail) return;
+  const handleRevokeVip = async (emailToRevoke: string = vipEmail) => {
+    if (!emailToRevoke) return;
     setLoading(true);
     try {
-      const { error } = await supabase.rpc('revoke_household_vip_by_email', { target_email: vipEmail });
+      const { error } = await supabase.rpc('revoke_household_vip_by_email', { target_email: emailToRevoke });
       if (error) throw error;
-      setMsg(`📉 VIP-status borttagen för ${vipEmail}. De kommer nu att fastna i betalväggen!`);
-      setVipEmail('');
+      setMsg(`📉 VIP-status borttagen för ${emailToRevoke}.`);
+      if (emailToRevoke === vipEmail) setVipEmail('');
+      await fetchVipList();
     } catch (e: any) {
       setMsg('❌ Admin Fel: ' + e.message);
     } finally {
@@ -104,8 +121,8 @@ export default function AdminDashboard() {
 
       <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
         <h3 style={{ marginBottom: '0.5rem' }}>VIP-Kunder</h3>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Ge ett hushåll gratis tillgång för alltid, eller ta bort det.</p>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Ge ett hushåll gratis tillgång för alltid.</p>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
           <input 
             type="email" 
             placeholder="E-postadress..." 
@@ -120,14 +137,21 @@ export default function AdminDashboard() {
           >
             Ge VIP
           </button>
-          <button 
-            onClick={handleRevokeVip} 
-            disabled={loading || !vipEmail} 
-            style={{ padding: '0.75rem 1.5rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            Ta bort VIP
-          </button>
         </div>
+
+        {vipList.length > 0 && (
+          <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '1rem' }}>
+            <h4 style={{ marginBottom: '1rem', color: '#fff' }}>👑 Aktiva VIP-konton</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {vipList.map(email => (
+                <div key={email} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '8px' }}>
+                  <span style={{ color: '#fff' }}>{email}</span>
+                  <button onClick={() => handleRevokeVip(email)} disabled={loading} style={{ background: 'transparent', border: '1px solid #f43f5e', color: '#f43f5e', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Ta bort</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', border: '1px solid rgba(244, 63, 94, 0.3)' }}>
