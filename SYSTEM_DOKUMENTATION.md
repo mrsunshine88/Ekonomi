@@ -1,6 +1,6 @@
 # Ekonomi & Swish - Systemdokumentation
 
-**Version:** 5.8 (Schemalagda Push-notiser & Påminnelser)  
+**Version:** 5.9 (Snygga Modaler & Grundar-UI)  
 **Plattform:** React + TypeScript + Vite (PWA) | Databas: Supabase (PostgreSQL) | Hosting: Vercel  
 **Uppdaterad:** 2026-06-10
 
