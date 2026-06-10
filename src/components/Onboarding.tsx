@@ -9,6 +9,35 @@ export default function Onboarding() {
   const [householdName, setHouseholdName] = useState('');
   const [members, setMembers] = useState([{ name: '' }, { name: '' }]);
   const [hasSharedAccount] = useState(true);
+  
+  // Join logic
+  const [inviteCode, setInviteCode] = useState('');
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [joinError, setJoinError] = useState('');
+
+  const handleJoin = async () => {
+    if (!inviteCode) return;
+    setJoinLoading(true);
+    setJoinError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) throw new Error("Inte inloggad.");
+
+      const { data: hhData, error: hhErr } = await supabase.from('households').select('id').eq('id', inviteCode).single();
+      if (hhErr || !hhData) throw new Error("Kunde inte hitta ett hushåll med den koden.");
+      
+      const { error } = await supabase.from('profiles').upsert([{ id: user.id, email: user.email, household_id: inviteCode, role: 'member' }]);
+      if (error) throw error;
+      
+      window.location.reload();
+    } catch (err: any) {
+      console.error(err);
+      setJoinError('❌ ' + err.message);
+    } finally {
+      setJoinLoading(false);
+    }
+  };
 
   const handleAddMember = () => setMembers([...members, { name: '' }]);
   const handleRemoveMember = (i: number) => setMembers(members.filter((_, index) => index !== i));
@@ -68,14 +97,38 @@ export default function Onboarding() {
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👋</div>
             <h2 style={{ color: '#fff', fontSize: '1.8rem', marginBottom: '1rem' }}>Välkommen till Ekonomiappen!</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: '1.5' }}>
-              Vi ska hjälpa er att aldrig mer behöva bråka om vem som ska betala vad. Låt oss bygga upp ert virtuella kassavalv.
+              Låt oss bygga upp ert virtuella kassavalv och slippa bråka om vem som ska betala vad.
             </p>
             <button 
               onClick={() => setStep(2)}
-              style={{ background: 'var(--accent-gradient)', color: 'white', padding: '1rem 2rem', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', width: '100%' }}
+              style={{ background: 'var(--accent-gradient)', color: 'white', padding: '1rem 2rem', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', width: '100%', marginBottom: '2rem' }}
             >
-              Kom igång
+              Skapa nytt hushåll
             </button>
+
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '2rem', marginTop: '1rem' }}>
+              <h3 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '1rem' }}>Har du blivit inbjuden?</h3>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.9rem' }}>
+                Klistra in inbjudningskoden från hushållets grundare för att ansluta (du behöver då inte betala).
+              </p>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input 
+                  type="text" 
+                  placeholder="Klistra in inbjudningskod..." 
+                  value={inviteCode}
+                  onChange={e => setInviteCode(e.target.value)}
+                  style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
+                />
+                <button 
+                  onClick={handleJoin}
+                  disabled={joinLoading}
+                  style={{ background: 'var(--accent-color)', color: '#fff', padding: '0.75rem 1.5rem', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  {joinLoading ? '...' : 'Gå med'}
+                </button>
+              </div>
+              {joinError && <p style={{ color: 'var(--danger-color)', marginTop: '1rem', fontSize: '0.9rem' }}>{joinError}</p>}
+            </div>
           </>
         )}
 
