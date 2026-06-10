@@ -8,7 +8,7 @@ export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [householdName, setHouseholdName] = useState('');
   const [members, setMembers] = useState([{ name: '' }, { name: '' }]);
-  const [hasSharedAccount, setHasSharedAccount] = useState(true);
+  const [hasSharedAccount] = useState(true);
 
   const handleAddMember = () => setMembers([...members, { name: '' }]);
   const handleRemoveMember = (i: number) => setMembers(members.filter((_, index) => index !== i));
@@ -25,7 +25,7 @@ export default function Onboarding() {
       if (hasSharedAccount) {
         accountsToCreate.push({ id: crypto.randomUUID(), household_id: householdId, name: householdName || 'Gemensamt konto', type: 'shared', transfer_method: 'transfer' });
       }
-      members.forEach((m, i) => {
+      members.forEach((m) => {
         if (m.name.trim()) {
           accountsToCreate.push({ id: crypto.randomUUID(), household_id: householdId, name: m.name.trim(), type: 'person', transfer_method: 'swish' });
         }
