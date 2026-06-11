@@ -9,6 +9,7 @@ export default function MonthView({ currentMonth }: Props) {
   const state = useStore(s => s.state);
   const updateBillAmount = useStore(s => s.updateBillAmount);
   const confirmAnomalyStore = useStore(s => s.confirmAnomaly);
+  const togglePaymentStatus = useStore(s => s.togglePaymentStatus);
   const monthData = state.months[currentMonth] || { monthId: currentMonth, billAmounts: {}, handledPayments: {} };
   
   // Calculate locked accounts
@@ -16,7 +17,9 @@ export default function MonthView({ currentMonth }: Props) {
   const lockedAccounts = new Set<string>();
   Object.keys(handled).forEach(paymentId => {
     if (handled[paymentId]) {
-      if (paymentId.startsWith('transfer_')) {
+      if (paymentId === 'top_total_lock') {
+        state.accounts.forEach(acc => lockedAccounts.add(acc.id));
+      } else if (paymentId.startsWith('transfer_')) {
         const parts = paymentId.split('_');
         const personId = parts[1];
         const sharedId = parts.slice(2).join('_');
@@ -184,6 +187,26 @@ export default function MonthView({ currentMonth }: Props) {
           <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>
             <span className="highlight-value">{totalSum.toLocaleString('sv-SE')} kr</span>
           </div>
+          <button
+            onClick={() => togglePaymentStatus(currentMonth, 'top_total_lock')}
+            style={{
+               marginTop: '1rem',
+               background: handled['top_total_lock'] ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+               color: handled['top_total_lock'] ? '#10b981' : 'var(--text-primary)',
+               border: handled['top_total_lock'] ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
+               padding: '0.5rem 1.5rem',
+               borderRadius: '8px',
+               cursor: handled['top_total_lock'] ? 'default' : 'pointer',
+               fontWeight: 600,
+               fontSize: '0.9rem',
+               display: 'inline-flex',
+               alignItems: 'center',
+               gap: '0.5rem'
+            }}
+            disabled={handled['top_total_lock']}
+          >
+            {handled['top_total_lock'] ? '🔒 Låst & Hanterat' : '✅ Markera som hanterad'}
+          </button>
         </div>
       )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>

@@ -338,7 +338,9 @@ export default function ManageBills() {
                   const lockedAccounts = new Set<string>();
                   Object.keys(handled).forEach(paymentId => {
                     if (handled[paymentId]) {
-                      if (paymentId.startsWith('transfer_')) {
+                      if (paymentId === 'top_total_lock') {
+                        state.accounts.forEach(acc => lockedAccounts.add(acc.id));
+                      } else if (paymentId.startsWith('transfer_')) {
                         const parts = paymentId.split('_');
                         const personId = parts[1];
                         const sharedId = parts.slice(2).join('_');

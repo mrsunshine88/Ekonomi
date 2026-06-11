@@ -487,7 +487,10 @@ export const useStore = create<StoreState>((set, get) => ({
     
     Object.keys(newHandled).forEach(paymentId => {
       if (newHandled[paymentId]) {
-        if (paymentId.startsWith('transfer_')) {
+        if (paymentId === 'top_total_lock') {
+          newHandled[paymentId] = false;
+          unhandledPayments.push(paymentId);
+        } else if (paymentId.startsWith('transfer_')) {
           const parts = paymentId.split('_');
           if (parts.length >= 3) {
             const personId = parts[1];
