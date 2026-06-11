@@ -459,6 +459,12 @@ För användare som aktiverat inställningen för att visa "Total Summa" i måna
 ### 21.3 Korrekt Lagring av Systeminställningar
 Appens databas uppdaterades med kolumnen `show_top_total` i tabellen `household_settings`. Detta säkerställer att användarens individuella vy-inställningar (såsom att visa Total Summa) inte bara hanteras lokalt i klienten utan lagras permanent via `store.ts` och synkroniseras i realtid.
 
+### 21.4 Offline-läge (Nätverksdetektion)
+Tidigare kunde appen försöka spara data även vid bristande internetanslutning, vilket orsakade tysta fel och förlorad data när sidan laddades om. Nu är samtliga mutationer i `store.ts` skyddade med `navigator.onLine`. Om användaren tappar täckningen, visas omedelbart en röd fel-notis via `react-hot-toast` och sparningen avbryts direkt i klienten.
+
+### 21.5 Historik & Arkivering av Data
+Istället för att ladda ner all historisk data vid varje inloggning (vilket skulle bli långsamt efter några års användning) begränsas dataladdningen automatiskt till innevarande år. För att ändå ge tillgång till historik finns nu en "Hämta äldre år"-knapp i *EkonomiTB*. Denna knapp anropar `loadYear(year)` on-demand och minskar initial laddningstid drastiskt, samtidigt som gammal data förblir 100% tillgänglig.
+
 ---
 
 ## 22. Arkitekturella Designval & Filosofi
@@ -485,3 +491,11 @@ När en användare laddar eller ändrar data använder appen ofta en full reload
 - Det garanterar 100% dataintegritet. Avancerade patch-system introducerar stor risk för state-desync (ex. att en användare swishar baserat på inaktuella siffror). 
 
 Dessa val gör Ekonomiappen exceptionellt snabb, robust och nästintill gratis att drifta, i full kontrast till tunga och tröga Enterprise-arkitekturer.
+
+---
+
+## 23. Databassäkerhet & Linter
+Under systemets utveckling genomfördes en rigorös granskning via Supabase Database Linter för att täppa till alla potentiella sårbarheter:
+- **Function Search Path Mutable:** Alla inbyggda RPC-funktioner (som `get_admin_stats`, `toggle_paywall` m.m.) har explicit tilldelats `SET search_path = ''` för att förhindra SQL-injection via spoofing av schema.
+- **SECURITY DEFINER Access:** Exekveringsrättigheter för administrativa funktioner har återkallats (`REVOKE EXECUTE`) från `PUBLIC` och `anon`-rollerna. Nu tillåts endast inloggade (`authenticated`) användare att *försöka* anropa dessa (funktionerna validerar sedan ifall användaren är Admin).
+- **Leaked Password Protection:** Systemet är förberett för att slå på skyddet mot läckta lösenord via Supabase Auth-inställningar.
