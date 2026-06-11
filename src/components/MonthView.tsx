@@ -171,7 +171,7 @@ export default function MonthView({ currentMonth }: Props) {
   return (
     <div>
       {state.bills.length === 0 && <OnboardingWizard />}
-      {state.bills.length > 0 && state.settings?.showTopTotal && (
+      {state.bills.length > 0 && state.settings?.showTopTotal !== false && (
         <div style={{ 
           marginBottom: '2rem', 
           padding: '1.5rem', 
@@ -183,8 +183,8 @@ export default function MonthView({ currentMonth }: Props) {
           textAlign: 'center', 
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
         }}>
-          <div style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            Total Summa (Gemensam)
+          <div style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Hushållets gemensamma utgifter
           </div>
           <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>
             <span className="highlight-value">{totalSum.toLocaleString('sv-SE')} kr</span>

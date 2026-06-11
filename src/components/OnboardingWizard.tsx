@@ -24,6 +24,7 @@ export default function OnboardingWizard() {
   const [selectedOptions, setSelectedOptions] = useState<Option[]>([]);
   const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
   const [windowDimensions, setWindowDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
 
   const householdId = useStore(s => s.householdId);
@@ -49,9 +50,15 @@ export default function OnboardingWizard() {
   };
 
   const billsToFill = selectedOptions.slice(0, 3); // Begär bara belopp för max de 3 första för aha-momentet
+  const totalAmount = billsToFill.reduce((sum, opt) => sum + (Number(amounts[opt.name]) || 0), 0);
 
   const handleNextStep2 = async () => {
-    setShowConfetti(true);
+    setIsCalculating(true);
+    
+    // Artificiell fördröjning för att bygga förväntan
+    setTimeout(async () => {
+      setIsCalculating(false);
+      setShowConfetti(true);
     
     // Save to database
     const paymentsToCreate = selectedOptions.map(opt => ({
@@ -65,10 +72,10 @@ export default function OnboardingWizard() {
     }));
     
     await createOnboardingPayments(paymentsToCreate);
-    
-    setTimeout(() => {
+      
       setStep(3);
-    }, 2500);
+      setIsCalculating(false);
+    }, 2000);
   };
 
   const copyInvite = () => {
@@ -97,16 +104,24 @@ export default function OnboardingWizard() {
             }} />
           ))}
         </div>
-        <h1 style={{ color: '#fff', fontSize: '2rem', marginBottom: '0.5rem' }}>
-          {step === 1 && 'Välkommen! 👋'}
-          {step === 2 && 'Dags för magin ✨'}
-          {step === 3 && 'Halva jobbet gjort! 🎯'}
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
-          {step === 1 && 'Klicka på de räkningar ni har i ert hushåll.'}
-          {step === 2 && `Ange ett ungefärligt belopp för dina räkningar.`}
-          {step === 3 && 'Bjud in din partner så delar ni på ansvaret.'}
-        </p>
+        {!isCalculating ? (
+          <>
+            <h1 style={{ color: '#fff', fontSize: '2rem', marginBottom: '0.5rem' }}>
+              {step === 1 && 'Välkommen! 👋'}
+              {step === 2 && 'Dags för magin ✨'}
+              {step === 3 && 'Uträkning klar! 🎯'}
+            </h1>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
+              {step === 1 && 'Klicka på de räkningar ni har i ert hushåll.'}
+              {step === 2 && `Ange ett ungefärligt belopp för dina räkningar.`}
+              {step === 3 && 'Så här ser det ut baserat på dina första siffror.'}
+            </p>
+          </>
+        ) : (
+          <h1 style={{ color: '#fff', fontSize: '2rem', marginBottom: '0.5rem', animation: 'pulse 1.5s infinite' }}>
+            Räknar ihop hushållets utgifter...
+          </h1>
+        )}
       </div>
 
       <div className="card" style={{ padding: '2rem' }}>
@@ -175,40 +190,68 @@ export default function OnboardingWizard() {
                 </div>
               )}
             </div>
-            <button 
-              className="btn btn-primary" 
-              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
-              onClick={handleNextStep2}
-            >
-              Visa magin ✨
-            </button>
+            {!isCalculating && (
+              <button 
+                className="btn btn-primary" 
+                style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
+                onClick={handleNextStep2}
+              >
+                Visa magin ✨
+              </button>
+            )}
+            {isCalculating && (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem' }}>
+                <div style={{ width: '40px', height: '40px', border: '4px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--accent-color)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+              </div>
+            )}
           </>
         )}
 
         {step === 3 && (
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💌</div>
-            <p style={{ color: '#fff', fontSize: '1.1rem', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-              Nu finns räkningarna i appen! Klistra in din inbjudningskod i ett SMS till din partner så ni kan hjälpas åt att lägga in resten.
-            </p>
             
-            <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px dashed var(--accent-color)', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Ditt Hushålls-ID:</div>
-              <div style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 'bold', wordBreak: 'break-all', fontFamily: 'monospace', marginBottom: '1rem' }}>
-                {householdId}
+            {/* The WOW Moment */}
+            <div style={{ 
+              background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.15), rgba(52, 211, 153, 0.15))',
+              border: '2px solid rgba(16, 185, 129, 0.4)',
+              borderRadius: '16px',
+              padding: '2rem',
+              marginBottom: '2rem',
+              animation: 'fadeIn 0.5s ease-out'
+            }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', marginBottom: '0.5rem' }}>Hushållets gemensamma utgifter:</div>
+              <div style={{ color: '#fff', fontSize: '3.5rem', fontWeight: 'bold', marginBottom: '1rem', textShadow: '0 2px 10px rgba(16,185,129,0.3)' }}>
+                {totalAmount} kr
               </div>
-              <button onClick={copyInvite} style={{ background: 'var(--accent-color)', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-                📋 Kopiera kod & text
-              </button>
+              <div style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', display: 'inline-block' }}>
+                💡 Med en partner blir din andel bara {Math.round(totalAmount / 2)} kr!
+              </div>
+            </div>
+            
+            {/* Semi-optional invite */}
+            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
+              <h3 style={{ color: '#fff', fontSize: '1.3rem', marginBottom: '0.5rem', margin: 0 }}>Vill ni dela detta? (Rekommenderas)</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+                Skicka inbjudningskoden till din partner så ni kan dela på utgifterna i realtid.
+              </p>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem' }}>
+                <code style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 'bold', flex: 1, letterSpacing: '1px' }}>{householdId}</code>
+                <button onClick={copyInvite} style={{ background: 'var(--accent-color)', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                  Kopiera
+                </button>
+              </div>
             </div>
 
             <button 
               className="btn btn-primary" 
-              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
+              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', background: 'transparent', border: '2px solid var(--border-color)', color: 'var(--text-secondary)' }}
               onClick={finish}
             >
-              Klar! Ta mig till appen 🚀
+              Hoppa över för nu – Ta mig till månadsvyn →
             </button>
+            <style>{`@keyframes fadeIn { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }`}</style>
           </div>
         )}
       </div>
