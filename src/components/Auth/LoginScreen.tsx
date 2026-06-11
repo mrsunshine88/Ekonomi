@@ -124,7 +124,7 @@ export default function LoginScreen() {
             <span className="text-gradient">Vi löser hushållsekonomin.</span>
           </h1>
           <p className="login-hero-subtitle">
-            Den smartaste plattformen för att automatisera, dela och räkna ut månadens utgifter mellan dig och din partner.
+            Den smartaste plattformen för att automatisera, dela och räkna ut månadens utgifter för hela ditt hushåll – oavsett om ni är två eller du kör själv.
           </p>
 
           <div className="features-grid">
