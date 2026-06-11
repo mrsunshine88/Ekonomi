@@ -19,10 +19,10 @@ Appen stöder ett obegränsat antal gemensamma konton och personliga konton, och
 
 ---
 
-## 2. Databasarkitektur – Relationsdatabas (v3.0)
+## 2. Databasarkitektur – Relationsdatabas
 
 ### Vad:
-All data lagras i en **fullt normaliserad relationsdatabas** i Supabase (PostgreSQL). Varje datatyp har sin egen tabell. Detta är den avgörande skillnaden mot v2.0 som sparade allt som ett enda stort JSON-dokument.
+All data lagras i en **fullt normaliserad relationsdatabas** i Supabase (PostgreSQL). Varje datatyp har sin egen tabell. Detta är den avgörande skillnaden mot hur den tidigaste arkitekturen sparade allt som ett enda stort JSON-dokument.
 
 ### Hur – Databastabeller:
 
@@ -43,7 +43,7 @@ All data lagras i en **fullt normaliserad relationsdatabas** i Supabase (Postgre
 
 ### Varför relationsdatabas (och inte JSON)?
 
-Den gamla v2.0-arkitekturen sparade **hela appens tillstånd** som ett enda JSON-dokument. Det innebar att om du och Helena ändrade olika räkningar i exakt samma sekund, vann den som sparade *sist* och den andras ändring försvann.
+Den tidigaste arkitekturen sparade **hela appens tillstånd** som ett enda JSON-dokument. Det innebar att om du och Helena ändrade olika räkningar i exakt samma sekund, vann den som sparade *sist* och den andras ändring försvann.
 
 Med relationsdatabasen uppdateras **enbart den exakta raden** som ändrades. Om du ändrar beloppet på "Elen" uppdateras en enda rad i `month_bill_amounts`. Om Helena ändrar "Hyran" uppdateras en annan rad. De är helt oberoende och kan aldrig skriva över varandra. **Ingen data kan gå förlorad.**
 
@@ -416,9 +416,9 @@ PWA:er har ofta brustit i förmågan att "väcka" användaren likt native-appar.
 
 ---
 
-## 20. SaaS, Stripe & Admin-infrastruktur (v6.2)
+## 20. SaaS, Stripe & Admin-infrastruktur
 
-Ekonomiappen är från och med version 6.2 en fullvärdig SaaS (Software as a Service) med en inbyggd betalvägg och ett dolt, säkert admin-system.
+Ekonomiappen är idag en fullvärdig SaaS (Software as a Service) med en inbyggd betalvägg och ett dolt, säkert admin-system.
 
 ### 20.1 Det Dolda Kassavalvet (`admin_secrets`)
 För att undvika att lagra känsliga nycklar (som Stripe Secret Key) hårdkodade i Vercels kontrollpanel, har appen ett eget "kassavalv" direkt i databasen.
