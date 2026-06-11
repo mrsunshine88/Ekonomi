@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
+import Footer from '../Footer';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -137,6 +138,10 @@ export default function LoginScreen() {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div style={{ marginTop: '2rem' }}>
+            <Footer />
           </div>
         </div>
       </div>
