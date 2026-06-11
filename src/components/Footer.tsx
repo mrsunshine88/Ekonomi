@@ -8,9 +8,8 @@ export default function Footer() {
     <>
       <footer style={{
         marginTop: 'auto',
-        padding: '2rem 1rem',
-        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-        background: '#0b0f19',
+        padding: '3rem 1rem 2rem 1rem',
+        background: 'transparent',
         textAlign: 'center',
       }}>
         <div style={{
@@ -22,19 +21,19 @@ export default function Footer() {
         }}>
           <button 
             onClick={() => setModalType('tos')}
-            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem' }}
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem', padding: '0.5rem', textDecoration: 'underline', textUnderlineOffset: '4px' }}
           >
             Användarvillkor
           </button>
           <button 
             onClick={() => setModalType('privacy')}
-            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem' }}
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem', padding: '0.5rem', textDecoration: 'underline', textUnderlineOffset: '4px' }}
           >
             Integritetspolicy
           </button>
           <button 
             onClick={() => setModalType('contact')}
-            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem' }}
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem', padding: '0.5rem', textDecoration: 'underline', textUnderlineOffset: '4px' }}
           >
             Kontakt
           </button>
