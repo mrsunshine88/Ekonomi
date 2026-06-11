@@ -493,10 +493,11 @@ button.primary:hover {
   min-height: 100vh;
   width: 100%;
   background: #060913;
+  justify-content: center;
 }
 
 .login-info-section {
-  flex: 1;
+  flex: 0 1 700px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -774,11 +775,12 @@ button.primary:hover {
 
 @media (max-width: 1024px) {
   .login-wrapper {
-    flex-direction: column;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
   }
   
   .login-info-section {
-    padding: 3rem 1.5rem;
+    padding: 2rem 1.5rem 4rem 1.5rem;
   }
   
   .login-hero-title {
@@ -789,7 +791,7 @@ button.primary:hover {
     width: 100%;
     padding: 3rem 1.5rem;
     border-left: none;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
   }
   
   .login-form-container {
