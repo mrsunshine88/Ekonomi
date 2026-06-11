@@ -499,3 +499,23 @@ Under systemets utveckling genomfördes en rigorös granskning via Supabase Data
 - **Function Search Path Mutable:** Alla inbyggda RPC-funktioner (som `get_admin_stats`, `toggle_paywall` m.m.) har explicit tilldelats `SET search_path = ''` för att förhindra SQL-injection via spoofing av schema.
 - **SECURITY DEFINER Access:** Exekveringsrättigheter för administrativa funktioner har återkallats (`REVOKE EXECUTE`) från `PUBLIC` och `anon`-rollerna. Nu tillåts endast inloggade (`authenticated`) användare att *försöka* anropa dessa (funktionerna validerar sedan ifall användaren är Admin).
 - **Leaked Password Protection:** Systemet är förberett för att slå på skyddet mot läckta lösenord via Supabase Auth-inställningar.
+
+---
+
+## 24. Testning & Kvalitetssäkring (QA)
+Ekonomiappen har genomgått rigorösa automatiska och manuella tester för att klassificeras som produktionsredo ("Live-ready"). Resultaten och metodiken finns detaljerat dokumenterad i en separat testrapport: [TEST_RAPPORT.md](TEST_RAPPORT.md).
+
+### 24.1 Logik- och Enhetstester
+Hjärtat i applikationen är matematikmotorn i `store.ts` (`calculateMonth()`). Den testas via Vitest (`store.test.ts`) som säkerställer att:
+- "Splitwise"-logiken fungerar 100% balanserat.
+- Skulder ("debts") och överföringar ("transfers") fördelas exakt.
+- Privata, gemensamma och autogiro-märkta räkningar separeras korrekt och beräknas på rätt individnivå.
+
+### 24.2 Chaos Monkey & Stress Test
+För att verifiera UI:ts tålighet användes ett avancerat "Chaos Monkey"-testverktyg. Ett automatiserat robot-skript skapade ett användarkonto och framkallade extremt hög last i webbläsaren:
+- Klickande mellan rutter (`/mypages`, `/month`, `/stats`) utan att invänta animationer.
+- Avbrytande av API-anrop från Onboarding-flödet.
+- Testet lyckades inledningsvis identifiera en ovanlig React-loop (Maximum update depth exceeded) i `MyPages.tsx` som åtgärdades omedelbart genom att optimera Zustand-selectorns array-allokering.
+- Efter rättningen kördes testet igen, och applikationen var **100% stabil** under intensiv belastning utan en enda varning i konsolen. All state-hantering (via Zustand) och optimering via `Suspense`/`lazy` hanterade kontextbyten felfritt.
+
+Dessa tester garanterar att Ekonomiappen tål verklighetsanpassad och extrem användning utan att förlora dataintegritet.

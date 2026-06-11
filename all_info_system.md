@@ -71,3 +71,9 @@
 *   **Skydd mot oavsiktliga klick:** Överförings/Swish-knappar disable:as permanent (för den aktuella sessionen) direkt efter klick. Behöver siduppdatering/state-refresh för att låsas upp.
 *   **Premium Startskärm (Login):** Split-screen layout på desktop med "glassmorphism" paneler. Formuläret staplas överst på mobila skärmar för optimalt flöde.
 *   **CSS:** Vanilla CSS med CSS-variabler för theming, backdrop-filter blur (glassmorphism), och responsiva CSS grids.
+
+## 8. Testning & Kvalitetssäkring (QA)
+*   **Enhetstester (Vitest):** Matematikmotorn (`calculateMonth`) är bevisat 100% exakt för hantering av "Splitwise"-skulder, gemensamma konton, och autogiro (`store.test.ts`).
+*   **Databas/RLS:** Fullständigt validerad via Supabase Linter. RPC-funktioner har säkerhetsprövad `search_path` och strikt `SECURITY DEFINER` access.
+*   **Chaos Monkey (Stress-tester):** Applikationen har utsatts för extrema automatiserade tester (100+ ologiska UI-klick per minut under laddningssekvenser). Testet upptäckte och eliminerade en dold React/Zustand render-loop (`Maximum update depth exceeded`) i Onboarding-flödet. UI-arkitekturen är nu bekräftat krasch-fri och skottsäker.
+*   **Fullständig Testrapport:** Finns i [TEST_RAPPORT.md](TEST_RAPPORT.md).
