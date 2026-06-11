@@ -14,6 +14,11 @@ export default function AdminDashboard() {
   const [vipList, setVipList] = useState<string[]>([]);
   const [stats, setStats] = useState<{ total_members: number, active_households: number } | null>(null);
 
+  const [contactCompany, setContactCompany] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [contactAddress, setContactAddress] = useState('');
+
   const fetchVipList = async () => {
     try {
       const { data, error } = await supabase.rpc('get_vip_emails');
@@ -36,9 +41,24 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchContactSettings = async () => {
+    try {
+      const { data } = await supabase.from('global_settings').select('key, value');
+      if (data) {
+        setContactCompany(data.find(d => d.key === 'contact_company')?.value || '');
+        setContactEmail(data.find(d => d.key === 'contact_email')?.value || '');
+        setContactPhone(data.find(d => d.key === 'contact_phone')?.value || '');
+        setContactAddress(data.find(d => d.key === 'contact_address')?.value || '');
+      }
+    } catch (e: any) {
+      console.error("Kunde inte hämta kontaktuppgifter", e);
+    }
+  };
+
   useEffect(() => {
     fetchVipList();
     fetchStats();
+    fetchContactSettings();
   }, []);
 
   const handleTogglePaywall = async () => {
@@ -100,6 +120,21 @@ export default function AdminDashboard() {
       setStripePriceId('');
     } catch (e: any) {
       setMsg('❌ Kunde inte spara nycklar: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveContactInfo = async () => {
+    setLoading(true);
+    try {
+      await supabase.rpc('set_global_setting', { setting_key: 'contact_company', setting_value: contactCompany });
+      await supabase.rpc('set_global_setting', { setting_key: 'contact_email', setting_value: contactEmail });
+      await supabase.rpc('set_global_setting', { setting_key: 'contact_phone', setting_value: contactPhone });
+      await supabase.rpc('set_global_setting', { setting_key: 'contact_address', setting_value: contactAddress });
+      setMsg('📞 Kontaktuppgifter sparades!');
+    } catch (e: any) {
+      setMsg('❌ Kunde inte spara kontaktuppgifter: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -181,6 +216,62 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+      </div>
+
+      <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+        <h3 style={{ marginBottom: '0.5rem' }}>Kontaktuppgifter (Sidfot)</h3>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Dessa uppgifter visas när användare klickar på "Kontakt" längst ner på sidan.</p>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Företagsnamn</label>
+            <input 
+              type="text" 
+              value={contactCompany}
+              onChange={e => setContactCompany(e.target.value)}
+              placeholder="Ex: Ekonomi & Swish AB"
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>E-postadress</label>
+            <input 
+              type="email" 
+              value={contactEmail}
+              onChange={e => setContactEmail(e.target.value)}
+              placeholder="Ex: info@exempel.se"
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Telefonnummer</label>
+            <input 
+              type="text" 
+              value={contactPhone}
+              onChange={e => setContactPhone(e.target.value)}
+              placeholder="Ex: 070-123 45 67"
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Adress</label>
+            <input 
+              type="text" 
+              value={contactAddress}
+              onChange={e => setContactAddress(e.target.value)}
+              placeholder="Ex: Storgatan 1, 123 45 Stad"
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
+            />
+          </div>
+        </div>
+        
+        <button 
+          onClick={handleSaveContactInfo}
+          disabled={loading}
+          style={{ padding: '0.75rem 1.5rem', background: 'var(--accent-gradient)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          {loading ? 'Sparar...' : 'Spara Kontaktuppgifter'}
+        </button>
       </div>
 
       <div style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', border: '1px solid rgba(244, 63, 94, 0.3)' }}>

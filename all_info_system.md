@@ -69,4 +69,5 @@
 *   **Mobilmeny:** CSS-backdrop filter dropdown (`mobile-menu-dropdown`). Hamburgermeny aktiverad vid < 768px.
 *   **Bekräftelsemodaler:** Glassmorphism-designade `<ConfirmModal />` i React state (ersätter `window.confirm`). Placerade via CSS `position: absolute` för mobilkompatibilitet.
 *   **Skydd mot oavsiktliga klick:** Överförings/Swish-knappar disable:as permanent (för den aktuella sessionen) direkt efter klick. Behöver siduppdatering/state-refresh för att låsas upp.
+*   **Premium Startskärm (Login):** Split-screen layout på desktop med "glassmorphism" paneler. Formuläret staplas överst på mobila skärmar för optimalt flöde.
 *   **CSS:** Vanilla CSS med CSS-variabler för theming, backdrop-filter blur (glassmorphism), och responsiva CSS grids.

@@ -4,13 +4,14 @@ import { useAuth } from '../AuthContext';
 export default function TermsModal() {
   const { acceptTos, tosAccepted, user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [checked, setChecked] = useState(false);
+  const [checkedTos, setCheckedTos] = useState(false);
+  const [checkedPrivacy, setCheckedPrivacy] = useState(false);
   const [activeTab, setActiveTab] = useState<'tos' | 'privacy'>('tos');
 
   if (!user || tosAccepted) return null;
 
   const handleAccept = async () => {
-    if (!checked) return;
+    if (!checkedTos || !checkedPrivacy) return;
     setLoading(true);
     await acceptTos();
     setLoading(false);
@@ -91,28 +92,41 @@ export default function TermsModal() {
           )}
         </div>
 
-        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '2rem', cursor: 'pointer', color: '#fff' }}>
-          <input 
-            type="checkbox" 
-            checked={checked} 
-            onChange={e => setChecked(e.target.checked)}
-            style={{ width: '20px', height: '20px', accentColor: 'var(--accent-color)', marginTop: '0.2rem' }}
-          />
-          <span style={{ fontSize: '0.95rem', lineHeight: '1.4' }}>
-            Jag har läst och förstått både Användarvillkoren och Integritetspolicyn, och jag godkänner dem.
-          </span>
-        </label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', color: '#fff' }}>
+            <input 
+              type="checkbox" 
+              checked={checkedTos} 
+              onChange={e => setCheckedTos(e.target.checked)}
+              style={{ width: '20px', height: '20px', accentColor: 'var(--accent-color)', marginTop: '0.2rem' }}
+            />
+            <span style={{ fontSize: '0.95rem', lineHeight: '1.4' }}>
+              Jag har läst och godkänner <strong>Användarvillkoren</strong>.
+            </span>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer', color: '#fff' }}>
+            <input 
+              type="checkbox" 
+              checked={checkedPrivacy} 
+              onChange={e => setCheckedPrivacy(e.target.checked)}
+              style={{ width: '20px', height: '20px', accentColor: 'var(--accent-color)', marginTop: '0.2rem' }}
+            />
+            <span style={{ fontSize: '0.95rem', lineHeight: '1.4' }}>
+              Jag har läst och godkänner <strong>Integritetspolicyn</strong>.
+            </span>
+          </label>
+        </div>
 
         <button 
           onClick={handleAccept}
-          disabled={!checked || loading}
+          disabled={!checkedTos || !checkedPrivacy || loading}
           style={{ 
-            background: checked ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.1)', 
-            color: checked ? '#fff' : 'var(--text-secondary)', 
+            background: (checkedTos && checkedPrivacy) ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.1)', 
+            color: (checkedTos && checkedPrivacy) ? '#fff' : 'var(--text-secondary)', 
             padding: '1rem 2rem', 
             border: 'none', 
             borderRadius: '8px', 
-            cursor: checked ? 'pointer' : 'not-allowed', 
+            cursor: (checkedTos && checkedPrivacy) ? 'pointer' : 'not-allowed', 
             fontWeight: 'bold', 
             fontSize: '1.1rem', 
             width: '100%',

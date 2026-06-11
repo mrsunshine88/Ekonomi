@@ -15,6 +15,7 @@ import InstallPrompt from './components/InstallPrompt';
 import Onboarding from './components/Onboarding';
 import PaywallModal from './components/PaywallModal';
 import TermsModal from './components/TermsModal';
+import Footer from './components/Footer';
 
 function App() {
   const { user, householdId, loading } = useAuth();
@@ -238,6 +239,8 @@ function App() {
           <MonthView currentMonth={currentMonth} />
         </>
       )}
+
+      <Footer />
     </div>
   );
 }
