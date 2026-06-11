@@ -1,5 +1,5 @@
 import { StrictMode, Component } from 'react';
-import type { ReactNode } from 'react';
+import type { ReactNode, ErrorInfo } from 'react';
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
@@ -23,10 +23,10 @@ class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean,
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({
       error: error,
-      componentStack: errorInfo.componentStack
+      componentStack: errorInfo.componentStack || null
     });
   }
 
