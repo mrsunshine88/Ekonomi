@@ -618,6 +618,10 @@ button.primary:hover {
   justify-content: center;
   padding: 3rem;
   border-left: 1px solid rgba(255,255,255,0.05);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
   box-shadow: -10px 0 30px rgba(0,0,0,0.3);
   z-index: 10;
 }
