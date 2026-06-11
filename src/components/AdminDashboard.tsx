@@ -119,7 +119,7 @@ export default function AdminDashboard() {
           <div style={{ flex: 1, background: 'rgba(16, 185, 129, 0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
             <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💎</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>{stats.active_households}</div>
-            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Betalande Hushåll (inkl. VIP)</div>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Betalande Hushåll</div>
           </div>
         </div>
       )}

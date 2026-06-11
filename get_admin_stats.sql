@@ -12,6 +12,6 @@ BEGIN
   RETURN QUERY
   SELECT 
     (SELECT COUNT(*)::INT FROM profiles),
-    (SELECT COUNT(*)::INT FROM households WHERE stripe_status IN ('active', 'vip'));
+    (SELECT COUNT(*)::INT FROM households WHERE stripe_status = 'active');
 END;
 $$;
