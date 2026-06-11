@@ -20,6 +20,12 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
     address: '',
     phone: ''
   });
+  const [visibility, setVisibility] = useState({
+    company: true,
+    email: true,
+    address: true,
+    phone: true
+  });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -35,6 +41,12 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
             phone: data.find(d => d.key === 'contact_phone')?.value || '-'
           };
           setContactInfo(info);
+          setVisibility({
+            company: data.find(d => d.key === 'show_contact_company')?.value !== 'false',
+            email: data.find(d => d.key === 'show_contact_email')?.value !== 'false',
+            address: data.find(d => d.key === 'show_contact_address')?.value !== 'false',
+            phone: data.find(d => d.key === 'show_contact_phone')?.value !== 'false'
+          });
         }
         setLoading(false);
       };
@@ -115,24 +127,32 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                 <p>Laddar kontaktuppgifter...</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div>
-                    <strong style={{ color: '#fff', display: 'block', marginBottom: '0.2rem' }}>Företag / Namn:</strong>
-                    {contactInfo.company}
-                  </div>
-                  <div>
-                    <strong style={{ color: '#fff', display: 'block', marginBottom: '0.2rem' }}>E-postadress:</strong>
-                    <a href={`mailto:${contactInfo.email}`} style={{ color: 'var(--accent-color)', textDecoration: 'none' }}>
-                      {contactInfo.email}
-                    </a>
-                  </div>
-                  <div>
-                    <strong style={{ color: '#fff', display: 'block', marginBottom: '0.2rem' }}>Telefonnummer:</strong>
-                    {contactInfo.phone}
-                  </div>
-                  <div>
-                    <strong style={{ color: '#fff', display: 'block', marginBottom: '0.2rem' }}>Adress:</strong>
-                    {contactInfo.address}
-                  </div>
+                  {visibility.company && (
+                    <div>
+                      <strong style={{ color: '#fff', display: 'block', marginBottom: '0.2rem' }}>Företag / Namn:</strong>
+                      {contactInfo.company}
+                    </div>
+                  )}
+                  {visibility.email && (
+                    <div>
+                      <strong style={{ color: '#fff', display: 'block', marginBottom: '0.2rem' }}>E-postadress:</strong>
+                      <a href={`mailto:${contactInfo.email}`} style={{ color: 'var(--accent-color)', textDecoration: 'none' }}>
+                        {contactInfo.email}
+                      </a>
+                    </div>
+                  )}
+                  {visibility.phone && (
+                    <div>
+                      <strong style={{ color: '#fff', display: 'block', marginBottom: '0.2rem' }}>Telefonnummer:</strong>
+                      {contactInfo.phone}
+                    </div>
+                  )}
+                  {visibility.address && (
+                    <div>
+                      <strong style={{ color: '#fff', display: 'block', marginBottom: '0.2rem' }}>Adress:</strong>
+                      {contactInfo.address}
+                    </div>
+                  )}
                 </div>
               )}
             </>

@@ -19,6 +19,11 @@ export default function AdminDashboard() {
   const [contactPhone, setContactPhone] = useState('');
   const [contactAddress, setContactAddress] = useState('');
 
+  const [showCompany, setShowCompany] = useState(true);
+  const [showEmail, setShowEmail] = useState(true);
+  const [showPhone, setShowPhone] = useState(true);
+  const [showAddress, setShowAddress] = useState(true);
+
   const fetchVipList = async () => {
     try {
       const { data, error } = await supabase.rpc('get_vip_emails');
@@ -49,6 +54,11 @@ export default function AdminDashboard() {
         setContactEmail(data.find(d => d.key === 'contact_email')?.value || '');
         setContactPhone(data.find(d => d.key === 'contact_phone')?.value || '');
         setContactAddress(data.find(d => d.key === 'contact_address')?.value || '');
+        
+        setShowCompany(data.find(d => d.key === 'show_contact_company')?.value !== 'false');
+        setShowEmail(data.find(d => d.key === 'show_contact_email')?.value !== 'false');
+        setShowPhone(data.find(d => d.key === 'show_contact_phone')?.value !== 'false');
+        setShowAddress(data.find(d => d.key === 'show_contact_address')?.value !== 'false');
       }
     } catch (e: any) {
       console.error("Kunde inte hämta kontaktuppgifter", e);
@@ -132,6 +142,11 @@ export default function AdminDashboard() {
       await supabase.rpc('set_global_setting', { setting_key: 'contact_email', setting_value: contactEmail });
       await supabase.rpc('set_global_setting', { setting_key: 'contact_phone', setting_value: contactPhone });
       await supabase.rpc('set_global_setting', { setting_key: 'contact_address', setting_value: contactAddress });
+      
+      await supabase.rpc('set_global_setting', { setting_key: 'show_contact_company', setting_value: showCompany.toString() });
+      await supabase.rpc('set_global_setting', { setting_key: 'show_contact_email', setting_value: showEmail.toString() });
+      await supabase.rpc('set_global_setting', { setting_key: 'show_contact_phone', setting_value: showPhone.toString() });
+      await supabase.rpc('set_global_setting', { setting_key: 'show_contact_address', setting_value: showAddress.toString() });
       setMsg('📞 Kontaktuppgifter sparades!');
     } catch (e: any) {
       setMsg('❌ Kunde inte spara kontaktuppgifter: ' + e.message);
@@ -229,9 +244,13 @@ export default function AdminDashboard() {
               type="text" 
               value={contactCompany}
               onChange={e => setContactCompany(e.target.value)}
-              placeholder="Ex: Ekonomi & Swish AB"
+              placeholder="Ex: SmartEkonomi AB"
               style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
             />
+            <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input type="checkbox" checked={showCompany} onChange={e => setShowCompany(e.target.checked)} id="show_comp" />
+              <label htmlFor="show_comp" style={{ fontSize: '0.85rem' }}>Visa på hemsidan</label>
+            </div>
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>E-postadress</label>
@@ -242,6 +261,10 @@ export default function AdminDashboard() {
               placeholder="Ex: info@exempel.se"
               style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
             />
+            <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input type="checkbox" checked={showEmail} onChange={e => setShowEmail(e.target.checked)} id="show_email" />
+              <label htmlFor="show_email" style={{ fontSize: '0.85rem' }}>Visa på hemsidan</label>
+            </div>
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Telefonnummer</label>
@@ -252,6 +275,10 @@ export default function AdminDashboard() {
               placeholder="Ex: 070-123 45 67"
               style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
             />
+            <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input type="checkbox" checked={showPhone} onChange={e => setShowPhone(e.target.checked)} id="show_phone" />
+              <label htmlFor="show_phone" style={{ fontSize: '0.85rem' }}>Visa på hemsidan</label>
+            </div>
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Adress</label>
@@ -259,9 +286,13 @@ export default function AdminDashboard() {
               type="text" 
               value={contactAddress}
               onChange={e => setContactAddress(e.target.value)}
-              placeholder="Ex: Storgatan 1, 123 45 Stad"
+              placeholder="Ex: Storgatan 1"
               style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
             />
+            <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input type="checkbox" checked={showAddress} onChange={e => setShowAddress(e.target.checked)} id="show_address" />
+              <label htmlFor="show_address" style={{ fontSize: '0.85rem' }}>Visa på hemsidan</label>
+            </div>
           </div>
         </div>
         
