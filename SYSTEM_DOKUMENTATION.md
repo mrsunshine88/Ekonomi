@@ -1,7 +1,6 @@
 # Ekonomi & Swish - Systemdokumentation
 
 **Plattform:** React + TypeScript + Vite (PWA) | Databas: Supabase (PostgreSQL) | Hosting: Vercel  
-**Uppdaterad:** 2026-06-11
 
 ---
 
