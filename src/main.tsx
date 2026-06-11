@@ -13,14 +13,21 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: Error | null}> {
+class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: Error | null, componentStack: string | null}> {
   constructor(props: {children: ReactNode}) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, componentStack: null };
   }
 
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    this.setState({
+      error: error,
+      componentStack: errorInfo.componentStack
+    });
   }
 
   render() {
@@ -30,6 +37,8 @@ class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean,
           <h2>Något gick fel!</h2>
           <pre>{this.state.error?.toString()}</pre>
           <pre>{this.state.error?.stack}</pre>
+          <h3>React Component Stack:</h3>
+          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{this.state.componentStack}</pre>
           <button onClick={() => { localStorage.clear(); window.location.reload(); }}>Rensa data och ladda om</button>
         </div>
       );
