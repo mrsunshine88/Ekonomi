@@ -21,19 +21,19 @@ export default function Footer() {
         }}>
           <button 
             onClick={() => setModalType('tos')}
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem', padding: '0.5rem', textDecoration: 'underline', textUnderlineOffset: '4px' }}
+            style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
           >
             Användarvillkor
           </button>
           <button 
             onClick={() => setModalType('privacy')}
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem', padding: '0.5rem', textDecoration: 'underline', textUnderlineOffset: '4px' }}
+            style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
           >
             Integritetspolicy
           </button>
           <button 
             onClick={() => setModalType('contact')}
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem', padding: '0.5rem', textDecoration: 'underline', textUnderlineOffset: '4px' }}
+            style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
           >
             Kontakt
           </button>
