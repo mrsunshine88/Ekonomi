@@ -782,6 +782,7 @@ button.primary:hover {
   .login-info-section {
     order: 2;
     padding: 2rem 1.5rem 4rem 1.5rem;
+    flex: none;
   }
   
   .login-hero-title {
