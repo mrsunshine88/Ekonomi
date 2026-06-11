@@ -12,6 +12,7 @@ export default function AdminDashboard() {
   const [stripePriceId, setStripePriceId] = useState('');
   const [vipEmail, setVipEmail] = useState('');
   const [vipList, setVipList] = useState<string[]>([]);
+  const [stats, setStats] = useState<{ total_members: number, active_households: number } | null>(null);
 
   const fetchVipList = async () => {
     try {
@@ -23,8 +24,21 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchStats = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_admin_stats');
+      if (error) throw error;
+      if (data && data.length > 0) {
+        setStats({ total_members: data[0].total_members, active_households: data[0].active_households });
+      }
+    } catch (e: any) {
+      console.error("Kunde inte hämta admin-statistik", e);
+    }
+  };
+
   useEffect(() => {
     fetchVipList();
+    fetchStats();
   }, []);
 
   const handleTogglePaywall = async () => {
@@ -95,6 +109,21 @@ export default function AdminDashboard() {
     <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
       <h2 style={{ color: '#f43f5e', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>👑 System Admin</h2>
       
+      {stats && (
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👥</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#fff' }}>{stats.total_members}</div>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Totala Medlemmar</div>
+          </div>
+          <div style={{ flex: 1, background: 'rgba(16, 185, 129, 0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💎</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>{stats.active_households}</div>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Betalande Hushåll (inkl. VIP)</div>
+          </div>
+        </div>
+      )}
+
       {msg && <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(0,0,0,0.5)', borderRadius: '8px', borderLeft: '4px solid #f43f5e', color: '#fff' }}>{msg}</div>}
 
       <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
 import { useStore } from '../store';
 
@@ -16,18 +16,25 @@ export default function PrivateView({ currentMonth }: Props) {
   
   const [selectedUserId, setSelectedUserId] = useState<string>(user?.id || '');
 
+  useEffect(() => {
+    if (user && !selectedUserId) {
+      setSelectedUserId(user.id);
+    }
+  }, [user, selectedUserId]);
+
   if (!user) return <div style={{ color: '#fff', textAlign: 'center', marginTop: '2rem' }}>Logga in för att se dina privata utgifter.</div>;
-  if (!selectedUserId) setSelectedUserId(user.id);
+
+  const activeUserId = selectedUserId || user.id;
 
   const householdProfiles = state.householdProfiles || [];
   const visibleProfiles = householdProfiles.filter(p => p.id === user.id || p.share_private_economy);
-  const isViewingOther = selectedUserId !== user.id;
+  const isViewingOther = activeUserId !== user.id;
 
   const monthData = state.privateMonths?.[currentMonth] || { monthId: currentMonth, billAmounts: {}, handledPayments: {} };
   
   const myBills = (state.privateBills || []).filter(b => {
     if (b.startMonth && b.startMonth > currentMonth) return false;
-    return b.userId === selectedUserId && (!b.isArchived || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0));
+    return b.userId === activeUserId && (!b.isArchived || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0));
   });
   
   const isLocked = isViewingOther || (monthData.isLocked || false);
@@ -54,7 +61,7 @@ export default function PrivateView({ currentMonth }: Props) {
         
         {visibleProfiles.length > 1 && (
           <select 
-            value={selectedUserId} 
+            value={activeUserId} 
             onChange={e => setSelectedUserId(e.target.value)}
             style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff', width: '100%', cursor: 'pointer' }}
           >
@@ -66,6 +73,17 @@ export default function PrivateView({ currentMonth }: Props) {
           </select>
         )}
       </div>
+
+      {state.settings?.showTopTotal && myBills.length > 0 && (
+        <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'var(--accent-gradient)', borderRadius: '12px', textAlign: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.3)', color: '#fff' }}>
+          <div style={{ fontSize: '1rem', opacity: 0.9, marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Total Summa (Privat)
+          </div>
+          <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>
+            {totalPrivateCost.toLocaleString('sv-SE')} kr
+          </div>
+        </div>
+      )}
 
       {myBills.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>

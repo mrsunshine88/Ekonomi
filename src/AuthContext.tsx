@@ -7,8 +7,10 @@ interface AuthState {
   session: Session | null;
   householdId: string | null;
   role: 'owner' | 'member' | null;
+  tosAccepted: boolean;
   loading: boolean;
   refreshHousehold: () => Promise<void>;
+  acceptTos: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState>({
@@ -16,8 +18,10 @@ const AuthContext = createContext<AuthState>({
   session: null,
   householdId: null,
   role: null,
+  tosAccepted: false,
   loading: true,
-  refreshHousehold: async () => {}
+  refreshHousehold: async () => {},
+  acceptTos: async () => {}
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -28,11 +32,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [role, setRole] = useState<'owner' | 'member' | null>(null);
+  const [tosAccepted, setTosAccepted] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const acceptTos = async () => {
+    if (!user) return;
+    try {
+      const { error } = await supabase.from('profiles').update({ tos_accepted: true }).eq('id', user.id);
+      if (!error) {
+        setTosAccepted(true);
+      } else {
+        console.error("Failed to accept TOS", error);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const fetchHousehold = async (userId: string) => {
     try {
-      const { data } = await supabase.from('profiles').select('household_id, role').eq('id', userId).single();
+      const { data } = await supabase.from('profiles').select('household_id, role, tos_accepted').eq('id', userId).single();
       if (data?.household_id) {
         setHouseholdId(data.household_id);
         setRole(data.role || 'member');
@@ -40,10 +59,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setHouseholdId(null);
         setRole(null);
       }
+      setTosAccepted(data?.tos_accepted || false);
     } catch (e) {
       console.error(e);
       setHouseholdId(null);
       setRole(null);
+      setTosAccepted(false);
     }
   };
 
@@ -118,7 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, householdId, role, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) } }}>
+    <AuthContext.Provider value={{ user, session, householdId, role, tosAccepted, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) }, acceptTos }}>
       {children}
     </AuthContext.Provider>
   );

@@ -38,6 +38,13 @@ export default function MonthView({ currentMonth }: Props) {
   // Sort all months including the current one, so we can always find the previous month
   const allMonths = Array.from(new Set([...Object.keys(state.months), currentMonth])).sort();
 
+  const totalSum = state.bills.reduce((acc, bill) => {
+    // Endast räkna med om den ska visas denna månad
+    const isVisible = !bill.isArchived || (monthData.billAmounts[bill.id] !== undefined && monthData.billAmounts[bill.id] > 0);
+    if (!isVisible) return acc;
+    const amount = monthData.billAmounts[bill.id] !== undefined ? monthData.billAmounts[bill.id] : bill.defaultAmount;
+    return acc + (amount > 0 ? amount : 0);
+  }, 0);
 
   const renderCategory = (account: Account) => {
     const categoryBills = state.bills.filter(b => b.accountId === account.id && (!b.isArchived || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0)));
@@ -158,8 +165,20 @@ export default function MonthView({ currentMonth }: Props) {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-      {state.accounts.map(account => renderCategory(account))}
+    <div>
+      {state.settings?.showTopTotal && (
+        <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'var(--accent-gradient)', borderRadius: '12px', textAlign: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.3)', color: '#fff' }}>
+          <div style={{ fontSize: '1rem', opacity: 0.9, marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Total Summa (Gemensam)
+          </div>
+          <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>
+            {totalSum.toLocaleString('sv-SE')} kr
+          </div>
+        </div>
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+        {state.accounts.map(account => renderCategory(account))}
+      </div>
     </div>
   );
 }

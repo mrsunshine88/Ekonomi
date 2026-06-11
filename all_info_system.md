@@ -10,6 +10,8 @@
 
 ## 2. Autentisering & Behörigheter
 *   **Inloggning:** E-post och lösenord via Supabase Auth.
+*   **Glömt Lösenord:** Inbyggt flöde med e-postutskick via `supabase.auth.resetPasswordForEmail()`.
+*   **Användarvillkor & GDPR (ToS):** Vid första inloggningen tvingas användaren godkänna Användarvillkor och Integritetspolicy (skrivskyddad modal som blockerar UI:t). Godkännandet sparas permanent som `tos_accepted` i `profiles`-tabellen via kontext (`AuthContext`).
 *   **Stale Closure Skydd:** `AuthContext` använder `useRef` för att förhindra app-låsning när PWA väcks ur viloläge.
 *   **Roller:** `owner` (Medägare) och `member` (Medlem - Låst vy). Sätts per profil.
 *   **Grundarskydd:** Personen med äldst `created_at` i ett hushåll är systemteknisk "Grundare" och kan inte raderas/degraderas av andra owners.
@@ -19,7 +21,9 @@
 ## 3. Betalvägg & SaaS Infrastruktur
 *   **Faktureringsenhet:** Betalning (59 kr/mån) hanteras per Hushåll, inte per användare.
 *   **Master Switch:** Tabellen `global_settings` styr boolean `paywall_active`. Om aktiverad tvingas obetalande hushåll till `<PaywallModal />`.
+*   **Prenumerationsinfo:** En detaljerad visuell modal (`SubscriptionFeaturesModal`) nås från betalväggen som listar alla premiumfördelar (PWA, Push, EkonomiTB etc.) med ikoner och förklaringar.
 *   **VIP-hantering & Admin-Bypass:** Sökning i Admin-panel sätter `stripe_status = 'vip'` i `households` tabellen via RPC. Admin kan hämta en komplett lista över alla aktiva VIP-kunder (`get_vip_emails` RPC) och dra in VIP-status per användare (`revoke_household_vip_by_email`). Administratörens egen inloggning (`apersson508@gmail.com`) förbigår alltid betalväggen internt för att garantera att de inte låser ute sig själva vid aktivering av Master Switchen.
+*   **Admin-statistik:** Systemadministratören ser live hur många totala medlemmar (profiles) och aktiva betalande hushåll/VIPs det finns (via RPC `get_admin_stats`).
 *   **Serverless API (Vercel):**
     *   `/api/create-checkout.js`: Skapar en Stripe Checkout Session (hämtar Price ID och Secret från Supabase).
     *   `/api/create-portal.js`: Dirigerar aktiv kund till Stripes kundportal för korthantering.

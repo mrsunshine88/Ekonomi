@@ -237,6 +237,21 @@ export default function ManageBills() {
               </p>
             </div>
 
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', fontSize: '1rem', color: 'var(--text-primary)' }}>
+                <input 
+                  type="checkbox" 
+                  checked={state.settings?.showTopTotal === true} 
+                  onChange={(e) => onUpdateSettings({ showTopTotal: e.target.checked })}
+                  style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
+                />
+                Visa totala summan på alla räkningar högst upp i vyerna
+              </label>
+              <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', marginLeft: '2.5rem', fontSize: '0.9rem' }}>
+                Visar en stor ruta längst upp med månadens sammanlagda kostnader (både i Gemensam och Privat vy).
+              </p>
+            </div>
+
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
               <label style={{ display: 'block', fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                 🔔 Gemensamt datum för påminnelse (1-31)

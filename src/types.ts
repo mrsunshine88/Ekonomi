@@ -68,6 +68,7 @@ export interface AppState {
   householdProfiles?: Profile[];
   settings?: {
     showSummary?: boolean;
+    showTopTotal?: boolean;
     reminderDay?: number;
   };
   stripeStatus?: 'free' | 'active' | 'canceled' | 'vip' | 'past_due';

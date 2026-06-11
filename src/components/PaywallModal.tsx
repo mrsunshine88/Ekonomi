@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useStore } from '../store';
 import { supabase } from '../supabase';
+import SubscriptionFeaturesModal from './SubscriptionFeaturesModal';
 
 export default function PaywallModal() {
   const [loading, setLoading] = useState(false);
+  const [showFeatures, setShowFeatures] = useState(false);
   const householdId = useStore(s => s.householdId);
 
   const handleCheckout = async () => {
@@ -78,12 +80,29 @@ export default function PaywallModal() {
             fontWeight: 'bold', 
             fontSize: '1.2rem', 
             width: '100%',
+            marginBottom: '1rem',
             boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)' 
           }}
         >
           {loading ? 'Laddar Stripe...' : 'Gå till betalning'}
         </button>
+
+        <button 
+          onClick={() => setShowFeatures(true)}
+          style={{ 
+            background: 'transparent', 
+            border: 'none', 
+            color: 'var(--text-secondary)', 
+            textDecoration: 'underline', 
+            cursor: 'pointer',
+            fontSize: '0.9rem'
+          }}
+        >
+          Vad ingår i prenumerationen? Läs mer här
+        </button>
       </div>
+
+      {showFeatures && <SubscriptionFeaturesModal onClose={() => setShowFeatures(false)} />}
     </div>
   );
 }

@@ -6,6 +6,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
@@ -14,6 +15,23 @@ export default function LoginScreen() {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
+
+    if (isForgotPassword) {
+      setLoading(true);
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin
+        });
+        if (error) throw error;
+        setSuccessMsg('En återställningslänk har skickats till din e-post. Kolla även skräpposten!');
+        setIsForgotPassword(false);
+      } catch (err: any) {
+        setError(err.message || 'Kunde inte skicka återställningslänk.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
     if (!isLogin && password !== confirmPassword) {
       setError('Lösenorden matchar inte.');
@@ -62,10 +80,16 @@ export default function LoginScreen() {
     <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
       <div className="card" style={{ maxWidth: '400px', width: '100%', margin: '0 1rem' }}>
         <h1 style={{ textAlign: 'center', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>Ekonomi & Swish</h1>
-        <h2 style={{ textAlign: 'center', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>{isLogin ? 'Logga in' : 'Skapa Konto'}</h2>
+        <h2 style={{ textAlign: 'center', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
+          {isForgotPassword ? 'Glömt lösenord' : isLogin ? 'Logga in' : 'Skapa Konto'}
+        </h2>
         
         <p style={{ textAlign: 'center', marginBottom: '2rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          {isLogin ? 'Välkommen tillbaka!' : 'Kom igång gratis och synka din ekonomi i molnet.'}
+          {isForgotPassword 
+            ? 'Fyll i din e-postadress så skickar vi en länk för att återställa lösenordet.'
+            : isLogin 
+              ? 'Välkommen tillbaka!' 
+              : 'Kom igång gratis och synka din ekonomi i molnet.'}
         </p>
         
         {error && <div style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>{error}</div>}
@@ -80,15 +104,17 @@ export default function LoginScreen() {
             required
             style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
           />
-          <input 
-            type="password" 
-            placeholder="Lösenord" 
-            value={password} 
-            onChange={e => setPassword(e.target.value)}
-            required
-            style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
-          />
-          {!isLogin && (
+          {!isForgotPassword && (
+            <input 
+              type="password" 
+              placeholder="Lösenord" 
+              value={password} 
+              onChange={e => setPassword(e.target.value)}
+              required
+              style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
+            />
+          )}
+          {!isLogin && !isForgotPassword && (
             <input 
               type="password" 
               placeholder="Bekräfta lösenord" 
@@ -98,20 +124,43 @@ export default function LoginScreen() {
               style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
             />
           )}
+          
+          {isLogin && !isForgotPassword && (
+            <div style={{ textAlign: 'right' }}>
+              <button 
+                type="button"
+                onClick={() => { setIsForgotPassword(true); setError(''); setSuccessMsg(''); }}
+                style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', cursor: 'pointer', fontSize: '0.85rem' }}
+              >
+                Glömt lösenord?
+              </button>
+            </div>
+          )}
+
           <button 
             type="submit" 
             disabled={loading}
             style={{ padding: '0.75rem', background: 'var(--accent-gradient)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1, marginTop: '1rem' }}
           >
-            {loading ? 'Laddar...' : isLogin ? 'Logga in' : 'Skapa konto'}
+            {loading ? 'Laddar...' : isForgotPassword ? 'Skicka återställningslänk' : isLogin ? 'Logga in' : 'Skapa konto'}
           </button>
         </form>
 
         <button 
-          onClick={() => { setIsLogin(!isLogin); setError(''); setSuccessMsg(''); }}
+          onClick={() => { 
+            if (isForgotPassword) {
+              setIsForgotPassword(false);
+            } else {
+              setIsLogin(!isLogin); 
+            }
+            setError(''); 
+            setSuccessMsg(''); 
+          }}
           style={{ width: '100%', marginTop: '1.5rem', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', textDecoration: 'underline' }}
         >
-          {isLogin ? 'Har du inget konto? Skapa ett här' : 'Har du redan ett konto? Logga in'}
+          {isForgotPassword 
+            ? 'Tillbaka till inloggning' 
+            : isLogin ? 'Har du inget konto? Skapa ett här' : 'Har du redan ett konto? Logga in'}
         </button>
       </div>
     </div>
