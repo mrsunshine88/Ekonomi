@@ -775,11 +775,12 @@ button.primary:hover {
 
 @media (max-width: 1024px) {
   .login-wrapper {
-    flex-direction: column-reverse;
-    justify-content: flex-end;
+    flex-direction: column;
+    justify-content: flex-start;
   }
   
   .login-info-section {
+    order: 2;
     padding: 2rem 1.5rem 4rem 1.5rem;
   }
   
@@ -788,6 +789,7 @@ button.primary:hover {
   }
   
   .login-form-section {
+    order: 1;
     width: 100%;
     padding: 3rem 1.5rem;
     border-left: none;
