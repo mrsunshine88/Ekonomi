@@ -806,4 +806,5 @@ button.primary:hover {
   .login-form-container {
     max-width: 100%;
   }
-}
+}\ n . s p i n n e r - b o r d e r   {   d i s p l a y :   i n l i n e - b l o c k ;   w i d t h :   1 . 5 r e m ;   h e i g h t :   1 . 5 r e m ;   b o r d e r :   3 p x   s o l i d   r g b a ( 2 5 5 , 2 5 5 , 2 5 5 , 0 . 3 ) ;   b o r d e r - r a d i u s :   5 0 % ;   b o r d e r - t o p - c o l o r :   # f f f ;   a n i m a t i o n :   s p i n   1 s   e a s e - i n - o u t   i n f i n i t e ;   } \ n @ k e y f r a m e s   s p i n   {   t o   {   t r a n s f o r m :   r o t a t e ( 3 6 0 d e g ) ;   }   }  
+ 
