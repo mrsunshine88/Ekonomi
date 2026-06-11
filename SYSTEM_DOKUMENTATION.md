@@ -1,4 +1,4 @@
-﻿# SmartEkonomi - Systemdokumentation
+# SmartEkonomi - Systemdokumentation
 
 **Plattform:** React + TypeScript + Vite (PWA) | Databas: Supabase (PostgreSQL) | Hosting: Vercel  
 
@@ -518,4 +518,21 @@ FÃ¶r att verifiera UI:ts tÃ¥lighet anvÃ¤ndes ett avancerat "Chaos Monkey"-
 - Testet lyckades inledningsvis identifiera en ovanlig React-loop (Maximum update depth exceeded) i `MyPages.tsx` som Ã¥tgÃ¤rdades omedelbart genom att optimera Zustand-selectorns array-allokering.
 - Efter rÃ¤ttningen kÃ¶rdes testet igen, och applikationen var **100% stabil** under intensiv belastning utan en enda varning i konsolen. All state-hantering (via Zustand) och optimering via `Suspense`/`lazy` hanterade kontextbyten felfritt.
 
-Dessa tester garanterar att SmartEkonomi tÃ¥l verklighetsanpassad och extrem anvÃ¤ndning utan att fÃ¶rlora dataintegritet.
+Dessa tester garanterar att SmartEkonomi tåla verklighetsanpassad och extrem användning utan att förlora dataintegritet.
+
+---
+
+## 25. Re-branding & Senaste Funktionstillägg
+
+Den senaste iterationen av applikationen innebar ett officiellt namnbyte från "Ekonomiapp / Ekonomi & Swish" till **SmartEkonomi** över hela projektet (inklusive domän, PWA-manifest, e-postmallar och pakethanterare). Vidare implementerades flera viktiga förbättringar kring UX och marknadsföring.
+
+### 25.1 Portals för Modaler (z-index fix)
+Ett problem med CSS-stacking contexts (där modaler som `InfoModal` hamnade bakom login-rutan trots hög `z-index`) åtgärdades strukturellt. Genom att implementera **React Portals** (`createPortal` direkt till `document.body`) bryter nu modalerna sig fria från alla lokala CSS-begränsningar och garanteras rendera överst i applikationen oavsett var de anropas ifrån.
+
+### 25.2 Dynamisk Kontaktinformation (Admin-styrd)
+Sidfotens "Kontakt"-ruta har nu integrerats helt med `global_settings` och Admin-panelen. Administratören kan inte bara uppdatera företagets uppgifter, utan även **visa/dölja** enskilda fält (E-post, Telefon, Adress) via interaktiva checkboxes. Detta är implementerat via en case-insensitive säkerhetscheck i RPC:n `set_global_setting` (som nu använder `LOWER(auth.jwt()->>'email')` för att skydda mot fel i versalisering av admin-eposten).
+
+### 25.3 Tydlig Marknadsföring (14 dagars provperiod)
+Paywall-infrastrukturen har förtydligats för att öka konverteringen av nya användare:
+- Checkout-koden i Vercel (`api/create-checkout.js`) skickar nu explicit med konfigurationen `subscription_data: { trial_period_days: 14 }` till Stripe. Detta tvingar automatiskt fram en 14-dagars gratis provperiod innan den första riktiga debiteringen genomförs, helt oberoende av manuella inställningar i Stripe Dashboard.
+- En framträdande "💎 Prenumerera"-knapp ligger numera publikt i sidfoten. Den öppnar `SubscriptionFeaturesModal` (samma vy som används under Paywall) men utrustad med tydlig text om "Endast 59 kr/månad" och "Prova gratis i 14 dagar". Syftet är att besökare omedelbart ska förstå fördelarna och priset innan de skapar ett konto. Användarvillkoren har också uppdaterats för att återspegla dessa betalningsvillkor.
