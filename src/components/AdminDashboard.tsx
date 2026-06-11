@@ -138,18 +138,25 @@ export default function AdminDashboard() {
   const handleSaveContactInfo = async () => {
     setLoading(true);
     try {
-      await supabase.rpc('set_global_setting', { setting_key: 'contact_company', setting_value: contactCompany });
-      await supabase.rpc('set_global_setting', { setting_key: 'contact_email', setting_value: contactEmail });
-      await supabase.rpc('set_global_setting', { setting_key: 'contact_phone', setting_value: contactPhone });
-      await supabase.rpc('set_global_setting', { setting_key: 'contact_address', setting_value: contactAddress });
+      const calls = [
+        supabase.rpc('set_global_setting', { setting_key: 'contact_company', setting_value: contactCompany }),
+        supabase.rpc('set_global_setting', { setting_key: 'contact_email', setting_value: contactEmail }),
+        supabase.rpc('set_global_setting', { setting_key: 'contact_phone', setting_value: contactPhone }),
+        supabase.rpc('set_global_setting', { setting_key: 'contact_address', setting_value: contactAddress }),
+        supabase.rpc('set_global_setting', { setting_key: 'show_contact_company', setting_value: showCompany.toString() }),
+        supabase.rpc('set_global_setting', { setting_key: 'show_contact_email', setting_value: showEmail.toString() }),
+        supabase.rpc('set_global_setting', { setting_key: 'show_contact_phone', setting_value: showPhone.toString() }),
+        supabase.rpc('set_global_setting', { setting_key: 'show_contact_address', setting_value: showAddress.toString() })
+      ];
       
-      await supabase.rpc('set_global_setting', { setting_key: 'show_contact_company', setting_value: showCompany.toString() });
-      await supabase.rpc('set_global_setting', { setting_key: 'show_contact_email', setting_value: showEmail.toString() });
-      await supabase.rpc('set_global_setting', { setting_key: 'show_contact_phone', setting_value: showPhone.toString() });
-      await supabase.rpc('set_global_setting', { setting_key: 'show_contact_address', setting_value: showAddress.toString() });
+      const results = await Promise.all(calls);
+      for (const res of results) {
+        if (res.error) throw res.error;
+      }
+      
       setMsg('📞 Kontaktuppgifter sparades!');
     } catch (e: any) {
-      setMsg('❌ Kunde inte spara kontaktuppgifter: ' + e.message);
+      setMsg('❌ Kunde inte spara kontaktuppgifter: ' + (e.message || JSON.stringify(e)));
     } finally {
       setLoading(false);
     }
