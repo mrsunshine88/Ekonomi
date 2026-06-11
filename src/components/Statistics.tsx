@@ -126,7 +126,7 @@ export default function Statistics() {
       }
     });
     const volatility = (max === -Infinity || min === Infinity) ? 0 : max - min;
-    return { name: b.name, volatility };
+    return { name: b.name, volatility, min, max };
   }).filter(b => b.volatility > 0).sort((a, b) => b.volatility - a.volatility).slice(0, 5);
 
   // Calculate Movers
@@ -351,21 +351,21 @@ export default function Statistics() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
             <div className="card">
               <h3 className="card-title">Mest instabila kostnaderna</h3>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>De räkningar som pendlat mest i pris historiskt.</p>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>De räkningar som pendlar mest i pris historiskt.</p>
               {volatileBills.length > 0 ? (
-                <div style={{ height: 250, width: '100%', marginLeft: '-15px' }}>
-                  <ResponsiveContainer>
-                    <LineChart data={timeData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
-                      <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend iconType="circle" wrapperStyle={{ paddingTop: '1rem' }} />
-                      {volatileBills.map((b, idx) => (
-                        <Line key={b.name} type="monotone" dataKey={b.name} stroke={COLORS[idx % COLORS.length]} strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
-                      ))}
-                    </LineChart>
-                  </ResponsiveContainer>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  {volatileBills.map((b, idx) => (
+                    <div key={b.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1rem' }}>
+                      <div>
+                        <div style={{ fontWeight: 'bold', color: COLORS[idx % COLORS.length] }}>{b.name}</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>Mellan {Math.round(b.min).toLocaleString('sv-SE')} och {Math.round(b.max).toLocaleString('sv-SE')} kr</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Pendlar med</div>
+                        <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--text-primary)' }}>{Math.round(b.volatility).toLocaleString('sv-SE')} kr</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>Inget tillräckligt underlag än.</div>
