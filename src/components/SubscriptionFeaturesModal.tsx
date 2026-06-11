@@ -23,8 +23,20 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
         boxShadow: '0 20px 40px rgba(0,0,0,0.8)' 
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ color: '#fff', fontSize: '1.5rem', margin: 0 }}>Vad ingår i prenumerationen?</h2>
+          <h2 style={{ color: '#fff', fontSize: '1.5rem', margin: 0 }}>Prenumeration & Fördelar</h2>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+        </div>
+
+        <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '1.25rem', marginBottom: '2rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#fff', marginBottom: '0.25rem' }}>
+            Endast 59 kr / månad
+          </div>
+          <div style={{ color: '#10b981', fontSize: '1.1rem', fontWeight: 'bold' }}>
+            🎁 Prova gratis i 14 dagar
+          </div>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem', marginBottom: 0 }}>
+            Ingen bindningstid. Avsluta när du vill. Priset gäller per hushåll, så hela familjen kan använda appen för en och samma summa.
+          </p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', color: '#e2e8f0', lineHeight: '1.5' }}>
