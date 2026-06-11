@@ -458,3 +458,30 @@ För användare som aktiverat inställningen för att visa "Total Summa" i måna
 
 ### 21.3 Korrekt Lagring av Systeminställningar
 Appens databas uppdaterades med kolumnen `show_top_total` i tabellen `household_settings`. Detta säkerställer att användarens individuella vy-inställningar (såsom att visa Total Summa) inte bara hanteras lokalt i klienten utan lagras permanent via `store.ts` och synkroniseras i realtid.
+
+---
+
+## 22. Arkitekturella Designval & Filosofi
+
+Under utvecklingen har vissa traditionella "Enterprise"-mönster (som ofta föreslås av generella AI-verktyg) aktivt valts bort till förmån för hastighet, prestanda och nollkostnads-drift. Ekonomiappen är designad som en snabb PWA.
+
+### 22.1 Uträkningar (`calculateMonth`) sker i Frontend
+Ett vanligt råd är att flytta tung logik till en backend-server för att isolera koden. I denna app sker istället alla Splitwise-uträkningar direkt i React (användarens telefon/webbläsare). 
+**Varför?** 
+- **Blixtsnabbt gränssnitt:** Genom att räkna i klienten sker alla UI-uppdateringar på millisekunder. Ingen nätverksladdning krävs när användaren knappar in ett nytt belopp.
+- **Noll serverkostnad:** All beräkningskraft lånas av användarens enhet istället för att belasta Vercel/Supabase.
+- **Offline-kapacitet:** Appen kan utföra matematiken även vid svajig uppkoppling.
+
+### 22.2 RLS & Frontend som "Source of Truth"
+I stället för att bygga en gigantisk Node.js/Python-backend förlitar sig appen på **Supabase RLS (Row Level Security)** som backend-skydd. 
+- Frontend sköter visuell statushantering (Optimistic UI).
+- RLS skyddar datan så att ingen kan läsa/skriva fel hushålls data.
+- RPC-funktioner används **endast** för säkerhetskritiska uppgifter (som att uppgradera VIP-status eller spara Stripe-nycklar), vilket följer best-practice för Supabase. Detta minskar behovet av "dubbel-logik" i en dedikerad backend.
+
+### 22.3 Full Reload vs Patch-Sync
+När en användare laddar eller ändrar data använder appen ofta en full reload av nuvarande årets data (via `store.ts`), istället för avancerad patch-baserad synkronisering (som Redux + GraphQL-patches).
+**Varför?** 
+- Ett hushålls data för ett helt år är extremt liten i kilobyte. Att ladda om allt går ofta på under 50 millisekunder.
+- Det garanterar 100% dataintegritet. Avancerade patch-system introducerar stor risk för state-desync (ex. att en användare swishar baserat på inaktuella siffror). 
+
+Dessa val gör Ekonomiappen exceptionellt snabb, robust och nästintill gratis att drifta, i full kontrast till tunga och tröga Enterprise-arkitekturer.
