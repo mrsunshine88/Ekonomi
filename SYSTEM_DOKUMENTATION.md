@@ -536,3 +536,28 @@ Sidfotens "Kontakt"-ruta har nu integrerats helt med `global_settings` och Admin
 Paywall-infrastrukturen har förtydligats för att öka konverteringen av nya användare:
 - Checkout-koden i Vercel (`api/create-checkout.js`) skickar nu explicit med konfigurationen `subscription_data: { trial_period_days: 14 }` till Stripe. Detta tvingar automatiskt fram en 14-dagars gratis provperiod innan den första riktiga debiteringen genomförs, helt oberoende av manuella inställningar i Stripe Dashboard.
 - En framträdande "💎 Prenumerera"-knapp ligger numera publikt i sidfoten. Den öppnar `SubscriptionFeaturesModal` (samma vy som används under Paywall) men utrustad med tydlig text om "Endast 59 kr/månad" och "Prova gratis i 14 dagar". Syftet är att besökare omedelbart ska förstå fördelarna och priset innan de skapar ett konto. Användarvillkoren har också uppdaterats för att återspegla dessa betalningsvillkor.
+
+---
+
+## 26. Onboarding & Psykologisk Värdeleverans
+
+För att radikalt sänka tröskeln för nya användare, har onboarding-flödet ("setupen") designats om från grunden. Istället för att mötas av en tom skärm får användaren en guidad, interaktiv upplevelse (`OnboardingWizard.tsx`) baserad på psykologiska UX-principer.
+
+### 26.1 "Quick Win" via One-Click-mallar
+I första steget visas vanliga räkningar (t.ex. Hyra, El, Bredband) som klickbara "piller". Användaren behöver inte skriva något själv, vilket minimerar den kognitiva belastningen. De väljer bara de utgifter de har.
+
+### 26.2 Förväntan (Build-up) och The WOW Moment
+När användaren angett belopp för sina 3 första räkningar, bygger appen upp förväntan:
+- **Loader-läge:** Skärmen visar tillfälligt *"Räknar ihop hushållets utgifter..."* med en roterande ikon i 2 sekunder. Denna artificiella fördröjning lurar hjärnan att förvänta sig en komplex beräkning (Aha-moment).
+- **Värdeleverans & Konfetti:** Istället för att bara skjuta konfetti i ett vakuum, presenteras den summerade kostnaden för hushållet samtidigt som konfettiregnet startar. 
+- **Solo Mode:** Om användaren inte har bjudit in en partner ännu, visas texten: *"Hushållets gemensamma utgifter: X kr. Med en partner blir din andel bara X/2 kr!"*. Detta kommunicerar det ekonomiska värdet av appen (Splitwise-uträkningen) omedelbart.
+
+### 26.3 Semi-Optional Partner Commitment
+Istället för att kräva att användaren direkt bjuder in sin partner under "setupen" (vilket skapar friktion), presenteras steget nu som en möjlighet efter att värdet redan bevisats.
+- Koden och kopieringsfunktionen presenteras med rubriken *"Vill ni dela detta? (Rekommenderas)"*.
+- En stor knapp under koden tillåter användaren att hoppa över steget (*"Hoppa över för nu - Ta mig till månadsvyn"*). 
+- Detta skapar en känsla av kontroll och gör inbjudan till ett naturligt och fritt val istället för ett påtvingat formulär.
+
+### 26.4 Magiskt färdig Månadsvy
+För att säkerställa att momentum bibehålls när onboarding-guiden stängs, ändrades standardbeteendet i `MonthView.tsx`.
+Sammanfattningsrutan ("Hushållets gemensamma utgifter" högst upp) tvingas nu vara synlig som standard för alla användare (såvida de inte aktivt går in i inställningarna och slår av den). Användaren möts alltså omedelbart av sin färdiga, uträknade total-summa snarare än bara en detaljerad lista, vilket förstärker "Wow"-upplevelsen.
