@@ -1,5 +1,6 @@
 import type { Account } from '../types';
 import { useStore } from '../store';
+import OnboardingWizard from './OnboardingWizard';
 
 interface Props {
   currentMonth: string;
@@ -169,7 +170,8 @@ export default function MonthView({ currentMonth }: Props) {
 
   return (
     <div>
-      {state.settings?.showTopTotal && (
+      {state.bills.length === 0 && <OnboardingWizard />}
+      {state.bills.length > 0 && state.settings?.showTopTotal && (
         <div style={{ 
           marginBottom: '2rem', 
           padding: '1.5rem', 
@@ -209,9 +211,11 @@ export default function MonthView({ currentMonth }: Props) {
           </button>
         </div>
       )}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-        {state.accounts.map(account => renderCategory(account))}
-      </div>
+      {state.bills.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+          {state.accounts.map(account => renderCategory(account))}
+        </div>
+      )}
     </div>
   );
 }

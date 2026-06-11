@@ -51,6 +51,7 @@ interface StoreState {
   
   updateBillAmount: (monthId: string, billId: string, amount: number) => Promise<void>;
   addBill: (bill: BillDefinition) => Promise<void>;
+  createOnboardingPayments: (payments: Omit<BillDefinition, 'id' | 'startMonth'>[]) => Promise<void>;
   removeBill: (billId: string) => Promise<void>;
   updateBill: (bill: BillDefinition) => Promise<void>;
   addAccount: (account: Account) => Promise<void>;
@@ -321,6 +322,39 @@ export const useStore = create<StoreState>((set, get) => ({
         () => set({ state: prevState })
       );
     }
+  },
+
+  createOnboardingPayments: async (payments) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
+    
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const { householdId, state } = get();
+    if (!householdId) return;
+
+    const newBills = payments.map(p => ({
+      id: crypto.randomUUID(),
+      ...p,
+      startMonth: currentMonth
+    }));
+
+    set({ state: { ...state, bills: [...state.bills, ...newBills] } });
+
+    await safeDb(
+      supabase.from('bills').insert(newBills.map(b => ({
+        household_id: householdId,
+        id: b.id,
+        name: b.name,
+        account_id: b.accountId,
+        default_amount: b.defaultAmount,
+        start_month: b.startMonth,
+        interval: b.interval,
+        warn_if_zero: b.warnIfZero,
+        split_type: b.splitType,
+        is_loan: b.isLoan,
+        custom_months: b.customMonths
+      }))),
+      () => set({ state })
+    );
   },
 
   addBill: async (bill) => {
