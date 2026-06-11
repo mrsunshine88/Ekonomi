@@ -16,9 +16,10 @@ import Onboarding from './components/Onboarding';
 import PaywallModal from './components/PaywallModal';
 import TermsModal from './components/TermsModal';
 import Footer from './components/Footer';
+import UpdatePassword from './components/Auth/UpdatePassword';
 
 function App() {
-  const { user, householdId, loading } = useAuth();
+  const { user, householdId, loading, isRecoveringPassword } = useAuth();
   const initCloud = useStore(s => s.initCloud);
   const state = useStore(s => s.state);
   
@@ -70,6 +71,10 @@ function App() {
   }, [currentMonth, loadedYears, loadYear]);
 
   if (loading) return <div style={{ color: 'white', padding: '2rem', textAlign: 'center' }}>Laddar...</div>;
+
+  if (isRecoveringPassword) {
+    return <UpdatePassword />;
+  }
 
   if (!user) {
     return <LoginScreen />;

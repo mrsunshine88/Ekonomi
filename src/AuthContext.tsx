@@ -11,6 +11,8 @@ interface AuthState {
   loading: boolean;
   refreshHousehold: () => Promise<void>;
   acceptTos: () => Promise<void>;
+  isRecoveringPassword: boolean;
+  setIsRecoveringPassword: (val: boolean) => void;
 }
 
 const AuthContext = createContext<AuthState>({
@@ -21,7 +23,9 @@ const AuthContext = createContext<AuthState>({
   tosAccepted: false,
   loading: true,
   refreshHousehold: async () => {},
-  acceptTos: async () => {}
+  acceptTos: async () => {},
+  isRecoveringPassword: false,
+  setIsRecoveringPassword: () => {}
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -34,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<'owner' | 'member' | null>(null);
   const [tosAccepted, setTosAccepted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
 
   const acceptTos = async () => {
     if (!user) return;
@@ -107,6 +112,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (!mounted) return;
       try {
+        if (event === 'PASSWORD_RECOVERY') {
+          setIsRecoveringPassword(true);
+        }
+
         const currentUserWasNull = !userRef.current; // Kollar ref för att undvika stale state i useEffect-closure
         setSession(newSession);
         userRef.current = newSession?.user ?? null;
@@ -139,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, householdId, role, tosAccepted, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) }, acceptTos }}>
+    <AuthContext.Provider value={{ user, session, householdId, role, tosAccepted, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) }, acceptTos, isRecoveringPassword, setIsRecoveringPassword }}>
       {children}
     </AuthContext.Provider>
   );
