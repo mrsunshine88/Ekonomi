@@ -322,7 +322,7 @@ export default function Statistics() {
           <div className="card" style={{ marginBottom: '2rem' }}>
             <h3 className="card-title">Kostnadsutveckling</h3>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>En visuell överblick över alla dina totala utgifter för de låsta månaderna.</p>
-            <div style={{ height: 350, width: '100%', marginTop: '1rem' }}>
+            <div style={{ height: 250, width: '100%', marginTop: '1rem' }}>
               <ResponsiveContainer>
                 <BarChart data={timeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
@@ -360,6 +360,7 @@ export default function Statistics() {
                       <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
                       <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
                       <Tooltip content={<CustomTooltip />} />
+                      <Legend iconType="circle" wrapperStyle={{ paddingTop: '1rem' }} />
                       {volatileBills.map((b, idx) => (
                         <Line key={b.name} type="monotone" dataKey={b.name} stroke={COLORS[idx % COLORS.length]} strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
                       ))}
