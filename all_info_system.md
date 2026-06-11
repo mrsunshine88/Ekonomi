@@ -16,7 +16,7 @@
 *   **Roller:** `owner` (Medägare) och `member` (Medlem - Låst vy). Sätts per profil.
 *   **Grundarskydd:** Personen med äldst `created_at` i ett hushåll är systemteknisk "Grundare" och kan inte raderas/degraderas av andra owners.
 *   **Row Level Security (RLS):** All data filtreras i databasen på inloggad användares `household_id`. Profiler skyddas så användare endast kan ändra egen e-post/lösenord, samt att `admin_secrets` är stängd för alla förutom administratören.
-*   **Bypass (RPC):** Databas-funktioner (Remote Procedure Calls) används för operationer som måste runda RLS, exempelvis `delete_user`, `set_user_role`, och `toggle_share_private_economy`.
+*   **Bypass (RPC):** Databas-funktioner (Remote Procedure Calls) används för operationer som måste runda RLS, exempelvis `delete_user`, `set_user_role`, och `toggle_share_private_economy`. Av säkerhetsskäl (för att klara Supabase Linter) har alla RPC-funktioner strypta exekveringsrättigheter (revoked från `PUBLIC` och `anon`) och fastlåst `search_path`.
 
 ## 3. Betalvägg & SaaS Infrastruktur
 *   **Faktureringsenhet:** Betalning (59 kr/mån) hanteras per Hushåll, inte per användare.
@@ -44,13 +44,13 @@
 
 ## 5. Kärnlogik & Vyer
 *   **App.tsx (Routing & State):** Hanterar `currentView` och rendering av betalvägg/onboarding.
-*   **Store (Zustand):** Hanterar lokalt state. Synkroniserar data med Supabase och hanterar offline/online-cache. Löst minnesläcka vid utloggning (`cleanup`).
+*   **Store (Zustand):** Hanterar lokalt state. Synkroniserar data med Supabase. Alla skrivoperationer är skyddade med `navigator.onLine` och `react-hot-toast` för att omedelbart avbryta och varna vid nätverksbortfall (Offline-läge). Löst minnesläcka vid utloggning (`cleanup`).
 *   **Onboarding:** Skapar antingen ett helt nytt hushåll och genererar nödvändiga `accounts`, *eller* ansluter till ett befintligt hushåll via inbjudningskod (Hushålls-ID).
 *   **Månadsvy:**
     *   Matematisk beräkningsmotor som summerar inmatade räkningar.
     *   Räknar ut skuld ("Swish") genom formeln: `(Total delad kostnad / Antal personer) - Vad en enskild person redan betalat`.
 *   **Privat Ekonomi:** Fristående modul. Kan delas globalt till hela hushållet via en toggle i databasen. Har separat tidslinje och rullgardinsmeny för att byta mellan hushållsmedlemmars privata vyer.
-*   **Statistik & Export (EkonomiTB):** Aggregerar data historiskt. Använder `exceljs` och `file-saver` för export av formaterade .xlsx-filer. Innehåller anomalidetektion (markerar avvikelser > 20% över 6 månaders snitt).
+*   **Statistik & Export (EkonomiTB):** Aggregerar data historiskt. Begränsar initial dataladdning till nuvarande år (prestandaoptimering), men inkluderar en "On-Demand"-knapp för att dynamiskt hämta in äldre år. Använder `exceljs` och `file-saver` för export av formaterade .xlsx-filer. Innehåller anomalidetektion (markerar avvikelser > 20% över 6 månaders snitt).
 *   **Låsning av Månader:** Om en månad är markerad som hanterad fryses all data (disabled inputs).
 *   **Arkivering:** Arkiverade räkningar (`is_archived`) döljs från aktuella inmatningar, men är synliga i historiken under förutsättning att beloppet för just den månaden var över 0 kr.
 
