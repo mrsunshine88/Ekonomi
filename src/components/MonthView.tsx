@@ -167,12 +167,22 @@ export default function MonthView({ currentMonth }: Props) {
   return (
     <div>
       {state.settings?.showTopTotal && (
-        <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'var(--accent-gradient)', borderRadius: '12px', textAlign: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.3)', color: '#fff' }}>
-          <div style={{ fontSize: '1rem', opacity: 0.9, marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+        <div style={{ 
+          marginBottom: '2rem', 
+          padding: '1.5rem', 
+          background: 'linear-gradient(145deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1))',
+          border: '1px solid rgba(168, 85, 247, 0.2)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderRadius: '16px', 
+          textAlign: 'center', 
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+        }}>
+          <div style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
             Total Summa (Gemensam)
           </div>
           <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>
-            {totalSum.toLocaleString('sv-SE')} kr
+            <span className="highlight-value">{totalSum.toLocaleString('sv-SE')} kr</span>
           </div>
         </div>
       )}
