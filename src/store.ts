@@ -159,7 +159,7 @@ export const useStore = create<StoreState>((set, get) => ({
         householdProfiles: profiles ? profiles.map(p => ({
           id: p.id, email: p.email, share_private_economy: p.share_private_economy
         })) : [],
-        settings: settings ? { showSummary: settings.show_summary, reminderDay: settings.reminder_day } : { showSummary: true }
+        settings: settings ? { showSummary: settings.show_summary, reminderDay: settings.reminder_day, showTopTotal: settings.show_top_total } : { showSummary: true, showTopTotal: false }
       };
 
       if (monthBillAmounts) {
@@ -526,6 +526,7 @@ export const useStore = create<StoreState>((set, get) => ({
       const payload: any = { household_id: householdId };
       if (settingsUpdates.showSummary !== undefined) payload.show_summary = settingsUpdates.showSummary;
       if (settingsUpdates.reminderDay !== undefined) payload.reminder_day = settingsUpdates.reminderDay;
+      if (settingsUpdates.showTopTotal !== undefined) payload.show_top_total = settingsUpdates.showTopTotal;
       await safeDb(supabase.from('household_settings').upsert(payload, { onConflict: 'household_id' }));
     }
   },
