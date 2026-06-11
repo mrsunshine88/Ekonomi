@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 
+import { createPortal } from 'react-dom';
+
 interface InfoModalProps {
   type: 'tos' | 'privacy' | 'contact';
   onClose: () => void;
@@ -46,7 +48,7 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
     contact: 'Kontakt'
   };
 
-  return (
+  return createPortal(
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       background: 'rgba(11, 15, 25, 0.95)', backdropFilter: 'blur(10px)',
@@ -137,6 +139,7 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
