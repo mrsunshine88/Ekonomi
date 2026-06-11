@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
 
 export default function LoginScreen() {
@@ -10,6 +10,14 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Sätt body background endast på login screen om vi behöver override
+  useEffect(() => {
+    document.body.style.background = '#060913';
+    return () => {
+      document.body.style.background = '#0b0f19';
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +66,7 @@ export default function LoginScreen() {
           // Skapa ett eget moln-hushåll automatiskt till användaren
           const newHouseholdId = crypto.randomUUID();
           const { error: hhErr } = await supabase.from('households').insert([{ id: newHouseholdId }]);
+          
           if (!hhErr) {
              await supabase.from('profiles').update({ household_id: newHouseholdId, role: 'owner' }).eq('id', data.user.id);
           }
@@ -76,92 +85,164 @@ export default function LoginScreen() {
     }
   };
 
+  const features = [
+    {
+      icon: "⚡",
+      title: "Splitwise-matematik i realtid",
+      desc: "Mata in månadens räkningar och låt vår motor räkna ut nettobeloppet på en bråkdel av en sekund. Släng miniräknaren och glöm krångliga Excel-ark."
+    },
+    {
+      icon: "👥",
+      title: "En prenumeration för hela hemmet",
+      desc: "Endast en person behöver betala. Resten av familjen bjuds in via en kod och använder appen helt gratis."
+    },
+    {
+      icon: "🔔",
+      title: "Automatiska Push-påminnelser",
+      desc: "Appen håller koll i bakgrunden och skickar en diskret notis till telefonen när det är dags att pricka av månadens räkningar."
+    },
+    {
+      icon: "🧠",
+      title: "Smart felskrivningskontroll",
+      desc: "Vårt system analyserar er historik och varnar direkt om du råkar trycka in en nolla för mycket på elräkningen."
+    },
+    {
+      icon: "📊",
+      title: "EkonomiTB",
+      desc: "Följ dina kostnader bakåt i historik och få full insyn med interaktiv statistik."
+    }
+  ];
+
   return (
-    <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-      <div className="card" style={{ maxWidth: '400px', width: '100%', margin: '0 1rem' }}>
-        <h1 style={{ textAlign: 'center', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>Ekonomi & Swish</h1>
-        <h2 style={{ textAlign: 'center', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
-          {isForgotPassword ? 'Glömt lösenord' : isLogin ? 'Logga in' : 'Skapa Konto'}
-        </h2>
-        
-        <p style={{ textAlign: 'center', marginBottom: '2rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          {isForgotPassword 
-            ? 'Fyll i din e-postadress så skickar vi en länk för att återställa lösenordet.'
-            : isLogin 
-              ? 'Välkommen tillbaka!' 
-              : 'Kom igång gratis och synka din ekonomi i molnet.'}
-        </p>
-        
-        {error && <div style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>{error}</div>}
-        {successMsg && <div style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>{successMsg}</div>}
+    <div className="login-wrapper">
+      {/* Vänster sida: Info och Features */}
+      <div className="login-info-section">
+        <div className="login-info-content">
+          <div className="brand-badge">Premium Economy</div>
+          <h1 className="login-hero-title">
+            Släng miniräknaren. <br/>
+            <span className="text-gradient">Vi löser hushållsekonomin.</span>
+          </h1>
+          <p className="login-hero-subtitle">
+            Den smartaste plattformen för att automatisera, dela och räkna ut månadens utgifter mellan dig och din partner.
+          </p>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <input 
-            type="email" 
-            placeholder="E-post" 
-            value={email} 
-            onChange={e => setEmail(e.target.value)}
-            required
-            style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
-          />
-          {!isForgotPassword && (
-            <input 
-              type="password" 
-              placeholder="Lösenord" 
-              value={password} 
-              onChange={e => setPassword(e.target.value)}
-              required
-              style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
-            />
-          )}
-          {!isLogin && !isForgotPassword && (
-            <input 
-              type="password" 
-              placeholder="Bekräfta lösenord" 
-              value={confirmPassword} 
-              onChange={e => setConfirmPassword(e.target.value)}
-              required
-              style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
-            />
-          )}
-          
-          {isLogin && !isForgotPassword && (
-            <div style={{ textAlign: 'right' }}>
-              <button 
-                type="button"
-                onClick={() => { setIsForgotPassword(true); setError(''); setSuccessMsg(''); }}
-                style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', cursor: 'pointer', fontSize: '0.85rem' }}
-              >
-                Glömt lösenord?
-              </button>
+          <div className="features-grid">
+            {features.map((feature, i) => (
+              <div key={i} className="feature-card">
+                <div className="feature-icon">{feature.icon}</div>
+                <div>
+                  <h3 className="feature-title">{feature.title}</h3>
+                  <p className="feature-desc">{feature.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Höger sida: Formulär */}
+      <div className="login-form-section">
+        <div className="login-form-container">
+          <div className="login-form-header">
+            <div className="login-logo">
+              <span className="logo-icon">E</span>
+              Ekonomi & Swish
             </div>
-          )}
+            <h2>{isForgotPassword ? 'Återställ Lösenord' : isLogin ? 'Välkommen tillbaka' : 'Skapa ditt konto'}</h2>
+            <p>
+              {isForgotPassword 
+                ? 'Fyll i din e-post så skickar vi en länk'
+                : isLogin 
+                  ? 'Logga in för att fortsätta till ditt hushåll' 
+                  : 'Kom igång på 30 sekunder och slipp excel-arken.'}
+            </p>
+          </div>
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            style={{ padding: '0.75rem', background: 'var(--accent-gradient)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1, marginTop: '1rem' }}
-          >
-            {loading ? 'Laddar...' : isForgotPassword ? 'Skicka återställningslänk' : isLogin ? 'Logga in' : 'Skapa konto'}
-          </button>
-        </form>
+          {error && <div className="login-alert error">{error}</div>}
+          {successMsg && <div className="login-alert success">{successMsg}</div>}
 
-        <button 
-          onClick={() => { 
-            if (isForgotPassword) {
-              setIsForgotPassword(false);
-            } else {
-              setIsLogin(!isLogin); 
-            }
-            setError(''); 
-            setSuccessMsg(''); 
-          }}
-          style={{ width: '100%', marginTop: '1.5rem', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', textDecoration: 'underline' }}
-        >
-          {isForgotPassword 
-            ? 'Tillbaka till inloggning' 
-            : isLogin ? 'Har du inget konto? Skapa ett här' : 'Har du redan ett konto? Logga in'}
-        </button>
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="input-group">
+              <label>E-postadress</label>
+              <input 
+                type="email" 
+                placeholder="namn@exempel.se" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            {!isForgotPassword && (
+              <div className="input-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label>Lösenord</label>
+                  {isLogin && (
+                    <button 
+                      type="button"
+                      onClick={() => { setIsForgotPassword(true); setError(''); setSuccessMsg(''); }}
+                      className="forgot-password-link"
+                    >
+                      Glömt lösenord?
+                    </button>
+                  )}
+                </div>
+                <input 
+                  type="password" 
+                  placeholder="••••••••" 
+                  value={password} 
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            {!isLogin && !isForgotPassword && (
+              <div className="input-group">
+                <label>Bekräfta lösenord</label>
+                <input 
+                  type="password" 
+                  placeholder="••••••••" 
+                  value={confirmPassword} 
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            <button type="submit" disabled={loading} className="submit-btn">
+              {loading 
+                ? <span className="spinner-border"></span> 
+                : isForgotPassword 
+                  ? 'Skicka återställningslänk' 
+                  : isLogin 
+                    ? 'Logga in' 
+                    : 'Skapa konto'}
+            </button>
+          </form>
+
+          <div className="login-footer">
+            <button 
+              onClick={() => { 
+                if (isForgotPassword) {
+                  setIsForgotPassword(false);
+                } else {
+                  setIsLogin(!isLogin); 
+                }
+                setError(''); 
+                setSuccessMsg(''); 
+              }}
+              className="toggle-auth-btn"
+            >
+              {isForgotPassword 
+                ? 'Tillbaka till inloggning' 
+                : isLogin 
+                  ? <>Har du inget konto? <span>Skapa ett gratis här</span></> 
+                  : <>Har du redan ett konto? <span>Logga in</span></>}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
