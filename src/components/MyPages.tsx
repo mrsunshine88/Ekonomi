@@ -184,7 +184,6 @@ export default function MyPages() {
     }
   };
 
-  const handleSignOut = () => supabase.auth.signOut();
 
   const handleDeleteAccount = () => {
     setConfirmModal({
@@ -634,9 +633,6 @@ export default function MyPages() {
         </div>
       </div>
 
-      <button onClick={handleSignOut} style={{ width: '100%', padding: '1rem', background: 'transparent', border: '1px solid var(--text-secondary)', color: 'var(--text-secondary)', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '2rem' }}>
-        Logga ut
-      </button>
     </div>
     </>
   );

@@ -1,5 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { useStore } from './store';
+import { supabase } from './supabase';
 import { useAuth } from './AuthContext';
 import MonthView from './components/MonthView';
 import Summary from './components/Summary';
@@ -108,6 +109,8 @@ function App() {
               {user?.email?.toLowerCase() === 'apersson508@gmail.com' && (
                 <button onClick={() => navigateTo('admin')} className={`mobile-menu-item ${currentView === 'admin' ? 'active' : ''}`}>👑 Admin</button>
               )}
+              <div style={{ height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
+              <button onClick={() => supabase.auth.signOut()} className="mobile-menu-item" style={{ color: '#f43f5e' }}>🚪 Logga ut</button>
             </div>
           </>
         )}
@@ -156,6 +159,12 @@ function App() {
               👑 Admin
             </button>
           )}
+          <button 
+            onClick={() => supabase.auth.signOut()} 
+            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s', marginLeft: '0.5rem' }}
+          >
+            🚪 Logga ut
+          </button>
         </nav>
       </header>
 
