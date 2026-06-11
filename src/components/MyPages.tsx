@@ -6,7 +6,7 @@ import { supabase } from '../supabase';
 export default function MyPages() {
   const { user, householdId, role, refreshHousehold } = useAuth();
   const toggleSharePrivateEconomy = useStore(s => s.toggleSharePrivateEconomy);
-  const householdProfiles = useStore(s => s.state.householdProfiles || []);
+  const householdProfiles = useStore(s => s.state.householdProfiles) || [];
   const myProfile = householdProfiles.find(p => p.id === user?.id);
   const isSharingPrivate = myProfile?.share_private_economy || false;
   const [members, setMembers] = useState<{id: string, email: string, role: string, created_at?: string}[]>([]);
