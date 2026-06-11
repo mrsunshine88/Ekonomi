@@ -38,7 +38,7 @@ export default function Footer() {
             Kontakt
           </button>
         </div>
-        <div style={{ color: 'rgba(255, 255, 255, 0.2)', fontSize: '0.8rem' }}>
+        <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
           &copy; {new Date().getFullYear()} Ekonomi & Swish. Alla rättigheter förbehållna.
         </div>
       </footer>
