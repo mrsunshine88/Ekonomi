@@ -11,10 +11,13 @@ export default function InstallPrompt() {
     const isAppStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
     setIsStandalone(isAppStandalone);
 
-    if (isAppStandalone) return;
+    // Känn av om det är en mobil enhet
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
+
+    if (isAppStandalone || !isMobile) return;
 
     // Känn av iOS eftersom Apple inte stöder beforeinstallprompt
-    const userAgent = window.navigator.userAgent.toLowerCase();
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
     setIsIOS(isIosDevice);
 
