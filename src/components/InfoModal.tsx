@@ -102,7 +102,7 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                 <strong style={{ color: '#fff' }}>Ansvarsfriskrivning:</strong> Appen är ett beräkningsverktyg. Vi ansvarar inte för eventuella matematiska fel, buggar eller ekonomiska beslut som fattas baserat på appens data.
               </p>
               <p>
-                <strong style={{ color: '#fff' }}>Betalning:</strong> Tjänsten kostar 59 kr/månad per hushåll och dras löpande via Stripe tills man avslutar.
+                <strong style={{ color: '#fff' }}>Betalning:</strong> Tjänsten kostar 59 kr/månad per hushåll. Nya prenumeranter får alltid 14 dagars gratis provperiod innan den första debiteringen sker via Stripe. Prenumerationen dras löpande tills man avslutar.
               </p>
             </>
           )}

@@ -54,6 +54,8 @@ export default function PaywallModal() {
         <h2 style={{ color: '#fff', fontSize: '2rem', marginBottom: '1rem' }}>Börja prenumerera</h2>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: '1.6' }}>
           Hoppas du gillar SmartEkonomi! För att få full tillgång och fortsätta låsa dina månader, uppgradera till Premium.
+          <br /><br />
+          <strong style={{ color: '#10b981' }}>🎁 Prova gratis i 14 dagar</strong> innan du debiteras. Avsluta när du vill.
         </p>
         
         <div style={{ 

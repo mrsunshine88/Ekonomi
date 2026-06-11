@@ -59,6 +59,9 @@ export default async function handler(req, res) {
       cancel_url: `${origin}`,
       customer_email: customerEmail || undefined,
       client_reference_id: householdId, // Pass household ID so we know who paid in the webhook
+      subscription_data: {
+        trial_period_days: 14,
+      },
       metadata: {
         household_id: householdId
       }
