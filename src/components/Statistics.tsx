@@ -20,15 +20,27 @@ export default function Statistics() {
   const [viewMode, setViewMode] = useState<'shared' | 'private'>('shared');
 
   const isPrivate = viewMode === 'private';
-  const activeMonthsObj = isPrivate ? (state.privateMonths || {}) : state.months;
-  const sortedMonths = Object.keys(activeMonthsObj).sort();
+  const rawMonthsObj = isPrivate ? (state.privateMonths || {}) : state.months;
+  
+  // 1. DATA FILTERING: Only include locked/handled months
+  const validMonths = Object.keys(rawMonthsObj).filter(monthId => {
+    if (isPrivate) {
+      return (rawMonthsObj[monthId] as any).isLocked === true;
+    } else {
+      const handled = rawMonthsObj[monthId].handledPayments || {};
+      return Object.values(handled).some(v => v === true);
+    }
+  });
+  
+  const sortedMonths = validMonths.sort();
+  
   const activeBills = isPrivate 
-    ? (state.privateBills || []).filter(b => b.userId === user?.id) 
-    : state.bills;
+    ? (state.privateBills || []).filter(b => b.userId === user?.id && !b.isArchived) 
+    : state.bills.filter(b => !b.isArchived);
 
   // 1. Time Series Data (for Bar & Line charts)
   const timeData = sortedMonths.map(monthId => {
-    const m = activeMonthsObj[monthId];
+    const m = rawMonthsObj[monthId];
     const amounts = m.billAmounts || {};
     
     const accountTotals: Record<string, number> = {};
@@ -69,14 +81,46 @@ export default function Statistics() {
     };
   });
 
-  // 2. Find most volatile bills for Line Chart (ignore months where it's 0)
+  // Calculate KPIs
+  const currentYear = new Date().getFullYear().toString();
+  const monthsThisYear = timeData.filter(d => d.monthId.startsWith(currentYear));
+  const totalCostThisYear = monthsThisYear.reduce((sum, d) => sum + d.Total, 0);
+  const avgCostPerMonth = timeData.length > 0 ? timeData.reduce((sum, d) => sum + d.Total, 0) / timeData.length : 0;
+  
+  let trendAmount = 0;
+  if (timeData.length >= 2) {
+    const latest = timeData[timeData.length - 1].Total;
+    const previous = timeData[timeData.length - 2].Total;
+    trendAmount = latest - previous;
+  }
+
+  // Calculate user requested additions
+  let highestBill = { name: '-', amount: 0 };
+  let lowestBill = { name: '-', amount: Infinity };
+  let totalActiveBillsCount = 0;
+  
+  if (sortedMonths.length > 0) {
+    const lastMonth = rawMonthsObj[sortedMonths[sortedMonths.length - 1]];
+    const amounts = lastMonth.billAmounts || {};
+    activeBills.forEach(b => {
+      const amt = amounts[b.id] !== undefined ? amounts[b.id] : b.defaultAmount;
+      if (amt > 0) {
+          totalActiveBillsCount++;
+          if (amt > highestBill.amount) highestBill = { name: b.name, amount: amt };
+          if (amt < lowestBill.amount) lowestBill = { name: b.name, amount: amt };
+      }
+    });
+  }
+  if (lowestBill.amount === Infinity) lowestBill.amount = 0;
+
+  // Find most volatile bills for Line Chart
   const volatileBills = activeBills.map(b => {
     let min = Infinity;
     let max = -Infinity;
     sortedMonths.forEach(mId => {
-      const amounts = activeMonthsObj[mId].billAmounts || {};
+      const amounts = rawMonthsObj[mId].billAmounts || {};
       const amt = amounts[b.id] !== undefined ? amounts[b.id] : b.defaultAmount;
-      if (amt > 0) { // Only calculate volatility when the bill is actually paid
+      if (amt > 0) { 
         if (amt < min) min = amt;
         if (amt > max) max = amt;
       }
@@ -85,34 +129,26 @@ export default function Statistics() {
     return { name: b.name, volatility };
   }).filter(b => b.volatility > 0).sort((a, b) => b.volatility - a.volatility).slice(0, 5);
 
-  // 3. Calculate Movers (Real price changes between the last two times the bill was paid)
-  let moversData: any[] = [];
-  
+  // Calculate Movers
   const diffs = activeBills.map(b => {
-    // Find all amounts for this bill over time
     const paidHistory = sortedMonths.map(mId => {
-      const amounts = activeMonthsObj[mId].billAmounts || {};
+      const amounts = rawMonthsObj[mId].billAmounts || {};
       return amounts[b.id] !== undefined ? amounts[b.id] : b.defaultAmount;
-    }).filter(amt => amt > 0); // Only keep months where it was actually paid
+    }).filter(amt => amt > 0); 
     
     if (paidHistory.length >= 2) {
       const latest = paidHistory[paidHistory.length - 1];
       const previous = paidHistory[paidHistory.length - 2];
-      return {
-        name: b.name,
-        Skillnad: latest - previous,
-      };
+      return { name: b.name, Skillnad: latest - previous };
     }
     return { name: b.name, Skillnad: 0 };
   }).filter(m => m.Skillnad !== 0).sort((a, b) => b.Skillnad - a.Skillnad);
   
-  // Top 3 increases, Top 3 decreases
   const topIncreases = diffs.filter(d => d.Skillnad > 0).slice(0, 3);
-  const topDecreases = diffs.filter(d => d.Skillnad < 0).slice(-3).reverse(); // largest negative first
-  
-  moversData = [...topIncreases, ...topDecreases];
+  const topDecreases = diffs.filter(d => d.Skillnad < 0).slice(-3).reverse(); 
+  const moversData = [...topIncreases, ...topDecreases];
 
-  // 4. Calculate Average Pie Chart (Total Distribution)
+  // Calculate Average Pie Chart (Total Distribution)
   let pieData: {name: string, value: number}[] = [];
   if (!isPrivate) {
     pieData = state.accounts.map(acc => {
@@ -123,7 +159,6 @@ export default function Statistics() {
       return { name: acc.name, value: sum };
     }).filter(p => p.value > 0);
   } else {
-    // For private, let's just make a pie of the top 5 bills by average cost
     pieData = activeBills.map(b => {
       let sum = 0;
       if (timeData.length > 0) {
@@ -133,7 +168,7 @@ export default function Statistics() {
     }).sort((a, b) => b.value - a.value).slice(0, 5).filter(p => p.value > 0);
   }
 
-  // 5. History Tables Data (Only for shared)
+  // History Tables Data (Only for shared)
   let history: any[] = [];
   if (!isPrivate) {
     history = sortedMonths.map((monthId, idx) => {
@@ -144,7 +179,6 @@ export default function Statistics() {
         Object.values(targetAcc).forEach(amt => totalShared += amt);
       });
       
-      // compare to previous month's total shared
       let prevTotalShared = 0;
       if (idx > 0) {
         const prevResult = calculateMonth(state, sortedMonths[idx - 1]);
@@ -154,83 +188,16 @@ export default function Statistics() {
       }
       const sharedDiff = idx > 0 ? totalShared - prevTotalShared : 0;
 
-      return {
-        monthId,
-        result,
-        totalShared,
-        sharedDiff
-      };
-    }).reverse(); // Newest first
+      return { monthId, result, totalShared, sharedDiff };
+    }).reverse();
   }
-
-  const detailedBills = activeBills.map(b => {
-    const paidHistory = sortedMonths.map(mId => {
-      const amounts = activeMonthsObj[mId].billAmounts || {};
-      return amounts[b.id] !== undefined ? amounts[b.id] : b.defaultAmount;
-    }).filter(amt => amt > 0);
-
-    const latest = paidHistory.length > 0 ? paidHistory[paidHistory.length - 1] : 0;
-    const previous = paidHistory.length > 1 ? paidHistory[paidHistory.length - 2] : 0;
-    const diff = latest - previous;
-    
-    return {
-      name: b.name,
-      latest,
-      previous,
-      diff
-    };
-  }).sort((a, b) => b.diff - a.diff);
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div style={{ background: 'rgba(0,0,0,0.85)', border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '8px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }}>
-          <p style={{ margin: '0 0 0.5rem 0', fontWeight: 'bold' }}>{label}</p>
-          {payload.map((p: any) => (
-            <div key={p.dataKey} style={{ color: p.color || p.fill, margin: '0.25rem 0', display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
-              <span>{p.name}:</span>
-              <strong>{p.value > 0 ? '+' : ''}{p.value.toLocaleString('sv-SE')} kr</strong>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
 
   const loanStats = activeBills.filter(b => b.isLoan && b.totalDebt !== undefined).map(loan => {
     let paidSoFar = 0;
     sortedMonths.forEach(monthId => {
-      const m = activeMonthsObj[monthId];
-      let isHandled = false;
-      if (isPrivate) {
-         isHandled = (m as any).isLocked === true;
-      } else {
-         const accountId = (loan as any).accountId;
-         const handled = m.handledPayments || {};
-         // Check if this account is locked
-         Object.keys(handled).forEach(paymentId => {
-           if (handled[paymentId]) {
-              if (paymentId.startsWith('transfer_')) {
-                 const parts = paymentId.split('_');
-                 if (parts.length >= 3 && (accountId === parts[1] || accountId === parts[2])) isHandled = true;
-              } else if (paymentId.startsWith('swish_')) {
-                 const [, fromId, toId] = paymentId.split('_');
-                 if (accountId === fromId || accountId === toId) isHandled = true;
-              }
-           }
-         });
-         
-         // If we couldn't determine account lock, but ANY payment is handled, we'll tentatively count it
-         if (!isHandled && Object.values(handled).some(v => v)) {
-           isHandled = true;
-         }
-      }
-      
-      if (isHandled) {
-        const amt = (m.billAmounts && m.billAmounts[loan.id]) !== undefined ? m.billAmounts[loan.id] : loan.defaultAmount;
-        paidSoFar += amt;
-      }
+      const m = rawMonthsObj[monthId];
+      const amt = (m.billAmounts && m.billAmounts[loan.id]) !== undefined ? m.billAmounts[loan.id] : loan.defaultAmount;
+      paidSoFar += amt;
     });
     
     return {
@@ -241,16 +208,30 @@ export default function Statistics() {
     };
   });
 
-  const tableHeaderStyle = { padding: '1rem', borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)', textAlign: 'left' as const, fontWeight: 'bold' };
-  const tableCellStyle = { padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' };
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(10px)' }}>
+          <p style={{ margin: '0 0 0.5rem 0', fontWeight: 'bold', color: 'var(--text-primary)' }}>{label}</p>
+          {payload.map((p: any) => (
+            <div key={p.dataKey} style={{ color: p.color || p.fill, margin: '0.25rem 0', display: 'flex', justifyContent: 'space-between', gap: '1.5rem', fontWeight: 500 }}>
+              <span>{p.name}:</span>
+              <span>{p.value > 0 ? '+' : ''}{p.value.toLocaleString('sv-SE')} kr</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
-    <div style={{ padding: '0 1rem' }}>
+    <div style={{ padding: '0 1rem', paddingBottom: '3rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <h2 style={{ margin: 0 }}>EkonomiTB - Historisk Data</h2>
+        <h2 style={{ margin: 0 }}>EkonomiTB - Insikter</h2>
         <button 
           onClick={() => exportToExcel(state, user?.id)}
-          style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.6rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)' }}
+          style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '0.6rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
         >
           💾 Ladda ner Excel
         </button>
@@ -259,113 +240,109 @@ export default function Statistics() {
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
         <button 
           onClick={() => setViewMode('shared')}
-          style={{ flex: 1, padding: '0.75rem', background: viewMode === 'shared' ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)', color: viewMode === 'shared' ? '#fff' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: viewMode === 'shared' ? 'bold' : 'normal' }}
+          style={{ flex: 1, padding: '0.75rem', background: viewMode === 'shared' ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)', color: viewMode === 'shared' ? '#fff' : 'var(--text-secondary)', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: viewMode === 'shared' ? 'bold' : 'normal', transition: 'all 0.2s' }}
         >
           Gemensam Statistik
         </button>
         <button 
           onClick={() => setViewMode('private')}
-          style={{ flex: 1, padding: '0.75rem', background: viewMode === 'private' ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)', color: viewMode === 'private' ? '#fff' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: viewMode === 'private' ? 'bold' : 'normal' }}
+          style={{ flex: 1, padding: '0.75rem', background: viewMode === 'private' ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)', color: viewMode === 'private' ? '#fff' : 'var(--text-secondary)', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: viewMode === 'private' ? 'bold' : 'normal', transition: 'all 0.2s' }}
         >
           🔒 Privat Statistik
         </button>
       </div>
 
-      {loanStats.length > 0 && (
-        <div className="card" style={{ marginBottom: '2rem' }}>
-          <h3 className="card-title">💳 Skulder & Lån</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-            Här ser du hur mycket som har betalats av på dina lån totalt (inkluderar endast låsta/hanterade månader).
-          </p>
-          <div style={{ display: 'grid', gap: '1.5rem' }}>
-            {loanStats.map(loan => (
-              <div key={loan.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ fontWeight: 'bold' }}>{loan.name}</span>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    {Math.round(loan.paidSoFar).toLocaleString('sv-SE')} kr betalt av {Math.round(loan.totalDebt!).toLocaleString('sv-SE')} kr
-                  </span>
-                </div>
-                <div style={{ width: '100%', height: '12px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', overflow: 'hidden' }}>
-                  <div style={{ 
-                    height: '100%', 
-                    width: `${loan.progress}%`, 
-                    background: loan.progress >= 100 ? 'var(--success-color)' : 'var(--accent-gradient)',
-                    transition: 'width 0.5s ease-out'
-                  }}></div>
-                </div>
-                <div style={{ textAlign: 'right', marginTop: '0.5rem', fontWeight: 'bold', color: loan.progress >= 100 ? 'var(--success-color)' : 'var(--accent-color)' }}>
-                  {loan.progress >= 100 ? '🎉 Fullt betald!' : `${Math.round(loan.remaining).toLocaleString('sv-SE')} kr kvar`}
-                </div>
-              </div>
-            ))}
-          </div>
+      {sortedMonths.length === 0 ? (
+        <div className="card" style={{ textAlign: 'center', padding: '3rem', marginTop: '2rem' }}>
+          <h3 style={{ color: 'var(--text-secondary)' }}>Ingen statistik tillgänglig</h3>
+          <p style={{ color: 'var(--text-secondary)' }}>Statistik visas först efter att ni har markerat en månad som hanterad i huvudvyn.</p>
         </div>
-      )}
-
-      {!isPrivate && history.length > 0 && (
-        <div className="card">
-          <h3 className="card-title">Huskonto & Swish - Månad för Månad</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>En tydlig tabell över hur stora överföringarna varit historiskt, och exakt vem som swishade vem.</p>
-          
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
-              <thead>
-                <tr>
-                  <th style={tableHeaderStyle}>Månad</th>
-                  <th style={tableHeaderStyle}>Summa till Huskonto</th>
-                  <th style={tableHeaderStyle}>Förändring</th>
-                  <th style={tableHeaderStyle}>Swishar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((h) => (
-                  <tr key={h.monthId}>
-                    <td style={{ ...tableCellStyle, fontWeight: 'bold' }}>{formatMonthName(h.monthId)}</td>
-                    <td style={tableCellStyle}>{Math.round(h.totalShared).toLocaleString('sv-SE')} kr</td>
-                    <td style={{ ...tableCellStyle, color: h.sharedDiff > 0 ? '#f43f5e' : (h.sharedDiff < 0 ? '#10b981' : 'inherit') }}>
-                      {h.sharedDiff > 0 ? '+' : ''}{Math.round(h.sharedDiff).toLocaleString('sv-SE')} kr
-                    </td>
-                    <td style={tableCellStyle}>
-                      {h.result.swishes.map((s: any, i: number) => {
-                        const fromName = state.accounts.find(a => a.id === s.fromId)?.name || s.fromId;
-                        const toName = state.accounts.find(a => a.id === s.toId)?.name || s.toId;
-                        return (
-                          <div key={i} style={{ fontSize: '0.85rem' }}>
-                            <span style={{ color: '#3b82f6' }}>{fromName}</span> swishade <span style={{ color: '#10b981' }}>{toName}</span>: {Math.round(s.amount).toLocaleString('sv-SE')} kr
-                          </div>
-                        );
-                      })}
-                      {h.result.swishes.length === 0 && <span style={{ color: 'var(--text-secondary)' }}>Inga</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {timeData.length > 0 && (
+      ) : (
         <>
+          {/* WOW FACTOR KPI OVERVIEW */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+            <div style={{ background: 'linear-gradient(145deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15))', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '16px', padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ color: 'var(--text-secondary)', textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: '1px', marginBottom: '0.5rem' }}>Snittkostnad / Månad</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>
+                <span className="highlight-value">{Math.round(avgCostPerMonth).toLocaleString('sv-SE')} kr</span>
+              </div>
+            </div>
+
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ color: 'var(--text-secondary)', textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: '1px', marginBottom: '0.5rem' }}>Senaste Månadens Trend</div>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: trendAmount > 0 ? '#f43f5e' : (trendAmount < 0 ? '#10b981' : 'var(--text-primary)'), display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {trendAmount > 0 ? '▲' : (trendAmount < 0 ? '▼' : '▬')} 
+                {Math.abs(trendAmount).toLocaleString('sv-SE')} kr
+              </div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Jämfört med månaden innan</div>
+            </div>
+
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ color: 'var(--text-secondary)', textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: '1px', marginBottom: '0.5rem' }}>Totalt Betalt i År ({currentYear})</div>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                {Math.round(totalCostThisYear).toLocaleString('sv-SE')} kr
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1.5rem' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Dyrast senaste månaden</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#f43f5e' }}>{highestBill.name} ({highestBill.amount.toLocaleString('sv-SE')} kr)</div>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1.5rem' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Billigast senaste månaden</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#10b981' }}>{lowestBill.name} ({lowestBill.amount.toLocaleString('sv-SE')} kr)</div>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1.5rem' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Antal låsta räkningar totalt</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#3b82f6' }}>{totalActiveBillsCount} st (Senaste månaden)</div>
+            </div>
+          </div>
+
+          {/* VISUAL MOVERS (STÖRSTA FÖRÄNDRINGAR) */}
+          {moversData.length > 0 && (
+            <div className="card" style={{ marginBottom: '2rem' }}>
+               <h3 className="card-title">Största prisförändringarna</h3>
+               <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>De räkningar som ändrats allra mest sedan de senast hanterades.</p>
+               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                 {moversData.map(m => (
+                    <div key={m.name} style={{ background: m.Skillnad > 0 ? 'rgba(244, 63, 94, 0.1)' : 'rgba(16, 185, 129, 0.1)', border: m.Skillnad > 0 ? '1px solid rgba(244, 63, 94, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
+                       <div style={{ color: 'var(--text-primary)', fontWeight: 600, marginBottom: '0.5rem' }}>{m.name}</div>
+                       <div style={{ color: m.Skillnad > 0 ? '#f43f5e' : '#10b981', fontSize: '1.5rem', fontWeight: 'bold' }}>
+                          {m.Skillnad > 0 ? '▲ +' : '▼ '}{m.Skillnad.toLocaleString('sv-SE')} kr
+                       </div>
+                    </div>
+                 ))}
+               </div>
+            </div>
+          )}
+
+          {/* CHARTS */}
           <div className="card" style={{ marginBottom: '2rem' }}>
-            <h3 className="card-title">Kostnadsutveckling över tid</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Hur dina totala utgifter har utvecklats månad för månad.</p>
-            <div style={{ height: 300, width: '100%', marginTop: '1rem' }}>
+            <h3 className="card-title">Kostnadsutveckling</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>En visuell överblick över alla dina totala utgifter för de låsta månaderna.</p>
+            <div style={{ height: 350, width: '100%', marginTop: '1rem' }}>
               <ResponsiveContainer>
                 <BarChart data={timeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                   <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
                   <Legend iconType="circle" wrapperStyle={{ paddingTop: '1rem' }} />
                   {!isPrivate ? (
                     state.accounts.map((acc, index) => (
-                      <Bar key={acc.id} dataKey={acc.name} stackId="a" fill={COLORS[index % COLORS.length]} radius={index === state.accounts.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+                      <Bar key={acc.id} dataKey={acc.name} stackId="a" fill={COLORS[index % COLORS.length]} radius={index === state.accounts.length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0]} />
                     ))
                   ) : (
-                    <Bar dataKey="Privat" stackId="a" fill={COLORS[0]} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Privat" stackId="a" fill="url(#colorUv)" radius={[6, 6, 0, 0]} />
                   )}
+                  <defs>
+                    <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={COLORS[2]} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={COLORS[2]} stopOpacity={0.2}/>
+                    </linearGradient>
+                  </defs>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -374,111 +351,122 @@ export default function Statistics() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
             <div className="card">
               <h3 className="card-title">Mest instabila kostnaderna</h3>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>De 5 räkningarna som pendlar mest i pris (baserat på differensen mellan billigast och dyrast historiskt).</p>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>De räkningar som pendlat mest i pris historiskt.</p>
               {volatileBills.length > 0 ? (
                 <div style={{ height: 250, width: '100%', marginLeft: '-15px' }}>
                   <ResponsiveContainer>
-                    <LineChart data={timeData}>
+                    <LineChart data={timeData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                      <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={10} tickLine={false} axisLine={false} />
-                      <YAxis stroke="var(--text-secondary)" fontSize={10} tickLine={false} axisLine={false} />
+                      <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
+                      <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
                       <Tooltip content={<CustomTooltip />} />
-                      <Legend iconType="plainline" iconSize={14} wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                      {volatileBills.map((b, index) => (
-                        <Line key={b.name} type="monotone" dataKey={b.name} stroke={COLORS[index % COLORS.length]} strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                      {volatileBills.map((b, idx) => (
+                        <Line key={b.name} type="monotone" dataKey={b.name} stroke={COLORS[idx % COLORS.length]} strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
                       ))}
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Finns inte tillräckligt med historik ännu.</div>
+                <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>Inget tillräckligt underlag än.</div>
               )}
             </div>
 
             <div className="card">
-              <h3 className="card-title">Genomsnittlig fördelning</h3>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Snittet per månad historiskt.</p>
+              <h3 className="card-title">Genomsnittlig Fördelning</h3>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Dina kostnaders totala snitt-uppdelning.</p>
               {pieData.length > 0 ? (
                 <div style={{ height: 250, width: '100%' }}>
                   <ResponsiveContainer>
                     <PieChart>
-                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                        {pieData.map((_entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0.2)" strokeWidth={2} />
+                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} fill="#8884d8" paddingAngle={5} dataKey="value" stroke="none">
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: any) => `${Math.round(value || 0).toLocaleString('sv-SE')} kr / mån`} contentStyle={{ background: 'rgba(0,0,0,0.85)', border: '1px solid var(--border-color)', borderRadius: '8px' }} />
+                      <Tooltip content={<CustomTooltip />} />
                       <Legend iconType="circle" />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Finns inte tillräckligt med historik ännu.</div>
+                <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '2rem' }}>Inget tillräckligt underlag än.</div>
               )}
             </div>
           </div>
-        </>
-      )}
 
-      {moversData.length > 0 && (
-        <div className="card" style={{ marginBottom: '2rem' }}>
-          <h3 className="card-title">Största förändringarna (Movers)</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Jämförelse mellan de <strong>två senaste gångerna</strong> en specifik räkning betalades. Listar de som blivit dyrast och de som blivit billigast.</p>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
-            <div>
-              <h4 style={{ color: '#f43f5e', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📈 Största ökningarna</h4>
-              {topIncreases.length > 0 ? topIncreases.map((m, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(244, 63, 94, 0.05)', borderRadius: '8px', marginBottom: '0.5rem', border: '1px solid rgba(244, 63, 94, 0.1)' }}>
-                  <span style={{ fontWeight: 'bold' }}>{m.name}</span>
-                  <span style={{ color: '#f43f5e', fontWeight: 'bold' }}>+{Math.round(m.Skillnad).toLocaleString('sv-SE')} kr</span>
-                </div>
-              )) : <div style={{ color: 'var(--text-secondary)' }}>Inga ökningar registrerade.</div>}
-            </div>
-            
-            <div>
-              <h4 style={{ color: '#10b981', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📉 Största minskningarna</h4>
-              {topDecreases.length > 0 ? topDecreases.map((m, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '8px', marginBottom: '0.5rem', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
-                  <span style={{ fontWeight: 'bold' }}>{m.name}</span>
-                  <span style={{ color: '#10b981', fontWeight: 'bold' }}>{Math.round(m.Skillnad).toLocaleString('sv-SE')} kr</span>
-                </div>
-              )) : <div style={{ color: 'var(--text-secondary)' }}>Inga minskningar registrerade.</div>}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {detailedBills.length > 0 && (
-        <div className="card">
-          <h3 className="card-title">Detaljerad Historik - Alla {isPrivate ? 'Privata ' : ''}Räkningar</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Sökbar tabell över alla räkningar och hur mycket de kostade senaste gången vs gången innan det.</p>
-          
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
-              <thead>
-                <tr>
-                  <th style={tableHeaderStyle}>Räkning</th>
-                  <th style={tableHeaderStyle}>Senast Betald</th>
-                  <th style={tableHeaderStyle}>Gången Innan</th>
-                  <th style={tableHeaderStyle}>Differens</th>
-                </tr>
-              </thead>
-              <tbody>
-                {detailedBills.map((b, i) => (
-                  <tr key={i}>
-                    <td style={{ ...tableCellStyle, fontWeight: 'bold' }}>{b.name}</td>
-                    <td style={tableCellStyle}>{b.latest > 0 ? `${Math.round(b.latest).toLocaleString('sv-SE')} kr` : '-'}</td>
-                    <td style={tableCellStyle}>{b.previous > 0 ? `${Math.round(b.previous).toLocaleString('sv-SE')} kr` : '-'}</td>
-                    <td style={{ ...tableCellStyle, color: b.diff > 0 ? '#f43f5e' : (b.diff < 0 ? '#10b981' : 'inherit') }}>
-                      {b.diff > 0 ? '+' : ''}{Math.round(b.diff).toLocaleString('sv-SE')} kr
-                    </td>
-                  </tr>
+          {loanStats.length > 0 && (
+            <div className="card" style={{ marginBottom: '2rem' }}>
+              <h3 className="card-title">💳 Lån & Skulder</h3>
+              <div style={{ display: 'grid', gap: '1.5rem', marginTop: '1rem' }}>
+                {loanStats.map(loan => (
+                  <div key={loan.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                      <span style={{ fontWeight: 'bold' }}>{loan.name}</span>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                        {Math.round(loan.paidSoFar).toLocaleString('sv-SE')} kr betalt av {Math.round(loan.totalDebt!).toLocaleString('sv-SE')} kr
+                      </span>
+                    </div>
+                    <div style={{ width: '100%', height: '14px', background: 'rgba(255,255,255,0.1)', borderRadius: '7px', overflow: 'hidden' }}>
+                      <div style={{ 
+                        height: '100%', 
+                        width: `${loan.progress}%`, 
+                        background: loan.progress >= 100 ? 'var(--success-color)' : 'var(--accent-gradient)',
+                        transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)'
+                      }}></div>
+                    </div>
+                    <div style={{ textAlign: 'right', marginTop: '0.75rem', fontWeight: 'bold', color: loan.progress >= 100 ? 'var(--success-color)' : 'var(--accent-color)' }}>
+                      {loan.progress >= 100 ? '🎉 Fullt betald!' : `${Math.round(loan.remaining).toLocaleString('sv-SE')} kr kvar`}
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              </div>
+            </div>
+          )}
+
+          {!isPrivate && history.length > 0 && (
+            <div className="card">
+              <h3 className="card-title">Huskonto & Swish - Historik</h3>
+              <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ padding: '1rem', borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)', textAlign: 'left', fontWeight: 'bold' }}>Månad</th>
+                      <th style={{ padding: '1rem', borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)', textAlign: 'left', fontWeight: 'bold' }}>Summa till Huskonto</th>
+                      <th style={{ padding: '1rem', borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)', textAlign: 'left', fontWeight: 'bold' }}>Swishar</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {history.map((h) => (
+                      <tr key={h.monthId} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <td style={{ padding: '1rem', fontWeight: 'bold' }}>{formatMonthName(h.monthId)}</td>
+                        <td style={{ padding: '1rem' }}>
+                          <div>{Math.round(h.totalShared).toLocaleString('sv-SE')} kr</div>
+                          {h.sharedDiff !== 0 && (
+                            <div style={{ fontSize: '0.8rem', color: h.sharedDiff > 0 ? '#f43f5e' : '#10b981', marginTop: '0.2rem' }}>
+                              {h.sharedDiff > 0 ? '▲ +' : '▼ '}{Math.round(h.sharedDiff).toLocaleString('sv-SE')} kr
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '1rem' }}>
+                          {h.result.swishes.map((s: any, i: number) => {
+                            const fromName = state.accounts.find(a => a.id === s.fromId)?.name || s.fromId;
+                            const toName = state.accounts.find(a => a.id === s.toId)?.name || s.toId;
+                            return (
+                              <div key={i} style={{ fontSize: '0.85rem', marginBottom: '0.2rem' }}>
+                                <span style={{ color: '#3b82f6', fontWeight: 600 }}>{fromName}</span> swishade <span style={{ color: '#10b981', fontWeight: 600 }}>{toName}</span>: {Math.round(s.amount).toLocaleString('sv-SE')} kr
+                              </div>
+                            );
+                          })}
+                          {h.result.swishes.length === 0 && <span style={{ color: 'var(--text-secondary)' }}>Inga överföringar</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
