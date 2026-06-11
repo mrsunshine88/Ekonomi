@@ -14,6 +14,23 @@ const formatMonthName = (monthId: string) => {
   return `${monthNames[parseInt(month, 10) - 1]} ${year}`;
 };
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(10px)' }}>
+        <p style={{ margin: '0 0 0.5rem 0', fontWeight: 'bold', color: 'var(--text-primary)' }}>{label}</p>
+        {payload.map((p: any) => (
+          <div key={p.dataKey} style={{ color: p.color || p.fill, margin: '0.25rem 0', display: 'flex', justifyContent: 'space-between', gap: '1.5rem', fontWeight: 500 }}>
+            <span>{p.name}:</span>
+            <span>{p.value > 0 ? '+' : ''}{p.value.toLocaleString('sv-SE')} kr</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function Statistics() {
   const state = useStore(s => s.state);
   const loadYear = useStore(s => s.loadYear);
@@ -219,22 +236,7 @@ export default function Statistics() {
     };
   });
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div style={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(10px)' }}>
-          <p style={{ margin: '0 0 0.5rem 0', fontWeight: 'bold', color: 'var(--text-primary)' }}>{label}</p>
-          {payload.map((p: any) => (
-            <div key={p.dataKey} style={{ color: p.color || p.fill, margin: '0.25rem 0', display: 'flex', justifyContent: 'space-between', gap: '1.5rem', fontWeight: 500 }}>
-              <span>{p.name}:</span>
-              <span>{p.value > 0 ? '+' : ''}{p.value.toLocaleString('sv-SE')} kr</span>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
+
 
   return (
     <div style={{ padding: '0 1rem', paddingBottom: '3rem' }}>
