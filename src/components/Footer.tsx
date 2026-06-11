@@ -39,7 +39,7 @@ export default function Footer() {
           </button>
         </div>
         <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-          &copy; {new Date().getFullYear()} Ekonomi & Swish. Alla rättigheter förbehållna.
+          &copy; {new Date().getFullYear()} SmartEkonomi. Alla rättigheter förbehållna.
         </div>
       </footer>
 

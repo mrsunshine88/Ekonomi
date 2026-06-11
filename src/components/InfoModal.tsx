@@ -27,7 +27,7 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
         const { data } = await supabase.from('global_settings').select('key, value');
         if (data) {
           const info = {
-            company: data.find(d => d.key === 'contact_company')?.value || 'Ekonomi & Swish AB',
+            company: data.find(d => d.key === 'contact_company')?.value || 'SmartEkonomi AB',
             email: data.find(d => d.key === 'contact_email')?.value || 'info@exempel.se',
             address: data.find(d => d.key === 'contact_address')?.value || '-',
             phone: data.find(d => d.key === 'contact_phone')?.value || '-'

@@ -53,7 +53,7 @@ export default function PaywallModal() {
         <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>💎</div>
         <h2 style={{ color: '#fff', fontSize: '2rem', marginBottom: '1rem' }}>Börja prenumerera</h2>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: '1.6' }}>
-          Hoppas du gillar Ekonomiappen! För att få full tillgång och fortsätta låsa dina månader, uppgradera till Premium.
+          Hoppas du gillar SmartEkonomi! För att få full tillgång och fortsätta låsa dina månader, uppgradera till Premium.
         </p>
         
         <div style={{ 

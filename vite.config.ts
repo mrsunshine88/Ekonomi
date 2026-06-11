@@ -15,8 +15,8 @@ export default defineConfig({
       },
       includeAssets: ['favicon.png', 'icon-192x192.png', 'icon-512x512.png'],
       manifest: {
-        name: 'Ekonomi & Swish',
-        short_name: 'Ekonomi',
+        name: 'SmartEkonomi',
+        short_name: 'SmartEkonomi',
         description: 'Automatisk uträkning av hushållets räkningar',
         theme_color: '#0b0f19',
         background_color: '#0b0f19',

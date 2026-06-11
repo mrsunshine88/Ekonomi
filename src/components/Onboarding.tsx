@@ -95,7 +95,7 @@ export default function Onboarding() {
         {step === 1 && (
           <>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👋</div>
-            <h2 style={{ color: '#fff', fontSize: '1.8rem', marginBottom: '1rem' }}>Välkommen till Ekonomiappen!</h2>
+            <h2 style={{ color: '#fff', fontSize: '1.8rem', marginBottom: '1rem' }}>Välkommen till SmartEkonomi!</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: '1.5' }}>
               Låt oss bygga upp ert virtuella kassavalv och slippa bråka om vem som ska betala vad.
             </p>

@@ -274,7 +274,7 @@ export default function MyPages() {
     if (!('serviceWorker' in navigator)) return;
     try {
       const reg = await navigator.serviceWorker.ready;
-      await reg.showNotification('Testnotis från Ekonomiappen 💸', {
+      await reg.showNotification('Testnotis från SmartEkonomi 💸', {
         body: 'Det fungerar! Denna enhet kan nu ta emot påminnelser.',
         icon: '/icon-192x192.png',
         badge: '/icon-192x192.png'

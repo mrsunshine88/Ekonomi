@@ -8,7 +8,7 @@ const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')!
 const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')!
 
 webpush.setVapidDetails(
-  'mailto:support@ekonomiapp.local',
+  'mailto:support@smartekonomi.nu',
   vapidPublicKey,
   vapidPrivateKey
 )

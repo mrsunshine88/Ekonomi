@@ -36,7 +36,7 @@ export default function TermsModal() {
         boxShadow: '0 20px 40px rgba(0,0,0,0.8)' 
       }}>
         <h2 style={{ color: '#fff', fontSize: '1.8rem', marginBottom: '1rem', textAlign: 'center' }}>
-          Välkommen till Ekonomiappen!
+          Välkommen till SmartEkonomi!
         </h2>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', textAlign: 'center' }}>
           För att fortsätta behöver du läsa och godkänna våra villkor.

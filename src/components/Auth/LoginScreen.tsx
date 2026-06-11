@@ -147,7 +147,7 @@ export default function LoginScreen() {
           <div className="login-form-header">
             <div className="login-logo">
               <span className="logo-icon">E</span>
-              Ekonomi & Swish
+              SmartEkonomi
             </div>
             <h2>{isForgotPassword ? 'Återställ Lösenord' : isLogin ? 'Välkommen tillbaka' : 'Skapa ditt konto'}</h2>
             <p>

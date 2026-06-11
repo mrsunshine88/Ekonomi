@@ -62,7 +62,7 @@ const formatCurrencyCells = (sheet: ExcelJS.Worksheet, startRow: number, endRow:
 export const exportToExcel = async (state: AppState, userId?: string) => {
   const sortedMonths = Object.keys(state.months).sort();
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'Ekonomiappen';
+  wb.creator = 'SmartEkonomi';
   wb.created = new Date();
 
   // -- BLAD 1: GEMENSAMMA RÄKNINGAR --

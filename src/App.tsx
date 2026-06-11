@@ -117,7 +117,7 @@ function App() {
         )}
 
         <div>
-          <h1 style={{ margin: 0, marginBottom: '0.5rem' }}>Ekonomi & Swish</h1>
+          <h1 style={{ margin: 0, marginBottom: '0.5rem' }}>SmartEkonomi</h1>
           <p style={{ margin: 0 }}>Automatisk uträkning av hushållets räkningar</p>
         </div>
         {/* Desktop nav - hidden on mobile via CSS */}
