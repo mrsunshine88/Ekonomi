@@ -16,8 +16,10 @@ const formatMonthName = (monthId: string) => {
 
 export default function Statistics() {
   const state = useStore(s => s.state);
+  const loadYear = useStore(s => s.loadYear);
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState<'shared' | 'private'>('shared');
+  const [loadingOlder, setLoadingOlder] = useState(false);
 
   const isPrivate = viewMode === 'private';
   const rawMonthsObj = isPrivate ? (state.privateMonths || {}) : state.months;
@@ -33,6 +35,15 @@ export default function Statistics() {
   });
   
   const sortedMonths = validMonths.sort();
+  
+  const oldestMonth = sortedMonths.length > 0 ? sortedMonths[0] : null;
+  const oldestYear = oldestMonth ? parseInt(oldestMonth.split('-')[0], 10) : new Date().getFullYear();
+
+  const handleLoadOlder = async () => {
+    setLoadingOlder(true);
+    await loadYear((oldestYear - 1).toString());
+    setLoadingOlder(false);
+  };
   
   const activeBills = isPrivate 
     ? (state.privateBills || []).filter(b => b.userId === user?.id && !b.isArchived) 
@@ -468,6 +479,41 @@ export default function Statistics() {
             </div>
           )}
         </>
+      )}
+
+      {sortedMonths.length > 0 && (
+        <div style={{ textAlign: 'center', marginTop: '3rem', marginBottom: '1rem' }}>
+          <button 
+            onClick={handleLoadOlder}
+            disabled={loadingOlder}
+            style={{ 
+              background: 'rgba(255,255,255,0.05)', 
+              border: '1px solid rgba(255,255,255,0.1)', 
+              color: 'var(--text-secondary)', 
+              padding: '0.75rem 1.5rem', 
+              borderRadius: '20px',
+              cursor: loadingOlder ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+            onMouseOver={(e) => {
+              if (!loadingOlder) {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (!loadingOlder) {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }
+            }}
+          >
+            {loadingOlder ? 'Hämtar...' : `Hämta äldre år (${oldestYear - 1})`}
+          </button>
+        </div>
       )}
     </div>
   );

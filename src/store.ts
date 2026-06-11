@@ -303,6 +303,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updateBillAmount: async (monthId, billId, amount) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const parseRes = safeParseAmount(amount);
     if (!parseRes.success) {
       toast.error(parseRes.error.issues[0].message);
@@ -323,6 +324,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   addBill: async (bill) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const parseRes = safeParseBill(bill);
     if (!parseRes.success) {
       toast.error(parseRes.error.issues[0].message);
@@ -342,6 +344,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   removeBill: async (billId) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const { householdId, state } = get();
     set({ state: { ...state, bills: state.bills.map(b => b.id === billId ? { ...b, isArchived: true } : b) } });
     if (householdId) {
@@ -350,6 +353,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updateBill: async (bill) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const parseRes = safeParseBill(bill);
     if (!parseRes.success) {
       toast.error(parseRes.error.issues[0].message);
@@ -365,6 +369,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   addAccount: async (account) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const parseRes = safeParseAccount(account);
     if (!parseRes.success) {
       toast.error(parseRes.error.issues[0].message);
@@ -380,6 +385,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   removeAccount: async (accountId) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const { householdId, state } = get();
     set({ state: { ...state, accounts: state.accounts.filter(a => a.id !== accountId) } });
     if (householdId) {
@@ -388,6 +394,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updateAccount: async (account) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const parseRes = safeParseAccount(account);
     if (!parseRes.success) {
       toast.error(parseRes.error.issues[0].message);
@@ -403,6 +410,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   copyFromPreviousMonth: async (monthId) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const { householdId, state } = get();
     
     const [yStr, mStr] = monthId.split('-');
@@ -469,6 +477,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   confirmAnomaly: async (monthId, billId) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const { householdId, state } = get();
     const monthData = state.months[monthId] || { monthId, billAmounts: {}, handledPayments: {} };
     set({ state: { ...state, months: { ...state.months, [monthId]: { ...monthData, confirmedAnomalies: { ...(monthData.confirmedAnomalies||{}), [billId]: true } } } } });
@@ -519,6 +528,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updateSettings: async (settingsUpdates) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     if (!settingsUpdates) return;
     const { householdId, state } = get();
     set({ state: { ...state, settings: { ...state.settings, ...settingsUpdates } } });
@@ -555,6 +565,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updatePrivateBillAmount: async (monthId, billId, amount) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const parseRes = safeParseAmount(amount);
     if (!parseRes.success) {
       toast.error(parseRes.error.issues[0].message);
@@ -576,6 +587,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   addPrivateBill: async (bill) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const parseRes = safeParsePrivateBill(bill);
     if (!parseRes.success) {
       toast.error(parseRes.error.issues[0].message);
@@ -595,6 +607,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   removePrivateBill: async (billId) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const { householdId, userId, state } = get();
     set({ state: { ...state, privateBills: (state.privateBills||[]).map(b => b.id === billId ? { ...b, isArchived: true } : b) } });
     if (householdId && userId) {
@@ -603,6 +616,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   updatePrivateBill: async (bill) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const parseRes = safeParsePrivateBill(bill);
     if (!parseRes.success) {
       toast.error(parseRes.error.issues[0].message);
@@ -618,6 +632,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   copyPrivateFromPreviousMonth: async (monthId) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const { householdId, userId, state } = get();
     
     const [yStr, mStr] = monthId.split('-');
@@ -653,6 +668,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   confirmPrivateAnomaly: async (monthId, billId) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const { householdId, userId, state } = get();
     const pMonths = state.privateMonths || {};
     const mData = pMonths[monthId] || { monthId, billAmounts: {} };
@@ -663,6 +679,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   togglePrivateLock: async (monthId) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const prevState = get().state;
     const { householdId, userId, state } = get();
     const pMonths = state.privateMonths || {};
