@@ -438,3 +438,23 @@ Stripe kommunicerar med tre dolda serverless-funktioner byggda i Node.js, placer
 - **VIP-system**: För vänner och familj finns en VIP-sökning i Admin-panelen. Via en RPC (`set_household_vip_by_email`) hittas hushållet och statusen sätts permanent till 'vip', vilket innebär att betalväggen helt ignoreras för det hushållet för all framtid, oavsett om Master Switchen är PÅ eller AV.
 - **Admin Statistik (`get_admin_stats`)**: Systemadministratören har en unik Dashboard (`AdminDashboard.tsx`) som kringgår det normala RLS-skyddet via en `SECURITY DEFINER`-funktion för att hämta det exakta antalet registrerade medlemmar i systemet och totalt antal aktiva, betalande hushåll.
 
+---
+
+## 21. Senaste UI/UX-uppdateringar & Insikter
+
+Appens statistikdel och hanteringsflöde har kontinuerligt moderniserats för att ge en "Wow"-känsla och absolut tillförlitlighet.
+
+### 21.1 Nya EkonomiTB (Insikter)
+Statistik-vyn (`Statistics.tsx`) har byggts om i grunden:
+- **"Glassmorphism" Design**: Ersatt äldre gränssnitt och tabeller med mörka, transparenta kort med moderna indikatorer.
+- **Pålitlig Data-filtrering**: Koden filtrerar bort alla månader som inte har markerats som "hanterade" (`is_handled = true` eller `isLocked = true` för privata månader). Detta förhindrar att halvt ifyllda, framtida månader stör statistik och genomsnittskostnader.
+- **Smarta KPI:er**: Omedelbar överblick av "Snittkostnad/månad", "Senaste månadens trend" (inklusive gröna/röda pilar), "Dyrast/Billigast senaste månaden", samt "Antal låsta räkningar".
+
+### 21.2 Global Låsning (Total Summa)
+För användare som aktiverat inställningen för att visa "Total Summa" i månadsvyn (`showTopTotal`) finns nu en smidig "Markera som hanterad"-knapp direkt under totalsumman.
+- Klick på denna knapp stämplar månaden med `payment_id = 'top_total_lock'`.
+- Detta inaktiverar omedelbart alla inmatningsfält i hela månaden och tystar Push-notisens Cron-jobb.
+- Upplåsning sker sömlöst via "Lås upp"-fliken under inställningar.
+
+### 21.3 Korrekt Lagring av Systeminställningar
+Appens databas uppdaterades med kolumnen `show_top_total` i tabellen `household_settings`. Detta säkerställer att användarens individuella vy-inställningar (såsom att visa Total Summa) inte bara hanteras lokalt i klienten utan lagras permanent via `store.ts` och synkroniseras i realtid.
