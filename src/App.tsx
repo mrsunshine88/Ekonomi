@@ -17,6 +17,7 @@ import PaywallModal from './components/PaywallModal';
 import TermsModal from './components/TermsModal';
 import Footer from './components/Footer';
 import UpdatePassword from './components/Auth/UpdatePassword';
+import ChatBubble from './components/ChatBubble';
 
 function App() {
   const { user, householdId, loading, isRecoveringPassword } = useAuth();
@@ -250,6 +251,7 @@ function App() {
       )}
 
       <Footer />
+      <ChatBubble />
     </div>
   );
 }

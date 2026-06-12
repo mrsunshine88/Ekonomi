@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import { supabase } from '../supabase';
+import AdminChat from './AdminChat';
 
 export default function AdminDashboard() {
   const paywallActive = useStore(s => s.state.paywallActive);
@@ -15,6 +16,9 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<{ total_members: number, active_households: number } | null>(null);
   const [stripeConfigured, setStripeConfigured] = useState<boolean | null>(null);
   const [stripeReason, setStripeReason] = useState<string | null>(null);
+
+  const [systemAdmins, setSystemAdmins] = useState<string[]>([]);
+  const [newAdminEmail, setNewAdminEmail] = useState('');
 
   const [contactCompany, setContactCompany] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -84,11 +88,22 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchSystemAdmins = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_system_admins');
+      if (error) throw error;
+      setSystemAdmins((data || []).map((row: any) => row.email));
+    } catch (e: any) {
+      console.error("Kunde inte hämta system admins", e);
+    }
+  };
+
   useEffect(() => {
     fetchVipList();
     fetchStats();
     fetchContactSettings();
     fetchStripeStatus();
+    fetchSystemAdmins();
   }, []);
 
   const handleTogglePaywall = async () => {
@@ -130,6 +145,40 @@ export default function AdminDashboard() {
       setMsg(`📉 VIP-status borttagen för ${emailToRevoke}.`);
       if (emailToRevoke === vipEmail) setVipEmail('');
       await fetchVipList();
+    } catch (e: any) {
+      setMsg('❌ Admin Fel: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddAdmin = async () => {
+    if (!newAdminEmail) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('add_system_admin', { target_email: newAdminEmail });
+      if (error) throw error;
+      if (data && data !== 'Success') {
+        setMsg(`ℹ️ ${data}`);
+      } else {
+        setMsg(`👑 ${newAdminEmail} är nu en systemadministratör!`);
+        setNewAdminEmail('');
+        await fetchSystemAdmins();
+      }
+    } catch (e: any) {
+      setMsg('❌ Admin Fel: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveAdmin = async (emailToRemove: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.rpc('remove_system_admin', { target_email: emailToRemove });
+      if (error) throw error;
+      setMsg(`📉 Administratörsrättigheter borttagna för ${emailToRemove}.`);
+      await fetchSystemAdmins();
     } catch (e: any) {
       setMsg('❌ Admin Fel: ' + e.message);
     } finally {
@@ -205,6 +254,10 @@ export default function AdminDashboard() {
       {msg && <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(0,0,0,0.5)', borderRadius: '8px', borderLeft: '4px solid #f43f5e', color: '#fff' }}>{msg}</div>}
 
       <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+        <AdminChat />
+      </div>
+
+      <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
         <h3 style={{ marginBottom: '1rem' }}>Global Master Switch</h3>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
@@ -254,6 +307,41 @@ export default function AdminDashboard() {
                 <div key={email} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '8px' }}>
                   <span style={{ color: '#fff' }}>{email}</span>
                   <button onClick={() => handleRevokeVip(email)} disabled={loading} style={{ background: 'transparent', border: '1px solid #f43f5e', color: '#f43f5e', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Ta bort</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+        <h3 style={{ marginBottom: '0.5rem' }}>Administratörer</h3>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Lägg till fler som ska ha tillgång till denna admin-panel. (Superadmin 'apersson508' är alltid inbyggd och osynlig i denna lista).</p>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+          <input 
+            type="email" 
+            placeholder="E-postadress..." 
+            value={newAdminEmail} 
+            onChange={e => setNewAdminEmail(e.target.value)}
+            style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff', minWidth: '200px' }}
+          />
+          <button 
+            onClick={handleAddAdmin} 
+            disabled={loading || !newAdminEmail} 
+            style={{ padding: '0.75rem 1.5rem', background: 'var(--accent-gradient)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            Gör till admin
+          </button>
+        </div>
+
+        {systemAdmins.length > 0 && (
+          <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '1rem' }}>
+            <h4 style={{ marginBottom: '1rem', color: '#fff' }}>🛡️ Aktiva Administratörer</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {systemAdmins.map(email => (
+                <div key={email} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '8px' }}>
+                  <span style={{ color: '#fff' }}>{email}</span>
+                  <button onClick={() => handleRemoveAdmin(email)} disabled={loading} style={{ background: 'transparent', border: '1px solid #f43f5e', color: '#f43f5e', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Ta bort</button>
                 </div>
               ))}
             </div>

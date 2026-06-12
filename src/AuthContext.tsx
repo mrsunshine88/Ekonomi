@@ -13,6 +13,7 @@ interface AuthState {
   acceptTos: () => Promise<void>;
   isRecoveringPassword: boolean;
   setIsRecoveringPassword: (val: boolean) => void;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthState>({
@@ -25,7 +26,8 @@ const AuthContext = createContext<AuthState>({
   refreshHousehold: async () => {},
   acceptTos: async () => {},
   isRecoveringPassword: false,
-  setIsRecoveringPassword: () => {}
+  setIsRecoveringPassword: () => {},
+  isAdmin: false
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -39,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [tosAccepted, setTosAccepted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const acceptTos = async () => {
     if (!user) return;
@@ -95,6 +98,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(session?.user ?? null);
           if (session?.user) {
             await fetchHousehold(session.user.id);
+            try {
+              const { data: adminStatus } = await supabase.rpc('is_user_admin');
+              if (mounted) setIsAdmin(!!adminStatus);
+            } catch (err) {
+              console.error("Failed to fetch admin status", err);
+            }
+          } else {
+            if (mounted) setIsAdmin(false);
           }
         }
       } catch (err) {
@@ -128,8 +139,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setTimeout(() => { if (mounted) setLoading(false); }, 4000);
           }
           await fetchHousehold(newSession.user.id);
+          try {
+            const { data: adminStatus } = await supabase.rpc('is_user_admin');
+            if (mounted) setIsAdmin(!!adminStatus);
+          } catch (err) {
+            console.error("Failed to fetch admin status", err);
+          }
         } else {
           setHouseholdId(null);
+          setIsAdmin(false);
         }
       } catch (err) {
         console.error("Unexpected error in onAuthStateChange:", err);
@@ -148,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, householdId, role, tosAccepted, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) }, acceptTos, isRecoveringPassword, setIsRecoveringPassword }}>
+    <AuthContext.Provider value={{ user, session, householdId, role, tosAccepted, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) }, acceptTos, isRecoveringPassword, setIsRecoveringPassword, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

@@ -602,3 +602,6 @@ Ett doldt krav för Android/Chrome för att betrakta en hemsida som en fullvärd
 pm run test:e2e\.
 * **Excel-export f�rb�ttringar:** P� fliken 'Gemensamma R�kningar' sorteras numera alla utgifter per konto-namn (Hus konto, Andreas konto, Helenas konto etc.) innan de ritas ut. Detta l�ste problemet med att utgifterna l�g osorterade / blandade.
 
+  
+* **Dynamiska Administratörer:** Byggt ett säkert gränssnitt i admin-panelen för att lägga till och ta bort systemadministratörer dynamiskt. Använder tabellen system_admins och is_user_admin() RPC.
+* **Live-Chatt Kundtjänst:** Integrerat en realtids-chatt (Kundservice) byggd med Supabase Realtime för direktkommunikation mellan inloggade användare och admin.
