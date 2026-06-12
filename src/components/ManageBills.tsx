@@ -323,23 +323,79 @@ export default function ManageBills() {
           </div>
 
           <h3 className="card-title">Lägg till nytt konto</h3>
-          <div style={{ display: 'grid', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px' }}>
-            <input 
-              type="text" 
-              placeholder="Kontonamn (t.ex. Barnets konto)" 
-              value={newAccName} 
-              onChange={e => setNewAccName(e.target.value)} 
-            />
-            <select value={newAccType} onChange={e => setNewAccType(e.target.value as any)}>
-              <option value="person">Personligt konto (Person som kan betala & swisha)</option>
-              <option value="shared">Gemensamt konto (Ett konto dit pengar ska föras över)</option>
-            </select>
-            <select value={newAccTransferMethod} onChange={e => setNewAccTransferMethod(e.target.value as any)}>
-              <option value="swish">Betalningsmetod: Swish</option>
-              <option value="transfer">Betalningsmetod: Banköverföring</option>
-            </select>
-            <button onClick={handleAddAccount} style={{ background: 'var(--success-color)', color: '#fff', border: 'none', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-              + Lägg till konto
+          <div style={{ display: 'grid', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 'bold' }}>1. VEM ELLER VAD ÄR DETTA?</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                <button
+                  onClick={() => setNewAccType('person')}
+                  style={{
+                    background: newAccType === 'person' ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)',
+                    border: newAccType === 'person' ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
+                    color: newAccType === 'person' ? '#fff' : 'var(--text-primary)',
+                    padding: '1rem', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.5rem'
+                  }}
+                >
+                  <strong style={{ fontSize: '1.1rem' }}>👤 En Verklig Person</strong>
+                  <span style={{ fontSize: '0.85rem', color: newAccType === 'person' ? 'rgba(255,255,255,0.9)' : 'var(--text-secondary)', lineHeight: '1.4' }}>En profil för en person i hushållet som betalar räkningar och Swishar.</span>
+                </button>
+
+                <button
+                  onClick={() => setNewAccType('shared')}
+                  style={{
+                    background: newAccType === 'shared' ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)',
+                    border: newAccType === 'shared' ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
+                    color: newAccType === 'shared' ? '#fff' : 'var(--text-primary)',
+                    padding: '1rem', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.5rem'
+                  }}
+                >
+                  <strong style={{ fontSize: '1.1rem' }}>🏦 Ett Gemensamt Mål</strong>
+                  <span style={{ fontSize: '0.85rem', color: newAccType === 'shared' ? 'rgba(255,255,255,0.9)' : 'var(--text-secondary)', lineHeight: '1.4' }}>Ett konto (t.ex. Hushållskassan) dit personer för över pengar.</span>
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 'bold' }}>2. VAD HETER KONTOT/PERSONEN?</label>
+              <input 
+                type="text" 
+                placeholder={newAccType === 'person' ? "T.ex. Johan, Maria eller Barnen" : "T.ex. Gemensamma Ica-kortet, Hus-kassan"} 
+                value={newAccName} 
+                onChange={e => setNewAccName(e.target.value)} 
+                style={{ padding: '1rem', fontSize: '1.1rem', marginBottom: 0 }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 'bold' }}>3. HUR TAR KONTOT EMOT PENGAR?</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+                <button
+                  onClick={() => setNewAccTransferMethod('swish')}
+                  style={{
+                    background: newAccTransferMethod === 'swish' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255,255,255,0.05)',
+                    border: newAccTransferMethod === 'swish' ? '1px solid #3b82f6' : '1px solid var(--border-color)',
+                    color: newAccTransferMethod === 'swish' ? '#60a5fa' : 'var(--text-primary)',
+                    padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', textAlign: 'center', fontWeight: 'bold'
+                  }}
+                >
+                  📱 Swish
+                </button>
+                <button
+                  onClick={() => setNewAccTransferMethod('transfer')}
+                  style={{
+                    background: newAccTransferMethod === 'transfer' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.05)',
+                    border: newAccTransferMethod === 'transfer' ? '1px solid #10b981' : '1px solid var(--border-color)',
+                    color: newAccTransferMethod === 'transfer' ? '#34d399' : 'var(--text-primary)',
+                    padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', textAlign: 'center', fontWeight: 'bold'
+                  }}
+                >
+                  🏦 Banköverföring
+                </button>
+              </div>
+            </div>
+
+            <button onClick={handleAddAccount} style={{ background: 'var(--success-color)', color: '#fff', border: 'none', padding: '1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', marginTop: '1rem' }}>
+              + Skapa Kontot
             </button>
           </div>
         </div>
