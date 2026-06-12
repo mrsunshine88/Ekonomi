@@ -11,14 +11,17 @@ export default function InstallPrompt() {
     const isAppStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
     setIsStandalone(isAppStandalone);
 
-    // Känn av om det är en mobil enhet
+    // Känn av om det är en mobil enhet baserat på skärmstorlek och user agent
     const userAgent = window.navigator.userAgent.toLowerCase();
-    const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
+    const isMobileUserAgent = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent);
+    const isSmallScreen = window.innerWidth <= 820;
+    const isMobile = isMobileUserAgent || isSmallScreen;
 
     if (isAppStandalone || !isMobile) return;
 
     // Känn av iOS eftersom Apple inte stöder beforeinstallprompt
-    const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
+    const isIpadOS = navigator.maxTouchPoints > 1 && /macintosh/.test(userAgent);
+    const isIosDevice = /iphone|ipad|ipod/.test(userAgent) || isIpadOS;
     setIsIOS(isIosDevice);
 
     // Lyssna på Android/Chrome's inbyggda event
