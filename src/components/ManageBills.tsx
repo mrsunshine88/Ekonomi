@@ -660,6 +660,7 @@ export default function ManageBills() {
                   <option value="" disabled>Vanliga räkningar...</option>
                   <option value="Hyra">🏠 Hyra</option>
                   <option value="Lån">🏦 Lån</option>
+                  <option value="Bolån">🏠 Bolån</option>
                   <option value="El">⚡ El</option>
                   <option value="Vatten">💧 Vatten</option>
                   <option value="Bredband">🌐 Bredband</option>
@@ -671,7 +672,8 @@ export default function ManageBills() {
                   <option value="Sophämtning">🗑️ Sophämtning</option>
                   <option value="CSN">🎓 CSN</option>
                   <option value="Mobilabonnemang">📱 Mobilabonnemang</option>
-                  <option value="A-kassa / Fack">💼 A-kassa / Fack</option>
+                  <option value="A-kassa">💼 A-kassa</option>
+                  <option value="Fackförening">🤝 Fackförening</option>
                   <option value="Gymkort">🏋️ Gymkort</option>
                 </select>
               </div>
