@@ -3,14 +3,15 @@ import Confetti from 'react-confetti';
 import { useStore } from '../store';
 
 const STANDARD_OPTIONS = [
-  { name: 'Hyra / Lån', category: 'boende', emoji: '🏠' },
-  { name: 'El & Vatten', category: 'boende', emoji: '⚡' },
+  { name: 'Hyra', category: 'boende', emoji: '🏠' },
+  { name: 'Lån', category: 'boende', emoji: '🏦' },
+  { name: 'El', category: 'boende', emoji: '⚡' },
+  { name: 'Vatten', category: 'boende', emoji: '💧' },
   { name: 'Bredband', category: 'boende', emoji: '🌐' },
   { name: 'Hemförsäkring', category: 'försäkringar', emoji: '🛡️' },
-  { name: 'Matkonto', category: 'mat', emoji: '🛒' },
   { name: 'Netflix', category: 'abonnemang', emoji: '🎬' },
   { name: 'Spotify', category: 'abonnemang', emoji: '🎵' },
-  { name: 'Bilen', category: 'transport', emoji: '🚗' },
+  { name: 'Bilförsäkring', category: 'försäkringar', emoji: '🚗' },
 ];
 
 interface Option {
