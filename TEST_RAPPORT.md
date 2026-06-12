@@ -1,4 +1,4 @@
-﻿# ðŸ§ª QA & Testrapport - Ekonomiapp
+# ðŸ§ª QA & Testrapport - Ekonomiapp
 
 **Datum:** 2026-06-11
 **TestmiljÃ¶:** Lokal utvecklingsserver ansluten till Supabase Production.
@@ -46,7 +46,19 @@ Denna rapport sammanfattar de rigorÃ¶sa tester som har utfÃ¶rts pÃ¥ SmartE
 
 ---
 
-## Slutsats
-Systemet anses nu vara **"SkottsÃ¤kert" (Bulletproof)** och redo fÃ¶r produktionslansering (Live). All historik frÃ¥n testerna visar pÃ¥ en applikation med hÃ¶g resiliens mot ovÃ¤ntat anvÃ¤ndarbeteende, robust sÃ¤kerhet mot angrepp och en pÃ¥litlig matematisk motor fÃ¶r utrÃ¤kningar.
+## 5. End-to-End Test av Betalflödet (Stripe E2E)
+**Metod:** Manuella E2E-tester via Stripe Sandbox.
+**Fokus:** Säkerställa att betalväggen skyddar obetalda konton och att hela livscykeln av en prenumeration fungerar i praktiken.
 
-Inga kÃ¤nda tekniska svagheter kvarstÃ¥r.
+- **[GODKÄNT]** **Admin-inmatning:** Stripe-nycklar (Secret, Webhook, Price ID) valideras dynamiskt via en säker Vercel-kontroll (`api/check-stripe.js`) som kringgår Frontend RLS, vilket ger tydlig grön/röd indikator.
+- **[GODKÄNT]** **Paywall Modal:** Betalväggen dyker upp och blockerar vyerna när master switchen är aktiverad och användaren saknar "VIP" eller "Active" status. Inloggade administratörer kan fortfarande fritt navigera utan att bli utlåsta.
+- **[GODKÄNT]** **Skapa Prenumeration:** Vercel-APIn (`create-checkout.js`) genererar korrekt Stripe Checkout-session med en tvingad 14 dagars gratis provperiod. Test-betalning med Stripes 4242-kort går igenom.
+- **[GODKÄNT]** **Webhook-synkronisering:** Efter godkänd kassa ropar Stripe på `/api/stripe-webhook.js`. Koden validerar kryptosignaturen och uppdaterar automatiskt `stripe_status` till `active` i Supabase, vilket omedelbart låser upp appen för kunden.
+- **[GODKÄNT]** **Customer Portal (Uppsägning):** Från "Mina sidor" navigerar användaren via `create-portal.js` in i Stripe Customer Portal där prenumerationen hanteras. Att avsluta prenumerationen triggar återigen en webhook som nedgraderar `stripe_status`, vilket aktiverar betalväggen igen vid nästa inloggning.
+
+---
+
+## Slutsats
+Systemet anses nu vara **"Skottsäkert" (Bulletproof)** och redo för produktionslansering (Live). All historik från testerna visar på en applikation med hög resiliens mot oväntat användarbeteende, robust säkerhet mot angrepp, ett klockrent Stripe-betalflöde och en pålitlig matematisk motor för uträkningar.
+
+Inga kända tekniska svagheter kvarstår.
