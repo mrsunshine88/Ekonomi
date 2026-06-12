@@ -396,7 +396,7 @@ export default function ManageBills() {
                           if (!isLocked) return null;
                           return (
                             <div key={acc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-color)', padding: '0.75rem', borderRadius: '8px' }}>
-                              <span>{acc.name} 🔒</span>
+                              <span>{acc.name}{acc.type === 'shared' ? ' (Gemensamt)' : ''} 🔒</span>
                               <button 
                                 onClick={() => onUnlockAccount(monthId, acc.id)}
                                 style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', border: '1px solid #3b82f6', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
