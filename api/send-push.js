@@ -2,7 +2,7 @@ import webpush from 'web-push';
 import { createClient } from '@supabase/supabase-js';
 
 // Setup VAPID keys
-const publicVapidKey = process.env.VAPID_PUBLIC_KEY;
+const publicVapidKey = process.env.VITE_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY;
 const privateVapidKey = process.env.VAPID_PRIVATE_KEY;
 
 if (publicVapidKey && privateVapidKey) {
