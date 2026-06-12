@@ -40,10 +40,13 @@ class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean,
   }
 }
 
+import InstallPrompt from './components/InstallPrompt';
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
       <AuthProvider>
+        <InstallPrompt />
         <App />
       </AuthProvider>
     </ErrorBoundary>

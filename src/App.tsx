@@ -11,7 +11,7 @@ import LoginScreen from './components/Auth/LoginScreen';
 import MyPages from './components/MyPages';
 import AdminDashboard from './components/AdminDashboard';
 import PrivateView from './components/PrivateView';
-import InstallPrompt from './components/InstallPrompt';
+
 import Onboarding from './components/Onboarding';
 import PaywallModal from './components/PaywallModal';
 import TermsModal from './components/TermsModal';
@@ -92,7 +92,6 @@ function App() {
   return (
     <div className="container">
       <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
-      <InstallPrompt />
       <TermsModal />
       {needsOnboarding && <Onboarding />}
       {!needsOnboarding && isPaywallBlocked && <PaywallModal />}
