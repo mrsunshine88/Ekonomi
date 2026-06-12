@@ -583,12 +583,43 @@ export default function ManageBills() {
               </div>
             )}
 
-            <input 
-              type="text" 
-              placeholder="Namn (t.ex. Bredband)" 
-              value={newBillName} 
-              onChange={e => setNewBillName(e.target.value)} 
-            />
+            <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input 
+                  type="text" 
+                  placeholder="Skriv namn eller välj i listan 👉" 
+                  value={newBillName} 
+                  onChange={e => setNewBillName(e.target.value)} 
+                  style={{ flex: 1, marginBottom: 0 }}
+                />
+                <select 
+                  value="" 
+                  onChange={e => {
+                    if (e.target.value) {
+                      setNewBillName(e.target.value);
+                    }
+                  }}
+                  style={{ flex: 1, marginBottom: 0 }}
+                >
+                  <option value="" disabled>Vanliga räkningar...</option>
+                  <option value="Hyra">🏠 Hyra</option>
+                  <option value="Lån">🏦 Lån</option>
+                  <option value="El">⚡ El</option>
+                  <option value="Vatten">💧 Vatten</option>
+                  <option value="Bredband">🌐 Bredband</option>
+                  <option value="Hemförsäkring">🛡️ Hemförsäkring</option>
+                  <option value="Bilförsäkring">🚗 Bilförsäkring</option>
+                  <option value="Netflix">🎬 Netflix</option>
+                  <option value="Spotify">🎵 Spotify</option>
+                  <option value="Fjärrvärme">🔥 Fjärrvärme</option>
+                  <option value="Sophämtning">🗑️ Sophämtning</option>
+                  <option value="CSN">🎓 CSN</option>
+                  <option value="Mobilabonnemang">📱 Mobilabonnemang</option>
+                  <option value="A-kassa / Fack">💼 A-kassa / Fack</option>
+                  <option value="Gymkort">🏋️ Gymkort</option>
+                </select>
+              </div>
+            </div>
             
             {newBillScope === 'shared' && (
               <>
