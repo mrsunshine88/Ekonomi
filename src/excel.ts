@@ -75,7 +75,15 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
   styleHeaderRow(headerRow1);
 
   let r1Count = 1; // header is row 1
-  state.bills.forEach(bill => {
+  
+  // Sort bills by account name so bills from the same account are grouped together
+  const sortedBills = [...state.bills].sort((a, b) => {
+    const accountA = state.accounts.find(acc => acc.id === a.accountId)?.name || 'Övrigt konto';
+    const accountB = state.accounts.find(acc => acc.id === b.accountId)?.name || 'Övrigt konto';
+    return accountA.localeCompare(accountB, 'sv');
+  });
+
+  sortedBills.forEach(bill => {
     const account = state.accounts.find(a => a.id === bill.accountId)?.name || 'Okänt konto';
     const rowData: any[] = [bill.name, account];
     

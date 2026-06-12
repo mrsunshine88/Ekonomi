@@ -593,3 +593,12 @@ Ett doldt krav fÃ¶r Android/Chrome fÃ¶r att betrakta en hemsida som en fullvÃ¤rd
 - Tidigare `main.tsx` raderade ("unregister") aktivt alla Service Workers, vilket effektivt stÃ¤ngde av PWA-installationsfunktionen.
 - Koden har nu skrivits om sÃ¥ att `navigator.serviceWorker.register('/push-sw.js')` kÃ¶rs konsekvent vid sidladdning.
 - `public/push-sw.js` har kompletterats med en tom men nÃ¶dvÃ¤ndig `self.addEventListener('fetch', ...)` fÃ¶r att passera Googles PWA-validering. MÃ¥let Ã¤r att sÃ¤kerstÃ¤lla att mobilrutan (nedladdningsprompten) *alltid* visas fÃ¶r nya anvÃ¤ndare pÃ¥ Android.
+
+## Senaste Uppdateringar
+
+* **Felhantering (Chunk Load Errors):** Lade till en automatisk omladdning i ErrorBoundary vid \Failed to fetch dynamically imported module\-fel, så att nya releaser automatiskt laddas om ifall klienten har cache-problem.
+* **Behåll inloggning vid fel:** Ändrade ErrorBoundary-knappen till att endast göra en \window.location.reload()\ istället för att rensa \localStorage\. Detta förhindrar att användare blir ofrivilligt utloggade (då Supabase auth token lagras där).
+* **Playwright E2E-tester:** Lade till \@playwright/test\ för end-to-end testning. Ett första smoke test (\e2e/app.spec.ts\) har implementerats som startar appen och verifierar inloggningsvyn utan konsolfel. Kan köras via \
+pm run test:e2e\.
+* **Excel-export förbättringar:** På fliken 'Gemensamma Räkningar' sorteras numera alla utgifter per konto-namn (Hus konto, Andreas konto, Helenas konto etc.) innan de ritas ut. Detta löste problemet med att utgifterna låg osorterade / blandade.
+
