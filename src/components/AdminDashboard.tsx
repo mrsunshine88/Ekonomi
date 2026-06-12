@@ -68,8 +68,11 @@ export default function AdminDashboard() {
 
   const fetchStripeStatus = async () => {
     try {
-      const { data } = await supabase.from('admin_secrets').select('key');
-      if (data && data.length >= 2) {
+      const { data, error } = await supabase.from('admin_secrets').select('key');
+      if (error) {
+        console.error("Supabase select error:", error);
+      }
+      if (data && data.length > 0) {
         setStripeConfigured(true);
       }
     } catch (e) {
