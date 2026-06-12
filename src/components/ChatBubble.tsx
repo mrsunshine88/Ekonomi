@@ -11,7 +11,15 @@ export default function ChatBubble() {
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isOpenRef = useRef(isOpen);
+
+  // Keep ref in sync and reset unread when opening
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+    if (isOpen) setUnreadCount(0);
+  }, [isOpen]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -81,6 +89,10 @@ export default function ChatBubble() {
     const channel = supabase.channel(`chat_${sessionId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${sessionId}` }, (payload: any) => {
         setMessages(prev => [...prev, payload.new]);
+        
+        if (payload.new.sender_type === 'admin' && !isOpenRef.current) {
+          setUnreadCount(prev => prev + 1);
+        }
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_sessions', filter: `id=eq.${sessionId}` }, (payload: any) => {
         if (payload.new.status) {
@@ -222,26 +234,40 @@ export default function ChatBubble() {
 
       {/* The Bubble Button */}
       {!isOpen && (
-        <button 
-          onClick={() => setIsOpen(true)}
-          style={{ 
-            width: '60px', 
-            height: '60px', 
-            borderRadius: '50%', 
-            background: 'var(--accent-gradient)', 
-            color: 'white', 
-            border: 'none',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
-            cursor: 'pointer',
-            fontSize: '1.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'transform 0.2s'
-          }}
-        >
-          💬
-        </button>
+        <div style={{ position: 'relative' }}>
+          {unreadCount > 0 && (
+            <div style={{ 
+              position: 'absolute', top: '-5px', right: '-5px', 
+              background: '#f43f5e', color: 'white', borderRadius: '50%', 
+              width: '24px', height: '24px', display: 'flex', 
+              alignItems: 'center', justifyContent: 'center', 
+              fontSize: '0.8rem', fontWeight: 'bold', zIndex: 10,
+              boxShadow: '0 2px 5px rgba(0,0,0,0.5)'
+            }}>
+              {unreadCount}
+            </div>
+          )}
+          <button 
+            onClick={() => setIsOpen(true)}
+            style={{ 
+              width: '60px', 
+              height: '60px', 
+              borderRadius: '50%', 
+              background: 'var(--accent-gradient)', 
+              color: 'white', 
+              border: 'none',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+              cursor: 'pointer',
+              fontSize: '1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'transform 0.2s'
+            }}
+          >
+            💬
+          </button>
+        </div>
       )}
     </div>
   );
