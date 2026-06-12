@@ -102,6 +102,24 @@ export default function PaywallModal() {
         >
           Vad ingår i prenumerationen? Läs mer här
         </button>
+
+        <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <button 
+            onClick={() => supabase.auth.signOut()}
+            style={{ 
+              background: 'transparent', 
+              border: '1px solid #f43f5e', 
+              color: '#f43f5e', 
+              padding: '0.5rem 1rem', 
+              borderRadius: '8px', 
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: 'bold'
+            }}
+          >
+            🚪 Logga ut
+          </button>
+        </div>
       </div>
 
       {showFeatures && <SubscriptionFeaturesModal onClose={() => setShowFeatures(false)} />}
