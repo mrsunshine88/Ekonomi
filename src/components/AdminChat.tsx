@@ -9,12 +9,12 @@ export default function AdminChat() {
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages change without moving the whole page
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
     }
   }, [messages, selectedSessionId]);
 
@@ -189,7 +189,7 @@ export default function AdminChat() {
                 <button onClick={() => handleCloseSession(selectedSessionId)} style={{ background: 'transparent', border: '1px solid #f43f5e', color: '#f43f5e', borderRadius: '4px', padding: '5px 10px', cursor: 'pointer' }}>Avsluta Ärende</button>
               </div>
 
-              <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div ref={scrollContainerRef} style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {messages.map(msg => (
                   <div key={msg.id} style={{ 
                     alignSelf: msg.sender_type === 'admin' ? 'flex-end' : 'flex-start',
@@ -203,7 +203,6 @@ export default function AdminChat() {
                     {msg.message}
                   </div>
                 ))}
-                <div ref={messagesEndRef} />
               </div>
 
               <form onSubmit={handleSendMessage} style={{ padding: '15px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '10px' }}>

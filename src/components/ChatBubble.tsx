@@ -10,12 +10,12 @@ export default function ChatBubble() {
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
     }
   }, [messages, isOpen]);
 
@@ -151,7 +151,7 @@ export default function ChatBubble() {
           </div>
 
           {/* Messages Area */}
-          <div style={{ flex: 1, padding: '15px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div ref={scrollContainerRef} style={{ flex: 1, padding: '15px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {messages.length === 0 ? (
               <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: '50px' }}>
                 <p>👋 Hej! Hur kan vi hjälpa dig idag?</p>
@@ -171,7 +171,6 @@ export default function ChatBubble() {
                 </div>
               ))
             )}
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Input Area */}
