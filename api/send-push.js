@@ -58,33 +58,31 @@ export default async function handler(req, res) {
     }
 
     // Send push notification to all admins
-    const notificationPayload = JSON.stringify({
-      title: 'Nytt Kundtjänst-meddelande',
-      body: messageText,
-      icon: '/icon-192x192.png',
-      badge: '/icon-192x192.png',
-      data: {
-        url: '/admin' // Or whatever URL to open
+    const sendPromises = subscriptions.map(record => {
+      let pushSubscription = record.subscription;
+      if (typeof pushSubscription === 'string') {
+        pushSubscription = JSON.parse(pushSubscription);
       }
-    });
 
-    const sendPromises = subscriptions.map(sub => {
-      const pushSub = sub.subscription;
-      return webpush.sendNotification(pushSub, notificationPayload).catch(err => {
-        console.error('Failed to send push to a subscription:', err);
-        // If subscription is invalid/expired, we could delete it here
-        if (err.statusCode === 410 || err.statusCode === 404) {
-           return supabase.from('admin_push_subscriptions').delete().eq('id', sub.id);
-        }
+      const payload = JSON.stringify({
+        title: 'Nytt meddelande',
+        body: messageText,
+        icon: '/icon-192x192.png',
+        badge: '/icon-192x192.png',
+        data: { url: '/admin-dashboard' }
       });
+
+      return webpush.sendNotification(pushSubscription, payload)
+        .then(() => ({ endpoint: pushSubscription.endpoint, success: true }))
+        .catch(err => ({ endpoint: pushSubscription.endpoint, success: false, error: err.message }));
     });
 
-    await Promise.all(sendPromises);
+    const results = await Promise.all(sendPromises);
 
       return res.status(200).json({ 
         success: true, 
         count: subscriptions.length,
-        endpoints: subscriptions.map(r => r.subscription.endpoint)
+        results: results
       });
   } catch (error) {
     console.error('Push error:', error);
