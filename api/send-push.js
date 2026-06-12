@@ -69,6 +69,7 @@ export default async function handler(req, res) {
         body: messageText,
         icon: '/icon-192x192.png',
         badge: '/icon-192x192.png',
+        tag: 'chat-message',
         data: { url: '/admin-dashboard' }
       });
 

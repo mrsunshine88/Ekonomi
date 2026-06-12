@@ -22,7 +22,15 @@ self.addEventListener('push', function(event) {
   };
 
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      const isAppActive = windowClients.some(client => 
+        client.visibilityState === 'visible' || client.focused
+      );
+      
+      if (!isAppActive) {
+        return self.registration.showNotification(title, options);
+      }
+    })
   );
 });
 
