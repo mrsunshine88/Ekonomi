@@ -163,7 +163,10 @@ export default function ChatBubble() {
           {/* Header */}
           <div style={{ background: 'var(--accent-gradient)', padding: '15px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Kundservice</h3>
-            <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+            <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+              <button onClick={() => setIsOpen(false)} title="Minimera" style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.5rem', lineHeight: '10px', paddingBottom: '8px' }}>_</button>
+              <button onClick={() => setIsOpen(false)} title="Stäng" style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+            </div>
           </div>
 
           {/* Messages Area */}
