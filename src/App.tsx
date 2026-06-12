@@ -22,12 +22,17 @@ function App() {
   const { user, householdId, loading, isRecoveringPassword } = useAuth();
   const initCloud = useStore(s => s.initCloud);
   const state = useStore(s => s.state);
+  const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin'>('month');
+
+  // Återställ vy när man byter användare
+  useEffect(() => {
+    setCurrentView('month');
+  }, [user?.id]);
   
   useEffect(() => {
     initCloud(householdId, user?.id || null);
   }, [householdId, user?.id, initCloud]);
 
-  const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin'>('month');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigateTo = (view: 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin') => {
@@ -80,13 +85,8 @@ function App() {
     return <LoginScreen />;
   }
 
-  // Återställ vy när man byter användare
-  useEffect(() => {
-    setCurrentView('month');
-  }, [user?.id]);
-
-  const isAdmin = user?.email?.toLowerCase() === 'apersson508@gmail.com';
   const needsOnboarding = state.accounts.length === 0;
+  const isAdmin = user?.email?.toLowerCase() === 'apersson508@gmail.com';
   const isPaywallBlocked = state.paywallActive && state.stripeStatus !== 'vip' && state.stripeStatus !== 'active' && !isAdmin;
 
   return (

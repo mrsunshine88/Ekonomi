@@ -6,10 +6,15 @@ import App from './App.tsx'
 import { AuthProvider } from './AuthContext'
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(function(registrations) {
-    for(let registration of registrations) {
-      registration.unregister();
-    }
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/push-sw.js').then(
+      (registration) => {
+        console.log('ServiceWorker registration successful');
+      },
+      (err) => {
+        console.log('ServiceWorker registration failed: ', err);
+      }
+    );
   });
 }
 

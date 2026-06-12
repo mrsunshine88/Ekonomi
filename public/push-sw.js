@@ -20,3 +20,8 @@ self.addEventListener('notificationclick', function(event) {
     event.waitUntil(clients.openWindow(event.notification.data.url));
   }
 });
+
+// A dummy fetch handler to satisfy Chrome's PWA installability requirements
+self.addEventListener('fetch', function(event) {
+  // We don't do anything here, we just need to have a fetch listener
+});
