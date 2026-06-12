@@ -157,12 +157,12 @@ export default function AdminChat() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '12px', flexWrap: 'wrap', gap: '15px' }}>
         <div>
           <h2 style={{ margin: 0 }}>Kundservice</h2>
           <p style={{ margin: '5px 0 0', color: 'var(--text-secondary)' }}>Hantera live-chattar från användare</p>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button 
             onClick={toggleNotifications}
             style={{ 
