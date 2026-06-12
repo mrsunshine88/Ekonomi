@@ -79,21 +79,12 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
         position: 'relative',
         boxShadow: '0 20px 40px rgba(0,0,0,0.8)' 
       }}>
-        <button 
-          onClick={onClose}
-          style={{
-            position: 'absolute', top: '1.5rem', right: '1.5rem',
-            background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff',
-            width: '30px', height: '30px', borderRadius: '50%', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'
-          }}
-        >
-          ✕
-        </button>
-
-        <h2 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '1.5rem' }}>
-          {titles[type]}
-        </h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2 style={{ color: '#fff', fontSize: '1.5rem', margin: 0 }}>
+            {titles[type]}
+          </h2>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+        </div>
 
         <div style={{ color: '#ccc', fontSize: '0.95rem', lineHeight: '1.6' }}>
           {type === 'tos' && (
