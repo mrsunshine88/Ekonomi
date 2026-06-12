@@ -189,27 +189,46 @@ export default function MonthView({ currentMonth }: Props) {
           <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>
             <span className="highlight-value">{totalSum.toLocaleString('sv-SE')} kr</span>
           </div>
-          <button
-            onClick={() => togglePaymentStatus(currentMonth, 'top_total_lock')}
-            style={{
-               marginTop: '1rem',
-               background: handled['top_total_lock'] ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-               color: handled['top_total_lock'] ? '#10b981' : 'var(--text-primary)',
-               border: handled['top_total_lock'] ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
-               padding: '0.5rem 1.5rem',
-               borderRadius: '8px',
-               cursor: handled['top_total_lock'] ? 'default' : 'pointer',
-               fontWeight: 600,
-               fontSize: '0.9rem',
-               display: 'inline-flex',
-               alignItems: 'center',
-               gap: '0.5rem'
-            }}
-            disabled={handled['top_total_lock']}
-          >
-            {handled['top_total_lock'] ? '🔒 Låst & Hanterat' : '✅ Markera som hanterad'}
-          </button>
+          {state.settings?.enableManagementButtons !== false && (
+            <button
+              onClick={() => togglePaymentStatus(currentMonth, 'top_total_lock')}
+              style={{
+                 marginTop: '1rem',
+                 background: handled['top_total_lock'] ? 'var(--success-color)' : 'transparent',
+                 color: handled['top_total_lock'] ? '#fff' : 'var(--text-secondary)',
+                 border: handled['top_total_lock'] ? '2px solid var(--success-color)' : '2px solid var(--text-secondary)',
+                 padding: '0.5rem 1.5rem',
+                 borderRadius: '20px',
+                 cursor: handled['top_total_lock'] ? 'default' : 'pointer',
+                 fontWeight: 600,
+                 fontSize: '0.9rem',
+                 display: 'inline-flex',
+                 alignItems: 'center',
+                 justifyContent: 'center',
+                 gap: '0.5rem'
+              }}
+              disabled={handled['top_total_lock']}
+            >
+              {handled['top_total_lock'] ? '🔒 Låst' : '✅ Markera som hanterad'}
+            </button>
+          )}
         </div>
+      )}
+      {state.bills.length > 0 && (
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem', marginTop: state.settings?.showTopTotal !== false ? '0' : '1.5rem' }}>
+            {Object.values(state.months[currentMonth]?.handledPayments || {}).some(v => v) ? (
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'inline-block' }}>
+                🔒 Vissa betalningar är låsta. Lås upp för att kunna hämta historik.
+              </div>
+            ) : (
+              <button 
+                onClick={() => useStore.getState().copyFromPreviousMonth(currentMonth)}
+                style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', background: 'var(--surface-color)' }}
+              >
+                📄 Hämta siffror från förra månaden
+              </button>
+            )}
+          </div>
       )}
       {state.bills.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>

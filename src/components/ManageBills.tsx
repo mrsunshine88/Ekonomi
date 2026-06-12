@@ -252,6 +252,21 @@ export default function ManageBills() {
               </p>
             </div>
 
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', fontSize: '1rem', color: 'var(--text-primary)' }}>
+                <input 
+                  type="checkbox" 
+                  checked={state.settings?.enableManagementButtons !== false} 
+                  onChange={(e) => onUpdateSettings({ enableManagementButtons: e.target.checked })}
+                  style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
+                />
+                Visa hanteringsknappar (Lås & Hanterat)
+              </label>
+              <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', marginLeft: '2.5rem', fontSize: '0.9rem' }}>
+                Om du bockar ur detta döljs alla knappar för att markera överföringar och totalbelopp som klara. Push-notiser stängs då också av. Appen fungerar då mer som en klassisk utgiftskoll.
+              </p>
+            </div>
+
             <div>
               <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', fontSize: '1rem', color: 'var(--text-primary)' }}>
                 <input 
@@ -260,33 +275,29 @@ export default function ManageBills() {
                   onChange={(e) => onUpdateSettings({ showTopTotal: e.target.checked })}
                   style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
                 />
-                Visa totala summan på alla räkningar högst upp i vyerna
+                Visa totala summan på alla räkningar högst upp i gemensam vy
               </label>
               <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', marginLeft: '2.5rem', fontSize: '0.9rem' }}>
-                Visar en stor ruta längst upp med månadens sammanlagda kostnader (både i Gemensam och Privat vy).
+                Visar en stor ruta längst upp med månadens sammanlagda kostnader i Gemensam vy.
               </p>
             </div>
 
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
-                🔔 Gemensamt datum för påminnelse (1-31)
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', fontSize: '1rem', color: 'var(--text-primary)' }}>
+                <input 
+                  type="checkbox" 
+                  checked={state.settings?.showPrivateTopTotal === true} 
+                  onChange={(e) => onUpdateSettings({ showPrivateTopTotal: e.target.checked })}
+                  style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
+                />
+                Visa totala summan på alla räkningar högst upp i privat vy
               </label>
-              <input 
-                type="number" 
-                min="1" 
-                max="31" 
-                placeholder="T.ex. 27"
-                value={state.settings?.reminderDay || ''} 
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  onUpdateSettings({ reminderDay: isNaN(val) ? undefined : val });
-                }}
-                style={{ width: '150px', marginBottom: 0 }}
-              />
-              <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontSize: '0.9rem' }}>
-                Vilket datum varje månad ska hushållet få en push-notis om ni har obetalda räkningar? (Varje person måste även aktivera notiser för sin enhet under "Mina sidor").
+              <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', marginLeft: '2.5rem', fontSize: '0.9rem' }}>
+                Visar en stor ruta längst upp med månadens sammanlagda kostnader i Privat vy.
               </p>
             </div>
+
+
           </div>
         </div>
       )}

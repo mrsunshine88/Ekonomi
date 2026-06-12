@@ -160,7 +160,15 @@ export const useStore = create<StoreState>((set, get) => ({
         householdProfiles: profiles ? profiles.map(p => ({
           id: p.id, email: p.email, share_private_economy: p.share_private_economy
         })) : [],
-        settings: settings ? { showSummary: settings.show_summary, reminderDay: settings.reminder_day, showTopTotal: settings.show_top_total } : { showSummary: true, showTopTotal: false }
+        settings: settings ? { 
+          showSummary: settings.show_summary, 
+          showSwishSummary: settings.show_swish_summary,
+          showTransferSummary: settings.show_transfer_summary,
+          enableManagementButtons: settings.enable_management_buttons,
+          reminderDay: settings.reminder_day, 
+          showTopTotal: settings.show_top_total,
+          showPrivateTopTotal: settings.show_private_top_total
+        } : { showSummary: true, showTopTotal: false, showPrivateTopTotal: false }
       };
 
       if (monthBillAmounts) {
@@ -569,9 +577,19 @@ export const useStore = create<StoreState>((set, get) => ({
     if (householdId) {
       const payload: any = { household_id: householdId };
       if (settingsUpdates.showSummary !== undefined) payload.show_summary = settingsUpdates.showSummary;
+      if (settingsUpdates.showSwishSummary !== undefined) payload.show_swish_summary = settingsUpdates.showSwishSummary;
+      if (settingsUpdates.showTransferSummary !== undefined) payload.show_transfer_summary = settingsUpdates.showTransferSummary;
+      if (settingsUpdates.enableManagementButtons !== undefined) payload.enable_management_buttons = settingsUpdates.enableManagementButtons;
       if (settingsUpdates.reminderDay !== undefined) payload.reminder_day = settingsUpdates.reminderDay;
       if (settingsUpdates.showTopTotal !== undefined) payload.show_top_total = settingsUpdates.showTopTotal;
-      await safeDb(supabase.from('household_settings').upsert(payload, { onConflict: 'household_id' }));
+      if (settingsUpdates.showPrivateTopTotal !== undefined) payload.show_private_top_total = settingsUpdates.showPrivateTopTotal;
+      
+      try {
+        await safeDb(supabase.from('household_settings').upsert(payload, { onConflict: 'household_id' }));
+      } catch (e) {
+        // Fallback if SQL migration not yet run
+        console.warn("Could not save new settings to DB. Run db_updates.sql.");
+      }
     }
   },
 

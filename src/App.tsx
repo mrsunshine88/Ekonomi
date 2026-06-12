@@ -111,7 +111,7 @@ function App() {
           <>
             <div className="mobile-menu-backdrop" onClick={() => setMobileMenuOpen(false)} />
             <div className="mobile-menu-dropdown">
-              <button onClick={() => navigateTo('month')} className={`mobile-menu-item ${currentView === 'month' ? 'active' : ''}`}>📅 Månadsvy</button>
+              <button onClick={() => navigateTo('month')} className={`mobile-menu-item ${currentView === 'month' ? 'active' : ''}`}>📅 Gemensam</button>
               <button onClick={() => navigateTo('privat')} className={`mobile-menu-item ${currentView === 'privat' ? 'active' : ''}`}>🔒 Privat</button>
               <button onClick={() => navigateTo('stats')} className={`mobile-menu-item ${currentView === 'stats' ? 'active' : ''}`}>📊 EkonomiTB</button>
               <button onClick={() => navigateTo('mypages')} className={`mobile-menu-item ${currentView === 'mypages' ? 'active' : ''}`}>👤 Mina sidor</button>
@@ -135,7 +135,7 @@ function App() {
             onClick={() => navigateTo('month')} 
             style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'month' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'month' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'month' ? 'bold' : 'normal', transition: 'all 0.2s' }}
           >
-            📅 Månadsvy
+            📅 Gemensam
           </button>
           <button 
             onClick={() => navigateTo('privat')} 
@@ -180,12 +180,12 @@ function App() {
 
       {currentView === 'admin' && isAdmin ? (
         <div>
-          <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Månadsvy</button>
+          <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Gemensam</button>
           <AdminDashboard />
         </div>
       ) : currentView === 'mypages' ? (
         <div>
-          <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Månadsvy</button>
+          <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Gemensam</button>
           <MyPages />
         </div>
       ) : currentView === 'manage' ? (
@@ -194,7 +194,7 @@ function App() {
         </div>
       ) : currentView === 'stats' ? (
         <div>
-          <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Månadsvy</button>
+          <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Gemensam</button>
           <Suspense fallback={<div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Laddar statistik...</div>}>
             <Statistics />
           </Suspense>
@@ -230,20 +230,7 @@ function App() {
             <Summary currentMonth={currentMonth} />
           )}
 
-          <div style={{ textAlign: 'center', marginBottom: '1.5rem', marginTop: ((state.settings?.showTransferSummary ?? state.settings?.showSummary) !== false || (state.settings?.showSwishSummary ?? state.settings?.showSummary) !== false) ? '0' : '1.5rem' }}>
-            {Object.values(state.months[currentMonth]?.handledPayments || {}).some(v => v) ? (
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'inline-block' }}>
-                🔒 Vissa betalningar är låsta. Lås upp för att kunna hämta historik.
-              </div>
-            ) : (
-              <button 
-                onClick={() => useStore.getState().copyFromPreviousMonth(currentMonth)}
-                style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', background: 'var(--surface-color)' }}
-              >
-                📄 Hämta siffror från förra månaden
-              </button>
-            )}
-          </div>
+
 
           <MonthView currentMonth={currentMonth} />
         </>

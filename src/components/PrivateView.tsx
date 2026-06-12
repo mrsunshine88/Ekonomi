@@ -74,7 +74,7 @@ export default function PrivateView({ currentMonth }: Props) {
         )}
       </div>
 
-      {state.settings?.showTopTotal && myBills.length > 0 && (
+      {state.settings?.showPrivateTopTotal && myBills.length > 0 && (
         <div style={{ 
           marginBottom: '2rem', 
           padding: '1.5rem', 
@@ -107,7 +107,6 @@ export default function PrivateView({ currentMonth }: Props) {
             <h3 className="card-title" style={{ margin: 0, border: 'none', padding: 0 }}>
               {isViewingOther ? 'Derars privata kostnader' : 'Mina privata kostnader'}
             </h3>
-            <div style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>Totalt: {totalPrivateCost} kr</div>
           </div>
           
           <div className="bill-list">

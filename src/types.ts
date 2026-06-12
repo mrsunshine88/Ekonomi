@@ -70,7 +70,9 @@ export interface AppState {
     showSummary?: boolean;
     showSwishSummary?: boolean;
     showTransferSummary?: boolean;
+    enableManagementButtons?: boolean;
     showTopTotal?: boolean;
+    showPrivateTopTotal?: boolean;
     reminderDay?: number;
   };
   stripeStatus?: 'free' | 'active' | 'canceled' | 'vip' | 'past_due';

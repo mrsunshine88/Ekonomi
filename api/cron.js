@@ -29,7 +29,7 @@ export default async function handler(req, res) {
 
     const { data: households, error: hhErr } = await supabase
       .from('household_settings')
-      .select('household_id, reminder_day')
+      .select('*')
       .eq('reminder_day', today);
 
     if (hhErr) throw hhErr;
@@ -50,6 +50,8 @@ export default async function handler(req, res) {
     let sentCount = 0;
 
     for (const hh of households) {
+      if (hh.enable_management_buttons === false) continue;
+      
       const { data: handled } = await supabase
         .from('month_handled_payments')
         .select('is_handled')
