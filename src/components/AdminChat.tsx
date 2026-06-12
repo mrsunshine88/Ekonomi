@@ -8,8 +8,15 @@ export default function AdminChat() {
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      setNotificationsEnabled(localStorage.getItem('chat_notifications') === 'true');
+    }
+  }, []);
 
   // Scroll to bottom when messages change without moving the whole page
   useEffect(() => {
@@ -41,7 +48,6 @@ export default function AdminChat() {
 
     initAdminChat();
 
-    // Listen to new sessions or status changes
     const channel = supabase.channel('admin_chat_overview')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_sessions' }, () => {
         fetchSessions();
@@ -51,8 +57,17 @@ export default function AdminChat() {
       })
       .subscribe();
 
+    const notifyChannel = supabase.channel('admin_chat_notifications')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: "sender_type=eq.user" }, (payload: any) => {
+        if (localStorage.getItem('chat_notifications') === 'true' && 'Notification' in window && Notification.permission === 'granted') {
+           new Notification('Nytt Kundtjänst-meddelande', { body: payload.new.message });
+        }
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(notifyChannel);
     };
   }, []);
 
@@ -97,6 +112,26 @@ export default function AdminChat() {
     await supabase.rpc('set_global_setting', { setting_key: 'chat_open', setting_value: newVal.toString() });
   };
 
+  const toggleNotifications = async () => {
+    if (!('Notification' in window)) {
+      alert('Din webbläsare stödjer tyvärr inte notiser.');
+      return;
+    }
+
+    if (notificationsEnabled) {
+      setNotificationsEnabled(false);
+      localStorage.setItem('chat_notifications', 'false');
+    } else {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        setNotificationsEnabled(true);
+        localStorage.setItem('chat_notifications', 'true');
+      } else {
+        alert('Du måste tillåta notiser i din webbläsare för att detta ska fungera.');
+      }
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || !selectedSessionId) return;
@@ -127,20 +162,36 @@ export default function AdminChat() {
           <h2 style={{ margin: 0 }}>Kundservice</h2>
           <p style={{ margin: '5px 0 0', color: 'var(--text-secondary)' }}>Hantera live-chattar från användare</p>
         </div>
-        <button 
-          onClick={handleToggleChatOpen}
-          style={{ 
-            padding: '10px 20px', 
-            background: chatOpen ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.1)', 
-            border: 'none', 
-            borderRadius: '8px', 
-            color: 'white', 
-            fontWeight: 'bold',
-            cursor: 'pointer'
-          }}
-        >
-          {chatOpen ? '🟢 Chatten är Öppen' : '🔴 Chatten är Stängd'}
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button 
+            onClick={toggleNotifications}
+            style={{ 
+              padding: '10px 20px', 
+              background: notificationsEnabled ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.1)', 
+              border: notificationsEnabled ? '1px solid #10b981' : '1px solid transparent', 
+              borderRadius: '8px', 
+              color: notificationsEnabled ? '#10b981' : 'white', 
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            {notificationsEnabled ? '🔔 Notiser PÅ' : '🔕 Notiser AV'}
+          </button>
+          <button 
+            onClick={handleToggleChatOpen}
+            style={{ 
+              padding: '10px 20px', 
+              background: chatOpen ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.1)', 
+              border: 'none', 
+              borderRadius: '8px', 
+              color: 'white', 
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            {chatOpen ? '🟢 Chatten är Öppen' : '🔴 Chatten är Stängd'}
+          </button>
+        </div>
       </div>
 
       <div className="admin-chat-layout">

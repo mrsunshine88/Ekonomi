@@ -20,7 +20,7 @@ import UpdatePassword from './components/Auth/UpdatePassword';
 import ChatBubble from './components/ChatBubble';
 
 function App() {
-  const { user, householdId, loading, isRecoveringPassword } = useAuth();
+  const { user, householdId, loading, isRecoveringPassword, isAdmin } = useAuth();
   const initCloud = useStore(s => s.initCloud);
   const state = useStore(s => s.state);
   const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin'>('month');
@@ -87,7 +87,6 @@ function App() {
   }
 
   const needsOnboarding = state.accounts.length === 0;
-  const isAdmin = user?.email?.toLowerCase() === 'apersson508@gmail.com';
   const isPaywallBlocked = state.paywallActive && state.stripeStatus !== 'vip' && state.stripeStatus !== 'active' && !isAdmin;
 
   return (

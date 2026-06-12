@@ -64,7 +64,7 @@ export default function ChatBubble() {
         .in('status', ['waiting', 'active'])
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (sessionData) {
         setSessionId(sessionData.id);
