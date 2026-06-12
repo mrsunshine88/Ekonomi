@@ -6,6 +6,8 @@ import { supabase } from '../supabase';
 export default function MyPages() {
   const { user, householdId, role, refreshHousehold } = useAuth();
   const toggleSharePrivateEconomy = useStore(s => s.toggleSharePrivateEconomy);
+  const settings = useStore(s => s.state.settings);
+  const updateSettings = useStore(s => s.updateSettings);
   const householdProfiles = useStore(s => s.state.householdProfiles) || [];
   const myProfile = householdProfiles.find(p => p.id === user?.id);
   const isSharingPrivate = myProfile?.share_private_economy || false;
@@ -378,10 +380,41 @@ export default function MyPages() {
               <div style={{ fontWeight: 'bold' }}>Få en notis på denna enhet</div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                 {isPushEnabled 
-                  ? 'Du får notiser till denna enhet när hushållet har obetalda räkningar (Gäller det datum som är valt i Allmänna inställningar).' 
+                  ? 'Du får notiser till denna enhet när hushållet har obetalda räkningar (Gäller det datum du valt nedan).' 
                   : 'Slå på detta för att telefonen/datorn ska plinga om ni glömt låsa månaden.'}
               </div>
             </div>
+            
+            <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Vilket datum ska vi påminna?</label>
+              <select 
+                value={settings?.reminderDay || 25}
+                onChange={async (e) => {
+                  setLoading(true);
+                  try {
+                    await updateSettings({ reminderDay: parseInt(e.target.value, 10) });
+                    setMsg('✅ Påminnelsedatum har uppdaterats!');
+                  } catch (err: any) {
+                    setMsg('❌ Fel: ' + err.message);
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                style={{ 
+                  padding: '0.5rem', 
+                  borderRadius: '4px', 
+                  border: '1px solid var(--border-color)', 
+                  background: 'rgba(0,0,0,0.2)', 
+                  color: '#fff',
+                  cursor: 'pointer'
+                }}
+              >
+                {Array.from({length: 31}, (_, i) => i + 1).map(day => (
+                  <option key={day} value={day}>Den {day}:e varje månad</option>
+                ))}
+              </select>
+            </div>
+
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               {isPushEnabled && (
                 <button 

@@ -1,7 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
+import { useAuth } from '../AuthContext';
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 export default function AdminChat() {
+  const { user } = useAuth();
   const [chatOpen, setChatOpen] = useState(false);
   const [sessions, setSessions] = useState<any[]>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
@@ -119,13 +132,59 @@ export default function AdminChat() {
     }
 
     if (notificationsEnabled) {
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          const subscription = await registration.pushManager.getSubscription();
+          if (subscription) {
+            await subscription.unsubscribe();
+            if (user?.email) {
+              await supabase.from('admin_push_subscriptions').delete().eq('admin_email', user.email);
+            }
+          }
+        } catch (e) {
+          console.error("Unsubscribe error", e);
+        }
+      }
       setNotificationsEnabled(false);
       localStorage.setItem('chat_notifications', 'false');
     } else {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
-        setNotificationsEnabled(true);
-        localStorage.setItem('chat_notifications', 'true');
+        const publicVapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+        if ('serviceWorker' in navigator && 'PushManager' in window && publicVapidKey) {
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            let subscription = await registration.pushManager.getSubscription();
+            if (!subscription) {
+              subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+              });
+            }
+            
+            if (user?.email) {
+              const { error } = await supabase.from('admin_push_subscriptions').insert({
+                admin_email: user.email,
+                subscription: subscription
+              });
+              if (error) throw error;
+            }
+            
+            setNotificationsEnabled(true);
+            localStorage.setItem('chat_notifications', 'true');
+          } catch (err) {
+            console.error("Push subscription failed", err);
+            alert("Ett fel uppstod vid prenumeration av bakgrundsnotiser. Se till att du kör appen som en PWA (på hemskärmen) om du använder iPhone.");
+            // Fallback
+            setNotificationsEnabled(true);
+            localStorage.setItem('chat_notifications', 'true');
+          }
+        } else {
+          // Fallback to local notifications
+          setNotificationsEnabled(true);
+          localStorage.setItem('chat_notifications', 'true');
+        }
       } else {
         alert('Du måste tillåta notiser i din webbläsare för att detta ska fungera.');
       }
