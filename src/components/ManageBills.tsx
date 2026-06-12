@@ -639,50 +639,6 @@ export default function ManageBills() {
               </>
             )}
 
-            <select value={newBillInterval} onChange={e => setNewBillInterval(e.target.value as PaymentInterval)}>
-              <option value="all">Betalas: Varje månad</option>
-              <option value="odd">Betalas: Udda månader (Jan, Mar, Maj...)</option>
-              <option value="even">Betalas: Jämna månader (Feb, Apr, Jun...)</option>
-              <option value="custom">Betalas: Välj specifika månader</option>
-            </select>
-
-            {newBillInterval === 'custom' && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px' }}>
-                <div style={{ width: '100%', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  Välj vilka månader räkningen kommer:
-                </div>
-                {['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'].map((m, index) => {
-                  const monthNum = index + 1;
-                  const isSelected = newBillCustomMonths.includes(monthNum);
-                  return (
-                    <button
-                      key={m}
-                      onClick={() => {
-                        if (isSelected) {
-                          setNewBillCustomMonths(prev => prev.filter(num => num !== monthNum));
-                        } else {
-                          setNewBillCustomMonths(prev => [...prev, monthNum]);
-                        }
-                      }}
-                      style={{
-                        background: isSelected ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)',
-                        color: isSelected ? '#fff' : 'var(--text-secondary)',
-                        border: isSelected ? 'none' : '1px solid var(--border-color)',
-                        padding: '0.5rem',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        flex: '1 0 calc(25% - 0.5rem)',
-                        minWidth: '60px',
-                        fontWeight: isSelected ? 'bold' : 'normal'
-                      }}
-                    >
-                      {m}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
               <input 
                 type="checkbox" 
@@ -692,6 +648,54 @@ export default function ManageBills() {
               />
               Varna med röd färg om jag glömmer fylla i denna (När den förväntas)
             </label>
+
+            {newBillWarn && (
+              <div style={{ paddingLeft: '1.5rem', marginTop: '-0.5rem', marginBottom: '0.5rem' }}>
+                <select value={newBillInterval} onChange={e => setNewBillInterval(e.target.value as PaymentInterval)} style={{ width: '100%', marginBottom: newBillInterval === 'custom' ? '0.5rem' : 0 }}>
+                  <option value="all">Betalas: Varje månad</option>
+                  <option value="odd">Betalas: Udda månader (Jan, Mar, Maj...)</option>
+                  <option value="even">Betalas: Jämna månader (Feb, Apr, Jun...)</option>
+                  <option value="custom">Betalas: Välj specifika månader</option>
+                </select>
+
+                {newBillInterval === 'custom' && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px' }}>
+                    <div style={{ width: '100%', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                      Välj vilka månader räkningen kommer:
+                    </div>
+                    {['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'].map((m, index) => {
+                      const monthNum = index + 1;
+                      const isSelected = newBillCustomMonths.includes(monthNum);
+                      return (
+                        <button
+                          key={m}
+                          onClick={() => {
+                            if (isSelected) {
+                              setNewBillCustomMonths(prev => prev.filter(num => num !== monthNum));
+                            } else {
+                              setNewBillCustomMonths(prev => [...prev, monthNum]);
+                            }
+                          }}
+                          style={{
+                            background: isSelected ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)',
+                            color: isSelected ? '#fff' : 'var(--text-secondary)',
+                            border: isSelected ? 'none' : '1px solid var(--border-color)',
+                            padding: '0.5rem',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            flex: '1 0 calc(25% - 0.5rem)',
+                            minWidth: '60px',
+                            fontWeight: isSelected ? 'bold' : 'normal'
+                          }}
+                        >
+                          {m}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)', marginTop: '0.5rem' }}>
               <input 
