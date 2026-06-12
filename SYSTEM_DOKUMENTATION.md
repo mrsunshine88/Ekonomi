@@ -605,3 +605,33 @@ pm run test:e2e\.
   
 * **Dynamiska Administratörer:** Byggt ett säkert gränssnitt i admin-panelen för att lägga till och ta bort systemadministratörer dynamiskt. Använder tabellen system_admins och is_user_admin() RPC.
 * **Live-Chatt Kundtjänst:** Integrerat en realtids-chatt (Kundservice) byggd med Supabase Realtime för direktkommunikation mellan inloggade användare och admin.
+  
+
+## 28. Dynamisk Administratörshantering & Live-Chatt
+
+För att göra appen mer skalbar och ge administratörer bättre verktyg, har två större funktioner lagts till i backend och frontend: ett dynamiskt system för att utse administratörer, samt en fullskalig chatt för kundservice i realtid.
+
+### 28.1 Dynamiska Administratörer
+Istället för att hårdkoda specifika e-postadresser för admin-behörighet, styrs detta nu via databasen.
+- **`system_admins`:** En ny Supabase-tabell lagrar godkända e-postadresser (text, primary key).
+- **`is_user_admin()`:** En ny PostgreSQL-funktion (RPC) som verifierar om inloggad användares (via `auth.jwt()`) e-post finns i tabellen. Denna används sedan både i Row Level Security (RLS) policies för att skydda andra tabeller, och av applikationen i start-laddningen.
+- **Gränssnitt:** I `AdminDashboard.tsx` finns en separat flik där en administratör kan skriva in en e-postadress för att ge någon admin-rättigheter (läggs till i tabellen) eller klicka på en papperskorg för att ta bort rättigheterna (tas bort från tabellen). Inloggad admin kan ej ta bort sig själv.
+
+### 28.2 Live-Chatt / Kundservice i Realtid
+Ett komplett system för kundtjänst skapades för att möjliggöra direktkontakt mellan användare och support.
+- **Databasstruktur:** 
+  - `chat_sessions`: Hanterar aktiva ärenden (`id`, `user_id`, `status: waiting|active|closed`, `updated_at`).
+  - `chat_messages`: Hanterar meddelanden i varje ärende (`id`, `session_id`, `sender_type: user|admin`, `message`, `created_at`).
+  - `on_new_chat_message`: Databastrigger (Trigger) som automatiskt uppdaterar `updated_at` i sessionen vid varje nytt meddelande.
+- **Användargränssnitt (`ChatBubble.tsx`):**
+  - En flytande "💬"-bubbla i nedre högra hörnet visas för inloggade användare om chatten är öppen globalt.
+  - Ogenomskinlig, mobilanpassad chattruta som ligger ovanpå allt annat.
+  - Minimeringsfunktion `_` gör det möjligt att stänga ner rutan tillfälligt.
+  - En röd notis-ikon (Badge) visar antalet olästa meddelanden om supporten svarar medan chatten är minimerad.
+- **Admin-vy (`AdminChat.tsx`):**
+  - Administratörer ser en realtids-kö med ärenden uppdelat i "Väntar" (Röd) och "Aktiv" (Grön).
+  - Vänster kolumn visar alla sessioner (med uppslag mot `profiles` för att visa e-post), och höger kolumn är själva chattrutan.
+  - Vyn är fullt mobilanpassad via flexibla CSS-klasser (`admin-chat-layout`) med smart radbrytning.
+  - Knappen "Avsluta Ärende" markerar sessionen som `closed`. När användaren får denna statuslås textinmatningen för dem med ett meddelande om att starta en ny session.
+- **Supabase Realtime:** 
+  - Kommunikationen drivs av Supabase Channels (WebSockets). Klienterna prenumererar på inserts i `chat_messages`, och uppdateringar i `chat_sessions` för att omedelbart bygga om chattgränssnittet utan att sidladdning krävs.
