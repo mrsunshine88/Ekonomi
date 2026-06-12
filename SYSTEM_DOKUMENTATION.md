@@ -515,8 +515,16 @@ HjÃ¤rtat i applikationen Ã¤r matematikmotorn i `store.ts` (`calculateMonth()
 FÃ¶r att verifiera UI:ts tÃ¥lighet anvÃ¤ndes ett avancerat "Chaos Monkey"-testverktyg. Ett automatiserat robot-skript skapade ett anvÃ¤ndarkonto och framkallade extremt hÃ¶g last i webblÃ¤saren:
 - Klickande mellan rutter (`/mypages`, `/month`, `/stats`) utan att invÃ¤nta animationer.
 - Avbrytande av API-anrop frÃ¥n Onboarding-flÃ¶det.
-- Testet lyckades inledningsvis identifiera en ovanlig React-loop (Maximum update depth exceeded) i `MyPages.tsx` som Ã¥tgÃ¤rdades omedelbart genom att optimera Zustand-selectorns array-allokering.
-- Efter rÃ¤ttningen kÃ¶rdes testet igen, och applikationen var **100% stabil** under intensiv belastning utan en enda varning i konsolen. All state-hantering (via Zustand) och optimering via `Suspense`/`lazy` hanterade kontextbyten felfritt.
+- Testet lyckades inledningsvis identifiera en ovanlig React-loop (Maximum update depth exceeded) i `MyPages.tsx` som åtgärdades omedelbart genom att optimera Zustand-selectorns array-allokering.
+- Efter rättningen kördes testet igen, och applikationen var **100% stabil** under intensiv belastning utan en enda varning i konsolen. All state-hantering (via Zustand) och optimering via `Suspense`/`lazy` hanterade kontextbyten felfritt.
+
+### 24.3 End-to-End Test av Betalflödet (Stripe E2E)
+Hela det fullständiga betalflödet har verifierats i en låst produktionsliknande miljö via Stripe Sandbox för att garantera att betalväggen är ogenomtränglig men ändå fungerar sömlöst för betalande kunder.
+- **Admin-inmatning [GODKÄNT]:** Stripe-nycklar (Secret, Webhook, Price ID) valideras dynamiskt via Vercel-API:et. Systemet bekräftar omedelbart med en grön "Aktivt"-indikator om integrationen fungerar.
+- **Paywall Modal [GODKÄNT]:** Betalväggen dyker upp korrekt och blockerar vyerna när master switchen är aktiverad. Administratörer (VIP) släpps igenom utan blockering, och vanliga användare kan säkert använda "Logga ut"-knappen utan att fastna.
+- **Skapa Prenumeration [GODKÄNT]:** Stripe Checkout-session genereras felfritt via `/api/create-checkout.js` och tvingar fram 14 dagars gratis provperiod. Test-kreditkort går igenom framgångsrikt.
+- **Webhook-synkronisering [GODKÄNT]:** Efter kassan anropar Stripe appens `/api/stripe-webhook.js` i bakgrunden. Koden uppdaterar `stripe_status` till `active` i databasen vilket låser upp hela appen för kunden i realtid.
+- **Customer Portal & Uppsägning [GODKÄNT]:** Användaren kan klicka sig in på Stripes säkra kundportal via "Mina sidor". Att avbryta prenumerationen (Cancel) hanteras korrekt av webkroken som omedelbart nedgraderar `stripe_status`, vilket låser kontot och visar betalväggen vid nästa inloggning.
 
 Dessa tester garanterar att SmartEkonomi tåla verklighetsanpassad och extrem användning utan att förlora dataintegritet.
 
