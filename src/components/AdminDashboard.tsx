@@ -14,6 +14,7 @@ export default function AdminDashboard() {
   const [vipList, setVipList] = useState<string[]>([]);
   const [stats, setStats] = useState<{ total_members: number, active_households: number } | null>(null);
   const [stripeConfigured, setStripeConfigured] = useState<boolean | null>(null);
+  const [stripeReason, setStripeReason] = useState<string | null>(null);
 
   const [contactCompany, setContactCompany] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -71,9 +72,15 @@ export default function AdminDashboard() {
       const res = await fetch('/api/check-stripe');
       const json = await res.json();
       setStripeConfigured(json.active);
+      if (!json.active && json.reason) {
+        setStripeReason(json.reason);
+      } else {
+        setStripeReason(null);
+      }
     } catch (e) {
       console.error("Kunde inte hämta stripe-status via Vercel", e);
       setStripeConfigured(false);
+      setStripeReason('Network error');
     }
   };
 
@@ -341,7 +348,7 @@ export default function AdminDashboard() {
             </span>
           ) : (
             <span style={{ background: '#f43f5e', color: 'white', fontWeight: 'bold', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.9rem' }}>
-              🔴 INTE AKTIVT (Inga nycklar hittades)
+              🔴 INTE AKTIVT {stripeReason ? `(Fel: ${stripeReason})` : '(Inga nycklar hittades)'}
             </span>
           )}
         </div>
