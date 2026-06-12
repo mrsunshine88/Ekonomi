@@ -7,6 +7,7 @@ export default function ChatBubble() {
   const [chatGlobalOpen, setChatGlobalOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<'waiting' | 'active' | 'closed' | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -58,6 +59,7 @@ export default function ChatBubble() {
 
       if (sessionData) {
         setSessionId(sessionData.id);
+        setSessionStatus(sessionData.status as any);
         // Fetch messages
         const { data: msgs } = await supabase
           .from('chat_messages')
@@ -72,7 +74,7 @@ export default function ChatBubble() {
     initChat();
   }, [user, chatGlobalOpen]);
 
-  // Listen to new messages if we have a session
+  // Listen to new messages and session status changes if we have a session
   useEffect(() => {
     if (!sessionId) return;
 
@@ -80,12 +82,26 @@ export default function ChatBubble() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${sessionId}` }, (payload: any) => {
         setMessages(prev => [...prev, payload.new]);
       })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_sessions', filter: `id=eq.${sessionId}` }, (payload: any) => {
+        if (payload.new.status) {
+          setSessionStatus(payload.new.status);
+        }
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [sessionId]);
+
+  // Reset chat if it was closed and user closes the bubble
+  useEffect(() => {
+    if (!isOpen && sessionStatus === 'closed') {
+      setSessionId(null);
+      setSessionStatus(null);
+      setMessages([]);
+    }
+  }, [isOpen, sessionStatus]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,22 +190,30 @@ export default function ChatBubble() {
           </div>
 
           {/* Input Area */}
-          <form onSubmit={sendMessage} style={{ padding: '10px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '10px' }}>
-            <input 
-              type="text" 
-              value={inputText}
-              onChange={e => setInputText(e.target.value)}
-              placeholder="Skriv ett meddelande..." 
-              style={{ flex: 1, padding: '10px', borderRadius: '20px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
-            />
-            <button 
-              type="submit" 
-              disabled={isSending || !inputText.trim()}
-              style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              ➤
-            </button>
-          </form>
+          {(sessionStatus as string) === 'closed' ? (
+            <div style={{ padding: '15px', borderTop: '1px solid var(--border-color)', textAlign: 'center', color: '#f43f5e', background: 'rgba(255,255,255,0.02)' }}>
+              Chatten är avslutad av kundtjänst.<br/>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Kryssa ner fönstret för att starta en ny.</span>
+            </div>
+          ) : (
+            <form onSubmit={sendMessage} style={{ padding: '10px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '10px' }}>
+              <input 
+                type="text" 
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                placeholder="Skriv ett meddelande..." 
+                style={{ flex: 1, padding: '10px', borderRadius: '20px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
+                disabled={isSending || (sessionStatus as string) === 'closed'}
+              />
+              <button 
+                type="submit" 
+                disabled={isSending || !inputText.trim() || (sessionStatus as string) === 'closed'}
+                style={{ background: (sessionStatus as string) === 'closed' ? 'var(--border-color)' : 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '50%', width: '40px', height: '40px', cursor: (sessionStatus as string) === 'closed' ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                ➤
+              </button>
+            </form>
+          )}
         </div>
       )}
 
