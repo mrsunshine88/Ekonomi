@@ -143,10 +143,11 @@ export default function AdminChat() {
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: '20px', height: '500px' }}>
+      <div className="admin-chat-layout">
         {/* Vänster kolumn: Aktiva sessioner */}
-        <div style={{ width: '300px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', overflowY: 'auto' }}>
+        <div className="admin-chat-sidebar">
           <h3 style={{ padding: '15px', margin: 0, borderBottom: '1px solid var(--border-color)' }}>Kö & Aktiva</h3>
+          <div className="admin-chat-sidebar-content">
           {sessions.length === 0 ? (
             <div style={{ padding: '20px', color: 'var(--text-secondary)', textAlign: 'center' }}>Inga aktiva chattar.</div>
           ) : (
@@ -172,10 +173,11 @@ export default function AdminChat() {
               </div>
             ))
           )}
+          </div>
         </div>
 
         {/* Höger kolumn: Chattruta */}
-        <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: '12px', display: 'flex', flexDirection: 'column' }}>
+        <div className="admin-chat-main">
           {!selectedSessionId ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
               Välj en konversation i listan för att svara

@@ -148,10 +148,10 @@ export default function ChatBubble() {
   return (
     <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
       {isOpen && (
-        <div style={{ 
-          width: '320px', 
-          height: '400px', 
-          background: 'var(--surface-color)', 
+          <div style={{ 
+            width: '320px', 
+            height: '400px', 
+            background: '#0b0f19', 
           borderRadius: '12px', 
           boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
           display: 'flex',
