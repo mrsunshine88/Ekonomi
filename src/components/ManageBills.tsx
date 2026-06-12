@@ -325,7 +325,7 @@ export default function ManageBills() {
           <h3 className="card-title">Lägg till nytt konto</h3>
           <div style={{ display: 'grid', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 'bold' }}>1. VEM ELLER VAD ÄR DETTA?</label>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 'bold' }}>1. Typ av konto</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                 <button
                   onClick={() => setNewAccType('person')}
@@ -336,8 +336,8 @@ export default function ManageBills() {
                     padding: '1rem', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.5rem'
                   }}
                 >
-                  <strong style={{ fontSize: '1.1rem' }}>👤 En Verklig Person</strong>
-                  <span style={{ fontSize: '0.85rem', color: newAccType === 'person' ? 'rgba(255,255,255,0.9)' : 'var(--text-secondary)', lineHeight: '1.4' }}>En profil för en person i hushållet som betalar räkningar och Swishar.</span>
+                  <strong style={{ fontSize: '1.05rem' }}>👤 En person</strong>
+                  <span style={{ fontSize: '0.85rem', color: newAccType === 'person' ? 'rgba(255,255,255,0.9)' : 'var(--text-secondary)', lineHeight: '1.4', fontWeight: 'normal' }}>En vanlig profil för någon i hushållet.</span>
                 </button>
 
                 <button
@@ -349,25 +349,25 @@ export default function ManageBills() {
                     padding: '1rem', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.5rem'
                   }}
                 >
-                  <strong style={{ fontSize: '1.1rem' }}>🏦 Ett Gemensamt Mål</strong>
-                  <span style={{ fontSize: '0.85rem', color: newAccType === 'shared' ? 'rgba(255,255,255,0.9)' : 'var(--text-secondary)', lineHeight: '1.4' }}>Ett konto (t.ex. Hushållskassan) dit personer för över pengar.</span>
+                  <strong style={{ fontSize: '1.05rem' }}>🏦 Ett gemensamt mål</strong>
+                  <span style={{ fontSize: '0.85rem', color: newAccType === 'shared' ? 'rgba(255,255,255,0.9)' : 'var(--text-secondary)', lineHeight: '1.4', fontWeight: 'normal' }}>Exempelvis hushållskassan eller matkontot.</span>
                 </button>
               </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-              <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 'bold' }}>2. VAD HETER KONTOT/PERSONEN?</label>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 'bold' }}>2. Namn på kontot/personen</label>
               <input 
                 type="text" 
-                placeholder={newAccType === 'person' ? "T.ex. Johan, Maria eller Barnen" : "T.ex. Gemensamma Ica-kortet, Hus-kassan"} 
+                placeholder={newAccType === 'person' ? "T.ex. Johan eller Maria" : "T.ex. Gemensamma Ica-kortet"} 
                 value={newAccName} 
                 onChange={e => setNewAccName(e.target.value)} 
-                style={{ padding: '1rem', fontSize: '1.1rem', marginBottom: 0 }}
+                style={{ padding: '0.8rem', fontSize: '1.05rem', marginBottom: 0 }}
               />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-              <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 'bold' }}>3. HUR TAR KONTOT EMOT PENGAR?</label>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 'bold' }}>3. Hur tar kontot emot pengar?</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
                 <button
                   onClick={() => setNewAccTransferMethod('swish')}
@@ -394,7 +394,7 @@ export default function ManageBills() {
               </div>
             </div>
 
-            <button onClick={handleAddAccount} style={{ background: 'var(--success-color)', color: '#fff', border: 'none', padding: '1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', marginTop: '1rem' }}>
+            <button onClick={handleAddAccount} style={{ background: 'var(--success-color)', color: '#fff', border: 'none', padding: '0.8rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.05rem', marginTop: '1rem' }}>
               + Skapa Kontot
             </button>
           </div>
