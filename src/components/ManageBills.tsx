@@ -710,6 +710,21 @@ export default function ManageBills() {
               💳 Detta är en skuld/ett lån som ska betalas av över tid
             </label>
 
+            {newBillIsLoan && (
+              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid var(--accent-color)', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                  Ange den <strong>ursprungliga totala skulden</strong> här. Appen kommer automatiskt att räkna ihop alla inmatade belopp över alla låsta månader och visa hur mycket du har betalat av i EkonomiTB.
+                </p>
+                <input 
+                  type="number" 
+                  placeholder="Total ursprunglig skuld (t.ex. 15000)" 
+                  value={newBillTotalDebt} 
+                  onChange={e => setNewBillTotalDebt(e.target.value)} 
+                  style={{ width: '100%', marginBottom: 0 }}
+                />
+              </div>
+            )}
+
             {newBillScope === 'shared' && (
               <div style={{ marginTop: '0.5rem' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
@@ -746,20 +761,7 @@ export default function ManageBills() {
               </div>
             )}
 
-            {newBillIsLoan && (
-              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid var(--accent-color)' }}>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                  Ange den <strong>ursprungliga totala skulden</strong> här. Appen kommer automatiskt att räkna ihop alla inmatade belopp över alla låsta månader och visa hur mycket du har betalat av i EkonomiTB.
-                </p>
-                <input 
-                  type="number" 
-                  placeholder="Total ursprunglig skuld (t.ex. 15000)" 
-                  value={newBillTotalDebt} 
-                  onChange={e => setNewBillTotalDebt(e.target.value)} 
-                  style={{ width: '100%', marginBottom: 0 }}
-                />
-              </div>
-            )}
+
 
             <input 
               type="number" 
