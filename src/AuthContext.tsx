@@ -45,11 +45,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const acceptTos = async () => {
     if (!user) return;
+    // Optimistically update to hide the modal instantly
+    setTosAccepted(true);
     try {
       const { error } = await supabase.from('profiles').update({ tos_accepted: true }).eq('id', user.id);
-      if (!error) {
-        setTosAccepted(true);
-      } else {
+      if (error) {
         console.error("Failed to accept TOS", error);
       }
     } catch (e) {
@@ -67,12 +67,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setHouseholdId(null);
         setRole(null);
       }
-      setTosAccepted(data?.tos_accepted || false);
+      if (data) {
+        setTosAccepted(data.tos_accepted || false);
+      }
     } catch (e) {
-      console.error(e);
-      setHouseholdId(null);
-      setRole(null);
-      setTosAccepted(false);
+      console.error("Network or fetch error in fetchHousehold:", e);
+      // We do NOT reset state here, because a temporary network drop 
+      // on mobile shouldn't trigger the TOS modal or wipe the household ID.
     }
   };
 
