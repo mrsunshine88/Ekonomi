@@ -184,11 +184,11 @@ export default function AdminChat() {
             </div>
           ) : (
             <>
-              <div style={{ padding: '15px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between' }}>
-                <h3 style={{ margin: 0 }}>
+              <div style={{ padding: '15px', borderBottom: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, wordBreak: 'break-all', flex: 1, minWidth: '200px' }}>
                   Konversation med {sessions.find(s => s.id === selectedSessionId)?.profiles?.email}
                 </h3>
-                <button onClick={() => handleCloseSession(selectedSessionId)} style={{ background: 'transparent', border: '1px solid #f43f5e', color: '#f43f5e', borderRadius: '4px', padding: '5px 10px', cursor: 'pointer' }}>Avsluta Ärende</button>
+                <button onClick={() => handleCloseSession(selectedSessionId)} style={{ background: 'transparent', border: '1px solid #f43f5e', color: '#f43f5e', borderRadius: '4px', padding: '8px 12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Avsluta Ärende</button>
               </div>
 
               <div ref={scrollContainerRef} style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -208,12 +208,17 @@ export default function AdminChat() {
               </div>
 
               <form onSubmit={handleSendMessage} style={{ padding: '15px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '10px' }}>
-                <input 
-                  type="text" 
+                <textarea 
                   value={inputText}
                   onChange={e => setInputText(e.target.value)}
-                  placeholder="Skriv ett svar..." 
-                  style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (inputText.trim()) handleSendMessage(e as any);
+                    }
+                  }}
+                  placeholder="Skriv ett svar... (Enter för att skicka)" 
+                  style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: 'white', minHeight: '60px', resize: 'vertical', fontFamily: 'inherit' }}
                 />
                 <button type="submit" disabled={!inputText.trim()} style={{ padding: '0 20px', background: 'var(--accent-gradient)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
                   Skicka
