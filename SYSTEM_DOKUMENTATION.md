@@ -643,3 +643,27 @@ För att förbättra kundupplevelsen och göra chattformattet mer professionellt
 - **Kö-system i Realtid:** Om en kund startar en chatt och administratören inte är tillgänglig, pollar klienten nu var 15:e sekund för att se hur många andra sessioner som står före i kön (`created_at` äldre än nuvarande session med `status = 'waiting'`). Kunden ser då texten "Din köplats: X" i toppen av chatt-bubblan.
 - **Notis-Badge för Olästa Meddelanden:** Om en användare har chattrutan minimerad och admin skickar ett meddelande, ökar en röd siffer-badge (`unreadCount`) på chattikonen. Denna nollställs omedelbart när användaren öppnar rutan igen.
 - **Robust felhantering (.maybeSingle):** Databasanropet för att hämta aktiva sessioner ändrades från `.single()` till `.maybeSingle()` för att förhindra HTTP 406 (Not Acceptable) nätverksfel när ingen aktiv chatt hittades i databasen.
+  
+
+## 29. Äkta Web Push-notiser (Bakgrundsnotiser för Chatt & Påminnelser)
+
+För att lösa problemet med att mobiltelefoner pausar JavaScript (och därmed stänger WebSocket-uppkopplingen) när skärmen låses eller appen hamnar i bakgrunden, har ett system för **Web Push-notiser** implementerats. Detta garanterar att notiser kommer fram och "plingar" även om appen är stängd.
+
+### Vad
+Två huvudsakliga push-funktioner har lagts till:
+1. **Kundtjänst-notiser:** Meddelar omedelbart administratörer (i bakgrunden) när en kund skriver i live-chatten.
+2. **Räknings-påminnelser:** Schemalagda notiser som skickas automatiskt till användare när det är dags att låsa månaden och betala räkningar.
+
+### Hur
+Infrastrukturen bygger på branschstandarden för PWA-notiser och består av följande delar:
+- **Kryptering (VAPID):** Systemet använder VAPID-nycklar (`VAPID_PUBLIC_KEY` och `VAPID_PRIVATE_KEY` sparade som miljövariabler i Vercel) för att bevisa för Apple och Google att notiserna kommer från rätt avsändare.
+- **Service Worker (`push-sw.js`):** En Service Worker är installerad på användarens enhet som "sover" i bakgrunden. När ett push-event tas emot från Apple/Google vaknar den till, ritar upp notisen och spelar upp telefonens standardljud.
+- **Databas & Prenumerationer:** 
+  - Administratörers unika prenumerationsnycklar (tokens) sparas i tabellen `admin_push_subscriptions`.
+  - Vanliga användares nycklar sparas i `push_subscriptions`.
+- **Utskick via Supabase Webhook (Chatt):** När en kund skriver ett meddelande (`INSERT` i `chat_messages`) triggas en Supabase Webhook. Webhooken gör ett anrop till backend-API:et `api/send-push.js` (på Vercel), som i sin tur kontaktar Apples/Googles servrar och skickar ut notisen.
+- **Utskick via Vercel Cron (Räkningar):** Användare kan i "Mina Sidor" välja vilket datum (`reminder_day` i `household_settings`) de vill ha påminnelser. Ett schemalagt "Cron-jobb" via `vercel.json` anropar `api/cron.js` automatiskt klockan 10:00 (UTC) varje dag. API:et kollar vilka hushåll som ska påminnas just idag och skickar ut notiserna.
+- **Gränssnitt:** "Notiser PÅ/AV"-knappar som frågar webbläsaren om tillåtelse via `PushManager` API:t finns implementerade i både `AdminChat.tsx` (för kundtjänst) och i `MyPages.tsx` (för räknings-påminnelser, med en dropdown för datum).
+
+### Varför
+Eftersom operativsystem som iOS har strikta batterisparfunktioner, dör "realtids-kopplingen" när skärmen släcks. Äkta Web Push-notiser är det enda tillförlitliga sättet att skicka tids- och händelsekritiska uppdateringar till användare som inte aktivt tittar på appen. Detta gör plattformen mycket mer robust, likvärdig med inbyggda native-appar från App Store.
