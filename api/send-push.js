@@ -81,7 +81,11 @@ export default async function handler(req, res) {
 
     await Promise.all(sendPromises);
 
-    return res.status(200).json({ success: true, count: subscriptions.length });
+      return res.status(200).json({ 
+        success: true, 
+        count: subscriptions.length,
+        endpoints: subscriptions.map(r => r.subscription.endpoint)
+      });
   } catch (error) {
     console.error('Push error:', error);
     return res.status(500).json({ error: error.message });
