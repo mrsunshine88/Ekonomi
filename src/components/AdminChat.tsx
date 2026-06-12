@@ -173,9 +173,9 @@ export default function AdminChat() {
             
             setNotificationsEnabled(true);
             localStorage.setItem('chat_notifications', 'true');
-          } catch (err) {
+          } catch (err: any) {
             console.error("Push subscription failed", err);
-            alert("Ett fel uppstod vid prenumeration av bakgrundsnotiser. Se till att du kör appen som en PWA (på hemskärmen) om du använder iPhone.");
+            alert("Ett fel uppstod: " + (err.message || JSON.stringify(err)) + ". Om det står 'relation does not exist' måste du köra SQL-skriptet i Supabase.");
             // Fallback
             setNotificationsEnabled(true);
             localStorage.setItem('chat_notifications', 'true');
