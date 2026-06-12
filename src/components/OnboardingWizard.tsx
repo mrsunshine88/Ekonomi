@@ -64,7 +64,9 @@ export default function OnboardingWizard() {
     if (selectedOptions.find(o => o.name === opt.name)) {
       setSelectedOptions(selectedOptions.filter(o => o.name !== opt.name));
     } else {
-      setSelectedOptions([...selectedOptions, opt]);
+      if (selectedOptions.length < 3) {
+        setSelectedOptions([...selectedOptions, opt]);
+      }
     }
   };
 
@@ -73,7 +75,7 @@ export default function OnboardingWizard() {
     setStep(2);
   };
 
-  const billsToFill = selectedOptions.slice(0, 3); // Begär bara belopp för max de 3 första för aha-momentet
+  const billsToFill = selectedOptions; // Limit is now handled at selection
   const totalAmount = billsToFill.reduce((sum, opt) => sum + (Number(amounts[opt.name]) || 0), 0);
 
   const handleNextStep2 = async () => {
@@ -81,27 +83,25 @@ export default function OnboardingWizard() {
     
     // Artificiell fördröjning för att bygga förväntan
     setTimeout(async () => {
+      const sharedAccount = accounts.find(a => a.type === 'shared') || accounts[0];
+      const targetAccountId = sharedAccount?.id || crypto.randomUUID();
+
+      // Save to database
+      const paymentsToCreate = selectedOptions.map(opt => ({
+        name: opt.name,
+        accountId: targetAccountId,
+        defaultAmount: Number(amounts[opt.name]) || 0,
+        interval: 'all' as const,
+        warnIfZero: true,
+        splitType: 'split' as const,
+        isLoan: false
+      }));
+      
+      await createOnboardingPayments(paymentsToCreate);
+        
       setIsCalculating(false);
       setShowConfetti(true);
-    
-    const sharedAccount = accounts.find(a => a.type === 'shared') || accounts[0];
-    const targetAccountId = sharedAccount?.id || crypto.randomUUID();
-
-    // Save to database
-    const paymentsToCreate = selectedOptions.map(opt => ({
-      name: opt.name,
-      accountId: targetAccountId,
-      defaultAmount: Number(amounts[opt.name]) || 0,
-      interval: 'all' as const,
-      warnIfZero: true,
-      splitType: 'split' as const,
-      isLoan: false
-    }));
-    
-    await createOnboardingPayments(paymentsToCreate);
-      
       setStep(3);
-      setIsCalculating(false);
     }, 2000);
   };
 
@@ -111,8 +111,7 @@ export default function OnboardingWizard() {
   };
 
   const finish = () => {
-    // This will unmount the wizard because monthView will re-render since recurring_payments.length > 0
-    window.location.reload(); // Enkel fulhack om komponenten inte triggar re-render av monthview direkt, men Zustand ska hantera det. Vi tar bort detta om vi litar på store-reactivityn.
+    window.location.reload(); 
   };
 
   return (
@@ -139,7 +138,7 @@ export default function OnboardingWizard() {
               {step === 3 && 'Uträkning klar! 🎯'}
             </h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
-              {step === 1 && 'Klicka på de räkningar ni har i ert hushåll.'}
+              {step === 1 && 'Välj 3 räkningar som ni har i ert hushåll.'}
               {step === 2 && `Ange ett ungefärligt belopp för dina räkningar.`}
               {step === 3 && 'Så här ser det ut baserat på dina första siffror.'}
             </p>
