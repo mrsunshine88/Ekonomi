@@ -13,6 +13,7 @@ export default function AdminDashboard() {
   const [vipEmail, setVipEmail] = useState('');
   const [vipList, setVipList] = useState<string[]>([]);
   const [stats, setStats] = useState<{ total_members: number, active_households: number } | null>(null);
+  const [stripeConfigured, setStripeConfigured] = useState(false);
 
   const [contactCompany, setContactCompany] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -65,10 +66,22 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchStripeStatus = async () => {
+    try {
+      const { data } = await supabase.from('admin_secrets').select('key');
+      if (data && data.length >= 2) {
+        setStripeConfigured(true);
+      }
+    } catch (e) {
+      console.error("Kunde inte hämta stripe-status", e);
+    }
+  };
+
   useEffect(() => {
     fetchVipList();
     fetchStats();
     fetchContactSettings();
+    fetchStripeStatus();
   }, []);
 
   const handleTogglePaywall = async () => {
@@ -128,6 +141,7 @@ export default function AdminDashboard() {
       setStripeSecret('');
       setStripeWebhook('');
       setStripePriceId('');
+      await fetchStripeStatus();
     } catch (e: any) {
       setMsg('❌ Kunde inte spara nycklar: ' + e.message);
     } finally {
@@ -313,7 +327,10 @@ export default function AdminDashboard() {
       </div>
 
       <div style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', border: '1px solid rgba(244, 63, 94, 0.3)' }}>
-        <h3 style={{ color: '#f43f5e', marginBottom: '0.5rem' }}>Stripe Kassavalv (Hemliga Nycklar)</h3>
+        <h3 style={{ color: '#f43f5e', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          Stripe Kassavalv (Hemliga Nycklar)
+          {stripeConfigured && <span style={{ background: 'var(--success-color)', color: 'white', fontSize: '0.8rem', padding: '0.2rem 0.6rem', borderRadius: '4px', display: 'inline-block' }}>✅ Aktivt & Inkopplat</span>}
+        </h3>
         <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
           Nycklarna sparas i en dold databastabell. När de väl är sparade visas de aldrig igen i klartext för säkerhets skull.
         </p>
