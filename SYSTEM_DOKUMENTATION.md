@@ -561,3 +561,27 @@ Istället för att kräva att användaren direkt bjuder in sin partner under "se
 ### 26.4 Magiskt färdig Månadsvy
 För att säkerställa att momentum bibehålls när onboarding-guiden stängs, ändrades standardbeteendet i `MonthView.tsx`.
 Sammanfattningsrutan ("Hushållets gemensamma utgifter" högst upp) tvingas nu vara synlig som standard för alla användare (såvida de inte aktivt går in i inställningarna och slår av den). Användaren möts alltså omedelbart av sin färdiga, uträknade total-summa snarare än bara en detaljerad lista, vilket förstärker "Wow"-upplevelsen.
+
+---
+
+## 27. Stripe Felsökning, Säkra Admin-kontroller & PWA-krav
+
+För att göra systemet mer robust och minska supportärenden har vi infört tydligare felsökning och hanterat strikta webbläsarkrav.
+
+### 27.1 Säker Validering av Stripe-kassavalvet (Vercel API)
+Tidigare uppstod RLS-problem (Row Level Security) när Admin-panelen (frontend) skulle verifiera om Stripe-nycklarna sparats korrekt. 
+- Lösningen är en ny Serverless-funktion `api/check-stripe.js` som körs i Vercel. 
+- När administratören öppnar Dashboarden anropas detta API, som i sin tur använder `SUPABASE_SERVICE_ROLE_KEY` för att bypassa RLS och titta ner i `admin_secrets`-tabellen. 
+- API:et returnerar antingen `{ active: true }` eller `{ active: false, reason: "Detaljerat felmeddelande" }`. 
+- Admin-gränssnittet (`AdminDashboard.tsx`) renderar nu en oerhört tydlig och dynamisk statusbox (🟢 AKTIVT & INKOPPLAT eller 🔴 INTE AKTIVT med exakt orsak, t.ex. "Missing Vercel Envs" eller saknade nycklar).
+
+### 27.2 Paywall "Escape Hatch" (Logga ut)
+Tidigare dolde betalväggens backdrop hela menyn. Om en administratör loggade ut och en vanlig (obetald) användare loggade in i samma fönster, frystes skärmen på betalväggen utan möjlighet att logga ut eller byta konto.
+- Lösningen: En "🚪 Logga ut"-knapp lades till i botten av `PaywallModal.tsx`. 
+- Vidare uppdaterades `App.tsx` så att `currentView` *alltid* tvångsåterställs till `'month'`-vyn via en `useEffect` när en användare byts, vilket eliminerar risken att obehöriga renderar ett tomt admin-skal.
+
+### 27.3 PWA-installation & Service Worker Fetch-krav
+Ett doldt krav för Android/Chrome för att betrakta en hemsida som en fullvärdig PWA (och visa popupen "Lägg till på hemskärmen" / `beforeinstallprompt`) är att det måste finnas en aktiv Service Worker med en giltig `fetch`-lyssnare.
+- Tidigare `main.tsx` raderade ("unregister") aktivt alla Service Workers, vilket effektivt stängde av PWA-installationsfunktionen.
+- Koden har nu skrivits om så att `navigator.serviceWorker.register('/push-sw.js')` körs konsekvent vid sidladdning.
+- `public/push-sw.js` har kompletterats med en tom men nödvändig `self.addEventListener('fetch', ...)` för att passera Googles PWA-validering. Målet är att säkerställa att mobilrutan (nedladdningsprompten) *alltid* visas för nya användare på Android.
