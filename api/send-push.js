@@ -82,7 +82,12 @@ export default async function handler(req, res) {
       return res.status(200).json({ 
         success: true, 
         count: subscriptions.length,
-        results: results
+        results: results,
+        debug: {
+          hasPublicVapid: !!publicVapidKey,
+          hasPrivateVapid: !!privateVapidKey,
+          publicVapidPrefix: publicVapidKey ? publicVapidKey.substring(0, 5) : null
+        }
       });
   } catch (error) {
     console.error('Push error:', error);
