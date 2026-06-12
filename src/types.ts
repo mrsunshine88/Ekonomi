@@ -68,6 +68,8 @@ export interface AppState {
   householdProfiles?: Profile[];
   settings?: {
     showSummary?: boolean;
+    showSwishSummary?: boolean;
+    showTransferSummary?: boolean;
     showTopTotal?: boolean;
     reminderDay?: number;
   };

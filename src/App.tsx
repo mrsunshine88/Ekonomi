@@ -226,11 +226,11 @@ function App() {
             <button onClick={() => changeMonth(1)}>Nästa →</button>
           </div>
 
-          {state.settings?.showSummary !== false && (
+          {((state.settings?.showTransferSummary ?? state.settings?.showSummary) !== false || (state.settings?.showSwishSummary ?? state.settings?.showSummary) !== false) && (
             <Summary currentMonth={currentMonth} />
           )}
 
-          <div style={{ textAlign: 'center', marginBottom: '1.5rem', marginTop: state.settings?.showSummary !== false ? '0' : '1.5rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem', marginTop: ((state.settings?.showTransferSummary ?? state.settings?.showSummary) !== false || (state.settings?.showSwishSummary ?? state.settings?.showSummary) !== false) ? '0' : '1.5rem' }}>
             {Object.values(state.months[currentMonth]?.handledPayments || {}).some(v => v) ? (
               <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'inline-block' }}>
                 🔒 Vissa betalningar är låsta. Lås upp för att kunna hämta historik.

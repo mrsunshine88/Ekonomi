@@ -226,14 +226,29 @@ export default function ManageBills() {
               <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', fontSize: '1rem', color: 'var(--text-primary)' }}>
                 <input 
                   type="checkbox" 
-                  checked={state.settings?.showSummary !== false} 
-                  onChange={(e) => onUpdateSettings({ showSummary: e.target.checked })}
+                  checked={(state.settings?.showTransferSummary ?? state.settings?.showSummary) !== false} 
+                  onChange={(e) => onUpdateSettings({ showTransferSummary: e.target.checked })}
                   style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
                 />
-                Visa sammanställning (Swish & Överföringar) högst upp i månadsvyn
+                Visa sammanställning för Överföringar högst upp i månadsvyn
               </label>
               <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', marginLeft: '2.5rem', fontSize: '0.9rem' }}>
-                Om du stänger av detta döljs rutorna som räknar ut vem som ska betala vad. Appen fungerar då mer som en klassisk utgiftskoll utan Swish-funktion.
+                Visar en ruta med vem som ska föra över pengar till gemensamma konton.
+              </p>
+            </div>
+
+            <div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', fontSize: '1rem', color: 'var(--text-primary)' }}>
+                <input 
+                  type="checkbox" 
+                  checked={(state.settings?.showSwishSummary ?? state.settings?.showSummary) !== false} 
+                  onChange={(e) => onUpdateSettings({ showSwishSummary: e.target.checked })}
+                  style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
+                />
+                Visa sammanställning för Swish högst upp i månadsvyn
+              </label>
+              <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', marginLeft: '2.5rem', fontSize: '0.9rem' }}>
+                Visar en ruta med vem som är skyldig vem pengar (Swish personer emellan).
               </p>
             </div>
 

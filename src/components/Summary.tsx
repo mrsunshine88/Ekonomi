@@ -10,6 +10,8 @@ export default function Summary({ currentMonth }: Props) {
   const togglePaymentStatus = useStore(s => s.togglePaymentStatus);
   const monthData = state.months[currentMonth] || { monthId: currentMonth, billAmounts: {}, handledPayments: {} };
   const result = calculateMonth(state, currentMonth);
+  const showTransfers = (state.settings?.showTransferSummary ?? state.settings?.showSummary) !== false;
+  const showSwishes = (state.settings?.showSwishSummary ?? state.settings?.showSummary) !== false;
 
   const [warningModal, setWarningModal] = useState<{ visible: boolean; bills: typeof state.bills }>({ visible: false, bills: [] });
   const handled = monthData.handledPayments || {};
@@ -82,7 +84,7 @@ export default function Summary({ currentMonth }: Props) {
       )}
       
       {/* Transfers to Shared Accounts */}
-      {Object.keys(result.transfersToShared).length > 0 && (
+      {showTransfers && Object.keys(result.transfersToShared).length > 0 && (
         <div className="summary-grid">
           {Object.entries(result.transfersToShared).map(([personId, sharedObj]) => {
             const person = state.accounts.find(a => a.id === personId);
@@ -126,7 +128,7 @@ export default function Summary({ currentMonth }: Props) {
       )}
       
       {/* Explicit Swishes */}
-      {result.swishes.length > 0 ? (
+      {showSwishes && (result.swishes.length > 0 ? (
         <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {result.swishes.map((swish, index) => {
             const fromPerson = state.accounts.find(a => a.id === swish.fromId);
@@ -166,7 +168,7 @@ export default function Summary({ currentMonth }: Props) {
         <div style={{ textAlign: 'center', marginTop: '2rem', padding: '2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Inga swishar behövs denna månad! 🎉</p>
         </div>
-      )}
+      ))}
     </div>
   );
 }
