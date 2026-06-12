@@ -635,3 +635,11 @@ Ett komplett system för kundtjänst skapades för att möjliggöra direktkontak
   - Knappen "Avsluta Ärende" markerar sessionen som `closed`. När användaren får denna statuslås textinmatningen för dem med ett meddelande om att starta en ny session.
 - **Supabase Realtime:** 
   - Kommunikationen drivs av Supabase Channels (WebSockets). Klienterna prenumererar på inserts i `chat_messages`, och uppdateringar i `chat_sessions` för att omedelbart bygga om chattgränssnittet utan att sidladdning krävs.
+  
+
+### 28.3 Ytterligare Kundservice-funktioner (Senaste tilläggen)
+För att förbättra kundupplevelsen och göra chattformattet mer professionellt har följande funktioner lagts till:
+- **Behållen Chatthistorik:** Logiken i `ChatBubble.tsx` har ändrats så att användarens chatt inte längre rensas när de minimerar rutan (`isOpen = false`), även om ärendet har avslutats (`closed`). Historiken rensas lokalt *endast* om användaren uttryckligen klickar på `✕` (Stäng) efter att admin har stängt ärendet. Detta säkerställer att användaren hinner läsa kundtjänstens sista meddelande.
+- **Kö-system i Realtid:** Om en kund startar en chatt och administratören inte är tillgänglig, pollar klienten nu var 15:e sekund för att se hur många andra sessioner som står före i kön (`created_at` äldre än nuvarande session med `status = 'waiting'`). Kunden ser då texten "Din köplats: X" i toppen av chatt-bubblan.
+- **Notis-Badge för Olästa Meddelanden:** Om en användare har chattrutan minimerad och admin skickar ett meddelande, ökar en röd siffer-badge (`unreadCount`) på chattikonen. Denna nollställs omedelbart när användaren öppnar rutan igen.
+- **Robust felhantering (.maybeSingle):** Databasanropet för att hämta aktiva sessioner ändrades från `.single()` till `.maybeSingle()` för att förhindra HTTP 406 (Not Acceptable) nätverksfel när ingen aktiv chatt hittades i databasen.
