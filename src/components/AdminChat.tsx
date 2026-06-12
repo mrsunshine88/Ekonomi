@@ -218,7 +218,7 @@ export default function AdminChat() {
                     }
                   }}
                   placeholder="Skriv ett svar... (Enter för att skicka)" 
-                  style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: 'white', minHeight: '60px', resize: 'vertical', fontFamily: 'inherit' }}
+                  style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: 'white', minHeight: '80px', height: '80px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', lineHeight: '1.5' }}
                 />
                 <button type="submit" disabled={!inputText.trim()} style={{ padding: '0 20px', background: 'var(--accent-gradient)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
                   Skicka
