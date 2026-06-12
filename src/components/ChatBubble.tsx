@@ -12,6 +12,7 @@ export default function ChatBubble() {
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [queuePosition, setQueuePosition] = useState<number | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isOpenRef = useRef(isOpen);
 
@@ -106,14 +107,29 @@ export default function ChatBubble() {
     };
   }, [sessionId]);
 
-  // Reset chat if it was closed and user closes the bubble
+  // Poll queue position when waiting
   useEffect(() => {
-    if (!isOpen && sessionStatus === 'closed') {
-      setSessionId(null);
-      setSessionStatus(null);
-      setMessages([]);
+    if (sessionStatus !== 'waiting' || !sessionId) {
+      setQueuePosition(null);
+      return;
     }
-  }, [isOpen, sessionStatus]);
+
+    const fetchQueue = async () => {
+      const { data: mySession } = await supabase.from('chat_sessions').select('created_at').eq('id', sessionId).single();
+      if (mySession) {
+        const { count } = await supabase
+          .from('chat_sessions')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'waiting')
+          .lt('created_at', mySession.created_at);
+        if (count !== null) setQueuePosition(count + 1);
+      }
+    };
+
+    fetchQueue();
+    const interval = setInterval(fetchQueue, 15000);
+    return () => clearInterval(interval);
+  }, [sessionStatus, sessionId]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,10 +190,22 @@ export default function ChatBubble() {
         }}>
           {/* Header */}
           <div style={{ background: 'var(--accent-gradient)', padding: '15px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Kundservice</h3>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Kundservice</h3>
+              {sessionStatus === 'waiting' && queuePosition !== null && (
+                <div style={{ fontSize: '0.8rem', opacity: 0.9, marginTop: '2px' }}>Din köplats: {queuePosition}</div>
+              )}
+            </div>
             <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
               <button onClick={() => setIsOpen(false)} title="Minimera" style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.5rem', lineHeight: '10px', paddingBottom: '8px' }}>_</button>
-              <button onClick={() => setIsOpen(false)} title="Stäng" style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+              <button onClick={() => {
+                if (sessionStatus === 'closed') {
+                  setSessionId(null);
+                  setSessionStatus(null);
+                  setMessages([]);
+                }
+                setIsOpen(false);
+              }} title="Stäng" style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
             </div>
           </div>
 
