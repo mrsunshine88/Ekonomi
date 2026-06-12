@@ -363,6 +363,12 @@ export const useStore = create<StoreState>((set, get) => ({
       }))),
       () => set({ state })
     );
+
+    await get().updateSettings({ 
+      showTopTotal: true, 
+      showSwishSummary: false, 
+      showTransferSummary: false 
+    });
   },
 
   addBill: async (bill) => {

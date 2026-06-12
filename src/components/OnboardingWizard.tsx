@@ -28,6 +28,7 @@ export default function OnboardingWizard() {
   const [windowDimensions, setWindowDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
 
   const householdId = useStore(s => s.householdId);
+  const accounts = useStore(s => s.state.accounts);
   const createOnboardingPayments = useStore(s => s.createOnboardingPayments);
 
   useEffect(() => {
@@ -60,10 +61,13 @@ export default function OnboardingWizard() {
       setIsCalculating(false);
       setShowConfetti(true);
     
+    const sharedAccount = accounts.find(a => a.type === 'shared') || accounts[0];
+    const targetAccountId = sharedAccount?.id || crypto.randomUUID();
+
     // Save to database
     const paymentsToCreate = selectedOptions.map(opt => ({
       name: opt.name,
-      accountId: opt.category,
+      accountId: targetAccountId,
       defaultAmount: Number(amounts[opt.name]) || 0,
       interval: 'all' as const,
       warnIfZero: true,
