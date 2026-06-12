@@ -385,18 +385,37 @@ export default function ManageBills() {
                     }
                   });
 
-                  if (lockedAccounts.size === 0) return null;
+                  if (lockedAccounts.size === 0 && !handled['top_total_lock']) return null;
 
                   return (
                     <div key={monthId} className="card" style={{ marginBottom: '1rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', padding: '1rem' }}>
                       <h4 style={{ margin: '0 0 1rem 0', color: 'var(--accent-color)' }}>{monthId}</h4>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {handled['top_total_lock'] && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-color)', padding: '0.75rem', borderRadius: '8px' }}>
+                            <span>Total kostnad (Hela månaden) 🔒</span>
+                            <button 
+                              onClick={() => onUnlockAccount(monthId, 'top_total_only')}
+                              style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', border: '1px solid #3b82f6', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                            >
+                              🔓 Lås upp
+                            </button>
+                          </div>
+                        )}
                         {state.accounts.map(acc => {
-                          const isLocked = lockedAccounts.has(acc.id);
-                          if (!isLocked) return null;
+                          if (acc.type === 'shared') return null;
+                          
+                          let isIndividuallyLocked = false;
+                          Object.keys(handled).forEach(paymentId => {
+                            if (handled[paymentId] && paymentId !== 'top_total_lock') {
+                              if (paymentId.includes(acc.id)) isIndividuallyLocked = true;
+                            }
+                          });
+
+                          if (!isIndividuallyLocked) return null;
                           return (
                             <div key={acc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-color)', padding: '0.75rem', borderRadius: '8px' }}>
-                              <span>{acc.name}{acc.type === 'shared' ? ' (Gemensamt)' : ''} 🔒</span>
+                              <span>{acc.name} 🔒</span>
                               <button 
                                 onClick={() => onUnlockAccount(monthId, acc.id)}
                                 style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', border: '1px solid #3b82f6', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
