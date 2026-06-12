@@ -310,7 +310,7 @@ export default function ManageBills() {
               <div key={acc.id} className="bill-row" style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div>
                   <div className="bill-name">{acc.name}</div>
-                  <div className="bill-meta">{acc.type === 'shared' ? 'Gemensamt konto' : 'Personligt konto'} • Mottar betalning via: {acc.transferMethod === 'transfer' ? 'Banköverföring' : 'Swish'}</div>
+                  <div className="bill-meta">{acc.type === 'shared' ? 'Gemensamt konto' : 'Personligt konto'} • Betalningsmetod: {acc.transferMethod === 'transfer' ? 'Banköverföring' : 'Swish'}</div>
                 </div>
                 <button 
                   onClick={() => onRemoveAccount(acc.id)}
@@ -335,8 +335,8 @@ export default function ManageBills() {
               <option value="shared">Gemensamt konto (Ett konto dit pengar ska föras över)</option>
             </select>
             <select value={newAccTransferMethod} onChange={e => setNewAccTransferMethod(e.target.value as any)}>
-              <option value="swish">Betalningsmetod: Mottar pengar via Swish</option>
-              <option value="transfer">Betalningsmetod: Mottar pengar via Banköverföring</option>
+              <option value="swish">Betalningsmetod: Swish</option>
+              <option value="transfer">Betalningsmetod: Banköverföring</option>
             </select>
             <button onClick={handleAddAccount} style={{ background: 'var(--success-color)', color: '#fff', border: 'none', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
               + Lägg till konto
