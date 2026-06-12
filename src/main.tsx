@@ -8,7 +8,7 @@ import { AuthProvider } from './AuthContext'
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/push-sw.js').then(
-      (registration) => {
+      () => {
         console.log('ServiceWorker registration successful');
       },
       (err) => {
