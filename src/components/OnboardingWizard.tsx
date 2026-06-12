@@ -19,6 +19,28 @@ interface Option {
   emoji: string;
 }
 
+function CountUp({ end, duration = 2 }: { end: number, duration?: number }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let startTimestamp: number | null = null;
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / (duration * 1000), 1);
+      const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setCount(Math.floor(easeProgress * end));
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      } else {
+        setCount(end);
+      }
+    };
+    window.requestAnimationFrame(step);
+  }, [end, duration]);
+
+  return <>{count}</>;
+}
+
 export default function OnboardingWizard() {
   const [step, setStep] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Option[]>([]);
@@ -224,9 +246,17 @@ export default function OnboardingWizard() {
               marginBottom: '2rem',
               animation: 'fadeIn 0.5s ease-out'
             }}>
+              <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid rgba(16, 185, 129, 0.3)', paddingBottom: '1rem' }}>
+                {billsToFill.map(opt => (
+                  <div key={opt.name} style={{ display: 'flex', justifyContent: 'space-between', color: '#e2e8f0', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                    <span>{opt.emoji} {opt.name}</span>
+                    <span>{Number(amounts[opt.name]) || 0} kr</span>
+                  </div>
+                ))}
+              </div>
               <div style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', marginBottom: '0.5rem' }}>Hushållets gemensamma utgifter:</div>
               <div style={{ color: '#fff', fontSize: '3.5rem', fontWeight: 'bold', marginBottom: '1rem', textShadow: '0 2px 10px rgba(16,185,129,0.3)' }}>
-                {totalAmount} kr
+                <CountUp end={totalAmount} duration={2} /> kr
               </div>
               <div style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', display: 'inline-block' }}>
                 💡 Med en partner blir din andel bara {Math.round(totalAmount / 2)} kr!
