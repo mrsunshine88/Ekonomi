@@ -5,18 +5,6 @@ import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from './AuthContext'
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/push-sw.js').then(
-      () => {
-        console.log('ServiceWorker registration successful');
-      },
-      (err) => {
-        console.log('ServiceWorker registration failed: ', err);
-      }
-    );
-  });
-}
 
 class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: Error | null, componentStack: string | null}> {
   constructor(props: {children: ReactNode}) {
