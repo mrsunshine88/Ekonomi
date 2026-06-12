@@ -80,8 +80,13 @@ function App() {
     return <LoginScreen />;
   }
 
-  const needsOnboarding = state.accounts.length === 0;
+  // Återställ vy när man byter användare
+  useEffect(() => {
+    setCurrentView('month');
+  }, [user?.id]);
+
   const isAdmin = user?.email?.toLowerCase() === 'apersson508@gmail.com';
+  const needsOnboarding = state.accounts.length === 0;
   const isPaywallBlocked = state.paywallActive && state.stripeStatus !== 'vip' && state.stripeStatus !== 'active' && !isAdmin;
 
   return (
@@ -112,7 +117,7 @@ function App() {
               <button onClick={() => navigateTo('stats')} className={`mobile-menu-item ${currentView === 'stats' ? 'active' : ''}`}>📊 EkonomiTB</button>
               <button onClick={() => navigateTo('mypages')} className={`mobile-menu-item ${currentView === 'mypages' ? 'active' : ''}`}>👤 Mina sidor</button>
               <button onClick={() => navigateTo('manage')} className={`mobile-menu-item ${currentView === 'manage' ? 'active' : ''}`}>⚙️ Inställningar</button>
-              {user?.email?.toLowerCase() === 'apersson508@gmail.com' && (
+              {isAdmin && (
                 <button onClick={() => navigateTo('admin')} className={`mobile-menu-item ${currentView === 'admin' ? 'active' : ''}`}>👑 Admin</button>
               )}
               <div style={{ height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
@@ -157,7 +162,7 @@ function App() {
           >
             ⚙️ Inställningar
           </button>
-          {user?.email === 'apersson508@gmail.com' && (
+          {isAdmin && (
             <button 
               onClick={() => navigateTo('admin')} 
               style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'admin' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'admin' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'admin' ? 'bold' : 'normal', transition: 'all 0.2s' }}
@@ -174,7 +179,7 @@ function App() {
         </nav>
       </header>
 
-      {currentView === 'admin' ? (
+      {currentView === 'admin' && isAdmin ? (
         <div>
           <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Månadsvy</button>
           <AdminDashboard />
