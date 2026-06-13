@@ -58,18 +58,10 @@ export default function LoginScreen() {
         if (error) throw error;
         
         if (data?.user) {
-          // Skapa profil
+          // Skapa profil - VIKTIGT: invänta att detta blir klart innan vi visar success-meddelande
           const { error: profileError } = await supabase.from('profiles').insert([{ id: data.user.id, email: data.user.email }]);
           if (profileError && profileError.code !== '23505') {
              console.error("Profile creation error:", profileError);
-          }
-          
-          // Skapa ett eget moln-hushåll automatiskt till användaren
-          const newHouseholdId = crypto.randomUUID();
-          const { error: hhErr } = await supabase.from('households').insert([{ id: newHouseholdId }]);
-          
-          if (!hhErr) {
-             await supabase.from('profiles').update({ household_id: newHouseholdId, role: 'owner' }).eq('id', data.user.id);
           }
           
           if (data.session) {
