@@ -3,7 +3,6 @@ import { useStore } from '../store';
 import { supabase } from '../supabase';
 
 export default function Onboarding() {
-  const householdId = useStore(s => s.householdId);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [householdName, setHouseholdName] = useState('');
