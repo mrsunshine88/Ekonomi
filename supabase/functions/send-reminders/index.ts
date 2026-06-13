@@ -15,7 +15,7 @@ webpush.setVapidDetails(
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-serve(async (req) => {
+serve(async (_req) => {
   try {
     const today = new Date().getDate();
 
@@ -34,7 +34,7 @@ serve(async (req) => {
     const currentDay = todayObj.getDate();
     
     // Om vi är sent i månaden (>= 20) ska vi kontrollera nästa månad.
-    let targetDate = new Date(todayObj);
+    const targetDate = new Date(todayObj);
     if (currentDay >= 20) {
       targetDate.setMonth(targetDate.getMonth() + 1);
     }
@@ -81,10 +81,12 @@ serve(async (req) => {
                   });
                   await webpush.sendNotification(subRow.subscription, payload);
                   sentCount++;
-                } catch (pushErr: any) {
+                } catch (pushErr: unknown) {
                   // Om prenumerationen är död (t.ex. användaren rensat data), radera den
-                  if (pushErr.statusCode === 410 || pushErr.statusCode === 404) {
-                    await supabase.from('push_subscriptions').delete().eq('id', subRow.id);
+                  if (typeof pushErr === 'object' && pushErr !== null && 'statusCode' in pushErr) {
+                    if (pushErr.statusCode === 410 || pushErr.statusCode === 404) {
+                      await supabase.from('push_subscriptions').delete().eq('id', subRow.id);
+                    }
                   }
                   console.error("Fel vid push:", pushErr);
                 }
@@ -96,7 +98,7 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ success: true, sent: sentCount }), { headers: { "Content-Type": "application/json" } });
-  } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+  } catch (error: unknown) {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 })

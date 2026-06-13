@@ -1015,3 +1015,37 @@ Aktiverat via: Supabase Dashboard → Authentication → Providers → Email →
 | `e2e/navigation.spec.ts` | NY — E2E-tester för appnavigering i Demo-läge. |
 | `e2e/robustness.spec.ts` | NY — E2E-tester för robusthet och edge cases. |
 | `playwright.config.ts` | BEFINTLIG — Playwright-konfiguration (var redan på plats). |
+
+---
+
+## 24. Flexibelt Inkomstsystem (Fasta och Rörliga Inkomster)
+
+### Vad:
+Det tidigare lön-systemet (`user_monthly_salaries`) byttes ut mot ett mer flexibelt system för att hantera alla typer av inkomster (`user_incomes`), inte bara en specifik lön. Systemet har nu stöd för både **fasta inkomster** och **rörliga inkomster**.
+
+### Hur:
+- **Databasen:** Skapade tabellen `user_incomes` med kolumnerna `id`, `household_id`, `user_id`, `name`, `amount`, `type` (vilket är 'fixed' eller 'variable') och `pay_date` (av typen DATE).
+- **Gamla Data:** En datamigrering gjordes från `user_monthly_salaries` till `user_incomes` i `add_user_incomes_table.sql` med `INSERT INTO ... SELECT ... pay_date::DATE`.
+- **Tillståndshantering (`src/store.ts`):** `monthlySalaries` byttes ut mot `incomes` av typen `Income[]`. Hämtningen och muteringarna uppdaterades för att arbeta mot `user_incomes`.
+- **UI (`src/components/ManageBills.tsx`):**
+  - Fliken "Min Lön" döptes om till "Inkomster".
+  - Den delades in i två sektioner: "Fast Inkomst (Varje månad)" för återkommande inkomster (ex. Barnbidrag, Underhåll) och "Rörlig Inkomst (Specifikt datum)" (ex. Lön, Försäkringskassan).
+- **Statistik och Beräkningar (`src/components/Statistics.tsx`):** `InkomstUtgiftView` beräknar inkomsten dynamiskt:
+  - Fasta inkomster läggs på varje månadsobjekt.
+  - Rörliga inkomster appliceras (precis som tidigare lönelogik) på *följande månad* baserat på dess datum.
+
+### Varför:
+Användare hade behov av att inkludera andra inkomstkällor såsom barnbidrag och underhåll. Eftersom dessa inkomster kommer varje månad oberoende av ett fast lönedatum, behövdes ett `fixed` inkomst-läge. För bidrag som kan variera eller infalla oregelbundet (såsom utbetalningar från försäkringskassan), är `variable`-läget (där inkomsten är bunden till ett specifikt utbetalningsdatum) bättre lämpat. På detta sätt ges hushållet en korrekt totalkalkyl för "Kvar att leva på".
+
+---
+
+### Filförteckning — Ändringar i detta kapitel
+
+| Fil | Typ av ändring |
+|---|---|
+| `add_user_incomes_table.sql` | NY — Skapar `user_incomes` tabellen och migrerar existerande löner från `user_monthly_salaries`. |
+| `src/types.ts` | ÄNDRAD — Ersatte `MonthlySalary` med `Income` interface (`id`, `name`, `amount`, `type`, `payDate`). |
+| `src/store.ts` | ÄNDRAD — Anpassade databasanrop, state och funktioner (`saveIncome`, `removeIncome`) att hantera `Income`. |
+| `src/components/ManageBills.tsx` | ÄNDRAD — Uppdaterade inställnings-UI:t att stödja Fasta och Rörliga inkomster under en och samma flik. |
+| `src/components/Statistics.tsx` | ÄNDRAD — Kalkyleringen i `InkomstUtgiftView` stödjer dynamisk iterering över `incomes`-arrayen för båda inkomsttyperna. |
+

@@ -66,7 +66,7 @@ export default function Statistics() {
     validMonths = Object.keys(rawMonthsObj).filter(monthId => {
       if (isDemoMode) return true;
       if (isPrivate) {
-        return (rawMonthsObj[monthId] as any).isLocked === true;
+        return (rawMonthsObj[monthId] as { isLocked?: boolean }).isLocked === true;
       } else {
         const handled = rawMonthsObj[monthId].handledPayments || {};
         return Object.values(handled).some(v => v === true);
@@ -87,7 +87,7 @@ export default function Statistics() {
   
   const activeBills = isPrivate 
     ? (state.privateBills || []).filter(b => b.userId === user?.id && !b.isArchived) 
-    : state.bills.filter(b => !b.isArchived);
+    : (state.bills || []).filter(b => !b.isArchived);
 
   // 1. Time Series Data (for Bar & Line charts)
   const timeData = sortedMonths.map(monthId => {
@@ -96,7 +96,7 @@ export default function Statistics() {
     
     const accountTotals: Record<string, number> = {};
     if (!isPrivate) {
-      state.accounts.forEach(acc => accountTotals[acc.name] = 0);
+      (state.accounts || []).forEach(acc => accountTotals[acc.name] = 0);
     } else {
       accountTotals['Privat'] = 0;
     }
@@ -108,7 +108,7 @@ export default function Statistics() {
       const amt = amounts[b.id] !== undefined ? amounts[b.id] : b.defaultAmount;
       if (!isPrivate) {
         // @ts-ignore - accountId exists on shared bills
-        const acc = state.accounts.find(a => a.id === b.accountId);
+        const acc = (state.accounts || []).find(a => a.id === b.accountId);
         if (acc) {
           accountTotals[acc.name] += amt;
         }
@@ -202,10 +202,10 @@ export default function Statistics() {
   // Calculate Average Pie Chart (Total Distribution)
   let pieData: {name: string, value: number}[] = [];
   if (!isPrivate) {
-    pieData = state.accounts.map(acc => {
+    pieData = (state.accounts || []).map(acc => {
       let sum = 0;
       if (timeData.length > 0) {
-        sum = timeData.reduce((accTotal, d) => accTotal + ((d as any)[acc.name] || 0), 0) / timeData.length;
+        sum = timeData.reduce((accTotal, d) => accTotal + (Number((d as Record<string, string | number>)[acc.name]) || 0), 0) / timeData.length;
       }
       return { name: acc.name, value: sum };
     }).filter(p => p.value > 0);
@@ -213,7 +213,7 @@ export default function Statistics() {
     pieData = activeBills.map(b => {
       let sum = 0;
       if (timeData.length > 0) {
-        sum = timeData.reduce((accTotal, d) => accTotal + ((d as any)[b.name] || 0), 0) / timeData.length;
+        sum = timeData.reduce((accTotal, d) => accTotal + (Number((d as Record<string, string | number>)[b.name]) || 0), 0) / timeData.length;
       }
       return { name: b.name, value: sum };
     }).sort((a, b) => b.value - a.value).slice(0, 5).filter(p => p.value > 0);
@@ -380,8 +380,8 @@ export default function Statistics() {
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
                   <Legend iconType="circle" wrapperStyle={{ paddingTop: '1rem' }} />
                   {!isPrivate ? (
-                    state.accounts.map((acc, index) => (
-                      <Bar key={acc.id} dataKey={acc.name} stackId="a" fill={COLORS[index % COLORS.length]} radius={index === state.accounts.length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0]} maxBarSize={60} />
+                    (state.accounts || []).map((acc, index) => (
+                      <Bar key={acc.id} dataKey={acc.name} stackId="a" fill={COLORS[index % COLORS.length]} radius={index === (state.accounts || []).length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0]} maxBarSize={60} />
                     ))
                   ) : (
                     <Bar dataKey="Privat" stackId="a" fill="url(#colorUv)" radius={[6, 6, 0, 0]} maxBarSize={60} />
@@ -499,8 +499,8 @@ export default function Statistics() {
                         </td>
                         <td style={{ padding: '1rem' }}>
                           {h.result.swishes.map((s: { fromId: string; toId: string; amount: number }, i: number) => {
-                            const fromName = state.accounts.find(a => a.id === s.fromId)?.name || s.fromId;
-                            const toName = state.accounts.find(a => a.id === s.toId)?.name || s.toId;
+                            const fromName = (state.accounts || []).find(a => a.id === s.fromId)?.name || s.fromId;
+                            const toName = (state.accounts || []).find(a => a.id === s.toId)?.name || s.toId;
                             return (
                               <div key={i} style={{ fontSize: '0.85rem', marginBottom: '0.2rem' }}>
                                 <span style={{ color: '#3b82f6', fontWeight: 600 }}>{fromName}</span> swishade <span style={{ color: '#10b981', fontWeight: 600 }}>{toName}</span>: {Math.round(s.amount).toLocaleString('sv-SE')} kr
@@ -566,7 +566,7 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: App
   const myProfile = state.householdProfiles?.find((p: { id: string }) => p.id === user?.id);
   const selectedAccountId = myProfile?.person_account_id;
   
-  const personAccounts = state.accounts.filter((a: { type: string }) => a.type === 'person');
+  const personAccounts = (state.accounts || []).filter((a: { type: string }) => a.type === 'person');
   const selectedAccount = personAccounts.find((a: { id: string }) => a.id === selectedAccountId);
 
   if (!selectedAccount) {
@@ -586,7 +586,7 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: App
   // Bygg upp tidsdata
   const timeData = [...sortedMonths].map(monthId => {
     let totalIncome = 0;
-    if (state.monthlySalaries) {
+    if (state.incomes) {
       const [mYear, mMonth] = monthId.split('-').map(Number);
       let payYear = mYear;
       let payMonth = mMonth - 1;
@@ -596,9 +596,13 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: App
       }
       const payMonthStr = `${payYear}-${String(payMonth).padStart(2, '0')}`;
       
-      state.monthlySalaries.forEach((s: { userId: string; payDate: string; amount: number }) => {
-        if (s.userId === user?.id && s.payDate.startsWith(payMonthStr)) {
-          totalIncome += s.amount;
+      state.incomes.forEach((i: any) => {
+        if (i.userId === user?.id) {
+          if (i.type === 'fixed') {
+            totalIncome += i.amount;
+          } else if (i.type === 'variable' && i.payDate && i.payDate.startsWith(payMonthStr)) {
+            totalIncome += i.amount;
+          }
         }
       });
     }
@@ -627,7 +631,7 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: App
 
     const m = state.months[monthId];
     if (m) {
-      const activeShared = state.bills.filter((b: { isArchived?: boolean }) => !b.isArchived);
+      const activeShared = (state.bills || []).filter((b: { isArchived?: boolean }) => !b.isArchived);
       activeShared.forEach((b: { accountId: string; id: string; defaultAmount: number }) => {
         if (b.accountId === selectedAccountId) {
           const amt = m.billAmounts?.[b.id] !== undefined ? m.billAmounts[b.id] : b.defaultAmount;

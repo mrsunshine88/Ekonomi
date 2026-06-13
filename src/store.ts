@@ -152,7 +152,7 @@ export const useStore = create<StoreState>((set, get) => ({
         { data: profiles },
         { data: householdData },
         { data: globalSettings },
-        { data: monthlySalariesData }
+        { data: incomesData }
       ] = await Promise.all([
         supabase.from('accounts').select('*').eq('household_id', householdId),
         supabase.from('bills').select('*').eq('household_id', householdId),
@@ -167,7 +167,7 @@ export const useStore = create<StoreState>((set, get) => ({
         supabase.from('profiles').select('id, email, role, share_private_economy, household_id, person_account_id').eq('household_id', householdId),
         supabase.from('households').select('stripe_status').eq('id', householdId).maybeSingle(),
         supabase.from('global_settings').select('value').eq('key', 'paywall_active').maybeSingle(),
-        supabase.from('user_monthly_salaries').select('*').eq('household_id', householdId).gte('pay_date', `${lastYearDec}-01`)
+        supabase.from('user_incomes').select('*').eq('household_id', householdId)
       ]);
 
       // 3. Reconstruct AppState
@@ -203,7 +203,7 @@ export const useStore = create<StoreState>((set, get) => ({
           showTopTotal: settings.show_top_total,
           showPrivateTopTotal: settings.show_private_top_total
         } : { showSummary: true },
-        monthlySalaries: monthlySalariesData ? monthlySalariesData.map((s: { user_id: string; pay_date: string; amount: number | string }) => ({ userId: s.user_id, payDate: s.pay_date, amount: Number(s.amount) })) : []
+        incomes: incomesData ? incomesData.map((i: any) => ({ id: i.id, userId: i.user_id, name: i.name, amount: Number(i.amount), type: i.type, payDate: i.pay_date })) : []
       };
 
       if (monthBillAmounts) {
@@ -298,7 +298,7 @@ export const useStore = create<StoreState>((set, get) => ({
       .on('postgres_changes', { event: '*', schema: 'public', table: 'private_month_anomalies', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'household_settings', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_monthly_salaries', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_incomes', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
       .subscribe();
 
     set({ channel });
@@ -746,21 +746,21 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
-  removeMonthlySalary: async (payDate: string) => {
+  removeIncome: async (incomeId: string) => {
     if (!navigator.onLine) { toast.error('Du är offline.', { id: 'offline' }); return; }
     const { householdId, userId, state } = get();
     if (!householdId || !userId) return;
     const prevState = state;
     
     // Update local state
-    const newSalaries = (state.monthlySalaries || []).filter(s => !(s.userId === userId && s.payDate === payDate));
-    set({ state: { ...state, monthlySalaries: newSalaries } });
+    const newIncomes = (state.incomes || []).filter(i => i.id !== incomeId);
+    set({ state: { ...state, incomes: newIncomes } });
     
     if (get().isDemoMode) return;
     
     // Update DB
     await safeDb(
-      supabase.from('user_monthly_salaries').delete().eq('household_id', householdId).eq('user_id', userId).eq('pay_date', payDate),
+      supabase.from('user_incomes').delete().eq('id', incomeId).eq('household_id', householdId).eq('user_id', userId),
       () => set({ state: prevState })
     );
   },
@@ -1037,11 +1037,12 @@ export const useStore = create<StoreState>((set, get) => ({
         [prevMonth]: { monthId: prevMonth, billAmounts: { demo_priv_1: 119, demo_priv_2: 399, demo_priv_3: 1500, demo_priv_4: 3000 }, handledPayments: { 'top_total_lock': true }, isLocked: true },
         [currentMonth]: { monthId: currentMonth, billAmounts: { demo_priv_1: 119, demo_priv_2: 399, demo_priv_3: 1500, demo_priv_4: 3000 }, handledPayments: {}, isLocked: false }
       },
-      monthlySalaries: [
-        { userId: 'demo_user_1', payDate: `${prevPrevPrevMonth}-25`, amount: 28500 },
-        { userId: 'demo_user_1', payDate: `${prevPrevMonth}-25`, amount: 30770 },
-        { userId: 'demo_user_1', payDate: `${prevMonth}-25`, amount: 28500 },
-        { userId: 'demo_user_1', payDate: `${currentMonth}-25`, amount: 28500 }
+      incomes: [
+        { id: 'inc1', userId: 'demo_user_1', name: 'Lön', amount: 28500, type: 'variable', payDate: `${prevPrevPrevMonth}-25` },
+        { id: 'inc2', userId: 'demo_user_1', name: 'Lön', amount: 30770, type: 'variable', payDate: `${prevPrevMonth}-25` },
+        { id: 'inc3', userId: 'demo_user_1', name: 'Lön', amount: 28500, type: 'variable', payDate: `${prevMonth}-25` },
+        { id: 'inc4', userId: 'demo_user_1', name: 'Lön', amount: 28500, type: 'variable', payDate: `${currentMonth}-25` },
+        { id: 'inc5', userId: 'demo_user_1', name: 'Barnbidrag', amount: 1250, type: 'fixed' }
       ],
       householdProfiles: [
         { id: 'demo_user_1', email: 'demo@smartekonomi.se', role: 'owner', share_private_economy: false, person_account_id: 'demo_person_1' }
@@ -1058,32 +1059,45 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
-  saveMonthlySalary: async (payDate: string, amount: number) => {
+  saveIncome: async (income: { id?: string, name: string, amount: number, type: 'fixed' | 'variable', payDate?: string }) => {
     if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const { householdId, userId, state } = get();
     if (!householdId || !userId) return;
 
+    const incomeId = income.id || crypto.randomUUID();
+    const newIncome: Income = {
+      id: incomeId,
+      userId,
+      name: income.name,
+      amount: income.amount,
+      type: income.type,
+      payDate: income.payDate
+    };
+
     // Local update
-    const existing = state.monthlySalaries || [];
-    const idx = existing.findIndex(s => s.userId === userId && s.payDate === payDate);
+    const existing = state.incomes || [];
+    const idx = existing.findIndex(i => i.id === incomeId);
     const newList = [...existing];
     if (idx >= 0) {
-      newList[idx] = { userId, payDate, amount };
+      newList[idx] = newIncome;
     } else {
-      newList.push({ userId, payDate, amount });
+      newList.push(newIncome);
     }
-    set({ state: { ...state, monthlySalaries: newList } });
+    set({ state: { ...state, incomes: newList } });
 
     if (get().isDemoMode) return;
 
     // DB update
     await safeDb(
-      supabase.from('user_monthly_salaries').upsert({
+      supabase.from('user_incomes').upsert({
+        id: incomeId,
         household_id: householdId,
         user_id: userId,
-        pay_date: payDate,
-        amount: amount
-      }, { onConflict: 'household_id,user_id,pay_date' })
+        name: income.name,
+        amount: income.amount,
+        type: income.type,
+        pay_date: income.payDate || null
+      }, { onConflict: 'id' })
     );
   },
 

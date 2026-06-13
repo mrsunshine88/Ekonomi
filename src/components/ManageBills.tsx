@@ -22,8 +22,8 @@ export default function ManageBills() {
   const onUnlockAccount = useStore(s => s.unlockAccount);
   const onUpdateSettings = useStore(s => s.updateSettings);
   const onUnlockPrivateMonth = useStore(s => s.togglePrivateLock);
-  const saveMonthlySalary = useStore(s => s.saveMonthlySalary);
-  const removeMonthlySalary = useStore(s => s.removeMonthlySalary);
+  const saveIncome = useStore(s => s.saveIncome);
+  const removeIncome = useStore(s => s.removeIncome);
   const [activeTab, setActiveTab] = useState<'bills' | 'accounts' | 'locks' | 'general' | 'salary'>('bills');
   
   // New/Edit Bill State
@@ -49,8 +49,14 @@ export default function ManageBills() {
   const [newAccType, setNewAccType] = useState<'shared' | 'person'>('person');
   const [newAccTransferMethod, setNewAccTransferMethod] = useState<'transfer' | 'swish'>('swish');
   
-  const [payDateInput, setPayDateInput] = useState('');
-  const [monthlySalaryAmount, setMonthlySalaryAmount] = useState('');
+  const [variableIncomeDate, setVariableIncomeDate] = useState('');
+  const [variableIncomeAmount, setVariableIncomeAmount] = useState('');
+  const [variableIncomeName, setVariableIncomeName] = useState('');
+
+  const [fixedIncomeName, setFixedIncomeName] = useState('');
+  const [fixedIncomeAmount, setFixedIncomeAmount] = useState('');
+
+  const [editingIncomeId, setEditingIncomeId] = useState<string | null>(null);
 
   const handleSaveBill = () => {
     if (!newBillName.trim()) return;
@@ -221,7 +227,7 @@ export default function ManageBills() {
             onClick={() => setActiveTab('salary')}
             style={{ background: activeTab === 'salary' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'salary' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'salary' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'salary' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
           >
-            💰 Lön
+            💰 Inkomster
           </button>
         </div>
         <div className="settings-tabs-mobile" style={{ marginBottom: '1.5rem' }}>
@@ -234,92 +240,180 @@ export default function ManageBills() {
             <option value="locks">🔒 Lås upp månader</option>
             {role === 'owner' && <option value="accounts">🏦 Hantera Konton</option>}
             {role === 'owner' && <option value="general">⚙️ Allmänna inställningar</option>}
-            <option value="salary">💰 Min Lön</option>
+            <option value="salary">💰 Mina Inkomster</option>
           </select>
         </div>
       </div>
 
       {activeTab === 'salary' && (
         <div>
-          <h3 className="card-title">Min Lön</h3>
-          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>Datum då lönen kommer in</label>
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <input 
-                  type="date" 
-                  value={payDateInput}
-                  onChange={e => setPayDateInput(e.target.value)}
-                  style={{ flex: 1, minWidth: '150px' }}
-                />
-                <input 
-                  type="number" 
-                  value={monthlySalaryAmount}
-                  onChange={e => setMonthlySalaryAmount(e.target.value)}
-                  placeholder="Nettolön (t.ex. 25000)"
-                  style={{ flex: 1, minWidth: '150px' }}
-                />
-                <button 
-                  onClick={() => {
-                     const amt = parseFloat(monthlySalaryAmount);
-                     if (payDateInput && !isNaN(amt)) {
-                       saveMonthlySalary(payDateInput, amt);
-                       toast.success('Lön sparad!');
-                       setMonthlySalaryAmount('');
-                     }
-                  }}
-                  className="btn-primary"
-                  style={{ minWidth: '100px' }}
-                >
-                  Spara
-                </button>
-              </div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                Systemet kopplar automatiskt lönen till <strong>månaden efter</strong>. (Exempel: En lön som kommer 25 Juni kommer användas för Juli-räkningarna i kalkylen).
+          <h3 className="card-title">Mina Inkomster</h3>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+            {/* Fasta Inkomster */}
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
+              <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Fast Inkomst (Varje månad)</h4>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                Exempel: Barnbidrag, Underhåll. Läggs automatiskt på <strong>varje månad</strong> i kalkylen.
               </p>
-              
-              {(state.monthlySalaries?.filter(s => s.userId === user?.id).length ?? 0) > 0 ? (
-                <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>Dina sparade löner:</h4>
-                  {state.monthlySalaries!.filter(s => s.userId === user?.id).sort((a,b) => b.payDate.localeCompare(a.payDate)).map(s => {
-                     const d = new Date(s.payDate);
-                     const nextMonthDate = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-                     const nextMonthStr = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
-                     return (
-                       <div key={s.payDate} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                         <div>
-                           <div style={{ fontWeight: 'bold' }}>{s.payDate}</div>
-                           <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Används för {nextMonthStr}</div>
-                         </div>
-                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                           <span style={{ color: '#10b981', fontWeight: 'bold' }}>{s.amount.toLocaleString('sv-SE')} kr</span>
-                           <button 
-                             onClick={() => {
-                               setPayDateInput(s.payDate);
-                               setMonthlySalaryAmount(s.amount.toString());
-                               window.scrollTo({ top: 0, behavior: 'smooth' });
-                             }}
-                             style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer' }}
-                           >
-                             Ändra
-                           </button>
-                           <button 
-                             onClick={async () => {
-                               if (confirm('Är du säker på att du vill ta bort lönen?')) {
-                                 await removeMonthlySalary(s.payDate);
-                                 toast.success('Lön borttagen');
-                               }
-                             }}
-                             style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer' }}
-                           >
-                             Ta bort
-                           </button>
-                         </div>
-                       </div>
-                     );
-                  })}
+              <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
+                <input 
+                  type="text" 
+                  value={fixedIncomeName}
+                  onChange={e => setFixedIncomeName(e.target.value)}
+                  placeholder="Namn (t.ex. Barnbidrag)"
+                  style={{ width: '100%' }}
+                />
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input 
+                    type="number" 
+                    value={fixedIncomeAmount}
+                    onChange={e => setFixedIncomeAmount(e.target.value)}
+                    placeholder="Summa"
+                    style={{ flex: 1 }}
+                  />
+                  <button 
+                    onClick={() => {
+                       const amt = parseFloat(fixedIncomeAmount);
+                       if (fixedIncomeName.trim() && !isNaN(amt)) {
+                         saveIncome({ id: editingIncomeId || undefined, name: fixedIncomeName, amount: amt, type: 'fixed' });
+                         toast.success('Fast inkomst sparad!');
+                         setFixedIncomeName('');
+                         setFixedIncomeAmount('');
+                         setEditingIncomeId(null);
+                       }
+                    }}
+                    className="btn-primary"
+                    style={{ minWidth: '100px' }}
+                  >
+                    Spara
+                  </button>
                 </div>
-              ) : null}
+              </div>
+              
+              <div style={{ marginTop: '1rem' }}>
+                {state.incomes?.filter(i => i.userId === user?.id && i.type === 'fixed').map(inc => (
+                  <div key={inc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div>
+                      <div style={{ fontWeight: 'bold' }}>{inc.name}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <span style={{ color: '#10b981', fontWeight: 'bold' }}>{inc.amount.toLocaleString('sv-SE')} kr</span>
+                      <button 
+                        onClick={() => {
+                          setFixedIncomeName(inc.name);
+                          setFixedIncomeAmount(inc.amount.toString());
+                          setEditingIncomeId(inc.id);
+                        }}
+                        style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        Ändra
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          if (confirm('Är du säker på att du vill ta bort inkomsten?')) {
+                            await removeIncome(inc.id);
+                            toast.success('Inkomst borttagen');
+                          }
+                        }}
+                        style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        Ta bort
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Rörliga Inkomster */}
+            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
+              <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Rörlig Inkomst (Specifikt datum)</h4>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                Exempel: Lön, Försäkringskassan. Kopplas automatiskt till <strong>månaden efter</strong> datumet du väljer.
+              </p>
+              <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
+                <input 
+                  type="text" 
+                  value={variableIncomeName}
+                  onChange={e => setVariableIncomeName(e.target.value)}
+                  placeholder="Namn (t.ex. Lön)"
+                  style={{ width: '100%' }}
+                />
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <input 
+                    type="date" 
+                    value={variableIncomeDate}
+                    onChange={e => setVariableIncomeDate(e.target.value)}
+                    style={{ flex: 1, minWidth: '130px' }}
+                  />
+                  <input 
+                    type="number" 
+                    value={variableIncomeAmount}
+                    onChange={e => setVariableIncomeAmount(e.target.value)}
+                    placeholder="Summa"
+                    style={{ flex: 1, minWidth: '100px' }}
+                  />
+                  <button 
+                    onClick={() => {
+                       const amt = parseFloat(variableIncomeAmount);
+                       if (variableIncomeName.trim() && variableIncomeDate && !isNaN(amt)) {
+                         saveIncome({ id: editingIncomeId || undefined, name: variableIncomeName, amount: amt, type: 'variable', payDate: variableIncomeDate });
+                         toast.success('Rörlig inkomst sparad!');
+                         setVariableIncomeName('');
+                         setVariableIncomeAmount('');
+                         setVariableIncomeDate('');
+                         setEditingIncomeId(null);
+                       }
+                    }}
+                    className="btn-primary"
+                    style={{ minWidth: '80px' }}
+                  >
+                    Spara
+                  </button>
+                </div>
+              </div>
+              
+              <div style={{ marginTop: '1rem' }}>
+                {state.incomes?.filter(i => i.userId === user?.id && i.type === 'variable').sort((a,b) => (b.payDate||'').localeCompare(a.payDate||'')).map(inc => {
+                   const d = new Date(inc.payDate!);
+                   const nextMonthDate = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+                   const nextMonthStr = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
+                   return (
+                     <div key={inc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                       <div>
+                         <div style={{ fontWeight: 'bold' }}>{inc.name} ({inc.payDate})</div>
+                         <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Används för {nextMonthStr}</div>
+                       </div>
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                         <span style={{ color: '#10b981', fontWeight: 'bold' }}>{inc.amount.toLocaleString('sv-SE')} kr</span>
+                         <button 
+                           onClick={() => {
+                             setVariableIncomeName(inc.name);
+                             setVariableIncomeDate(inc.payDate!);
+                             setVariableIncomeAmount(inc.amount.toString());
+                             setEditingIncomeId(inc.id);
+                           }}
+                           style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer' }}
+                         >
+                           Ändra
+                         </button>
+                         <button 
+                           onClick={async () => {
+                             if (confirm('Är du säker på att du vill ta bort inkomsten?')) {
+                               await removeIncome(inc.id);
+                               toast.success('Inkomst borttagen');
+                             }
+                           }}
+                           style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer' }}
+                         >
+                           Ta bort
+                         </button>
+                       </div>
+                     </div>
+                   );
+                })}
+              </div>
             </div>
           </div>
         </div>

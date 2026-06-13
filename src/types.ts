@@ -70,10 +70,13 @@ export interface Profile {
   person_account_id?: string;
 }
 
-export interface MonthlySalary {
+export interface Income {
+  id: string;
   userId: string;
-  payDate: string; // 'YYYY-MM-DD'
+  name: string;
   amount: number;
+  type: 'fixed' | 'variable';
+  payDate?: string; // 'YYYY-MM-DD', endast för rörliga inkomster
 }
 
 export interface AppState {
@@ -83,7 +86,7 @@ export interface AppState {
   privateBills?: PrivateBill[];
   privateMonths?: Record<string, PrivateMonthData>;
   householdProfiles?: Profile[];
-  monthlySalaries?: MonthlySalary[];
+  incomes?: Income[];
   settings?: {
     showSummary?: boolean;
     showSwishSummary?: boolean;

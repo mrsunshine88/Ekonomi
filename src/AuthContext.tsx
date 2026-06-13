@@ -68,7 +68,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchHousehold = async (userId: string) => {
     try {
-      const { data } = await supabase.from('profiles').select('household_id, role, tos_accepted').eq('id', userId).single();
+      const { data, error } = await supabase.from('profiles').select('household_id, role, tos_accepted').eq('id', userId).single();
+      if (error) {
+        throw error;
+      }
       if (data?.household_id) {
         setHouseholdId(data.household_id);
         setRole(data.role || 'member');

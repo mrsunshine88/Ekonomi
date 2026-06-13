@@ -334,7 +334,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
   unlockAccount: async (monthId, accountId) => {
     const { householdId, state } = get();
-    let unhandledPayments: string[] = [];
+    const unhandledPayments: string[] = [];
     const monthData = state.months[monthId];
     if (!monthData || !monthData.handledPayments) return;
     
@@ -489,7 +489,7 @@ export function calculateMonth(state: AppState, monthId: string): CalculationRes
     const amount = amounts[bill.id] !== undefined ? amounts[bill.id] : bill.defaultAmount;
     const billAccount = state.accounts.find(a => a.id === bill.accountId);
     
-    let liabilities: Record<string, number> = {};
+    const liabilities: Record<string, number> = {};
     if (bill.splitType === 'equal') {
       const splitAmt = personAccounts.length > 0 ? amount / personAccounts.length : 0;
       personAccounts.forEach(p => { liabilities[p.id] = splitAmt; });

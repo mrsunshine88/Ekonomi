@@ -26,7 +26,13 @@ function App() {
   const state = useStore(s => s.state);
   const isDemoMode = useStore(s => s.isDemoMode);
   const stopDemo = useStore(s => s.stopDemo);
-  const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin'>('month');
+  const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin'>(() => {
+    return (localStorage.getItem('smartEkonomi_currentView') as any) || 'month';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('smartEkonomi_currentView', currentView);
+  }, [currentView]);
 
   // Återställ vy när man byter användare
   useEffect(() => {
