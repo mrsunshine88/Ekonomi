@@ -1,4 +1,4 @@
-import { AppState, CalculationResult, SwishTransfer } from '../types';
+import type { AppState, CalculationResult, SwishTransfer } from '../types';
 
 export function calculateMonth(state: AppState, monthId: string): CalculationResult {
   const monthData = state.months[monthId];

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from './supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import type { AppState, BillDefinition, CalculationResult, Account, SwishTransfer, PrivateBill, Income } from './types';
+import type { AppState, BillDefinition, Account, PrivateBill, Income } from './types';
 import toast from 'react-hot-toast';
 import * as Sentry from '@sentry/react';
 import { runRelationalMigration } from './migrateToRelational';
