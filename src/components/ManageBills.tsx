@@ -19,7 +19,9 @@ export default function ManageBills() {
   const onUnlockAccount = useStore(s => s.unlockAccount);
   const onUpdateSettings = useStore(s => s.updateSettings);
   const onUnlockPrivateMonth = useStore(s => s.togglePrivateLock);
-  const [activeTab, setActiveTab] = useState<'bills' | 'accounts' | 'locks' | 'general'>('bills');
+  const onUpdateSalary = useStore(s => s.updateSalary);
+  const onUpdateVariableSalary = useStore(s => s.updateVariableSalary);
+  const [activeTab, setActiveTab] = useState<'bills' | 'accounts' | 'locks' | 'general' | 'salary'>('bills');
   
   // New/Edit Bill State
   const [editingBillId, setEditingBillId] = useState<string | null>(null);
@@ -42,6 +44,10 @@ export default function ManageBills() {
   const [newAccName, setNewAccName] = useState('');
   const [newAccType, setNewAccType] = useState<'shared' | 'person'>('person');
   const [newAccTransferMethod, setNewAccTransferMethod] = useState<'transfer' | 'swish'>('swish');
+  
+  const [fixedSalaryInput, setFixedSalaryInput] = useState('');
+  const [varSalaryMonth, setVarSalaryMonth] = useState('');
+  const [varSalaryAmount, setVarSalaryAmount] = useState('');
 
   const handleSaveBill = () => {
     if (!newBillName.trim()) return;
@@ -203,20 +209,113 @@ export default function ManageBills() {
               </button>
             </>
           )}
+          <button 
+            onClick={() => setActiveTab('salary')}
+            style={{ background: activeTab === 'salary' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'salary' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'salary' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'salary' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
+          >
+            💰 Lön
+          </button>
         </div>
         <div className="settings-tabs-mobile" style={{ marginBottom: '1.5rem' }}>
           <select 
             value={activeTab} 
-            onChange={(e) => setActiveTab(e.target.value as 'bills' | 'accounts' | 'locks' | 'general')}
+            onChange={(e) => setActiveTab(e.target.value as 'bills' | 'accounts' | 'locks' | 'general' | 'salary')}
             style={{ width: '100%', padding: '0.8rem', fontSize: '1.05rem', background: 'rgba(0,0,0,0.4)', color: 'var(--text-primary)', border: '1px solid var(--accent-color)', borderRadius: '8px', cursor: 'pointer', appearance: 'auto' }}
           >
             <option value="bills">📋 Hantera Räkningar</option>
             <option value="locks">🔒 Lås upp månader</option>
             {role === 'owner' && <option value="accounts">🏦 Hantera Konton</option>}
             {role === 'owner' && <option value="general">⚙️ Allmänna inställningar</option>}
+            <option value="salary">💰 Min Lön</option>
           </select>
         </div>
       </div>
+
+      {activeTab === 'salary' && (
+        <div>
+          <h3 className="card-title">Min Lön</h3>
+          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>Fast månadslön (Netto)</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input 
+                  type="number" 
+                  value={fixedSalaryInput}
+                  onChange={e => setFixedSalaryInput(e.target.value)}
+                  placeholder={state.salaries?.find(s => s.userId === user?.id)?.amount?.toString() || 't.ex. 28000'}
+                  style={{ flex: 1 }}
+                />
+                <button 
+                  onClick={() => {
+                     const amt = parseFloat(fixedSalaryInput);
+                     if (!isNaN(amt)) {
+                       onUpdateSalary(amt);
+                       toast.success('Fast lön sparad!');
+                       setFixedSalaryInput('');
+                     }
+                  }}
+                  className="btn-primary"
+                >
+                  Spara
+                </button>
+              </div>
+              {state.salaries?.find(s => s.userId === user?.id) && (
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                  Nuvarande sparad fast lön: <strong style={{ color: 'var(--text-primary)' }}>{state.salaries.find(s => s.userId === user?.id)?.amount.toLocaleString('sv-SE')} kr</strong>
+                </p>
+              )}
+            </div>
+            <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)' }} />
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>Rörlig lön / Tillägg (Per månad)</label>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <input 
+                  type="month" 
+                  value={varSalaryMonth}
+                  onChange={e => setVarSalaryMonth(e.target.value)}
+                  style={{ flex: 1, minWidth: '150px' }}
+                />
+                <input 
+                  type="number" 
+                  value={varSalaryAmount}
+                  onChange={e => setVarSalaryAmount(e.target.value)}
+                  placeholder="t.ex. 2000"
+                  style={{ flex: 1, minWidth: '150px' }}
+                />
+                <button 
+                  onClick={() => {
+                     const amt = parseFloat(varSalaryAmount);
+                     if (varSalaryMonth && !isNaN(amt)) {
+                       onUpdateVariableSalary(varSalaryMonth, amt);
+                       toast.success('Rörlig lön sparad!');
+                       setVarSalaryAmount('');
+                     }
+                  }}
+                  className="btn-primary"
+                  style={{ minWidth: '100px' }}
+                >
+                  Spara
+                </button>
+              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                Välj vilken månad pengarna tillhör. Väljer du "Juni", kommer tillägget räknas in i Junis uträkningar i EkonomiTB. Skriver du ett minustecken (-500) så dras det av från din fasta lön.
+              </p>
+              
+              {(state.variableSalaries?.filter(s => s.userId === user?.id).length ?? 0) > 0 ? (
+                <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
+                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>Dina sparade tillägg:</h4>
+                  {state.variableSalaries!.filter(s => s.userId === user?.id).sort((a,b) => b.monthId.localeCompare(a.monthId)).map(s => (
+                     <div key={s.monthId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                       <span>{s.monthId}</span>
+                       <span style={{ color: s.amount >= 0 ? '#10b981' : '#f43f5e' }}>{s.amount > 0 ? '+' : ''}{s.amount.toLocaleString('sv-SE')} kr</span>
+                     </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeTab === 'general' && (
         <div>

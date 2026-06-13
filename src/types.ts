@@ -59,6 +59,17 @@ export interface Profile {
   share_private_economy?: boolean;
 }
 
+export interface Salary {
+  userId: string;
+  amount: number;
+}
+
+export interface VariableSalary {
+  userId: string;
+  monthId: string;
+  amount: number;
+}
+
 export interface AppState {
   accounts: Account[];
   bills: BillDefinition[];
@@ -66,6 +77,8 @@ export interface AppState {
   privateBills?: PrivateBill[];
   privateMonths?: Record<string, PrivateMonthData>;
   householdProfiles?: Profile[];
+  salaries?: Salary[];
+  variableSalaries?: VariableSalary[];
   settings?: {
     showSummary?: boolean;
     showSwishSummary?: boolean;

@@ -50,6 +50,9 @@ interface StoreState {
   startDemo: () => void;
   stopDemo: () => void;
 
+  updateSalary: (amount: number) => Promise<void>;
+  updateVariableSalary: (monthId: string, amount: number) => Promise<void>;
+
   initCloud: (householdId: string | null, userId: string | null) => void;
   loadYear: (year: string) => Promise<void>;
   cleanup: () => void;
@@ -130,7 +133,9 @@ export const useStore = create<StoreState>((set, get) => ({
         { data: settings },
         { data: profiles },
         { data: householdData },
-        { data: globalSettings }
+        { data: globalSettings },
+        { data: salariesData },
+        { data: variableSalariesData }
       ] = await Promise.all([
         supabase.from('accounts').select('*').eq('household_id', householdId),
         supabase.from('bills').select('*').eq('household_id', householdId),
@@ -144,7 +149,9 @@ export const useStore = create<StoreState>((set, get) => ({
         supabase.from('household_settings').select('*').eq('household_id', householdId).maybeSingle(),
         supabase.from('profiles').select('id, email, share_private_economy, household_id').eq('household_id', householdId),
         supabase.from('households').select('stripe_status').eq('id', householdId).maybeSingle(),
-        supabase.from('global_settings').select('value').eq('key', 'paywall_active').maybeSingle()
+        supabase.from('global_settings').select('value').eq('key', 'paywall_active').maybeSingle(),
+        supabase.from('user_salaries').select('*').eq('household_id', householdId),
+        supabase.from('user_variable_salaries').select('*').eq('household_id', householdId).gte('month_id', lastYearDec)
       ]);
 
       // 3. Reconstruct AppState
@@ -177,7 +184,9 @@ export const useStore = create<StoreState>((set, get) => ({
           reminderDay: settings.reminder_day, 
           showTopTotal: settings.show_top_total,
           showPrivateTopTotal: settings.show_private_top_total
-        } : { showSummary: true }
+        } : { showSummary: true },
+        salaries: salariesData ? salariesData.map((s: any) => ({ userId: s.user_id, amount: Number(s.amount) })) : [],
+        variableSalaries: variableSalariesData ? variableSalariesData.map((s: any) => ({ userId: s.user_id, monthId: s.month_id, amount: Number(s.amount) })) : []
       };
 
       if (monthBillAmounts) {
@@ -246,6 +255,8 @@ export const useStore = create<StoreState>((set, get) => ({
       .on('postgres_changes', { event: '*', schema: 'public', table: 'private_month_anomalies', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'household_settings', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_salaries', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_variable_salaries', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
       .subscribe();
 
     set({ channel });
@@ -621,6 +632,36 @@ export const useStore = create<StoreState>((set, get) => ({
         console.warn("Could not save new settings to DB. Run db_updates.sql.");
       }
     }
+  },
+
+  updateSalary: async (amount: number) => {
+    if (!navigator.onLine) { toast.error('Du är offline.', { id: 'offline' }); return; }
+    const { householdId, userId, state } = get();
+    if (!householdId || !userId) return;
+    const prevState = get().state;
+    const newSalaries = (state.salaries || []).filter(s => s.userId !== userId);
+    newSalaries.push({ userId, amount });
+    set({ state: { ...state, salaries: newSalaries } });
+    if (get().isDemoMode) return;
+    await safeDb(
+      supabase.from('user_salaries').upsert({ household_id: householdId, user_id: userId, amount }, { onConflict: 'household_id,user_id' }),
+      () => set({ state: prevState })
+    );
+  },
+
+  updateVariableSalary: async (monthId: string, amount: number) => {
+    if (!navigator.onLine) { toast.error('Du är offline.', { id: 'offline' }); return; }
+    const { householdId, userId, state } = get();
+    if (!householdId || !userId) return;
+    const prevState = get().state;
+    const newVarSalaries = (state.variableSalaries || []).filter(s => !(s.userId === userId && s.monthId === monthId));
+    newVarSalaries.push({ userId, monthId, amount });
+    set({ state: { ...state, variableSalaries: newVarSalaries } });
+    if (get().isDemoMode) return;
+    await safeDb(
+      supabase.from('user_variable_salaries').upsert({ household_id: householdId, user_id: userId, month_id: monthId, amount }, { onConflict: 'household_id,user_id,month_id' }),
+      () => set({ state: prevState })
+    );
   },
 
   toggleSharePrivateEconomy: async (share: boolean) => {
