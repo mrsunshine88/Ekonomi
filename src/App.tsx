@@ -43,6 +43,25 @@ function App() {
     initCloud(householdId, user?.id || null);
   }, [householdId, user?.id, initCloud]);
 
+  // Visitor Tracking
+  useEffect(() => {
+    let sessionId = localStorage.getItem('visitor_session_id');
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      localStorage.setItem('visitor_session_id', sessionId);
+    }
+    
+    const lastLog = sessionStorage.getItem('last_visit_log');
+    const now = Date.now();
+    if (!lastLog || now - parseInt(lastLog) > 1000 * 60 * 60) {
+      supabase.from('page_visits').insert([{ session_id: sessionId, path: window.location.pathname }]).then(({ error }) => {
+        if (!error) {
+          sessionStorage.setItem('last_visit_log', now.toString());
+        }
+      });
+    }
+  }, []);
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigateTo = (view: 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin') => {
