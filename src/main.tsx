@@ -4,7 +4,12 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from './AuthContext'
+import * as Sentry from "@sentry/react";
 
+Sentry.init({
+  dsn: "https://9f0dea41c5c429ec14fe555113b2fc7c@o4511558355910656.ingest.de.sentry.io/4511558367182928",
+  enabled: import.meta.env.PROD, // Skicka bara loggar i produktion, inte när vi kodar lokalt
+});
 
 class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: Error | null, componentStack: string | null, isReloading: boolean}> {
   constructor(props: {children: ReactNode}) {
@@ -45,6 +50,12 @@ class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean,
       window.location.reload();
       return;
     }
+    Sentry.captureException(error, {
+      extra: {
+        componentStack: errorInfo.componentStack
+      }
+    });
+
     this.setState({
       error: error,
       componentStack: errorInfo.componentStack || null
