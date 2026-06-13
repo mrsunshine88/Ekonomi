@@ -800,10 +800,10 @@ export const useStore = create<StoreState>((set, get) => ({
     ];
 
     const mockBills: BillDefinition[] = [
-      { id: 'demo_bill_1', name: 'Hyra', accountId: 'demo_shared', defaultAmount: 12000, splitType: 'equal', interval: 'all', isArchived: false },
-      { id: 'demo_bill_2', name: 'El', accountId: 'demo_shared', defaultAmount: 850, splitType: 'equal', interval: 'all', isArchived: false },
-      { id: 'demo_bill_3', name: 'Bredband', accountId: 'demo_shared', defaultAmount: 499, splitType: 'equal', interval: 'all', isArchived: false },
-      { id: 'demo_bill_4', name: 'Netflix', accountId: 'demo_person_1', defaultAmount: 159, splitType: 'equal', interval: 'all', isArchived: false },
+      { id: 'demo_bill_1', name: 'Hyra', accountId: 'demo_shared', defaultAmount: 12000, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
+      { id: 'demo_bill_2', name: 'El', accountId: 'demo_shared', defaultAmount: 850, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
+      { id: 'demo_bill_3', name: 'Bredband', accountId: 'demo_shared', defaultAmount: 499, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
+      { id: 'demo_bill_4', name: 'Netflix', accountId: 'demo_person_1', defaultAmount: 159, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
     ];
 
     const mockState: AppState = {
