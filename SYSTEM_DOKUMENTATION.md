@@ -842,3 +842,18 @@ En rad estetiska och funktionella finjusteringar genomfördes för att höja app
 - **Privat Demodata:** `store.ts` utökades till att injecta mock-räkningar i `state.privateBills` och mock-belopp i `state.privateMonths` under `startDemo()`. En bugg som kopplade privatdata till den obefintliga inloggade användaren fixades genom att hårdkoda fallback-ID `demo_user_1` i de privata vyerna vid `isDemoMode`.
 - **Globala Modaler via Portals:** `SubscriptionFeaturesModal.tsx` lindades in i Reacts `createPortal(..., document.body)`. Detta bryter ut modalen ur den aktuella DOM-hierarkin och renderar den direkt på `body`, vilket fullständigt eliminerar alla z-index- och overflow-klippningar (t.ex. från `.login-info-section`).
 - **Input Styling (Amortering):** Layouten i `MonthView.tsx` för lån stuvades om. Den inbyggda `bill-amount-wrapper` som lägger till "kr" isolerades till att enbart omsluta "Totalt"-fältet, medan Amorterings-fältet fick en egen, ren input med tydlig kontrast och spacing så att siffror och valutor inte flöt in i varandra.
+
+## 36. 100% Typsäkerhet (Borttagning av 'any')
+
+### Vad
+En stor refaktorering av hela kodbasen genomfördes för att uppnå 100% typsäkerhet ("Fortnox-nivå"). Detta innebar att samtliga förekomster av TypeScript-typen `any` identifierades och ersattes med strikta typer, interfaces eller `unknown`.
+
+### Varför
+Att använda `any` är en genväg i TypeScript som stänger av kompilatorns typkontroll för den variabeln. Genom att eliminera alla `any`-typer från systemet garanterar vi att all data har den struktur som koden förväntar sig. Detta eliminerar oväntade körtidsfel ("runtime errors"), gör det blixtsnabbt att hitta fel när man ändrar kod i framtiden, och höjer appens övergripande tekniska standard till en modern Enterprise-nivå.
+
+### Hur
+- **Supabase-mappning (`store.ts`):** Dynamiska data-returer från databasen (t.ex. vid laddning av månadslöner eller hushållsinställningar) typsattes från att lita på `(s: any)` till att använda definierade objekt (`s: { user_id: string; pay_date: string; amount: number }`) och `Record<string, unknown>` för payloads.
+- **Recharts (`Statistics.tsx`):** `CustomTooltip` (som renderar svävande info-rutor över grafer) fick ett eget gränssnitt `TooltipProps` (med `active`, `payload`, `label`) för att matcha vad Recharts matar in, och formaterare till `LabelList` typsattes till att enbart acceptera nummer/strängar.
+- **Excel-export (`excel.ts`):** Den osäkra typen `rowData: any[]` byttes ut mot `(string | number)[]` vilket är vad ExcelJS förväntar sig. Sökningar i listor typsattes strikt mot domänobjekt som `HouseholdProfile` och `Account`.
+- **Global Felhantering (Try/Catch):** Alla felhanteringsblock runt om i appen (t.ex. `MyPages.tsx`, `AdminDashboard.tsx`, `PaywallModal.tsx`, `AuthContext.tsx`) refaktorerades. Istället för den omoderna TypeScript-genvägen `catch (e: any)` används nu den säkra branschstandarden `catch (e: unknown)`. Där vi tidigare direkt anropade `e.message` implementerades en säkerhetskontroll: `(e instanceof Error ? e.message : String(e))`. 
+- **Byggprocess (CI/CD):** Efter refaktoreringen sattes verifikationskrav med kommandot `npx tsc --noEmit` för att tvinga fram en kompilering helt utan typ-fel, vilket nu fungerar felfritt utan varningar.
