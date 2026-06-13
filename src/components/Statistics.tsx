@@ -372,10 +372,10 @@ export default function Statistics() {
                   <Legend iconType="circle" wrapperStyle={{ paddingTop: '1rem' }} />
                   {!isPrivate ? (
                     state.accounts.map((acc, index) => (
-                      <Bar key={acc.id} dataKey={acc.name} stackId="a" fill={COLORS[index % COLORS.length]} radius={index === state.accounts.length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0]} />
+                      <Bar key={acc.id} dataKey={acc.name} stackId="a" fill={COLORS[index % COLORS.length]} radius={index === state.accounts.length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0]} maxBarSize={60} />
                     ))
                   ) : (
-                    <Bar dataKey="Privat" stackId="a" fill="url(#colorUv)" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="Privat" stackId="a" fill="url(#colorUv)" radius={[6, 6, 0, 0]} maxBarSize={60} />
                   )}
                   <defs>
                     <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
@@ -691,7 +691,7 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
                 <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                <Bar dataKey="Inkomst" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Inkomst" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={60} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -706,7 +706,7 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
                 <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                <Bar dataKey="Utgift" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Utgift" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={60} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -721,7 +721,7 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
                 <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                <Bar dataKey="Kvar" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Kvar" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60} />
               </BarChart>
             </ResponsiveContainer>
           </div>
