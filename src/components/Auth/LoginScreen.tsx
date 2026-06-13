@@ -28,6 +28,13 @@ export default function LoginScreen() {
     if (isForgotPassword) {
       setLoading(true);
       try {
+        const { data: isConfirmed, error: rpcError } = await supabase.rpc('check_email_confirmed', { check_email: email });
+        
+        if (rpcError) throw rpcError;
+        if (!isConfirmed) {
+           throw new Error("Kunde inte hitta ett bekräftat konto med den e-postadressen. Har du klickat på länken i bekräftelsemejlet?");
+        }
+
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin
         });
