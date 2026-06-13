@@ -596,9 +596,9 @@ function InkomstUtgiftView({ state, user, sortedMonths }: { state: any, user: an
               
               let incomingSwish = 0;
               let outgoingSwish = 0;
-              sharedRes.swishTransfers.forEach((t: any) => {
-                if (t.to === selectedAccountId) incomingSwish += t.amount;
-                if (t.from === selectedAccountId) outgoingSwish += t.amount;
+              sharedRes.swishes.forEach((t: any) => {
+                if (t.toId === selectedAccountId) incomingSwish += t.amount;
+                if (t.fromId === selectedAccountId) outgoingSwish += t.amount;
               });
 
               totalIncome += incomingSwish;
