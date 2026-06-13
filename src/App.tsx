@@ -109,7 +109,7 @@ function App() {
   }
 
   // 2. HARD GATE: Onboarding (Create Household)
-  const needsOnboarding = state.accounts.length === 0;
+  const needsOnboarding = !householdId;
   if (needsOnboarding && !isDemoMode) {
     return (
       <div className="container" style={{ minHeight: '100vh' }}>
