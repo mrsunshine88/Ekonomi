@@ -50,14 +50,13 @@ interface StoreState {
   startDemo: () => void;
   stopDemo: () => void;
 
-  updateSalary: (amount: number) => Promise<void>;
-  updateVariableSalary: (monthId: string, amount: number) => Promise<void>;
+  saveMonthlySalary: (payDate: string, amount: number) => Promise<void>;
 
   initCloud: (householdId: string | null, userId: string | null) => void;
   loadYear: (year: string) => Promise<void>;
   cleanup: () => void;
   
-  updateBillAmount: (monthId: string, billId: string, amount: number) => Promise<void>;
+  updateBillAmount: (monthId: string, billId: string, amount: number, amortization?: number) => Promise<void>;
   addBill: (bill: BillDefinition) => Promise<void>;
   createOnboardingPayments: (payments: Omit<BillDefinition, 'id' | 'startMonth'>[]) => Promise<void>;
   removeBill: (billId: string) => Promise<void>;
@@ -72,7 +71,7 @@ interface StoreState {
   updateSettings: (settingsUpdates: Partial<AppState['settings']> | undefined) => Promise<void>;
   toggleSharePrivateEconomy: (share: boolean) => Promise<void>;
   
-  updatePrivateBillAmount: (monthId: string, billId: string, amount: number) => Promise<void>;
+  updatePrivateBillAmount: (monthId: string, billId: string, amount: number, amortization?: number) => Promise<void>;
   addPrivateBill: (bill: PrivateBill) => Promise<void>;
   removePrivateBill: (billId: string) => Promise<void>;
   updatePrivateBill: (bill: PrivateBill) => Promise<void>;
@@ -134,8 +133,7 @@ export const useStore = create<StoreState>((set, get) => ({
         { data: profiles },
         { data: householdData },
         { data: globalSettings },
-        { data: salariesData },
-        { data: variableSalariesData }
+        { data: monthlySalariesData }
       ] = await Promise.all([
         supabase.from('accounts').select('*').eq('household_id', householdId),
         supabase.from('bills').select('*').eq('household_id', householdId),
@@ -150,8 +148,7 @@ export const useStore = create<StoreState>((set, get) => ({
         supabase.from('profiles').select('id, email, share_private_economy, household_id').eq('household_id', householdId),
         supabase.from('households').select('stripe_status').eq('id', householdId).maybeSingle(),
         supabase.from('global_settings').select('value').eq('key', 'paywall_active').maybeSingle(),
-        supabase.from('user_salaries').select('*').eq('household_id', householdId),
-        supabase.from('user_variable_salaries').select('*').eq('household_id', householdId).gte('month_id', lastYearDec)
+        supabase.from('user_monthly_salaries').select('*').eq('household_id', householdId).gte('pay_date', `${lastYearDec}-01`)
       ]);
 
       // 3. Reconstruct AppState
@@ -163,6 +160,7 @@ export const useStore = create<StoreState>((set, get) => ({
           id: b.id, name: b.name, accountId: b.account_id, splitType: b.split_type,
           defaultAmount: Number(b.default_amount), interval: b.interval, customMonths: b.custom_months,
           warnIfZero: b.warn_if_zero, isLoan: b.is_loan, totalDebt: b.total_debt ? Number(b.total_debt) : undefined,
+          fixedFee: b.fixed_fee ? Number(b.fixed_fee) : 0,
           isArchived: b.is_archived, isAutoTransfer: b.is_auto_transfer || undefined, startMonth: b.start_month
         })) : [],
         months: {},
@@ -170,6 +168,7 @@ export const useStore = create<StoreState>((set, get) => ({
           id: b.id, userId: b.user_id, name: b.name, defaultAmount: Number(b.default_amount),
           interval: b.interval, customMonths: b.custom_months, warnIfZero: b.warn_if_zero,
           isShared: b.is_shared, isLoan: b.is_loan, totalDebt: b.total_debt ? Number(b.total_debt) : undefined,
+          fixedFee: b.fixed_fee ? Number(b.fixed_fee) : 0,
           isArchived: b.is_archived, startMonth: b.start_month
         })) : [],
         privateMonths: {},
@@ -185,14 +184,26 @@ export const useStore = create<StoreState>((set, get) => ({
           showTopTotal: settings.show_top_total,
           showPrivateTopTotal: settings.show_private_top_total
         } : { showSummary: true },
-        salaries: salariesData ? salariesData.map((s: any) => ({ userId: s.user_id, amount: Number(s.amount) })) : [],
-        variableSalaries: variableSalariesData ? variableSalariesData.map((s: any) => ({ userId: s.user_id, monthId: s.month_id, amount: Number(s.amount) })) : []
+        monthlySalaries: monthlySalariesData ? monthlySalariesData.map((s: any) => ({ userId: s.user_id, payDate: s.pay_date, amount: Number(s.amount) })) : []
       };
 
       if (monthBillAmounts) {
         monthBillAmounts.forEach(mba => {
           if (!newState.months[mba.month_id]) newState.months[mba.month_id] = { monthId: mba.month_id, billAmounts: {}, handledPayments: {}, confirmedAnomalies: {} };
           newState.months[mba.month_id].billAmounts[mba.bill_id] = Number(mba.amount);
+          
+          if (mba.amortization !== undefined && mba.amortization !== null) {
+            if (!newState.months[mba.month_id].billAmortization) newState.months[mba.month_id].billAmortization = {};
+            newState.months[mba.month_id].billAmortization![mba.bill_id] = Number(mba.amortization);
+          }
+          if (mba.interest !== undefined && mba.interest !== null) {
+            if (!newState.months[mba.month_id].billInterest) newState.months[mba.month_id].billInterest = {};
+            newState.months[mba.month_id].billInterest![mba.bill_id] = Number(mba.interest);
+          }
+          if (mba.fee !== undefined && mba.fee !== null) {
+            if (!newState.months[mba.month_id].billFee) newState.months[mba.month_id].billFee = {};
+            newState.months[mba.month_id].billFee![mba.bill_id] = Number(mba.fee);
+          }
         });
       }
       if (monthHandledPayments) {
@@ -212,6 +223,19 @@ export const useStore = create<StoreState>((set, get) => ({
         privateMonthAmounts.forEach(pma => {
           if (!newState.privateMonths![pma.month_id]) newState.privateMonths![pma.month_id] = { monthId: pma.month_id, billAmounts: {}, handledPayments: {}, confirmedAnomalies: {} };
           newState.privateMonths![pma.month_id].billAmounts[pma.bill_id] = Number(pma.amount);
+          
+          if (pma.amortization !== undefined && pma.amortization !== null) {
+            if (!newState.privateMonths![pma.month_id].billAmortization) newState.privateMonths![pma.month_id].billAmortization = {};
+            newState.privateMonths![pma.month_id].billAmortization![pma.bill_id] = Number(pma.amortization);
+          }
+          if (pma.interest !== undefined && pma.interest !== null) {
+            if (!newState.privateMonths![pma.month_id].billInterest) newState.privateMonths![pma.month_id].billInterest = {};
+            newState.privateMonths![pma.month_id].billInterest![pma.bill_id] = Number(pma.interest);
+          }
+          if (pma.fee !== undefined && pma.fee !== null) {
+            if (!newState.privateMonths![pma.month_id].billFee) newState.privateMonths![pma.month_id].billFee = {};
+            newState.privateMonths![pma.month_id].billFee![pma.bill_id] = Number(pma.fee);
+          }
         });
       }
       if (privateMonthLocks) {
@@ -255,8 +279,7 @@ export const useStore = create<StoreState>((set, get) => ({
       .on('postgres_changes', { event: '*', schema: 'public', table: 'private_month_anomalies', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'household_settings', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_salaries', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_variable_salaries', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_monthly_salaries', filter: `household_id=eq.${householdId}` }, handleRealtimeUpdate)
       .subscribe();
 
     set({ channel });
@@ -292,6 +315,19 @@ export const useStore = create<StoreState>((set, get) => ({
       monthBillAmounts.forEach(mba => {
         if (!newState.months[mba.month_id]) newState.months[mba.month_id] = { monthId: mba.month_id, billAmounts: {}, handledPayments: {}, confirmedAnomalies: {} };
         newState.months[mba.month_id].billAmounts[mba.bill_id] = Number(mba.amount);
+        
+        if (mba.amortization !== undefined && mba.amortization !== null) {
+          if (!newState.months[mba.month_id].billAmortization) newState.months[mba.month_id].billAmortization = {};
+          newState.months[mba.month_id].billAmortization![mba.bill_id] = Number(mba.amortization);
+        }
+        if (mba.interest !== undefined && mba.interest !== null) {
+          if (!newState.months[mba.month_id].billInterest) newState.months[mba.month_id].billInterest = {};
+          newState.months[mba.month_id].billInterest![mba.bill_id] = Number(mba.interest);
+        }
+        if (mba.fee !== undefined && mba.fee !== null) {
+          if (!newState.months[mba.month_id].billFee) newState.months[mba.month_id].billFee = {};
+          newState.months[mba.month_id].billFee![mba.bill_id] = Number(mba.fee);
+        }
       });
     }
     if (monthHandledPayments) {
@@ -313,6 +349,19 @@ export const useStore = create<StoreState>((set, get) => ({
       privateMonthAmounts.forEach(pma => {
         if (!newState.privateMonths[pma.month_id]) newState.privateMonths[pma.month_id] = { monthId: pma.month_id, billAmounts: {}, isLocked: false, confirmedAnomalies: {} };
         newState.privateMonths[pma.month_id].billAmounts[pma.bill_id] = Number(pma.amount);
+        
+        if (pma.amortization !== undefined && pma.amortization !== null) {
+          if (!newState.privateMonths[pma.month_id].billAmortization) newState.privateMonths[pma.month_id].billAmortization = {};
+          newState.privateMonths[pma.month_id].billAmortization![pma.bill_id] = Number(pma.amortization);
+        }
+        if (pma.interest !== undefined && pma.interest !== null) {
+          if (!newState.privateMonths[pma.month_id].billInterest) newState.privateMonths[pma.month_id].billInterest = {};
+          newState.privateMonths[pma.month_id].billInterest![pma.bill_id] = Number(pma.interest);
+        }
+        if (pma.fee !== undefined && pma.fee !== null) {
+          if (!newState.privateMonths[pma.month_id].billFee) newState.privateMonths[pma.month_id].billFee = {};
+          newState.privateMonths[pma.month_id].billFee![pma.bill_id] = Number(pma.fee);
+        }
       });
     }
     if (privateMonthLocks) {
@@ -332,7 +381,7 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ state: newState });
   },
 
-  updateBillAmount: async (monthId, billId, amount) => {
+  updateBillAmount: async (monthId, billId, amount, inputAmortization) => {
     if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const parseRes = safeParseAmount(amount);
     if (!parseRes.success) {
@@ -343,12 +392,30 @@ export const useStore = create<StoreState>((set, get) => ({
 
     const prevState = get().state;
     const { householdId, state } = get();
+    
+    const bill = state.bills.find(b => b.id === billId);
+    let amort = inputAmortization;
+    if (amort === undefined || amort === null || isNaN(amort)) amort = validatedAmount;
+    
+    let fee = 0;
+    let interest = 0;
+    if (bill && bill.isLoan) {
+      fee = bill.fixedFee || 0;
+      interest = validatedAmount - amort - fee;
+      if (interest < 0) interest = 0;
+    }
+
     const monthData = state.months[monthId] || { monthId, billAmounts: {}, handledPayments: {} };
-    set({ state: { ...state, months: { ...state.months, [monthId]: { ...monthData, billAmounts: { ...monthData.billAmounts, [billId]: validatedAmount } } } } });
+    set({ state: { ...state, months: { ...state.months, [monthId]: { ...monthData, 
+      billAmounts: { ...monthData.billAmounts, [billId]: validatedAmount },
+      billAmortization: { ...(monthData.billAmortization||{}), [billId]: amort },
+      billInterest: { ...(monthData.billInterest||{}), [billId]: interest },
+      billFee: { ...(monthData.billFee||{}), [billId]: fee }
+    } } } });
     if (get().isDemoMode) return;
     if (householdId) {
       await safeDb(
-        supabase.from('month_bill_amounts').upsert({ household_id: householdId, month_id: monthId, bill_id: billId, amount: validatedAmount }, { onConflict: 'household_id,month_id,bill_id' }),
+        supabase.from('month_bill_amounts').upsert({ household_id: householdId, month_id: monthId, bill_id: billId, amount: validatedAmount, amortization: amort, interest: interest, fee: fee }, { onConflict: 'household_id,month_id,bill_id' }),
         () => set({ state: prevState })
       );
     }
@@ -439,7 +506,7 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ state: { ...state, bills: state.bills.map(b => b.id === validBill.id ? validBill : b) } });
     if (get().isDemoMode) return;
     if (householdId) {
-      await safeDb(supabase.from('bills').update({ name: validBill.name, account_id: validBill.accountId, split_type: validBill.splitType, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_loan: validBill.isLoan, total_debt: validBill.totalDebt, is_auto_transfer: validBill.isAutoTransfer || null }).eq('id', validBill.id).eq('household_id', householdId));
+      await safeDb(supabase.from('bills').update({ name: validBill.name, account_id: validBill.accountId, split_type: validBill.splitType, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_loan: validBill.isLoan, total_debt: validBill.totalDebt, fixed_fee: validBill.fixedFee, is_auto_transfer: validBill.isAutoTransfer || null }).eq('id', validBill.id).eq('household_id', householdId));
     }
   },
 
@@ -688,7 +755,7 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
-  updatePrivateBillAmount: async (monthId, billId, amount) => {
+  updatePrivateBillAmount: async (monthId, billId, amount, inputAmortization) => {
     if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const parseRes = safeParseAmount(amount);
     if (!parseRes.success) {
@@ -699,13 +766,31 @@ export const useStore = create<StoreState>((set, get) => ({
 
     const prevState = get().state;
     const { householdId, userId, state } = get();
+    
+    const bill = state.privateBills?.find(b => b.id === billId);
+    let amort = inputAmortization;
+    if (amort === undefined || amort === null || isNaN(amort)) amort = validatedAmount;
+    
+    let fee = 0;
+    let interest = 0;
+    if (bill && bill.isLoan) {
+      fee = bill.fixedFee || 0;
+      interest = validatedAmount - amort - fee;
+      if (interest < 0) interest = 0;
+    }
+
     const pMonths = state.privateMonths || {};
     const mData = pMonths[monthId] || { monthId, billAmounts: {} };
-    set({ state: { ...state, privateMonths: { ...pMonths, [monthId]: { ...mData, billAmounts: { ...mData.billAmounts, [billId]: validatedAmount } } } } });
+    set({ state: { ...state, privateMonths: { ...pMonths, [monthId]: { ...mData, 
+      billAmounts: { ...mData.billAmounts, [billId]: validatedAmount },
+      billAmortization: { ...(mData.billAmortization||{}), [billId]: amort },
+      billInterest: { ...(mData.billInterest||{}), [billId]: interest },
+      billFee: { ...(mData.billFee||{}), [billId]: fee }
+    } } } });
     if (get().isDemoMode) return;
     if (householdId && userId) {
       await safeDb(
-        supabase.from('private_month_amounts').upsert({ household_id: householdId, user_id: userId, month_id: monthId, bill_id: billId, amount: validatedAmount }, { onConflict: 'household_id,user_id,month_id,bill_id' }),
+        supabase.from('private_month_amounts').upsert({ household_id: householdId, user_id: userId, month_id: monthId, bill_id: billId, amount: validatedAmount, amortization: amort, interest: interest, fee: fee }, { onConflict: 'household_id,user_id,month_id,bill_id' }),
         () => set({ state: prevState })
       );
     }
@@ -728,7 +813,7 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ state: { ...state, privateBills: [...(state.privateBills||[]), validBill] } });
     if (get().isDemoMode) return;
     if (householdId && userId) {
-      await safeDb(supabase.from('private_bills').insert({ id: validBill.id, household_id: householdId, user_id: userId, name: validBill.name, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_shared: validBill.isShared, is_loan: validBill.isLoan, total_debt: validBill.totalDebt, start_month: validBill.startMonth }));
+      await safeDb(supabase.from('private_bills').insert({ id: validBill.id, household_id: householdId, user_id: userId, name: validBill.name, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_shared: validBill.isShared, is_loan: validBill.isLoan, total_debt: validBill.totalDebt, fixed_fee: validBill.fixedFee, start_month: validBill.startMonth }));
     }
   },
 
@@ -755,7 +840,7 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ state: { ...state, privateBills: (state.privateBills||[]).map(b => b.id === validBill.id ? validBill : b) } });
     if (get().isDemoMode) return;
     if (householdId && userId) {
-      await safeDb(supabase.from('private_bills').update({ name: validBill.name, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_shared: validBill.isShared, is_loan: validBill.isLoan, total_debt: validBill.totalDebt }).eq('id', validBill.id).eq('household_id', householdId).eq('user_id', userId));
+      await safeDb(supabase.from('private_bills').update({ name: validBill.name, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_shared: validBill.isShared, is_loan: validBill.isLoan, total_debt: validBill.totalDebt, fixed_fee: validBill.fixedFee }).eq('id', validBill.id).eq('household_id', householdId).eq('user_id', userId));
     }
   },
 
@@ -922,6 +1007,35 @@ export const useStore = create<StoreState>((set, get) => ({
     if (real) {
       set({ state: real, isDemoMode: false, realState: null });
     }
+  },
+
+  saveMonthlySalary: async (payDate: string, amount: number) => {
+    if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
+    const { householdId, userId, state } = get();
+    if (!householdId || !userId) return;
+
+    // Local update
+    const existing = state.monthlySalaries || [];
+    const idx = existing.findIndex(s => s.userId === userId && s.payDate === payDate);
+    let newList = [...existing];
+    if (idx >= 0) {
+      newList[idx] = { userId, payDate, amount };
+    } else {
+      newList.push({ userId, payDate, amount });
+    }
+    set({ state: { ...state, monthlySalaries: newList } });
+
+    if (get().isDemoMode) return;
+
+    // DB update
+    await safeDb(
+      supabase.from('user_monthly_salaries').upsert({
+        household_id: householdId,
+        user_id: userId,
+        pay_date: payDate,
+        amount: amount
+      }, { onConflict: 'household_id,user_id,pay_date' })
+    );
   }
 
 }));

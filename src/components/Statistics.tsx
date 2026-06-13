@@ -43,14 +43,24 @@ export default function Statistics() {
   const rawMonthsObj = isPrivate || isIncomeMode ? (state.privateMonths || {}) : state.months;
   
   // 1. DATA FILTERING: Only include locked/handled months
-  const validMonths = Object.keys(rawMonthsObj).filter(monthId => {
-    if (isPrivate) {
-      return (rawMonthsObj[monthId] as any).isLocked === true;
-    } else {
-      const handled = rawMonthsObj[monthId].handledPayments || {};
-      return Object.values(handled).some(v => v === true);
-    }
-  });
+  let validMonths: string[] = [];
+  if (isIncomeMode) {
+    const allIds = new Set([...Object.keys(state.months || {}), ...Object.keys(state.privateMonths || {})]);
+    validMonths = Array.from(allIds).filter(monthId => {
+      const isSharedHandled = Object.values((state.months[monthId] || {}).handledPayments || {}).some(v => v === true);
+      const isPrivateLocked = state.privateMonths?.[monthId]?.isLocked === true;
+      return isSharedHandled || isPrivateLocked;
+    });
+  } else {
+    validMonths = Object.keys(rawMonthsObj).filter(monthId => {
+      if (isPrivate) {
+        return (rawMonthsObj[monthId] as any).isLocked === true;
+      } else {
+        const handled = rawMonthsObj[monthId].handledPayments || {};
+        return Object.values(handled).some(v => v === true);
+      }
+    });
+  }
   
   const sortedMonths = validMonths.sort();
   
@@ -225,8 +235,13 @@ export default function Statistics() {
     let paidSoFar = 0;
     sortedMonths.forEach(monthId => {
       const m = rawMonthsObj[monthId];
-      const amt = (m.billAmounts && m.billAmounts[loan.id]) !== undefined ? m.billAmounts[loan.id] : loan.defaultAmount;
-      paidSoFar += amt;
+      let amort = 0;
+      if (m.billAmortization && m.billAmortization[loan.id] !== undefined) {
+         amort = m.billAmortization[loan.id];
+      } else {
+         amort = (m.billAmounts && m.billAmounts[loan.id]) !== undefined ? m.billAmounts[loan.id] : loan.defaultAmount;
+      }
+      paidSoFar += amort;
     });
     
     return {
@@ -550,8 +565,6 @@ function InkomstUtgiftView({ state, user, sortedMonths }: { state: any, user: an
   const selectedAccount = personAccounts.find((a: any) => a.id === selectedAccountId);
   if (!selectedAccount) return null;
 
-  const mySalary = state.salaries?.find((s: any) => s.userId === user.id)?.amount || 0;
-
   return (
     <div style={{ animation: 'fadeIn 0.3s ease' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.5rem', marginBottom: '2rem' }}>
@@ -586,10 +599,24 @@ function InkomstUtgiftView({ state, user, sortedMonths }: { state: any, user: an
           </thead>
           <tbody>
             {[...sortedMonths].reverse().map(monthId => {
-              // 1. Inkomst
-              let totalIncome = mySalary;
-              const varSalary = state.variableSalaries?.find((s: any) => s.userId === user.id && s.monthId === monthId);
-              if (varSalary) totalIncome += varSalary.amount;
+              // 1. Inkomst från Månadslön (Lön föregående månad används för denna månad)
+              let totalIncome = 0;
+              if (state.monthlySalaries) {
+                const [mYear, mMonth] = monthId.split('-').map(Number);
+                let payYear = mYear;
+                let payMonth = mMonth - 1;
+                if (payMonth === 0) {
+                  payMonth = 12;
+                  payYear -= 1;
+                }
+                const payMonthStr = `${payYear}-${String(payMonth).padStart(2, '0')}`;
+                
+                state.monthlySalaries.forEach((s: any) => {
+                  if (s.userId === user.id && s.payDate.startsWith(payMonthStr)) {
+                    totalIncome += s.amount;
+                  }
+                });
+              }
 
               // 2. Kalkylera gemensamt
               const sharedRes = calculateMonth(state, monthId);

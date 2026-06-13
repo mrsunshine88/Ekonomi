@@ -19,8 +19,7 @@ export default function ManageBills() {
   const onUnlockAccount = useStore(s => s.unlockAccount);
   const onUpdateSettings = useStore(s => s.updateSettings);
   const onUnlockPrivateMonth = useStore(s => s.togglePrivateLock);
-  const onUpdateSalary = useStore(s => s.updateSalary);
-  const onUpdateVariableSalary = useStore(s => s.updateVariableSalary);
+  const saveMonthlySalary = useStore(s => s.saveMonthlySalary);
   const [activeTab, setActiveTab] = useState<'bills' | 'accounts' | 'locks' | 'general' | 'salary'>('bills');
   
   // New/Edit Bill State
@@ -35,6 +34,7 @@ export default function ManageBills() {
   const [newBillWarn, setNewBillWarn] = useState(false);
   const [newBillIsLoan, setNewBillIsLoan] = useState(false);
   const [newBillTotalDebt, setNewBillTotalDebt] = useState('');
+  const [newBillFixedFee, setNewBillFixedFee] = useState('');
   const [newBillAutoTransfer, setNewBillAutoTransfer] = useState<string>('');
 
   // Raderingsbekräftelse
@@ -45,9 +45,8 @@ export default function ManageBills() {
   const [newAccType, setNewAccType] = useState<'shared' | 'person'>('person');
   const [newAccTransferMethod, setNewAccTransferMethod] = useState<'transfer' | 'swish'>('swish');
   
-  const [fixedSalaryInput, setFixedSalaryInput] = useState('');
-  const [varSalaryMonth, setVarSalaryMonth] = useState('');
-  const [varSalaryAmount, setVarSalaryAmount] = useState('');
+  const [payDateInput, setPayDateInput] = useState('');
+  const [monthlySalaryAmount, setMonthlySalaryAmount] = useState('');
 
   const handleSaveBill = () => {
     if (!newBillName.trim()) return;
@@ -65,7 +64,8 @@ export default function ManageBills() {
         userId: user.id,
         isShared: false, // default, can be toggled in private view
         isLoan: newBillIsLoan,
-        totalDebt: newBillTotalDebt === '' ? undefined : parseFloat(newBillTotalDebt)
+        totalDebt: newBillTotalDebt === '' ? undefined : parseFloat(newBillTotalDebt),
+        fixedFee: newBillFixedFee === '' ? 0 : parseFloat(newBillFixedFee)
       };
       if (editingBillId) {
         onUpdatePrivateBill(billData);
@@ -84,6 +84,7 @@ export default function ManageBills() {
         warnIfZero: newBillWarn,
         isLoan: newBillIsLoan,
         totalDebt: newBillTotalDebt === '' ? undefined : parseFloat(newBillTotalDebt),
+        fixedFee: newBillFixedFee === '' ? 0 : parseFloat(newBillFixedFee),
         isAutoTransfer: newBillAutoTransfer || undefined
       };
       if (editingBillId) {
@@ -102,6 +103,7 @@ export default function ManageBills() {
       setNewBillWarn(false);
       setNewBillIsLoan(false);
       setNewBillTotalDebt('');
+      setNewBillFixedFee('');
       setNewBillAutoTransfer('');
       setNewBillInterval('all');
       setNewBillCustomMonths([]);
@@ -123,6 +125,7 @@ export default function ManageBills() {
     setNewBillWarn(bill.warnIfZero || false);
     setNewBillIsLoan(bill.isLoan || false);
     setNewBillTotalDebt(bill.totalDebt !== undefined ? bill.totalDebt.toString() : '');
+    setNewBillFixedFee(bill.fixedFee !== undefined ? bill.fixedFee.toString() : '');
     setNewBillAutoTransfer(bill.isAutoTransfer || '');
     
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -138,6 +141,7 @@ export default function ManageBills() {
     setNewBillWarn(bill.warnIfZero || false);
     setNewBillIsLoan(bill.isLoan || false);
     setNewBillTotalDebt(bill.totalDebt !== undefined ? bill.totalDebt.toString() : '');
+    setNewBillFixedFee(bill.fixedFee !== undefined ? bill.fixedFee.toString() : '');
     
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   };
@@ -236,59 +240,28 @@ export default function ManageBills() {
           <h3 className="card-title">Min Lön</h3>
           <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem' }}>
             <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>Fast månadslön (Netto)</label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input 
-                  type="number" 
-                  value={fixedSalaryInput}
-                  onChange={e => setFixedSalaryInput(e.target.value)}
-                  placeholder={state.salaries?.find(s => s.userId === user?.id)?.amount?.toString() || 't.ex. 28000'}
-                  style={{ flex: 1 }}
-                />
-                <button 
-                  onClick={() => {
-                     const amt = parseFloat(fixedSalaryInput);
-                     if (!isNaN(amt)) {
-                       onUpdateSalary(amt);
-                       toast.success('Fast lön sparad!');
-                       setFixedSalaryInput('');
-                     }
-                  }}
-                  className="btn-primary"
-                >
-                  Spara
-                </button>
-              </div>
-              {state.salaries?.find(s => s.userId === user?.id) && (
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                  Nuvarande sparad fast lön: <strong style={{ color: 'var(--text-primary)' }}>{state.salaries.find(s => s.userId === user?.id)?.amount.toLocaleString('sv-SE')} kr</strong>
-                </p>
-              )}
-            </div>
-            <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)' }} />
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>Rörlig lön / Tillägg (Per månad)</label>
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>Datum då lönen kommer in</label>
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <input 
-                  type="month" 
-                  value={varSalaryMonth}
-                  onChange={e => setVarSalaryMonth(e.target.value)}
+                  type="date" 
+                  value={payDateInput}
+                  onChange={e => setPayDateInput(e.target.value)}
                   style={{ flex: 1, minWidth: '150px' }}
                 />
                 <input 
                   type="number" 
-                  value={varSalaryAmount}
-                  onChange={e => setVarSalaryAmount(e.target.value)}
-                  placeholder="t.ex. 2000"
+                  value={monthlySalaryAmount}
+                  onChange={e => setMonthlySalaryAmount(e.target.value)}
+                  placeholder="Nettolön (t.ex. 25000)"
                   style={{ flex: 1, minWidth: '150px' }}
                 />
                 <button 
                   onClick={() => {
-                     const amt = parseFloat(varSalaryAmount);
-                     if (varSalaryMonth && !isNaN(amt)) {
-                       onUpdateVariableSalary(varSalaryMonth, amt);
-                       toast.success('Rörlig lön sparad!');
-                       setVarSalaryAmount('');
+                     const amt = parseFloat(monthlySalaryAmount);
+                     if (payDateInput && !isNaN(amt)) {
+                       saveMonthlySalary(payDateInput, amt);
+                       toast.success('Lön sparad!');
+                       setMonthlySalaryAmount('');
                      }
                   }}
                   className="btn-primary"
@@ -298,18 +271,23 @@ export default function ManageBills() {
                 </button>
               </div>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                Välj vilken månad pengarna tillhör. Väljer du "Juni", kommer tillägget räknas in i Junis uträkningar i EkonomiTB. Skriver du ett minustecken (-500) så dras det av från din fasta lön.
+                Systemet kopplar automatiskt lönen till <strong>månaden efter</strong>. (Exempel: En lön som kommer 25 Juni kommer användas för Juli-räkningarna i kalkylen).
               </p>
               
-              {(state.variableSalaries?.filter(s => s.userId === user?.id).length ?? 0) > 0 ? (
+              {(state.monthlySalaries?.filter(s => s.userId === user?.id).length ?? 0) > 0 ? (
                 <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>Dina sparade tillägg:</h4>
-                  {state.variableSalaries!.filter(s => s.userId === user?.id).sort((a,b) => b.monthId.localeCompare(a.monthId)).map(s => (
-                     <div key={s.monthId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                       <span>{s.monthId}</span>
-                       <span style={{ color: s.amount >= 0 ? '#10b981' : '#f43f5e' }}>{s.amount > 0 ? '+' : ''}{s.amount.toLocaleString('sv-SE')} kr</span>
-                     </div>
-                  ))}
+                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>Dina sparade löner:</h4>
+                  {state.monthlySalaries!.filter(s => s.userId === user?.id).sort((a,b) => b.payDate.localeCompare(a.payDate)).map(s => {
+                     const d = new Date(s.payDate);
+                     const nextMonthDate = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+                     const nextMonthStr = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
+                     return (
+                       <div key={s.payDate} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                         <span>{s.payDate} (Används för {nextMonthStr})</span>
+                         <span style={{ color: '#10b981' }}>{s.amount.toLocaleString('sv-SE')} kr</span>
+                       </div>
+                     );
+                  })}
                 </div>
               ) : null}
             </div>
@@ -482,7 +460,7 @@ export default function ManageBills() {
 
           <h3 className="card-title">Befintliga Konton</h3>
           <div className="bill-list" style={{ marginBottom: '2rem' }}>
-            {state.accounts.map(acc => (
+            {[...state.accounts].sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => (
               <div key={acc.id} className="bill-row" style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div>
                   <div className="bill-name">{acc.name}</div>
@@ -557,7 +535,7 @@ export default function ManageBills() {
                             </button>
                           </div>
                         )}
-                        {state.accounts.map(acc => {
+                        {[...state.accounts].sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => {
                           if (acc.type === 'shared') return null;
                           
                           let isIndividuallyLocked = false;
@@ -688,14 +666,14 @@ export default function ManageBills() {
               <>
                 <select value={newBillAccount} onChange={e => setNewBillAccount(e.target.value)}>
                   <option value="" disabled>-- Välj vilket konto räkningen dras ifrån --</option>
-                  {state.accounts.map(acc => (
+                  {[...state.accounts].sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => (
                     <option key={acc.id} value={acc.id}>{acc.name}</option>
                   ))}
                 </select>
                 
                 <select value={newBillSplit} onChange={e => setNewBillSplit(e.target.value)}>
                   <option value="equal">Delas lika på alla personer (Gemensam)</option>
-                  {state.accounts.filter(a => a.type === 'person').map(acc => (
+                  {state.accounts.filter(a => a.type === 'person').sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => (
                     <option key={acc.id} value={acc.id}>{acc.name} betalar 100%</option>
                   ))}
                 </select>
@@ -766,7 +744,10 @@ export default function ManageBills() {
                 checked={newBillIsLoan} 
                 onChange={e => {
                   setNewBillIsLoan(e.target.checked);
-                  if (!e.target.checked) setNewBillTotalDebt('');
+                  if (!e.target.checked) {
+                    setNewBillTotalDebt('');
+                    setNewBillFixedFee('');
+                  }
                 }} 
                 style={{ width: 'auto' }}
               />
@@ -778,13 +759,28 @@ export default function ManageBills() {
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
                   Ange den <strong>ursprungliga totala skulden</strong> här. Appen kommer automatiskt att räkna ihop alla inmatade belopp över alla låsta månader och visa hur mycket du har betalat av i EkonomiTB.
                 </p>
-                <input 
-                  type="number" 
-                  placeholder="Total ursprunglig skuld (t.ex. 15000)" 
-                  value={newBillTotalDebt} 
-                  onChange={e => setNewBillTotalDebt(e.target.value)} 
-                  style={{ width: '100%', marginBottom: 0 }}
-                />
+                <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
+                  <div>
+                    <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Total startskuld (kr)</label>
+                    <input 
+                      type="number" 
+                      placeholder="T.ex. 10000" 
+                      value={newBillTotalDebt} 
+                      onChange={e => setNewBillTotalDebt(e.target.value)} 
+                      style={{ width: '100%', marginBottom: 0 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Fast avgift / månad (kr)</label>
+                    <input 
+                      type="number" 
+                      placeholder="T.ex. 50" 
+                      value={newBillFixedFee} 
+                      onChange={e => setNewBillFixedFee(e.target.value)} 
+                      style={{ width: '100%', marginBottom: 0 }}
+                    />
+                  </div>
+                </div>
               </div>
             )}
 
@@ -809,7 +805,7 @@ export default function ManageBills() {
                       style={{ marginBottom: '0.5rem' }}
                     >
                       <option value="all">Alla (Pengarna räknas bort för alla)</option>
-                      {state.accounts.filter(a => a.type === 'person').map(acc => (
+                      {state.accounts.filter(a => a.type === 'person').sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => (
                         <option key={acc.id} value={acc.id}>
                           Bara {acc.name} (Räknas endast bort för {acc.name})
                         </option>
@@ -846,7 +842,7 @@ export default function ManageBills() {
           </div>
           <h3 className="card-title">Gemensamma Räkningar (Månadsvyn)</h3>
           <div className="bill-list" style={{ marginBottom: '2rem' }}>
-            {state.bills.filter(b => !b.isArchived).map(bill => {
+            {state.bills.filter(b => !b.isArchived).sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(bill => {
               const account = state.accounts.find(a => a.id === bill.accountId);
               let splitText = 'Delas lika';
               if (bill.splitType !== 'equal') {
@@ -898,7 +894,7 @@ export default function ManageBills() {
             <>
               <h3 className="card-title">Privata Räkningar</h3>
               <div className="bill-list" style={{ marginBottom: '2rem' }}>
-                {(state.privateBills || []).filter(b => b.userId === user?.id && !b.isArchived).map(bill => {
+                {(state.privateBills || []).filter(b => b.userId === user?.id && !b.isArchived).sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(bill => {
                   let intervalText = 'Varje månad';
                   if (bill.interval === 'odd') intervalText = 'Udda månader';
                   if (bill.interval === 'even') intervalText = 'Jämna månader';

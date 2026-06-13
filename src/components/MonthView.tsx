@@ -51,7 +51,9 @@ export default function MonthView({ currentMonth }: Props) {
   }, 0);
 
   const renderCategory = (account: Account) => {
-    const categoryBills = state.bills.filter(b => b.accountId === account.id && (!b.isArchived || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0)));
+    const categoryBills = state.bills
+      .filter(b => b.accountId === account.id && (!b.isArchived || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0)))
+      .sort((a, b) => a.name.localeCompare(b.name, 'sv'));
     if (categoryBills.length === 0) return null;
 
     return (
@@ -125,20 +127,42 @@ export default function MonthView({ currentMonth }: Props) {
                         {amount === 0 ? '-' : amount}
                       </div>
                     ) : (
-                      <input 
-                        type="number" 
-                        value={amount === 0 ? '' : amount} 
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          updateBillAmount(currentMonth, bill.id, val === '' ? 0 : parseFloat(val));
-                        }}
-                        min="0"
-                        style={{ 
-                          color: isAnomaly ? '#f43f5e' : 'inherit',
-                          borderColor: isAnomaly ? '#f43f5e' : (showWarning ? '#f43f5e' : 'var(--border-color)'),
-                          boxShadow: isAnomaly ? '0 0 10px rgba(244, 63, 94, 0.4)' : (showWarning ? '0 0 0 1px #f43f5e' : 'none')
-                        }}
-                      />
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-end' }}>
+                        <input 
+                          type="number" 
+                          value={amount === 0 ? '' : amount} 
+                          placeholder="Totalt"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const currentAmort = monthData.billAmortization?.[bill.id];
+                            updateBillAmount(currentMonth, bill.id, val === '' ? 0 : parseFloat(val), currentAmort);
+                          }}
+                          min="0"
+                          style={{ 
+                            color: isAnomaly ? '#f43f5e' : 'inherit',
+                            borderColor: isAnomaly ? '#f43f5e' : (showWarning ? '#f43f5e' : 'var(--border-color)'),
+                            boxShadow: isAnomaly ? '0 0 10px rgba(244, 63, 94, 0.4)' : (showWarning ? '0 0 0 1px #f43f5e' : 'none')
+                          }}
+                        />
+                        {bill.isLoan && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Amortering:</span>
+                            <input 
+                              type="number" 
+                              value={monthData.billAmortization?.[bill.id] !== undefined ? monthData.billAmortization[bill.id] : (amount === 0 ? '' : amount)}
+                              onChange={(e) => {
+                                const amortVal = e.target.value;
+                                updateBillAmount(currentMonth, bill.id, amount, amortVal === '' ? undefined : parseFloat(amortVal));
+                              }}
+                              min="0"
+                              style={{ 
+                                fontSize: '0.8rem', padding: '0.25rem 0.5rem', width: '70px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)'
+                              }}
+                              title="Varav amortering"
+                            />
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                   {isAnomaly && (
@@ -248,7 +272,7 @@ export default function MonthView({ currentMonth }: Props) {
       )}
       {state.bills.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-          {state.accounts.map(account => renderCategory(account))}
+          {[...state.accounts].sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(account => renderCategory(account))}
         </div>
       )}
     </div>

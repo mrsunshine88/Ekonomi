@@ -32,10 +32,12 @@ export default function PrivateView({ currentMonth }: Props) {
 
   const monthData = state.privateMonths?.[currentMonth] || { monthId: currentMonth, billAmounts: {}, handledPayments: {} };
   
-  const myBills = (state.privateBills || []).filter(b => {
-    if (b.startMonth && b.startMonth > currentMonth) return false;
-    return b.userId === activeUserId && (!b.isArchived || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0));
-  });
+  const myBills = (state.privateBills || [])
+    .filter(b => {
+      if (b.startMonth && b.startMonth > currentMonth) return false;
+      return b.userId === activeUserId && (!b.isArchived || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0));
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, 'sv'));
   
   const isLocked = isViewingOther || (monthData.isLocked || false);
 
@@ -173,12 +175,15 @@ export default function PrivateView({ currentMonth }: Props) {
                           {amount === 0 ? '-' : amount}
                         </div>
                       ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-end' }}>
                         <input 
                           type="number" 
                           value={amount === 0 ? '' : amount} 
+                          placeholder="Totalt"
                           onChange={(e) => {
                             const val = e.target.value;
-                            updatePrivateBillAmount(currentMonth, bill.id, val === '' ? 0 : parseFloat(val));
+                            const currentAmort = monthData.billAmortization?.[bill.id];
+                            updatePrivateBillAmount(currentMonth, bill.id, val === '' ? 0 : parseFloat(val), currentAmort);
                           }}
                           min="0"
                           style={{ 
@@ -189,6 +194,25 @@ export default function PrivateView({ currentMonth }: Props) {
                             textAlign: 'right' 
                           }}
                         />
+                        {bill.isLoan && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Amortering:</span>
+                            <input 
+                              type="number" 
+                              value={monthData.billAmortization?.[bill.id] !== undefined ? monthData.billAmortization[bill.id] : (amount === 0 ? '' : amount)}
+                              onChange={(e) => {
+                                const amortVal = e.target.value;
+                                updatePrivateBillAmount(currentMonth, bill.id, amount, amortVal === '' ? undefined : parseFloat(amortVal));
+                              }}
+                              min="0"
+                              style={{ 
+                                fontSize: '0.8rem', padding: '0.25rem 0.5rem', width: '70px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)'
+                              }}
+                              title="Varav amortering"
+                            />
+                          </div>
+                        )}
+                      </div>
                       )}
                     </div>
                     {isAnomaly && (

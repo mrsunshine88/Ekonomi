@@ -18,6 +18,7 @@ export interface BillDefinition {
   warnIfZero: boolean;
   isLoan?: boolean;
   totalDebt?: number;
+  fixedFee?: number;
   isArchived?: boolean;
   isAutoTransfer?: string; // 'all' = hela räkningen, eller ett personkonto-ID = bara den personen förs automatiskt. Undefined/'' = manuell.
   startMonth?: string; // YYYY-MM
@@ -26,6 +27,9 @@ export interface BillDefinition {
 export interface MonthData {
   monthId: string; // YYYY-MM
   billAmounts: Record<string, number>; // billId -> amount
+  billAmortization?: Record<string, number>; // billId -> amortization
+  billInterest?: Record<string, number>; // billId -> interest
+  billFee?: Record<string, number>; // billId -> fee
   handledPayments?: Record<string, boolean>; // paymentId -> true/false
   confirmedAnomalies?: Record<string, boolean>; // billId -> true/false
 }
@@ -41,6 +45,7 @@ export interface PrivateBill {
   isShared?: boolean;
   isLoan?: boolean;
   totalDebt?: number;
+  fixedFee?: number;
   isArchived?: boolean;
   startMonth?: string;
 }
@@ -48,6 +53,9 @@ export interface PrivateBill {
 export interface PrivateMonthData {
   monthId: string;
   billAmounts: Record<string, number>;
+  billAmortization?: Record<string, number>;
+  billInterest?: Record<string, number>;
+  billFee?: Record<string, number>;
   handledPayments?: Record<string, boolean>;
   confirmedAnomalies?: Record<string, boolean>;
   isLocked?: boolean;
@@ -59,14 +67,9 @@ export interface Profile {
   share_private_economy?: boolean;
 }
 
-export interface Salary {
+export interface MonthlySalary {
   userId: string;
-  amount: number;
-}
-
-export interface VariableSalary {
-  userId: string;
-  monthId: string;
+  payDate: string; // 'YYYY-MM-DD'
   amount: number;
 }
 
@@ -77,8 +80,7 @@ export interface AppState {
   privateBills?: PrivateBill[];
   privateMonths?: Record<string, PrivateMonthData>;
   householdProfiles?: Profile[];
-  salaries?: Salary[];
-  variableSalaries?: VariableSalary[];
+  monthlySalaries?: MonthlySalary[];
   settings?: {
     showSummary?: boolean;
     showSwishSummary?: boolean;
