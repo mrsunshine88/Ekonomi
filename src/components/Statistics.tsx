@@ -80,7 +80,7 @@ export default function Statistics() {
   // 1. Time Series Data (for Bar & Line charts)
   const timeData = sortedMonths.map(monthId => {
     const m = rawMonthsObj[monthId];
-    const amounts = m.billAmounts || {};
+    const amounts = m?.billAmounts || {};
     
     const accountTotals: Record<string, number> = {};
     if (!isPrivate) {
@@ -140,7 +140,7 @@ export default function Statistics() {
   
   if (sortedMonths.length > 0) {
     const lastMonth = rawMonthsObj[sortedMonths[sortedMonths.length - 1]];
-    const amounts = lastMonth.billAmounts || {};
+    const amounts = lastMonth?.billAmounts || {};
     activeBills.forEach(b => {
       const amt = amounts[b.id] !== undefined ? amounts[b.id] : b.defaultAmount;
       if (amt > 0) {
