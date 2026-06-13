@@ -121,13 +121,25 @@ export default function MonthView({ currentMonth }: Props) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem', flexShrink: 0, paddingTop: isAnomaly ? '0.5rem' : '0' }}>
-                  <div className="bill-amount-wrapper">
-                    {lockedAccounts.has(account?.id || '') ? (
-                      <div style={{ textAlign: 'right', padding: '0.75rem 1rem', paddingRight: '2.5rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        {amount === 0 ? '-' : amount}
+                  {lockedAccounts.has(account?.id || '') ? (
+                    <>
+                      <div className="bill-amount-wrapper">
+                        <div style={{ textAlign: 'right', padding: '0.75rem 1rem', paddingRight: '2.5rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                          {amount === 0 ? '-' : amount}
+                        </div>
                       </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', alignItems: 'flex-end' }}>
+                      {bill.isLoan && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <span>Amortering:</span>
+                          <span style={{ background: 'rgba(0,0,0,0.2)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                            {monthData.billAmortization?.[bill.id] !== undefined ? monthData.billAmortization[bill.id] : (amount === 0 ? '-' : amount)} kr
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
+                      <div className="bill-amount-wrapper">
                         <input 
                           type="number" 
                           value={amount === 0 ? '' : amount} 
@@ -144,9 +156,11 @@ export default function MonthView({ currentMonth }: Props) {
                             boxShadow: isAnomaly ? '0 0 10px rgba(244, 63, 94, 0.4)' : (showWarning ? '0 0 0 1px #f43f5e' : 'none')
                           }}
                         />
-                        {bill.isLoan && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Amortering:</span>
+                      </div>
+                      {bill.isLoan && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Varav amortering:</span>
+                          <div className="bill-amount-wrapper" style={{ width: '100px' }}>
                             <input 
                               type="number" 
                               value={monthData.billAmortization?.[bill.id] !== undefined ? monthData.billAmortization[bill.id] : (amount === 0 ? '' : amount)}
@@ -156,15 +170,15 @@ export default function MonthView({ currentMonth }: Props) {
                               }}
                               min="0"
                               style={{ 
-                                fontSize: '0.8rem', padding: '0.25rem 0.5rem', width: '70px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)'
+                                fontSize: '0.9rem', padding: '0.4rem 1.8rem 0.4rem 0.5rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-primary)'
                               }}
                               title="Varav amortering"
                             />
                           </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {isAnomaly && (
                     <div style={{ display: 'flex', gap: '0.4rem' }}>
                       <button 

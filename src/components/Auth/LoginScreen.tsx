@@ -142,7 +142,7 @@ export default function LoginScreen() {
     {
       icon: "💬",
       title: "Live-support & Demoläge",
-      desc: "Testkör appen säkert med låtsassiffror. Fastnar du? Chatta direkt med oss i appen så hjälper vi till."
+      desc: "Testkör appen säkert med låtsassiffror. När du sedan skapat konto och prenumererat låses vår live-chatt upp i appen."
     }
   ];
 

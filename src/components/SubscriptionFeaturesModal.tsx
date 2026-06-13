@@ -1,10 +1,11 @@
+import { createPortal } from 'react-dom';
 
 interface Props {
   onClose: () => void;
 }
 
 export default function SubscriptionFeaturesModal({ onClose }: Props) {
-  return (
+  return createPortal(
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       background: 'rgba(11, 15, 25, 0.95)', backdropFilter: 'blur(10px)',
@@ -115,6 +116,7 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
           Stäng
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
