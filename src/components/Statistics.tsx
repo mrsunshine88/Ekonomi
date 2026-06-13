@@ -50,12 +50,14 @@ export default function Statistics() {
   if (isIncomeMode) {
     const allIds = new Set([...Object.keys(state.months || {}), ...Object.keys(state.privateMonths || {})]);
     validMonths = Array.from(allIds).filter(monthId => {
+      if (isDemoMode) return true;
       const isSharedHandled = Object.values((state.months[monthId] || {}).handledPayments || {}).some(v => v === true);
       const isPrivateLocked = state.privateMonths?.[monthId]?.isLocked === true;
       return isSharedHandled || isPrivateLocked;
     });
   } else {
     validMonths = Object.keys(rawMonthsObj).filter(monthId => {
+      if (isDemoMode) return true;
       if (isPrivate) {
         return (rawMonthsObj[monthId] as any).isLocked === true;
       } else {
