@@ -50,27 +50,52 @@ export default function Onboarding() {
   const handleFinish = async () => {
     setLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) throw new Error("Inte inloggad");
+
+      // 1. Skapa hushållet
+      const newHouseholdId = crypto.randomUUID();
+      const { error: hhErr } = await supabase.from('households').insert([{ id: newHouseholdId, name: householdName || 'Mitt hushåll' }]);
+      if (hhErr) throw hhErr;
+
+      // 2. Skapa inställningar för hushållet med rätt defaults (endast totalsumma, ej swish/överföringar)
+      await supabase.from('household_settings').insert([{
+        household_id: newHouseholdId,
+        show_summary: true,
+        show_swish_summary: false,
+        show_transfer_summary: false,
+        enable_management_buttons: true,
+        show_top_total: true,
+        show_private_top_total: true
+      }]);
+
+      // 3. Koppla profilen till hushållet
+      const { error: profErr } = await supabase.from('profiles').update({ household_id: newHouseholdId, role: 'owner' }).eq('id', user.id);
+      if (profErr) throw profErr;
+
+      // 4. Skapa konton
       const accountsToCreate = [];
       if (hasSharedAccount) {
-        accountsToCreate.push({ id: crypto.randomUUID(), household_id: householdId, name: householdName || 'Gemensamt konto', type: 'shared', transfer_method: 'transfer' });
+        accountsToCreate.push({ id: crypto.randomUUID(), household_id: newHouseholdId, name: householdName || 'Gemensamt konto', type: 'shared', transfer_method: 'transfer' });
       }
       members.forEach((m) => {
         if (m.name.trim()) {
-          accountsToCreate.push({ id: crypto.randomUUID(), household_id: householdId, name: m.name.trim(), type: 'person', transfer_method: 'swish' });
+          accountsToCreate.push({ id: crypto.randomUUID(), household_id: newHouseholdId, name: m.name.trim(), type: 'person', transfer_method: 'swish' });
         }
       });
 
       if (accountsToCreate.length === 0) {
-         // Fallback
-         accountsToCreate.push({ id: crypto.randomUUID(), household_id: householdId, name: 'Person 1', type: 'person', transfer_method: 'swish' });
+         accountsToCreate.push({ id: crypto.randomUUID(), household_id: newHouseholdId, name: 'Person 1', type: 'person', transfer_method: 'swish' });
       }
 
       await supabase.from('accounts').insert(accountsToCreate);
       
       // Force reload state
       window.location.reload();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      alert(e.message || "Ett fel uppstod");
     } finally {
       setLoading(false);
     }

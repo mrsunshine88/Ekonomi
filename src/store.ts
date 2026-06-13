@@ -820,6 +820,14 @@ export const useStore = create<StoreState>((set, get) => ({
 
     const mockState: AppState = {
       ...currentState,
+      settings: {
+        showSummary: true,
+        showSwishSummary: true,
+        showTransferSummary: true,
+        enableManagementButtons: true,
+        showTopTotal: true,
+        showPrivateTopTotal: true
+      },
       accounts: mockAccounts,
       bills: mockBills,
       months: {
