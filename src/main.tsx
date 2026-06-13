@@ -11,6 +11,27 @@ Sentry.init({
   enabled: import.meta.env.PROD, // Skicka bara loggar i produktion, inte när vi kodar lokalt
 });
 
+// Tysta unhandled promise rejections från Service Worker-registrering.
+// Dessa uppstår på Android/Chrome Mobile när SW-registration misslyckas
+// (t.ex. inkognito-läge, restriktiv miljö) och är ofarliga – PWA degraderar gracefully.
+window.addEventListener('unhandledrejection', (event) => {
+  const reason = event.reason;
+  const isSwError =
+    reason instanceof DOMException ||
+    reason?.name === 'SecurityError' ||
+    reason?.name === 'InvalidStateError' ||
+    (typeof reason?.message === 'string' &&
+      (reason.message.toLowerCase().includes('service worker') ||
+       reason.message.toLowerCase().includes('serviceworker') ||
+       reason.message.toLowerCase().includes('registersw') ||
+       reason.message.toLowerCase().includes('failed to register')));
+
+  if (isSwError) {
+    event.preventDefault(); // Förhindrar att Sentry fångar det
+    console.warn('[SW] Service Worker registration failed (suppressed from Sentry):', reason);
+  }
+});
+
 class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: Error | null, componentStack: string | null, isReloading: boolean}> {
   constructor(props: {children: ReactNode}) {
     super(props);
