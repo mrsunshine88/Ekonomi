@@ -857,3 +857,17 @@ Att använda `any` är en genväg i TypeScript som stänger av kompilatorns typk
 - **Excel-export (`excel.ts`):** Den osäkra typen `rowData: any[]` byttes ut mot `(string | number)[]` vilket är vad ExcelJS förväntar sig. Sökningar i listor typsattes strikt mot domänobjekt som `HouseholdProfile` och `Account`.
 - **Global Felhantering (Try/Catch):** Alla felhanteringsblock runt om i appen (t.ex. `MyPages.tsx`, `AdminDashboard.tsx`, `PaywallModal.tsx`, `AuthContext.tsx`) refaktorerades. Istället för den omoderna TypeScript-genvägen `catch (e: any)` används nu den säkra branschstandarden `catch (e: unknown)`. Där vi tidigare direkt anropade `e.message` implementerades en säkerhetskontroll: `(e instanceof Error ? e.message : String(e))`. 
 - **Byggprocess (CI/CD):** Efter refaktoreringen sattes verifikationskrav med kommandot `npx tsc --noEmit` för att tvinga fram en kompilering helt utan typ-fel, vilket nu fungerar felfritt utan varningar.
+
+## 37. Felsökning och Remote Logging (Sentry)
+
+### Vad
+För att kunna identifiera och åtgärda fel hos slutanvändare utan att de behöver kontakta supporten manuellt, har vi integrerat **Sentry** (`@sentry/react`). Sentry är ett branschledande verktyg för felövervakning ("Error Tracking") i realtid.
+
+### Varför
+Tidigare förlitade sig appen enbart på lokala loggar (`console.error`) och den inbyggda React Error Boundaryn för att presentera en fallback-vy. Det fanns inget sätt att få reda på om en kund upplevde en krasch. Med Sentry skickas en detaljerad felrapport (inklusive stack-trace, webbläsarinformation och aktuell komponent-vy) omedelbart och osynligt till utvecklingsteamets dashboard så fort något går snett i klienten.
+
+### Hur
+- **Installation:** NPM-paketet `@sentry/react` lades till som ett dependency.
+- **Konfiguration i `main.tsx`:** Sentry initieras innan React hinner börja rendera applikationen. Funktionen `Sentry.init` anropas med en specifik `DSN` (Data Source Name) som fungerar som adressen till projektet på Sentry.io.
+- **Produktions-spärr:** Initieringen innehåller konfigurationen `enabled: import.meta.env.PROD` för att säkerställa att Sentry *enbart* skickar iväg felrapporter när koden körs i produktion, och därmed hålla utvecklingsmiljön (`localhost`) fri från falska larm.
+- **ErrorBoundary-koppling:** Inuti vår befintliga, skräddarsydda `ErrorBoundary` i `main.tsx` utökades metoden `componentDidCatch(error)` till att anropa `Sentry.captureException(error)`. Detta bibehåller vårt användarvänliga fallback-UI ("Något gick fel!") samtidigt som felet sparas för teknisk granskning på Sentry.
