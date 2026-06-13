@@ -226,7 +226,7 @@ export default function ManageBills() {
               <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', fontSize: '1rem', color: 'var(--text-primary)' }}>
                 <input 
                   type="checkbox" 
-                  checked={(state.settings?.showTransferSummary ?? state.settings?.showSummary) !== false} 
+                  checked={state.settings?.showTransferSummary === true} 
                   onChange={(e) => onUpdateSettings({ showTransferSummary: e.target.checked })}
                   style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
                 />
@@ -241,7 +241,7 @@ export default function ManageBills() {
               <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', fontSize: '1rem', color: 'var(--text-primary)' }}>
                 <input 
                   type="checkbox" 
-                  checked={(state.settings?.showSwishSummary ?? state.settings?.showSummary) !== false} 
+                  checked={state.settings?.showSwishSummary === true} 
                   onChange={(e) => onUpdateSettings({ showSwishSummary: e.target.checked })}
                   style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
                 />
@@ -271,7 +271,7 @@ export default function ManageBills() {
               <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', fontSize: '1rem', color: 'var(--text-primary)' }}>
                 <input 
                   type="checkbox" 
-                  checked={state.settings?.showTopTotal === true} 
+                  checked={state.settings?.showTopTotal !== false} 
                   onChange={(e) => onUpdateSettings({ showTopTotal: e.target.checked })}
                   style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
                 />

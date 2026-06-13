@@ -266,7 +266,7 @@ function App() {
             <button onClick={() => changeMonth(1)}>Nästa →</button>
           </div>
 
-          {((state.settings?.showTransferSummary ?? state.settings?.showSummary) !== false || (state.settings?.showSwishSummary ?? state.settings?.showSummary) !== false) && (
+          {(state.settings?.showTransferSummary === true || state.settings?.showSwishSummary === true) && (
             <Summary currentMonth={currentMonth} />
           )}
 

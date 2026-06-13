@@ -10,8 +10,8 @@ export default function Summary({ currentMonth }: Props) {
   const togglePaymentStatus = useStore(s => s.togglePaymentStatus);
   const monthData = state.months[currentMonth] || { monthId: currentMonth, billAmounts: {}, handledPayments: {} };
   const result = calculateMonth(state, currentMonth);
-  const showTransfers = (state.settings?.showTransferSummary ?? state.settings?.showSummary) !== false;
-  const showSwishes = (state.settings?.showSwishSummary ?? state.settings?.showSummary) !== false;
+  const showTransfers = state.settings?.showTransferSummary === true;
+  const showSwishes = state.settings?.showSwishSummary === true;
   const enableManagementButtons = state.settings?.enableManagementButtons !== false;
 
   const [warningModal, setWarningModal] = useState<{ visible: boolean; bills: typeof state.bills }>({ visible: false, bills: [] });
