@@ -13,7 +13,18 @@ export default function AdminDashboard() {
   const [stripePriceId, setStripePriceId] = useState('');
   const [vipEmail, setVipEmail] = useState('');
   const [vipList, setVipList] = useState<string[]>([]);
-  const [stats, setStats] = useState<{ total_members: number, active_households: number, unique_visitors_today?: number, total_page_views_today?: number } | null>(null);
+  const [stats, setStats] = useState<{ 
+    total_members: number, 
+    active_households: number, 
+    unique_visitors_today?: number, 
+    total_page_views_today?: number,
+    unique_visitors_yesterday?: number,
+    total_page_views_yesterday?: number,
+    unique_visitors_this_week?: number,
+    total_page_views_this_week?: number,
+    unique_visitors_this_month?: number,
+    total_page_views_this_month?: number
+  } | null>(null);
   const [stripeConfigured, setStripeConfigured] = useState<boolean | null>(null);
   const [stripeReason, setStripeReason] = useState<string | null>(null);
 
@@ -51,7 +62,13 @@ export default function AdminDashboard() {
           total_members: data[0].total_members, 
           active_households: data[0].active_households,
           unique_visitors_today: data[0].unique_visitors_today,
-          total_page_views_today: data[0].total_page_views_today
+          total_page_views_today: data[0].total_page_views_today,
+          unique_visitors_yesterday: data[0].unique_visitors_yesterday,
+          total_page_views_yesterday: data[0].total_page_views_yesterday,
+          unique_visitors_this_week: data[0].unique_visitors_this_week,
+          total_page_views_this_week: data[0].total_page_views_this_week,
+          unique_visitors_this_month: data[0].unique_visitors_this_month,
+          total_page_views_this_month: data[0].total_page_views_this_month
         });
       }
     } catch (e: unknown) {
@@ -263,28 +280,83 @@ export default function AdminDashboard() {
       <h2 style={{ color: '#f43f5e', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>👑 System Admin</h2>
       
       {stats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👥</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#fff' }}>{stats.total_members}</div>
-            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Totala Medlemmar</div>
+        <>
+          {/* General Stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👥</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#fff' }}>{stats.total_members}</div>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Totala Medlemmar</div>
+            </div>
+            <div style={{ background: 'rgba(16, 185, 129, 0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💎</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>{stats.active_households}</div>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Betalande Hushåll</div>
+            </div>
           </div>
-          <div style={{ background: 'rgba(16, 185, 129, 0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💎</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>{stats.active_households}</div>
-            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Betalande Hushåll</div>
+
+          {/* Visitor Stats */}
+          <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+            <h3 style={{ marginBottom: '1rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>📊</span> Besöksstatistik
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+              
+              {/* Idag */}
+              <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                <div style={{ fontSize: '0.9rem', color: '#3b82f6', fontWeight: 'bold', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Idag</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>👁️ Unika</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.unique_visitors_today || 0}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>📈 Visningar</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.total_page_views_today || 0}</span>
+                </div>
+              </div>
+
+              {/* Igår */}
+              <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 'bold', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Igår</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>👁️ Unika</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.unique_visitors_yesterday || 0}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>📈 Visningar</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.total_page_views_yesterday || 0}</span>
+                </div>
+              </div>
+
+              {/* Vecka */}
+              <div style={{ background: 'rgba(168, 85, 247, 0.1)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                <div style={{ fontSize: '0.9rem', color: '#a855f7', fontWeight: 'bold', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Denna Veckan</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>👁️ Unika</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.unique_visitors_this_week || 0}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>📈 Visningar</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.total_page_views_this_week || 0}</span>
+                </div>
+              </div>
+
+              {/* Månad */}
+              <div style={{ background: 'rgba(244, 63, 94, 0.1)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(244, 63, 94, 0.3)' }}>
+                <div style={{ fontSize: '0.9rem', color: '#f43f5e', fontWeight: 'bold', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Denna Månaden</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>👁️ Unika</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.unique_visitors_this_month || 0}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>📈 Visningar</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.total_page_views_this_month || 0}</span>
+                </div>
+              </div>
+
+            </div>
           </div>
-          <div style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👁️</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#3b82f6' }}>{stats.unique_visitors_today || 0}</div>
-            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Unika Besökare Idag</div>
-          </div>
-          <div style={{ background: 'rgba(168, 85, 247, 0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📈</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#a855f7' }}>{stats.total_page_views_today || 0}</div>
-            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Sidvisningar Idag</div>
-          </div>
-        </div>
+        </>
       )}
 
       {msg && <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(0,0,0,0.5)', borderRadius: '8px', borderLeft: '4px solid #f43f5e', color: '#fff' }}>{msg}</div>}

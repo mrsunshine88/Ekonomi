@@ -1049,3 +1049,30 @@ Användare hade behov av att inkludera andra inkomstkällor såsom barnbidrag oc
 | `src/components/ManageBills.tsx` | ÄNDRAD — Uppdaterade inställnings-UI:t att stödja Fasta och Rörliga inkomster under en och samma flik. |
 | `src/components/Statistics.tsx` | ÄNDRAD — Kalkyleringen i `InkomstUtgiftView` stödjer dynamisk iterering över `incomes`-arrayen för båda inkomsttyperna. |
 
+---
+
+## 25. Besöksstatistik och Säkerhetsuppdatering (Admin Dashboard)
+
+### Vad:
+En utökning av Admin-panelen för att inkludera detaljerad besöksstatistik (idag, igår, denna vecka, denna månad) för både inloggade och oinloggade (anonyma) besökare. Samtidigt fixades säkerhetsvarningar (`SECURITY DEFINER`) från Supabase genom att återkalla publika åtkomsträttigheter för administrativa databasfunktioner.
+
+### Hur:
+- **Databas & Säkerhet:** Ett SQL-skript (`fix_security_and_visitor_tracking.sql`) kördes för att köra `REVOKE EXECUTE ON FUNCTION ... FROM public, anon` på alla admin-funktioner.
+- **Loggning (Databas):** En ny tabell `page_visits` skapades med `session_id`, `path` och `visited_at`. RLS-policys sattes upp så att `anon` kan göra `INSERT` (logga besök) men endast `is_user_admin()` kan göra `SELECT`.
+- **Loggning (Klient):** I `App.tsx` lades en `useEffect` till som genererar ett unikt (men anonymt) `sessionId` via `crypto.randomUUID()` och sparar det i `localStorage`. Ett besök sparas i databasen max en gång per timme (spåras i `sessionStorage`).
+- **Beräkning:** Funktionen `get_admin_stats` uppdaterades (`update_visitor_stats.sql`) för att direkt i PostgreSQL räkna fram `COUNT(DISTINCT session_id)` och `COUNT(*)` för olika tidsintervaller (`CURRENT_DATE`, `CURRENT_DATE - INTERVAL '1 day'`, `date_trunc('week')`, `date_trunc('month')`).
+- **UI:** `AdminDashboard.tsx` uppdaterades med en ny kort-baserad layout ("Cards") i ett rutnät som presenterar statistiken visuellt med ikoner och färger.
+
+### Varför:
+Systemadministratören ville ha inbyggd, integritetsvänlig (inga cookies-banners krävs, endast anonymt session-id) och blixtsnabb analys av webbplatstrafik direkt inbyggd i befintlig admin-panel, utan att förlita sig på tredjepartsverktyg som Google Analytics. Säkerhetsuppdateringen krävdes för att följa Supabases best-practices och stänga ute potentiella attacker mot oskyddade `SECURITY DEFINER`-funktioner från publika API:et.
+
+---
+
+### Filförteckning — Ändringar i detta kapitel
+
+| Fil | Typ av ändring |
+|---|---|
+| `fix_security_and_visitor_tracking.sql` | NY — Löser säkerhetsvarningar och skapar tabellen `page_visits`. |
+| `update_visitor_stats.sql` | NY — Uppdaterar `get_admin_stats` att inkludera historisk trafik. |
+| `src/App.tsx` | ÄNDRAD — Lägger till logik för anonym tracking (`localStorage` / `sessionStorage`). |
+| `src/components/AdminDashboard.tsx` | ÄNDRAD — Ny UI/UX-design för statistik i rutnät, uppdaterade TypeScript-gränssnitt. |
