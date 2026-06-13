@@ -806,12 +806,12 @@ export const useStore = create<StoreState>((set, get) => ({
       { id: 'demo_bill_4', name: 'Netflix', accountId: 'demo_person_1', defaultAmount: 159, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
       { id: 'demo_bill_5', name: 'Spotify', accountId: 'demo_person_2', defaultAmount: 119, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
       { id: 'demo_bill_6', name: 'Hemförsäkring', accountId: 'demo_shared', defaultAmount: 450, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
-      { id: 'demo_bill_7', name: 'CSN Johan', accountId: 'demo_person_1', defaultAmount: 1500, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
-      { id: 'demo_bill_8', name: 'CSN Maria', accountId: 'demo_person_2', defaultAmount: 1350, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
+      { id: 'demo_bill_7', name: 'CSN Johan', accountId: 'demo_person_1', defaultAmount: 1500, splitType: 'demo_person_1', interval: 'all', isArchived: false, warnIfZero: false },
+      { id: 'demo_bill_8', name: 'CSN Maria', accountId: 'demo_person_2', defaultAmount: 1350, splitType: 'demo_person_2', interval: 'all', isArchived: false, warnIfZero: false },
       { id: 'demo_bill_9', name: 'Bilförsäkring', accountId: 'demo_shared', defaultAmount: 650, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
       { id: 'demo_bill_10', name: 'Drivmedel', accountId: 'demo_shared', defaultAmount: 1200, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
       { id: 'demo_bill_11', name: 'Matkonto ICA', accountId: 'demo_shared', defaultAmount: 4500, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
-      { id: 'demo_bill_12', name: 'Gymkort', accountId: 'demo_person_1', defaultAmount: 399, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
+      { id: 'demo_bill_12', name: 'Gymkort', accountId: 'demo_person_1', defaultAmount: 399, splitType: 'demo_person_1', interval: 'all', isArchived: false, warnIfZero: false },
     ];
 
     const mockState: AppState = {
