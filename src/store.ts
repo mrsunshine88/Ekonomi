@@ -44,6 +44,11 @@ interface StoreState {
   householdId: string | null;
   userId: string | null;
   channel: any;
+  isDemoMode: boolean;
+  realState: AppState | null;
+
+  startDemo: () => void;
+  stopDemo: () => void;
 
   initCloud: (householdId: string | null, userId: string | null) => void;
   loadYear: (year: string) => Promise<void>;
@@ -79,16 +84,20 @@ export const useStore = create<StoreState>((set, get) => ({
   householdId: null,
   userId: null,
   channel: null,
+  isDemoMode: false,
+  realState: null,
 
   cleanup: () => {
     const { channel } = get();
     if (channel) {
       supabase.removeChannel(channel);
     }
-    set({ state: DEFAULT_STATE, channel: null, isCloudLoaded: false, householdId: null, userId: null });
+    set({ state: DEFAULT_STATE, channel: null, isCloudLoaded: false, householdId: null, userId: null, isDemoMode: false, realState: null });
   },
 
   initCloud: async (householdId, userId) => {
+    if (get().isDemoMode) return;
+
     if (!householdId || !userId) {
       get().cleanup();
       return;
@@ -243,6 +252,7 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   loadYear: async (year: string) => {
+    if (get().isDemoMode) return;
     const { householdId, state } = get();
     if (!householdId) return;
 
@@ -324,6 +334,7 @@ export const useStore = create<StoreState>((set, get) => ({
     const { householdId, state } = get();
     const monthData = state.months[monthId] || { monthId, billAmounts: {}, handledPayments: {} };
     set({ state: { ...state, months: { ...state.months, [monthId]: { ...monthData, billAmounts: { ...monthData.billAmounts, [billId]: validatedAmount } } } } });
+    if (get().isDemoMode) return;
     if (householdId) {
       await safeDb(
         supabase.from('month_bill_amounts').upsert({ household_id: householdId, month_id: monthId, bill_id: billId, amount: validatedAmount }, { onConflict: 'household_id,month_id,bill_id' }),
@@ -346,6 +357,8 @@ export const useStore = create<StoreState>((set, get) => ({
     }));
 
     set({ state: { ...state, bills: [...state.bills, ...newBills] } });
+
+    if (get().isDemoMode) return;
 
     await safeDb(
       supabase.from('bills').insert(newBills.map(b => ({
@@ -386,6 +399,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
     const { householdId, state } = get();
     set({ state: { ...state, bills: [...state.bills, validBill] } });
+    if (get().isDemoMode) return;
     if (householdId) {
       await safeDb(supabase.from('bills').insert({ id: validBill.id, household_id: householdId, name: validBill.name, account_id: validBill.accountId, split_type: validBill.splitType, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_loan: validBill.isLoan, total_debt: validBill.totalDebt, is_auto_transfer: validBill.isAutoTransfer, start_month: validBill.startMonth }));
     }
@@ -395,6 +409,7 @@ export const useStore = create<StoreState>((set, get) => ({
     if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const { householdId, state } = get();
     set({ state: { ...state, bills: state.bills.map(b => b.id === billId ? { ...b, isArchived: true } : b) } });
+    if (get().isDemoMode) return;
     if (householdId) {
       await safeDb(supabase.from('bills').update({ is_archived: true }).eq('id', billId).eq('household_id', householdId));
     }
@@ -411,6 +426,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
     const { householdId, state } = get();
     set({ state: { ...state, bills: state.bills.map(b => b.id === validBill.id ? validBill : b) } });
+    if (get().isDemoMode) return;
     if (householdId) {
       await safeDb(supabase.from('bills').update({ name: validBill.name, account_id: validBill.accountId, split_type: validBill.splitType, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_loan: validBill.isLoan, total_debt: validBill.totalDebt, is_auto_transfer: validBill.isAutoTransfer || null }).eq('id', validBill.id).eq('household_id', householdId));
     }
@@ -427,6 +443,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
     const { householdId, state } = get();
     set({ state: { ...state, accounts: [...state.accounts, validAcc] } });
+    if (get().isDemoMode) return;
     if (householdId) {
       await safeDb(supabase.from('accounts').insert({ id: validAcc.id, household_id: householdId, name: validAcc.name, type: validAcc.type, transfer_method: validAcc.transferMethod }));
     }
@@ -436,6 +453,7 @@ export const useStore = create<StoreState>((set, get) => ({
     if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const { householdId, state } = get();
     set({ state: { ...state, accounts: state.accounts.filter(a => a.id !== accountId) } });
+    if (get().isDemoMode) return;
     if (householdId) {
       await safeDb(supabase.from('accounts').delete().eq('id', accountId).eq('household_id', householdId));
     }
@@ -452,6 +470,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
     const { householdId, state } = get();
     set({ state: { ...state, accounts: state.accounts.map(a => a.id === validAcc.id ? validAcc : a) } });
+    if (get().isDemoMode) return;
     if (householdId) {
       await safeDb(supabase.from('accounts').update({ name: validAcc.name, type: validAcc.type, transfer_method: validAcc.transferMethod }).eq('id', validAcc.id).eq('household_id', householdId));
     }
@@ -499,6 +518,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
     set({ state: { ...state, months: { ...state.months, [monthId]: { ...currentMonthData, billAmounts: { ...currentMonthData.billAmounts, ...newAmounts } } } } });
 
+    if (get().isDemoMode) return;
     if (householdId) {
       const inserts = Object.entries(newAmounts).map(([billId, amt]) => ({ household_id: householdId, month_id: monthId, bill_id: billId, amount: amt }));
       if (inserts.length > 0) {
@@ -516,6 +536,7 @@ export const useStore = create<StoreState>((set, get) => ({
     
     set({ state: { ...state, months: { ...state.months, [monthId]: { ...monthData, handledPayments: { ...handled, [paymentId]: newStatus } } } } });
     
+    if (get().isDemoMode) return;
     if (householdId) {
       await safeDb(
         supabase.from('month_handled_payments').upsert({ household_id: householdId, month_id: monthId, payment_id: paymentId, is_handled: newStatus }, { onConflict: 'household_id,month_id,payment_id' }),
@@ -529,6 +550,7 @@ export const useStore = create<StoreState>((set, get) => ({
     const { householdId, state } = get();
     const monthData = state.months[monthId] || { monthId, billAmounts: {}, handledPayments: {} };
     set({ state: { ...state, months: { ...state.months, [monthId]: { ...monthData, confirmedAnomalies: { ...(monthData.confirmedAnomalies||{}), [billId]: true } } } } });
+    if (get().isDemoMode) return;
     if (householdId) {
       await safeDb(supabase.from('month_confirmed_anomalies').upsert({ household_id: householdId, month_id: monthId, bill_id: billId, is_confirmed: true }, { onConflict: 'household_id,month_id,bill_id' }));
     }
@@ -569,6 +591,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
     set({ state: { ...state, months: { ...state.months, [monthId]: { ...monthData, handledPayments: newHandled } } } });
 
+    if (get().isDemoMode) return;
     if (householdId && unhandledPayments.length > 0) {
       const updates = unhandledPayments.map(pid => ({ household_id: householdId, month_id: monthId, payment_id: pid, is_handled: false }));
       await safeDb(supabase.from('month_handled_payments').upsert(updates, { onConflict: 'household_id,month_id,payment_id' }));
@@ -580,6 +603,7 @@ export const useStore = create<StoreState>((set, get) => ({
     if (!settingsUpdates) return;
     const { householdId, state } = get();
     set({ state: { ...state, settings: { ...state.settings, ...settingsUpdates } } });
+    if (get().isDemoMode) return;
     if (householdId) {
       const payload: any = { household_id: householdId };
       if (settingsUpdates.showSummary !== undefined) payload.show_summary = settingsUpdates.showSummary;
@@ -611,6 +635,7 @@ export const useStore = create<StoreState>((set, get) => ({
     const updatedProfiles = profiles.map(p => p.id === userId ? { ...p, share_private_economy: share } : p);
     set({ state: { ...state, householdProfiles: updatedProfiles } });
     
+    if (get().isDemoMode) return;
     // Update DB
     const { error } = await supabase.rpc('toggle_share_private_economy', { share_status: share });
     if (error) {
@@ -636,6 +661,7 @@ export const useStore = create<StoreState>((set, get) => ({
     const pMonths = state.privateMonths || {};
     const mData = pMonths[monthId] || { monthId, billAmounts: {} };
     set({ state: { ...state, privateMonths: { ...pMonths, [monthId]: { ...mData, billAmounts: { ...mData.billAmounts, [billId]: validatedAmount } } } } });
+    if (get().isDemoMode) return;
     if (householdId && userId) {
       await safeDb(
         supabase.from('private_month_amounts').upsert({ household_id: householdId, user_id: userId, month_id: monthId, bill_id: billId, amount: validatedAmount }, { onConflict: 'household_id,user_id,month_id,bill_id' }),
@@ -659,6 +685,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
     const { householdId, userId, state } = get();
     set({ state: { ...state, privateBills: [...(state.privateBills||[]), validBill] } });
+    if (get().isDemoMode) return;
     if (householdId && userId) {
       await safeDb(supabase.from('private_bills').insert({ id: validBill.id, household_id: householdId, user_id: userId, name: validBill.name, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_shared: validBill.isShared, is_loan: validBill.isLoan, total_debt: validBill.totalDebt, start_month: validBill.startMonth }));
     }
@@ -668,6 +695,7 @@ export const useStore = create<StoreState>((set, get) => ({
     if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const { householdId, userId, state } = get();
     set({ state: { ...state, privateBills: (state.privateBills||[]).map(b => b.id === billId ? { ...b, isArchived: true } : b) } });
+    if (get().isDemoMode) return;
     if (householdId && userId) {
       await safeDb(supabase.from('private_bills').update({ is_archived: true }).eq('id', billId).eq('household_id', householdId).eq('user_id', userId));
     }
@@ -684,6 +712,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
     const { householdId, userId, state } = get();
     set({ state: { ...state, privateBills: (state.privateBills||[]).map(b => b.id === validBill.id ? validBill : b) } });
+    if (get().isDemoMode) return;
     if (householdId && userId) {
       await safeDb(supabase.from('private_bills').update({ name: validBill.name, default_amount: validBill.defaultAmount, interval: validBill.interval, custom_months: validBill.customMonths || [], warn_if_zero: validBill.warnIfZero, is_shared: validBill.isShared, is_loan: validBill.isLoan, total_debt: validBill.totalDebt }).eq('id', validBill.id).eq('household_id', householdId).eq('user_id', userId));
     }
@@ -717,6 +746,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
     set({ state: { ...state, privateMonths: { ...(state.privateMonths || {}), [monthId]: { ...currentMonthData, billAmounts: { ...currentMonthData.billAmounts, ...newAmounts } } } } });
 
+    if (get().isDemoMode) return;
     if (householdId && userId) {
       const inserts = Object.entries(newAmounts).map(([billId, amt]) => ({ household_id: householdId, user_id: userId, month_id: monthId, bill_id: billId, amount: amt }));
       if (inserts.length > 0) {
@@ -731,6 +761,7 @@ export const useStore = create<StoreState>((set, get) => ({
     const pMonths = state.privateMonths || {};
     const mData = pMonths[monthId] || { monthId, billAmounts: {} };
     set({ state: { ...state, privateMonths: { ...pMonths, [monthId]: { ...mData, confirmedAnomalies: { ...(mData.confirmedAnomalies||{}), [billId]: true } } } } });
+    if (get().isDemoMode) return;
     if (householdId && userId) {
       await safeDb(supabase.from('private_month_anomalies').upsert({ household_id: householdId, user_id: userId, month_id: monthId, bill_id: billId, is_confirmed: true }, { onConflict: 'household_id,user_id,month_id,bill_id' }));
     }
@@ -745,11 +776,69 @@ export const useStore = create<StoreState>((set, get) => ({
     const newStatus = !mData.isLocked;
     
     set({ state: { ...state, privateMonths: { ...pMonths, [monthId]: { ...mData, isLocked: newStatus } } } });
+    if (get().isDemoMode) return;
     if (householdId && userId) {
       await safeDb(
         supabase.from('private_month_locks').upsert({ household_id: householdId, user_id: userId, month_id: monthId, is_locked: newStatus }, { onConflict: 'household_id,user_id,month_id' }),
         () => set({ state: prevState })
       );
+    }
+  },
+
+  startDemo: () => {
+    const currentState = get().state;
+    if (get().isDemoMode) return;
+    
+    const d = new Date();
+    const currentMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const prevMonth = `${d.getMonth() === 0 ? d.getFullYear() - 1 : d.getFullYear()}-${String(d.getMonth() === 0 ? 12 : d.getMonth()).padStart(2, '0')}`;
+    
+    const mockAccounts: Account[] = [
+      { id: 'demo_person_1', name: 'Johan (Demo)', type: 'person', transferMethod: 'swish' },
+      { id: 'demo_person_2', name: 'Maria (Demo)', type: 'person', transferMethod: 'swish' },
+      { id: 'demo_shared', name: 'Gemensamt Konto (Demo)', type: 'shared', transferMethod: 'transfer' }
+    ];
+
+    const mockBills: BillDefinition[] = [
+      { id: 'demo_bill_1', name: 'Hyra', accountId: 'demo_shared', defaultAmount: 12000, splitType: 'equal', interval: 'all', isArchived: false },
+      { id: 'demo_bill_2', name: 'El', accountId: 'demo_shared', defaultAmount: 850, splitType: 'equal', interval: 'all', isArchived: false },
+      { id: 'demo_bill_3', name: 'Bredband', accountId: 'demo_shared', defaultAmount: 499, splitType: 'equal', interval: 'all', isArchived: false },
+      { id: 'demo_bill_4', name: 'Netflix', accountId: 'demo_person_1', defaultAmount: 159, splitType: 'equal', interval: 'all', isArchived: false },
+    ];
+
+    const mockState: AppState = {
+      ...currentState,
+      accounts: mockAccounts,
+      bills: mockBills,
+      months: {
+        [prevMonth]: {
+          monthId: prevMonth,
+          billAmounts: {
+            demo_bill_1: 12000, demo_bill_2: 920, demo_bill_3: 499, demo_bill_4: 159
+          },
+          handledPayments: {
+            'top_total_lock': true,
+            'transfer_demo_person_1_demo_shared': true,
+            'transfer_demo_person_2_demo_shared': true
+          }
+        },
+        [currentMonth]: {
+          monthId: currentMonth,
+          billAmounts: {
+            demo_bill_1: 12000, demo_bill_2: 850, demo_bill_3: 499, demo_bill_4: 159
+          },
+          handledPayments: {}
+        }
+      }
+    };
+
+    set({ realState: currentState, state: mockState, isDemoMode: true });
+  },
+
+  stopDemo: () => {
+    const real = get().realState;
+    if (real) {
+      set({ state: real, isDemoMode: false, realState: null });
     }
   }
 

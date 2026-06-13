@@ -731,3 +731,18 @@ Tidigare kändes formulär och inställningar stela och otydliga (t.ex. dropdown
 - **Skapa Konto UI-Overhaul:** Inställningarna för att lägga till nya konton/personer (under fliken Konton) byggdes om från rullgardiner till en 3-stegs guide ("1. Typ av konto", "2. Namn", "3. Hur tar kontot emot pengar?"). Layouten använder grid-baserade kort som klickas i, med mjuk och beskrivande text ("En person" vs "Ett gemensamt mål") istället för versaler och tekniska beskrivningar.
 - **Rensning av Lås-vyn:** I inställningarna för "Lås upp månader/konton" togs de duplicerade knapparna för delade konton bort. Vyn visar nu istället en enda övergripande `Total kostnad (Hela månaden) 🔒`-knapp som låser upp hela månaden på ett klick, vilket speglar funktionaliteten i MonthView.
 - **Förenklad Text:** Uttryck som *"Mottar pengar via Swish"* har bytts ut till det mer standardiserade *"Betalningsmetod: Swish"* för ett renare utseende.
+
+## 32. Demo-läge för nya användare
+
+### Vad
+Ett låtsas-läge (mock-state) för helt nya användare (utan räkningar) där appen fylls med realistisk testdata, historik och låsta månader.
+
+### Varför
+För att minska tröskeln för nya användare att förstå appens värde. Genom att utforska färdig data i Gemensam vy och EkonomiTB kan användaren se slutmålet innan de börjar bygga sin egen ekonomi.
+
+### Hur
+- Ett tillfälligt UI-state (isDemoMode, ealState) infördes i src/store.ts via Zustand.
+- Funktionen startDemo() sparar undan den riktiga, tomma datan i minnet och ersätter statet med mock-konton ('Johan', 'Maria') och mock-räkningar.
+- Spärrar lades in i samtliga state-mutationer (t.ex. updateBillAmount) så att if (get().isDemoMode) return; blockerar databasanrop (Supabase) när demo-läget är aktivt. Testdata kan alltså aldrig råka sparas för alltid.
+- En stopDemo() funktion laddar tillbaka originaldatan från minnet.
+- UI för 'Starta Demo' renderas endast i MonthView.tsx när listan på räkningar är helt tom (state.bills.length === 0).

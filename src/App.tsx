@@ -23,6 +23,8 @@ function App() {
   const { user, householdId, loading, isRecoveringPassword, isAdmin } = useAuth();
   const initCloud = useStore(s => s.initCloud);
   const state = useStore(s => s.state);
+  const isDemoMode = useStore(s => s.isDemoMode);
+  const stopDemo = useStore(s => s.stopDemo);
   const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin'>('month');
 
   // Återställ vy när man byter användare
@@ -96,6 +98,18 @@ function App() {
       {needsOnboarding && <Onboarding />}
       {!needsOnboarding && isPaywallBlocked && <PaywallModal />}
       
+      {isDemoMode && (
+        <div style={{ background: '#f59e0b', color: '#000', padding: '1rem', textAlign: 'center', borderRadius: '8px', marginBottom: '1rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <span>🛠️ Du utforskar just nu appen i Demo-läge. Inget du gör här sparas.</span>
+          <button 
+            onClick={stopDemo}
+            style={{ background: '#000', color: '#fff', border: 'none', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            Avsluta Demo
+          </button>
+        </div>
+      )}
+
       <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem', position: 'relative' }}>
         {/* Mobile hamburger button - only visible on mobile */}
         <button

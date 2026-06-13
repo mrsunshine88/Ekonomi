@@ -657,7 +657,7 @@ export default function ManageBills() {
                   }}
                   style={{ flex: 1, marginBottom: 0 }}
                 >
-                  <option value="" disabled>Vanliga räkningar...</option>
+                  <option value="">Vanliga räkningar...</option>
                   <option value="Hyra">🏠 Hyra</option>
                   <option value="Lån">🏦 Lån</option>
                   <option value="Bolån">🏠 Bolån</option>
