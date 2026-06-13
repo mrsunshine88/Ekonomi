@@ -177,7 +177,7 @@ export const useStore = create<StoreState>((set, get) => ({
           reminderDay: settings.reminder_day, 
           showTopTotal: settings.show_top_total,
           showPrivateTopTotal: settings.show_private_top_total
-        } : { showSummary: true, showTopTotal: false, showPrivateTopTotal: false }
+        } : { showSummary: true }
       };
 
       if (monthBillAmounts) {
