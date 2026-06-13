@@ -701,35 +701,7 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
-  updateSalary: async (amount: number) => {
-    if (!navigator.onLine) { toast.error('Du är offline.', { id: 'offline' }); return; }
-    const { householdId, userId, state } = get();
-    if (!householdId || !userId) return;
-    const prevState = get().state;
-    const newSalaries = (state.salaries || []).filter(s => s.userId !== userId);
-    newSalaries.push({ userId, amount });
-    set({ state: { ...state, salaries: newSalaries } });
-    if (get().isDemoMode) return;
-    await safeDb(
-      supabase.from('user_salaries').upsert({ household_id: householdId, user_id: userId, amount }, { onConflict: 'household_id,user_id' }),
-      () => set({ state: prevState })
-    );
-  },
 
-  updateVariableSalary: async (monthId: string, amount: number) => {
-    if (!navigator.onLine) { toast.error('Du är offline.', { id: 'offline' }); return; }
-    const { householdId, userId, state } = get();
-    if (!householdId || !userId) return;
-    const prevState = get().state;
-    const newVarSalaries = (state.variableSalaries || []).filter(s => !(s.userId === userId && s.monthId === monthId));
-    newVarSalaries.push({ userId, monthId, amount });
-    set({ state: { ...state, variableSalaries: newVarSalaries } });
-    if (get().isDemoMode) return;
-    await safeDb(
-      supabase.from('user_variable_salaries').upsert({ household_id: householdId, user_id: userId, month_id: monthId, amount }, { onConflict: 'household_id,user_id,month_id' }),
-      () => set({ state: prevState })
-    );
-  },
 
   toggleSharePrivateEconomy: async (share: boolean) => {
     const { userId, state } = get();

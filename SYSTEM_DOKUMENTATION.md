@@ -796,3 +796,27 @@ När e-postbekräftelse slogs på (och Supabase PKCE-flöde började användas) 
 - **Åtgärdat Databas-schema:** Lade till den saknade `name`-kolumnen (VARCHAR) i `households`-tabellen, vilket eliminerade schema error när användare fyllde i namnet på sitt hushåll.
 - **Åtkomst för alla:** Tog bort `role === 'owner'` spärren på knapparna till inställningsflikarna (`Allmänt` och `Konton`) i `ManageBills.tsx`.
 - **UI-Uppdatering för SaaS:** Live-chatt och Demoläge lades till som punkter i `SubscriptionFeaturesModal.tsx` och `LoginScreen.tsx` för att förtydliga appens värdeerbjudande.
+
+## 34. Avancerad Lånehantering & Nettolön (Enterprise-logik)
+
+### Vad
+Två stora uppdateringar gjordes för att hantera lån och inkomster mer professionellt:
+1. **Lån med automatisk Ränteuträkning:** Istället för att användaren manuellt behöver räkna ut sin ränta varje månad på ett lån, sköter appen nu matten.
+2. **Nettolön & Utbetalningsdag:** Hanteringen av lön förenklades drastiskt. Vi bytte från att spara fast/rörlig lön till att enbart fokusera på Nettolön och vilken dag lönen kommer.
+3. **Alfabetisk sortering:** Alla listor (räkningar och konton) visas nu bokstavsordning för att göra UI:t tydligare när man har många poster.
+
+### Varför
+- För huslån och privatlån varierar räntan månad för månad, men de fasta avgifterna (aviavgift) och amorteringen är ofta känd eller lättläst från fakturan. Att tvinga användaren att skriva in tre separata fält (Ränta, Amortering, Avgift) var för krångligt. Den nya Enterprise-lösningen gör att de fyller i "Totalt" och "Amortering", och appen löser resten.
+- Lönemodellen med fast/rörlig användes aldrig på djupet, det viktiga för budgeten var när pengarna kommer in (`pay_date`) och hur mycket (`amount`) så att appen kan applicera månadens inkomst på rätt räkningar (exempel: lön den 25:e juni är budgeten för juli).
+- Osorterade listor orsakade frustration då användare fick leta efter sina konton i den ordning de skapades.
+
+### Hur
+- **Alfabetisk Sortering:** `.sort((a,b) => a.name.localeCompare(b.name, 'sv'))` lades till på renderingen av `accounts`, `bills` och `privateBills` i filerna `ManageBills.tsx`, `MonthView.tsx` och `PrivateView.tsx`.
+- **Nettolön Database & Store:** `user_monthly_salaries` uppdaterades med `amount` (Nettolön) och `pay_date` (utbetalningsdag). Fälten för rörlig/fast togs bort. `store.ts` (`saveMonthlySalary`, `loadMonthlySalaries`) anpassades till den nya datamodellen.
+- **Enterprise Låne-Logik:** 
+  1. Inställningarna (`ManageBills.tsx`) fick ett fält för "Fast avgift / månad (kr)" som mappas mot nya db-kolumnen `fixed_fee` i `bills` och `private_bills`.
+  2. Inmatningen i Månadsvy/PrivatVy fick en diskret "Amortering"-ruta inuti input-fältet för lån.
+  3. I `store.ts` (`updateBillAmount` / `updatePrivateBillAmount`) läggs matematiken på: `Ränta = Totalt Inmatat Belopp - Amortering - Fast Avgift`. Är räntan negativ sätts den till 0.
+  4. Om "Amortering" lämnas tomt (t.ex. vid CSN där det dras automatiskt utan ränta), faller koden tillbaka på att `Amortering = Totalt Inmatat Belopp`.
+  5. Skulden (progress-baren) i `Statistics.tsx` räknar numera ned uteslutande baserat på `billAmortization` från databasen istället för totalbeloppet, så att räntan inte felaktigt krymper lånet.
+- **Databas-Migrering:** Ett SQL-skript (`add_loan_columns.sql`) skapades som lade till kolumnerna `fixed_fee` på lån-tabellerna, och `amortization`, `interest`, `fee` på belopps-tabellerna (`month_bill_amounts` / `private_month_amounts`).
