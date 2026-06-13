@@ -106,7 +106,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               console.error("Failed to fetch admin status", err);
             }
           } else {
-            if (mounted) setIsAdmin(false);
+            if (mounted) {
+              setIsAdmin(false);
+              setHouseholdId(null);
+              setRole(null);
+              setTosAccepted(false);
+            }
           }
         }
       } catch (err) {
@@ -149,6 +154,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setHouseholdId(null);
           setIsAdmin(false);
+          setRole(null);
+          setTosAccepted(false);
         }
       } catch (err) {
         console.error("Unexpected error in onAuthStateChange:", err);
