@@ -34,7 +34,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function Statistics() {
   const state = useStore(s => s.state);
   const loadYear = useStore(s => s.loadYear);
-  const { user } = useAuth();
+  const { user: realUser } = useAuth();
+  const isDemoMode = useStore(s => s.isDemoMode);
+  const user = isDemoMode ? { id: 'demo_user_1', email: 'demo@smartekonomi.se' } : realUser;
+  
   const [viewMode, setViewMode] = useState<'shared' | 'private' | 'inkomst_utgift'>('shared');
   const [loadingOlder, setLoadingOlder] = useState(false);
 

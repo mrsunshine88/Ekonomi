@@ -10,7 +10,7 @@ interface Props {
 export default function PrivateView({ currentMonth }: Props) {
   const { user: realUser } = useAuth();
   const isDemoMode = useStore(s => s.isDemoMode);
-  const user = isDemoMode && !realUser ? { id: 'demo_user_1', email: 'demo@smartekonomi.se' } : realUser;
+  const user = isDemoMode ? { id: 'demo_user_1', email: 'demo@smartekonomi.se' } : realUser;
 
   const state = useStore(s => s.state);
   const updatePrivateBillAmount = useStore(s => s.updatePrivateBillAmount);
