@@ -14,7 +14,13 @@ interface AuthState {
   isRecoveringPassword: boolean;
   setIsRecoveringPassword: (val: boolean) => void;
   isAdmin: boolean;
+  isNewlyConfirmed: boolean;
+  setIsNewlyConfirmed: (val: boolean) => void;
 }
+
+// Fånga hash-fragmentet innan Supabase Auth rensar det
+const initialHashStr = typeof window !== 'undefined' ? window.location.hash + window.location.search : '';
+const initiallyConfirmed = initialHashStr.includes('type=signup');
 
 const AuthContext = createContext<AuthState>({
   user: null,
@@ -27,7 +33,9 @@ const AuthContext = createContext<AuthState>({
   acceptTos: async () => {},
   isRecoveringPassword: false,
   setIsRecoveringPassword: () => {},
-  isAdmin: false
+  isAdmin: false,
+  isNewlyConfirmed: false,
+  setIsNewlyConfirmed: () => {}
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -42,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isNewlyConfirmed, setIsNewlyConfirmed] = useState(initiallyConfirmed);
 
   const acceptTos = async () => {
     if (!user) return;
@@ -174,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, householdId, role, tosAccepted, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) }, acceptTos, isRecoveringPassword, setIsRecoveringPassword, isAdmin }}>
+    <AuthContext.Provider value={{ user, session, householdId, role, tosAccepted, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) }, acceptTos, isRecoveringPassword, setIsRecoveringPassword, isAdmin, isNewlyConfirmed, setIsNewlyConfirmed }}>
       {children}
     </AuthContext.Provider>
   );

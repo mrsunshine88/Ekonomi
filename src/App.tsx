@@ -18,9 +18,10 @@ import TermsModal from './components/TermsModal';
 import Footer from './components/Footer';
 import UpdatePassword from './components/Auth/UpdatePassword';
 import ChatBubble from './components/ChatBubble';
+import ConfirmedModal from './components/Auth/ConfirmedModal';
 
 function App() {
-  const { user, householdId, loading, isRecoveringPassword, isAdmin, tosAccepted } = useAuth();
+  const { user, householdId, loading, isRecoveringPassword, isAdmin, tosAccepted, isNewlyConfirmed, setIsNewlyConfirmed } = useAuth();
   const initCloud = useStore(s => s.initCloud);
   const state = useStore(s => s.state);
   const isDemoMode = useStore(s => s.isDemoMode);
@@ -137,6 +138,8 @@ function App() {
       )}
 
       <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem', position: 'relative' }}>
+        {isNewlyConfirmed && <ConfirmedModal onClose={() => setIsNewlyConfirmed(false)} />}
+        
         {/* Mobile hamburger button - only visible on mobile */}
         <button
           className="hamburger-btn"
