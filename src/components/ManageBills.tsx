@@ -719,6 +719,32 @@ export default function ManageBills() {
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                       {newBillAutoTransfer === 'all' && '✅ Ingen behöver föra över – allt sköts automatiskt.'}
                       {newBillAutoTransfer !== 'all' && `✅ Bara ${state.accounts.find(a => a.id === newBillAutoTransfer)?.name || '?'} slipper föra över sin andel – de andra måste fortfarande göra det manuellt.`}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+
+
+            <input 
+              type="number" 
+              placeholder="Standardbelopp (Frivilligt)" 
+              value={newBillDefault} 
+              onChange={e => setNewBillDefault(e.target.value)} 
+            />
+            
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button onClick={handleSaveBill} style={{ flex: 1, background: 'var(--success-color)', color: '#fff', border: 'none', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                {editingBillId ? 'Spara ändringar' : '+ Lägg till räkning'}
+              </button>
+              {editingBillId && (
+                <button onClick={handleCancelEdit} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                  Avbryt
+                </button>
+              )}
+            </div>
+          </div>
           <h3 className="card-title">Gemensamma Räkningar (Månadsvyn)</h3>
           <div className="bill-list" style={{ marginBottom: '2rem' }}>
             {state.bills.filter(b => !b.isArchived).map(bill => {
@@ -812,33 +838,6 @@ export default function ManageBills() {
               </div>
             </>
           )}
-
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-
-
-            <input 
-              type="number" 
-              placeholder="Standardbelopp (Frivilligt)" 
-              value={newBillDefault} 
-              onChange={e => setNewBillDefault(e.target.value)} 
-            />
-            
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button onClick={handleSaveBill} style={{ flex: 1, background: 'var(--success-color)', color: '#fff', border: 'none', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-                {editingBillId ? 'Spara ändringar' : '+ Lägg till räkning'}
-              </button>
-              {editingBillId && (
-                <button onClick={handleCancelEdit} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-                  Avbryt
-                </button>
-              )}
-            </div>
-          </div>
         </div>
       )}
 
