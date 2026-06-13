@@ -40,7 +40,7 @@ export default function ConfirmedModal({ onClose }: { onClose: () => void }) {
             boxShadow: '0 4px 15px rgba(244, 63, 94, 0.3)'
           }}
         >
-          Ta mig till appen! 🚀
+          Nästa 🚀
         </button>
       </div>
     </div>

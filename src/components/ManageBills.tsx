@@ -187,8 +187,7 @@ export default function ManageBills() {
           >
             🔓 Lås upp
           </button>
-          {role === 'owner' && (
-            <>
+          <>
               <button 
                 onClick={() => setActiveTab('accounts')}
                 style={{ background: activeTab === 'accounts' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'accounts' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'accounts' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'accounts' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
@@ -202,7 +201,6 @@ export default function ManageBills() {
                 ⚙️ Allmänt
               </button>
             </>
-          )}
         </div>
         <div className="settings-tabs-mobile" style={{ marginBottom: '1.5rem' }}>
           <select 
@@ -212,8 +210,8 @@ export default function ManageBills() {
           >
             <option value="bills">📋 Hantera Räkningar</option>
             <option value="locks">🔒 Lås upp månader</option>
-            {role === 'owner' && <option value="accounts">🏦 Hantera Konton</option>}
-            {role === 'owner' && <option value="general">⚙️ Allmänna inställningar</option>}
+            <option value="accounts">🏦 Hantera Konton</option>
+            <option value="general">⚙️ Allmänna inställningar</option>
           </select>
         </div>
       </div>
@@ -553,8 +551,7 @@ export default function ManageBills() {
                     <div className="bill-meta">{account?.name} • {splitText} • {intervalText}</div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    {role === 'owner' && (
-                      <>
+                    <>
                         <button 
                           onClick={() => handleEditBill(bill)}
                           style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
@@ -567,8 +564,7 @@ export default function ManageBills() {
                         >
                           Ta bort
                         </button>
-                      </>
-                    )}
+                    </>
                   </div>
                 </div>
               );

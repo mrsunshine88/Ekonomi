@@ -89,7 +89,16 @@ function App() {
     return <LoginScreen />;
   }
 
-  // 1. HARD GATE: TOS & Privacy Policy
+  // 1. HARD GATE: Grattis-rutan vid ny bekräftelse
+  if (isNewlyConfirmed) {
+    return (
+      <div className="container" style={{ minHeight: '100vh' }}>
+        <ConfirmedModal onClose={() => setIsNewlyConfirmed(false)} />
+      </div>
+    );
+  }
+
+  // 2. HARD GATE: TOS & Privacy Policy
   if (!tosAccepted) {
     return (
       <div className="container" style={{ minHeight: '100vh' }}>
@@ -138,8 +147,6 @@ function App() {
       )}
 
       <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem', position: 'relative' }}>
-        {isNewlyConfirmed && <ConfirmedModal onClose={() => setIsNewlyConfirmed(false)} />}
-        
         {/* Mobile hamburger button - only visible on mobile */}
         <button
           className="hamburger-btn"
