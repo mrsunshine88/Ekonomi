@@ -88,15 +88,41 @@ function App() {
     return <LoginScreen />;
   }
 
+  // 1. HARD GATE: TOS & Privacy Policy
+  if (!tosAccepted) {
+    return (
+      <div className="container" style={{ minHeight: '100vh' }}>
+        <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
+        <TermsModal />
+      </div>
+    );
+  }
+
+  // 2. HARD GATE: Onboarding (Create Household)
   const needsOnboarding = state.accounts.length === 0;
+  if (needsOnboarding && !isDemoMode) {
+    return (
+      <div className="container" style={{ minHeight: '100vh' }}>
+        <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
+        <Onboarding />
+      </div>
+    );
+  }
+
+  // 3. HARD GATE: Paywall
   const isPaywallBlocked = state.paywallActive && state.stripeStatus !== 'vip' && state.stripeStatus !== 'active' && !isAdmin;
+  if (isPaywallBlocked && !isDemoMode) {
+    return (
+      <div className="container" style={{ minHeight: '100vh' }}>
+        <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
+        <PaywallModal />
+      </div>
+    );
+  }
 
   return (
     <div className="container">
       <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
-      <TermsModal />
-      {tosAccepted && needsOnboarding && <Onboarding />}
-      {tosAccepted && !needsOnboarding && isPaywallBlocked && <PaywallModal />}
       
       {isDemoMode && (
         <div style={{ background: '#f59e0b', color: '#000', padding: '1rem', textAlign: 'center', borderRadius: '8px', marginBottom: '1rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
