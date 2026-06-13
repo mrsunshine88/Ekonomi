@@ -1100,3 +1100,35 @@ För att ge administratören insikt i hur populärt demoläget är bland besöka
 | `add_demo_stats.sql` | NY — Skapar tabellen `demo_visits` och uppdaterar `get_admin_stats`. |
 | `src/store.ts` | ÄNDRAD — Spårar "startDemo" händelser mot databasen. |
 | `src/components/AdminDashboard.tsx` | ÄNDRAD — Implementerar visning av demostatistik inuti befintliga trafikkort. |
+
+---
+
+## 27. Arkitektur 10/10: Enterprise-filosofi & "The Engine"
+
+För att säkra upp systemet inför massiv skalning ("10/10 Michelin-stjärna nivå") och undvika att teknisk skuld (emergent complexity) smyger sig in via överlappande features, bygger arkitekturen på följande stöttepelare och defensiva mönster:
+
+### 27.1 Single point of conceptual gravity (Renodlad Engine)
+Hela appens affärslogik (den komplexa "Splitwise-matematiken") har separerats från UI och tillståndshantering. 
+- **Fil:** `src/engine/calculator.ts`
+- **Hur:** `calculateMonth()` är en 100% isolerad, framework-agnostisk funktion. Den tar in rena datastrukturer (`AppState`, `monthId`) och returnerar ett absolut utfall (`CalculationResult`). 
+- **Varför:** Genom att ha en "lagbok" frikopplad från React och Zustand möjliggörs framtida batch-jobb, isolerade enhetstester (Vitest) och en arkitektur som kan exekveras exakt likadant i en backend (Node/Vercel) som i en frontend-webbläsare.
+
+### 27.2 Versionerad affärslogik via "Data Snapshots"
+Istället för att bygga en överdrivet komplex versionsmotor för matematiken löser systemet historisk reproducerbarhet via *produktflöden*.
+- **Hur:** När ett hushåll låser en månad (`is_handled = true`), fryser appen datan i databasen. Även om algoritmen i `calculator.ts` uppdateras radikalt ett år senare, är gamla månader låsta i sitt historiska tillstånd. 
+- **Varför:** Att skydda verkligheten med datalås (immutability) minskar subtila buggar och är oändligt mycket mer intuitivt för användaren än historiska "replays".
+
+### 27.3 Defensiv design (Trust nothing, verify everything)
+Ett dubbellagrat "immunförsvar" för dataintegritet.
+- **Klientnivå:** Zod agerar gatekeeper i formulären och vägrar skicka iväg ogiltiga format.
+- **Databasnivå:** PostgreSQL `CHECK Constraints` (som att skulder inte kan bli negativa, belopp $\ge$ 0) är "The Last Line of Defense". Om klienten hackas eller Zod falerar tvärvägrar databasen att korrumpera informationen.
+
+### 27.4 Realtids Anomalidetektion (Finansiellt Immunförsvar)
+En inbyggd skyddsmekanism mot handhavandefel ("fat-fingers").
+- **Hur:** Applikationen analyserar ständigt historiska extremvärden (min/max över tre månader). Om en inmatning avviker med > 50% blockeras sparningen asynkront och användaren tvingas verifiera summan med "Är du säker?".
+- **Varför:** Att stoppa fel *innan* de skrivs till databasen är avsevärt mycket billigare, säkrare och ger ett extremt starkt förtroende från användaren (SaaS-kritiskt).
+
+### 27.5 Kontroll över Metrics (Native SQL)
+Istället för att slänga in tredjepartsverktyg som Amplitude eller Mixpanel för besöksstatistik:
+- **Hur:** Appen loggar anonyma page views och demo-starter direkt i Supabase, och sammanställer detta via dedikerade RPC-funktioner (`get_admin_stats`) direkt till `AdminDashboard.tsx`.
+- **Varför:** Det säkerställer fullständig kontroll, eliminerar GDPR-problematik/cookies-banners och optimerar för maximal app-hastighet. Lösningen signalerar att vi äger och förstår vår egen data fullt ut.
