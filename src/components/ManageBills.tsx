@@ -20,6 +20,7 @@ export default function ManageBills() {
   const onUpdateSettings = useStore(s => s.updateSettings);
   const onUnlockPrivateMonth = useStore(s => s.togglePrivateLock);
   const saveMonthlySalary = useStore(s => s.saveMonthlySalary);
+  const removeMonthlySalary = useStore(s => s.removeMonthlySalary);
   const [activeTab, setActiveTab] = useState<'bills' | 'accounts' | 'locks' | 'general' | 'salary'>('bills');
   
   // New/Edit Bill State
@@ -282,9 +283,35 @@ export default function ManageBills() {
                      const nextMonthDate = new Date(d.getFullYear(), d.getMonth() + 1, 1);
                      const nextMonthStr = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
                      return (
-                       <div key={s.payDate} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                         <span>{s.payDate} (Används för {nextMonthStr})</span>
-                         <span style={{ color: '#10b981' }}>{s.amount.toLocaleString('sv-SE')} kr</span>
+                       <div key={s.payDate} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                         <div>
+                           <div style={{ fontWeight: 'bold' }}>{s.payDate}</div>
+                           <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Används för {nextMonthStr}</div>
+                         </div>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                           <span style={{ color: '#10b981', fontWeight: 'bold' }}>{s.amount.toLocaleString('sv-SE')} kr</span>
+                           <button 
+                             onClick={() => {
+                               setPayDateInput(s.payDate);
+                               setMonthlySalaryAmount(s.amount.toString());
+                               window.scrollTo({ top: 0, behavior: 'smooth' });
+                             }}
+                             style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer' }}
+                           >
+                             Ändra
+                           </button>
+                           <button 
+                             onClick={async () => {
+                               if (confirm('Är du säker på att du vill ta bort lönen?')) {
+                                 await removeMonthlySalary(s.payDate);
+                                 toast.success('Lön borttagen');
+                               }
+                             }}
+                             style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer' }}
+                           >
+                             Ta bort
+                           </button>
+                         </div>
                        </div>
                      );
                   })}

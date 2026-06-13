@@ -727,6 +727,25 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
+  removeMonthlySalary: async (payDate: string) => {
+    if (!navigator.onLine) { toast.error('Du är offline.', { id: 'offline' }); return; }
+    const { householdId, userId, state } = get();
+    if (!householdId || !userId) return;
+    const prevState = state;
+    
+    // Update local state
+    const newSalaries = (state.monthlySalaries || []).filter(s => !(s.userId === userId && s.payDate === payDate));
+    set({ state: { ...state, monthlySalaries: newSalaries } });
+    
+    if (get().isDemoMode) return;
+    
+    // Update DB
+    await safeDb(
+      supabase.from('user_monthly_salaries').delete().eq('household_id', householdId).eq('user_id', userId).eq('pay_date', payDate),
+      () => set({ state: prevState })
+    );
+  },
+
   updatePrivateBillAmount: async (monthId, billId, amount, inputAmortization) => {
     if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const parseRes = safeParseAmount(amount);

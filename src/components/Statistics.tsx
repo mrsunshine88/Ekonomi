@@ -565,26 +565,161 @@ function InkomstUtgiftView({ state, user, sortedMonths }: { state: any, user: an
   const selectedAccount = personAccounts.find((a: any) => a.id === selectedAccountId);
   if (!selectedAccount) return null;
 
+  // Bygg upp tidsdata
+  const timeData = [...sortedMonths].map(monthId => {
+    let totalIncome = 0;
+    if (state.monthlySalaries) {
+      const [mYear, mMonth] = monthId.split('-').map(Number);
+      let payYear = mYear;
+      let payMonth = mMonth - 1;
+      if (payMonth === 0) {
+        payMonth = 12;
+        payYear -= 1;
+      }
+      const payMonthStr = `${payYear}-${String(payMonth).padStart(2, '0')}`;
+      
+      state.monthlySalaries.forEach((s: any) => {
+        if (s.userId === user.id && s.payDate.startsWith(payMonthStr)) {
+          totalIncome += s.amount;
+        }
+      });
+    }
+
+    const sharedRes = calculateMonth(state, monthId);
+    
+    let incomingSwish = 0;
+    let outgoingSwish = 0;
+    sharedRes.swishes.forEach((t: any) => {
+      if (t.toId === selectedAccountId) incomingSwish += t.amount;
+      if (t.fromId === selectedAccountId) outgoingSwish += t.amount;
+    });
+
+    totalIncome += incomingSwish;
+
+    let totalExpense = 0;
+
+    if (state.privateMonths?.[monthId]) {
+      const pm = state.privateMonths[monthId];
+      const activePrivate = (state.privateBills || []).filter((b: any) => b.userId === user.id && !b.isArchived);
+      activePrivate.forEach((b: any) => {
+        const amt = pm.billAmounts?.[b.id] !== undefined ? pm.billAmounts[b.id] : b.defaultAmount;
+        totalExpense += amt;
+      });
+    }
+
+    const m = state.months[monthId];
+    if (m) {
+      const activeShared = state.bills.filter((b: any) => !b.isArchived);
+      activeShared.forEach((b: any) => {
+        if (b.accountId === selectedAccountId) {
+          const amt = m.billAmounts?.[b.id] !== undefined ? m.billAmounts[b.id] : b.defaultAmount;
+          totalExpense += amt;
+        }
+      });
+    }
+
+    if (sharedRes.transfersToShared[selectedAccountId]) {
+      Object.values(sharedRes.transfersToShared[selectedAccountId]).forEach((amt: any) => {
+        if (amt > 0) totalExpense += amt;
+      });
+    }
+
+    totalExpense += outgoingSwish;
+
+    const leftover = totalIncome - totalExpense;
+
+    const [year, month] = monthId.split('-');
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "Maj", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"];
+    const name = `${monthNames[parseInt(month, 10) - 1]} '${year.substring(2)}`;
+
+    return { monthId, name, Inkomst: totalIncome, Utgift: totalExpense, Kvar: leftover };
+  });
+
+  const avgIncome = timeData.length > 0 ? timeData.reduce((sum, d) => sum + d.Inkomst, 0) / timeData.length : 0;
+  const avgUtgift = timeData.length > 0 ? timeData.reduce((sum, d) => sum + d.Utgift, 0) / timeData.length : 0;
+  const avgKvar = timeData.length > 0 ? timeData.reduce((sum, d) => sum + d.Kvar, 0) / timeData.length : 0;
+
   return (
     <div style={{ animation: 'fadeIn 0.3s ease' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.5rem', marginBottom: '2rem' }}>
         <h3 style={{ margin: '0 0 1rem 0', color: 'var(--text-primary)' }}>💡 Hur fungerar uträkningen?</h3>
         <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0 }}>
-          Den här kalkylen räknar fram exakt hur mycket pengar du har kvar att leva på varje månad. Den tittar på din <strong style={{color: 'var(--text-primary)'}}>fasta och rörliga lön</strong> plus de pengar du <strong style={{color: 'var(--text-primary)'}}>får via Swish</strong> från din partner, vilket utgör din totala inkomst. Från detta dras dina <strong style={{color: 'var(--text-primary)'}}>privata räkningar</strong>, de <strong style={{color: 'var(--text-primary)'}}>gemensamma räkningarna som dras från ditt konto</strong> (eftersom du måste betala dessa till företagen), de pengar du ska <strong style={{color: 'var(--text-primary)'}}>föra över till huskontot</strong>, samt om du behöver <strong style={{color: 'var(--text-primary)'}}>swisha pengar</strong> till din partner. Resten är dina fickpengar!
+          Den här kalkylen räknar fram exakt hur mycket pengar du har kvar att leva på varje månad. Den tittar på din <strong style={{color: 'var(--text-primary)'}}>månadslön</strong> plus de pengar du <strong style={{color: 'var(--text-primary)'}}>får via Swish</strong>, vilket utgör din totala inkomst. Från detta dras dina <strong style={{color: 'var(--text-primary)'}}>privata räkningar</strong>, de <strong style={{color: 'var(--text-primary)'}}>gemensamma räkningarna som dras från ditt konto</strong>, överföringar till huskontot, samt Swish ut. Resten är dina fickpengar!
         </p>
       </div>
 
       <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-        <label style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>Visa kalkyl för:</label>
+        <div>
+          <label style={{ color: 'var(--text-primary)', fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Vilket är ditt personkonto?</label>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Välj kontot som du står för i hushållet, så räknar vi ut din personliga andel av de gemensamma utgifterna.</div>
+        </div>
         <select 
           value={selectedAccountId} 
           onChange={e => setSelectedAccountId(e.target.value)}
-          style={{ padding: '0.6rem', borderRadius: '8px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid var(--accent-color)', fontSize: '1rem', minWidth: '200px', cursor: 'pointer' }}
+          style={{ padding: '0.6rem', borderRadius: '8px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid var(--accent-color)', fontSize: '1rem', minWidth: '200px', cursor: 'pointer', marginLeft: 'auto' }}
         >
           {personAccounts.map((a: any) => (
             <option key={a.id} value={a.id}>{a.name}</option>
           ))}
         </select>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+        <div className="card stat-card" style={{ background: 'var(--surface-color)', border: '1px solid var(--border-color)' }}>
+          <div className="icon" style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10b981' }}>💵</div>
+          <div className="info">
+            <h3>Snittinkomst</h3>
+            <div className="value" style={{ color: '#10b981' }}>{Math.round(avgIncome).toLocaleString('sv-SE')} kr</div>
+          </div>
+        </div>
+        <div className="card stat-card" style={{ background: 'var(--surface-color)', border: '1px solid var(--border-color)' }}>
+          <div className="icon" style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e' }}>📉</div>
+          <div className="info">
+            <h3>Snittutgift</h3>
+            <div className="value" style={{ color: '#f43f5e' }}>{Math.round(avgUtgift).toLocaleString('sv-SE')} kr</div>
+          </div>
+        </div>
+        <div className="card stat-card" style={{ background: 'var(--surface-color)', border: '1px solid var(--border-color)' }}>
+          <div className="icon" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6' }}>💰</div>
+          <div className="info">
+            <h3>Kvar i snitt</h3>
+            <div className="value" style={{ color: '#3b82f6' }}>{Math.round(avgKvar).toLocaleString('sv-SE')} kr</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: '2rem' }}>
+        <h3 className="card-title">Inkomst vs Utgift över tid</h3>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>En visuell överblick över din personliga ekonomi.</p>
+        <div style={{ height: 300, width: '100%', marginTop: '1rem' }}>
+          <ResponsiveContainer>
+            <BarChart data={timeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+              <Tooltip content={({ active, payload, label }) => {
+                if (active && payload && payload.length) {
+                  return (
+                    <div style={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }}>
+                      <p style={{ margin: '0 0 0.5rem 0', fontWeight: 'bold', color: 'var(--text-primary)' }}>{label}</p>
+                      {payload.map((p: any) => (
+                        <div key={p.dataKey} style={{ color: p.color || p.fill, margin: '0.25rem 0', display: 'flex', justifyContent: 'space-between', gap: '1.5rem', fontWeight: 500 }}>
+                          <span>{p.name}:</span>
+                          <span>{p.value > 0 ? '+' : ''}{p.value.toLocaleString('sv-SE')} kr</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
+                return null;
+              }} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+              <Legend iconType="circle" wrapperStyle={{ paddingTop: '1rem' }} />
+              <Bar dataKey="Inkomst" fill="#10b981" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Utgift" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Kvar" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       <div style={{ overflowX: 'auto', background: 'rgba(0,0,0,0.2)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
@@ -598,83 +733,15 @@ function InkomstUtgiftView({ state, user, sortedMonths }: { state: any, user: an
             </tr>
           </thead>
           <tbody>
-            {[...sortedMonths].reverse().map(monthId => {
-              // 1. Inkomst från Månadslön (Lön föregående månad används för denna månad)
-              let totalIncome = 0;
-              if (state.monthlySalaries) {
-                const [mYear, mMonth] = monthId.split('-').map(Number);
-                let payYear = mYear;
-                let payMonth = mMonth - 1;
-                if (payMonth === 0) {
-                  payMonth = 12;
-                  payYear -= 1;
-                }
-                const payMonthStr = `${payYear}-${String(payMonth).padStart(2, '0')}`;
-                
-                state.monthlySalaries.forEach((s: any) => {
-                  if (s.userId === user.id && s.payDate.startsWith(payMonthStr)) {
-                    totalIncome += s.amount;
-                  }
-                });
-              }
-
-              // 2. Kalkylera gemensamt
-              const sharedRes = calculateMonth(state, monthId);
-              
-              let incomingSwish = 0;
-              let outgoingSwish = 0;
-              sharedRes.swishes.forEach((t: any) => {
-                if (t.toId === selectedAccountId) incomingSwish += t.amount;
-                if (t.fromId === selectedAccountId) outgoingSwish += t.amount;
-              });
-
-              totalIncome += incomingSwish;
-
-              // 3. Utgifter
-              let totalExpense = 0;
-
-              // Privata räkningar
-              if (state.privateMonths?.[monthId]) {
-                const pm = state.privateMonths[monthId];
-                const activePrivate = (state.privateBills || []).filter((b: any) => b.userId === user.id && !b.isArchived);
-                activePrivate.forEach((b: any) => {
-                  const amt = pm.billAmounts[b.id] !== undefined ? pm.billAmounts[b.id] : b.defaultAmount;
-                  totalExpense += amt;
-                });
-              }
-
-              // Gemensamma räkningar som dras från detta konto
-              const m = state.months[monthId];
-              if (m) {
-                const activeShared = state.bills.filter((b: any) => !b.isArchived);
-                activeShared.forEach((b: any) => {
-                  if (b.accountId === selectedAccountId) {
-                    const amt = m.billAmounts[b.id] !== undefined ? m.billAmounts[b.id] : b.defaultAmount;
-                    totalExpense += amt;
-                  }
-                });
-              }
-
-              // Överföringar till gemensamma konton
-              if (sharedRes.transfersToShared[selectedAccountId]) {
-                Object.values(sharedRes.transfersToShared[selectedAccountId]).forEach((amt: any) => {
-                  if (amt > 0) totalExpense += amt;
-                });
-              }
-
-              // Swish ut
-              totalExpense += outgoingSwish;
-
-              const leftover = totalIncome - totalExpense;
-              const isPositive = leftover >= 0;
-
+            {[...timeData].reverse().map(d => {
+              const isPositive = d.Kvar >= 0;
               return (
-                <tr key={monthId} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                  <td style={{ padding: '1rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>{monthId}</td>
-                  <td style={{ padding: '1rem', color: '#10b981' }}>{Math.round(totalIncome).toLocaleString('sv-SE')} kr</td>
-                  <td style={{ padding: '1rem', color: '#f43f5e' }}>{Math.round(totalExpense).toLocaleString('sv-SE')} kr</td>
+                <tr key={d.monthId} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                  <td style={{ padding: '1rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>{d.monthId}</td>
+                  <td style={{ padding: '1rem', color: '#10b981' }}>{Math.round(d.Inkomst).toLocaleString('sv-SE')} kr</td>
+                  <td style={{ padding: '1rem', color: '#f43f5e' }}>{Math.round(d.Utgift).toLocaleString('sv-SE')} kr</td>
                   <td style={{ padding: '1rem', fontWeight: 'bold', color: isPositive ? '#10b981' : '#f43f5e', fontSize: '1.1rem' }}>
-                    {isPositive ? '+' : ''}{Math.round(leftover).toLocaleString('sv-SE')} kr
+                    {isPositive ? '+' : ''}{Math.round(d.Kvar).toLocaleString('sv-SE')} kr
                   </td>
                 </tr>
               );
