@@ -928,10 +928,12 @@ export const useStore = create<StoreState>((set, get) => ({
     const now = new Date();
     const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const prevPrevDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    const prevPrevPrevDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
     
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
     const prevPrevMonth = `${prevPrevDate.getFullYear()}-${String(prevPrevDate.getMonth() + 1).padStart(2, '0')}`;
+    const prevPrevPrevMonth = `${prevPrevPrevDate.getFullYear()}-${String(prevPrevPrevDate.getMonth() + 1).padStart(2, '0')}`;
     
     const mockAccounts: Account[] = [
       { id: 'demo_person_1', name: 'Johan (Demo)', type: 'person', transferMethod: 'swish' },
@@ -1019,6 +1021,7 @@ export const useStore = create<StoreState>((set, get) => ({
         [currentMonth]: { monthId: currentMonth, billAmounts: { demo_priv_1: 119, demo_priv_2: 399, demo_priv_3: 1500, demo_priv_4: 3000 }, handledPayments: {}, isLocked: false }
       },
       monthlySalaries: [
+        { userId: 'demo_user_1', payDate: `${prevPrevPrevMonth}-25`, amount: 28500 },
         { userId: 'demo_user_1', payDate: `${prevPrevMonth}-25`, amount: 30770 },
         { userId: 'demo_user_1', payDate: `${prevMonth}-25`, amount: 28500 },
         { userId: 'demo_user_1', payDate: `${currentMonth}-25`, amount: 28500 }

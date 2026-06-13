@@ -163,9 +163,9 @@ function App() {
             <div className="mobile-menu-dropdown">
               <button onClick={() => navigateTo('month')} className={`mobile-menu-item ${currentView === 'month' ? 'active' : ''}`}>📅 Gemensam</button>
               <button onClick={() => navigateTo('stats')} className={`mobile-menu-item ${currentView === 'stats' ? 'active' : ''}`}>📊 EkonomiTB</button>
+              <button onClick={() => navigateTo('privat')} className={`mobile-menu-item ${currentView === 'privat' ? 'active' : ''}`}>🔒 Privat</button>
               {(!isDemoMode || user) && (
                 <>
-                  <button onClick={() => navigateTo('privat')} className={`mobile-menu-item ${currentView === 'privat' ? 'active' : ''}`}>🔒 Privat</button>
                   <button onClick={() => navigateTo('mypages')} className={`mobile-menu-item ${currentView === 'mypages' ? 'active' : ''}`}>👤 Mina sidor</button>
                   <button onClick={() => navigateTo('manage')} className={`mobile-menu-item ${currentView === 'manage' ? 'active' : ''}`}>⚙️ Inställningar</button>
                   {isAdmin && (
@@ -201,14 +201,14 @@ function App() {
           >
             📊 EkonomiTB
           </button>
+          <button 
+            onClick={() => navigateTo('privat')} 
+            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'privat' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'privat' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'privat' ? 'bold' : 'normal', transition: 'all 0.2s' }}
+          >
+            🔒 Privat
+          </button>
           {(!isDemoMode || user) && (
             <>
-              <button 
-                onClick={() => navigateTo('privat')} 
-                style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'privat' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'privat' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'privat' ? 'bold' : 'normal', transition: 'all 0.2s' }}
-              >
-                🔒 Privat
-              </button>
               <button 
                 onClick={() => navigateTo('mypages')} 
                 style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'mypages' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'mypages' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'mypages' ? 'bold' : 'normal', transition: 'all 0.2s' }}
