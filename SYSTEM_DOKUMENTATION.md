@@ -1076,3 +1076,27 @@ Systemadministratören ville ha inbyggd, integritetsvänlig (inga cookies-banner
 | `update_visitor_stats.sql` | NY — Uppdaterar `get_admin_stats` att inkludera historisk trafik. |
 | `src/App.tsx` | ÄNDRAD — Lägger till logik för anonym tracking (`localStorage` / `sessionStorage`). |
 | `src/components/AdminDashboard.tsx` | ÄNDRAD — Ny UI/UX-design för statistik i rutnät, uppdaterade TypeScript-gränssnitt. |
+
+---
+
+## 26. Demostatistik i Admin-panelen
+
+### Vad:
+Funktionalitet för att logga och visa besöksstatistik specifikt för "Demoläget". Systemet spårar hur många besökare som klickar sig in på "Testkör utan konto" och visar denna statistik i Admin-panelen, med samma tidsintervaller som den allmänna besöksstatistiken (Idag, Igår, Denna Veckan, Denna Månaden).
+
+### Hur:
+- **Databas & Säkerhet:** Skapade en ny tabell `demo_visits` som loggar `session_id` och `visited_at`. Tabellen använder RLS (Row Level Security) som tillåter anonyma inlägg (`INSERT`) men begränsar läsning (`SELECT`) till administratörer.
+- **SQL-funktion:** Uppdaterade funktionen `get_admin_stats()` för att räkna antalet unika sessions-ID:n och totala sidvisningar för demoläget under de angivna tidsperioderna, i tillägg till den existerande statistiken.
+- **Frontend (Spårning):** I `src/store.ts` utökades funktionen `startDemo()` till att skicka ett anrop (insert) till tabellen `demo_visits` med besökarens unika `visitor_session_id` från `localStorage` varje gång demoläget startas.
+- **Frontend (Visning):** I `src/components/AdminDashboard.tsx` uppdaterades typningen och datahämtningen för att hantera de åtta nya datafälten. Demostatistiken (Unika och Visningar) integrerades visuellt inuti de existerande besökskort-rutorna med en subtil avgränsare, för att behålla en kompakt och ren design.
+
+### Varför:
+För att ge administratören insikt i hur populärt demoläget är bland besökarna, och mäta konverteringen eller intresset hos potentiella nya användare utan att behöva förlita sig på externa spårningsverktyg. Systemet bygger på appens inbyggda och integritetssäkra sessionshantering.
+
+### Filförteckning — Ändringar i detta kapitel
+
+| Fil | Typ av ändring |
+|---|---|
+| `add_demo_stats.sql` | NY — Skapar tabellen `demo_visits` och uppdaterar `get_admin_stats`. |
+| `src/store.ts` | ÄNDRAD — Spårar "startDemo" händelser mot databasen. |
+| `src/components/AdminDashboard.tsx` | ÄNDRAD — Implementerar visning av demostatistik inuti befintliga trafikkort. |

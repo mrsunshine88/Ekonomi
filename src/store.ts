@@ -942,6 +942,10 @@ export const useStore = create<StoreState>((set, get) => ({
     const currentState = get().state;
     if (get().isDemoMode) return;
     
+    // Logga demo-besök
+    const sessionId = localStorage.getItem('visitor_session_id') || crypto.randomUUID();
+    supabase.from('demo_visits').insert([{ session_id: sessionId }]).then(() => {});
+
     const now = new Date();
     const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const prevPrevDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);

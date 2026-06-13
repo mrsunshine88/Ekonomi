@@ -18,12 +18,20 @@ export default function AdminDashboard() {
     active_households: number, 
     unique_visitors_today?: number, 
     total_page_views_today?: number,
+    demo_unique_today?: number,
+    demo_views_today?: number,
     unique_visitors_yesterday?: number,
     total_page_views_yesterday?: number,
+    demo_unique_yesterday?: number,
+    demo_views_yesterday?: number,
     unique_visitors_this_week?: number,
     total_page_views_this_week?: number,
+    demo_unique_this_week?: number,
+    demo_views_this_week?: number,
     unique_visitors_this_month?: number,
-    total_page_views_this_month?: number
+    total_page_views_this_month?: number,
+    demo_unique_this_month?: number,
+    demo_views_this_month?: number
   } | null>(null);
   const [stripeConfigured, setStripeConfigured] = useState<boolean | null>(null);
   const [stripeReason, setStripeReason] = useState<string | null>(null);
@@ -63,12 +71,20 @@ export default function AdminDashboard() {
           active_households: data[0].active_households,
           unique_visitors_today: data[0].unique_visitors_today,
           total_page_views_today: data[0].total_page_views_today,
+          demo_unique_today: data[0].demo_unique_today,
+          demo_views_today: data[0].demo_views_today,
           unique_visitors_yesterday: data[0].unique_visitors_yesterday,
           total_page_views_yesterday: data[0].total_page_views_yesterday,
+          demo_unique_yesterday: data[0].demo_unique_yesterday,
+          demo_views_yesterday: data[0].demo_views_yesterday,
           unique_visitors_this_week: data[0].unique_visitors_this_week,
           total_page_views_this_week: data[0].total_page_views_this_week,
+          demo_unique_this_week: data[0].demo_unique_this_week,
+          demo_views_this_week: data[0].demo_views_this_week,
           unique_visitors_this_month: data[0].unique_visitors_this_month,
-          total_page_views_this_month: data[0].total_page_views_this_month
+          total_page_views_this_month: data[0].total_page_views_this_month,
+          demo_unique_this_month: data[0].demo_unique_this_month,
+          demo_views_this_month: data[0].demo_views_this_month
         });
       }
     } catch (e: unknown) {
@@ -313,6 +329,16 @@ export default function AdminDashboard() {
                   <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>📈 Visningar</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.total_page_views_today || 0}</span>
                 </div>
+                <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>🛠️ Demo Unika</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.demo_unique_today || 0}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>🛠️ Demo Visn.</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.demo_views_today || 0}</span>
+                  </div>
+                </div>
               </div>
 
               {/* Igår */}
@@ -325,6 +351,16 @@ export default function AdminDashboard() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>📈 Visningar</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.total_page_views_yesterday || 0}</span>
+                </div>
+                <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>🛠️ Demo Unika</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.demo_unique_yesterday || 0}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>🛠️ Demo Visn.</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.demo_views_yesterday || 0}</span>
+                  </div>
                 </div>
               </div>
 
@@ -339,6 +375,16 @@ export default function AdminDashboard() {
                   <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>📈 Visningar</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.total_page_views_this_week || 0}</span>
                 </div>
+                <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(168, 85, 247, 0.2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>🛠️ Demo Unika</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.demo_unique_this_week || 0}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>🛠️ Demo Visn.</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.demo_views_this_week || 0}</span>
+                  </div>
+                </div>
               </div>
 
               {/* Månad */}
@@ -351,6 +397,16 @@ export default function AdminDashboard() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>📈 Visningar</span>
                   <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.total_page_views_this_month || 0}</span>
+                </div>
+                <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(244, 63, 94, 0.2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>🛠️ Demo Unika</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.demo_unique_this_month || 0}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>🛠️ Demo Visn.</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#fff' }}>{stats.demo_views_this_month || 0}</span>
+                  </div>
                 </div>
               </div>
 
