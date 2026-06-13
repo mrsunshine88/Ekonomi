@@ -236,10 +236,10 @@ export default function Statistics() {
     sortedMonths.forEach(monthId => {
       const m = rawMonthsObj[monthId];
       let amort = 0;
-      if (m.billAmortization && m.billAmortization[loan.id] !== undefined) {
+      if (m && m.billAmortization && m.billAmortization[loan.id] !== undefined) {
          amort = m.billAmortization[loan.id];
       } else {
-         amort = (m.billAmounts && m.billAmounts[loan.id]) !== undefined ? m.billAmounts[loan.id] : loan.defaultAmount;
+         amort = (m && m.billAmounts && m.billAmounts[loan.id]) !== undefined ? m.billAmounts[loan.id] : loan.defaultAmount;
       }
       paidSoFar += amort;
     });
