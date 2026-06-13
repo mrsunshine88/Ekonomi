@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function ConfirmedModal({ onClose }: { onClose: () => void }) {
   return (
     <div style={{
