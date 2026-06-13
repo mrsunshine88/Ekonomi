@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from './supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import type { AppState, BillDefinition, CalculationResult, Account, SwishTransfer, PrivateBill } from './types';
+import type { AppState, BillDefinition, CalculationResult, Account, SwishTransfer, PrivateBill, Income } from './types';
 import toast from 'react-hot-toast';
 import * as Sentry from '@sentry/react';
 import { runRelationalMigration } from './migrateToRelational';
@@ -67,8 +67,8 @@ interface StoreState {
   startDemo: () => void;
   stopDemo: () => void;
 
-  saveMonthlySalary: (payDate: string, amount: number) => Promise<void>;
-  removeMonthlySalary: (payDate: string) => Promise<void>;
+  saveIncome: (income: Omit<Income, 'id' | 'userId'> & { id?: string }) => Promise<void>;
+  removeIncome: (id: string) => Promise<void>;
 
   initCloud: (householdId: string | null, userId: string | null) => void;
   loadYear: (year: string) => Promise<void>;

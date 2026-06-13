@@ -284,7 +284,7 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
 
       sortedMonths.forEach(monthId => {
         let totalIncome = 0;
-        if (state.monthlySalaries) {
+        if (state.incomes) {
           const [mYear, mMonth] = monthId.split('-').map(Number);
           let payYear = mYear;
           let payMonth = mMonth - 1;
@@ -294,9 +294,12 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
           }
           const payMonthStr = `${payYear}-${String(payMonth).padStart(2, '0')}`;
           
-          state.monthlySalaries.forEach((s) => {
-            if (s.userId === userId && s.payDate.startsWith(payMonthStr)) {
-              totalIncome += s.amount;
+          state.incomes.forEach((inc) => {
+            if (inc.userId !== userId) return;
+            if (inc.type === 'fixed') {
+              totalIncome += inc.amount;
+            } else if (inc.type === 'variable' && inc.payDate?.startsWith(payMonthStr)) {
+              totalIncome += inc.amount;
             }
           });
         }
