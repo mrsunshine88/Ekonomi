@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { calculateMonth } from '../store';
 import { useAuth } from '../AuthContext';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, LabelList } from 'recharts';
 import { exportToExcel } from '../excel';
 
 import { useStore } from '../store';
@@ -648,6 +648,25 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
   const avgUtgift = timeData.length > 0 ? timeData.reduce((sum, d) => sum + d.Utgift, 0) / timeData.length : 0;
   const avgKvar = timeData.length > 0 ? timeData.reduce((sum, d) => sum + d.Kvar, 0) / timeData.length : 0;
 
+  const currentData = timeData.length > 0 ? timeData[timeData.length - 1] : null;
+  const prevData = timeData.length > 1 ? timeData[timeData.length - 2] : null;
+
+  const renderTrend = (key: 'Inkomst' | 'Utgift' | 'Kvar', invertColors = false) => {
+    if (!currentData) return null;
+    const current = currentData[key];
+    const prev = prevData ? prevData[key] : current;
+    const diff = current - prev;
+    
+    if (diff === 0) return <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Oförändrad sedan förra månaden</div>;
+    
+    const isIncrease = diff > 0;
+    let color = isIncrease ? '#10b981' : '#f43f5e';
+    if (invertColors) color = isIncrease ? '#f43f5e' : '#10b981';
+    
+    const sign = isIncrease ? '▲ +' : '▼ ';
+    return <div style={{ fontSize: '0.9rem', color, marginTop: '0.25rem', fontWeight: 500 }}>{sign}{Math.abs(diff).toLocaleString('sv-SE')} kr jämfört med fg. månad</div>;
+  };
+
   return (
     <div style={{ animation: 'fadeIn 0.3s ease' }}>
       <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.5rem', marginBottom: '2rem' }}>
@@ -683,64 +702,73 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginBottom: '2rem' }}>
         <div className="card" style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-          <h3 style={{ color: '#10b981', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>💰 Inkomst över tid</h3>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ color: '#10b981', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>💰 Inkomst över tid</h3>
+            {currentData && (
+              <>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{currentData.Inkomst.toLocaleString('sv-SE')} kr</div>
+                {renderTrend('Inkomst')}
+              </>
+            )}
+          </div>
           <div style={{ height: 200, width: '100%' }}>
             <ResponsiveContainer>
-              <AreaChart data={timeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorInkomst" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <LineChart data={timeData} margin={{ top: 30, right: 20, left: 20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
                 <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="Inkomst" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorInkomst)" />
-              </AreaChart>
+                <Line type="monotone" dataKey="Inkomst" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981', strokeWidth: 2 }} activeDot={{ r: 6 }}>
+                  <LabelList dataKey="Inkomst" position="top" fill="var(--text-primary)" fontSize={12} formatter={(val: any) => `${Number(val).toLocaleString('sv-SE')} kr`} offset={10} />
+                </Line>
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         <div className="card" style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(244, 63, 94, 0.2)' }}>
-          <h3 style={{ color: '#f43f5e', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📉 Utgifter över tid</h3>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ color: '#f43f5e', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📉 Utgifter över tid</h3>
+            {currentData && (
+              <>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{currentData.Utgift.toLocaleString('sv-SE')} kr</div>
+                {renderTrend('Utgift', true)}
+              </>
+            )}
+          </div>
           <div style={{ height: 200, width: '100%' }}>
             <ResponsiveContainer>
-              <AreaChart data={timeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorUtgift" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <LineChart data={timeData} margin={{ top: 30, right: 20, left: 20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
                 <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="Utgift" stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#colorUtgift)" />
-              </AreaChart>
+                <Line type="monotone" dataKey="Utgift" stroke="#f43f5e" strokeWidth={3} dot={{ r: 4, fill: '#f43f5e', strokeWidth: 2 }} activeDot={{ r: 6 }}>
+                  <LabelList dataKey="Utgift" position="top" fill="var(--text-primary)" fontSize={12} formatter={(val: any) => `${Number(val).toLocaleString('sv-SE')} kr`} offset={10} />
+                </Line>
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         <div className="card" style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-          <h3 style={{ color: '#3b82f6', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>✨ Kvar att leva på</h3>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ color: '#3b82f6', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>✨ Kvar att leva på</h3>
+            {currentData && (
+              <>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{currentData.Kvar.toLocaleString('sv-SE')} kr</div>
+                {renderTrend('Kvar')}
+              </>
+            )}
+          </div>
           <div style={{ height: 200, width: '100%' }}>
             <ResponsiveContainer>
-              <AreaChart data={timeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorKvar" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <LineChart data={timeData} margin={{ top: 30, right: 20, left: 20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
                 <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="Kvar" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorKvar)" />
-              </AreaChart>
+                <Line type="monotone" dataKey="Kvar" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2 }} activeDot={{ r: 6 }}>
+                  <LabelList dataKey="Kvar" position="top" fill="var(--text-primary)" fontSize={12} formatter={(val: any) => `${Number(val).toLocaleString('sv-SE')} kr`} offset={10} />
+                </Line>
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
