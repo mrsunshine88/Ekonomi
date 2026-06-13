@@ -776,3 +776,23 @@ Tidigare kändes formulär och inställningar stela och otydliga (t.ex. dropdown
 - **Självständig Onboarding:** Flödet för nya konton har städats upp. Tidigare dolda auto-skapanden av hushåll i `LoginScreen.tsx` har raderats. Nu hanterar `Onboarding.tsx` hela skapandet av hushållet på ett säkert sätt.
 
 - **Rätt Standardinställningar:** Vid nyskapade konton (via Onboarding) initieras `household_settings` nu med strikta standardvärden: endast `show_top_total` och `enable_management_buttons` är aktiverade, medan Swish- och överföringssammanställningar är dolda från start. Som kontrast förblir alla funktioner påslagna när man klickar "Prova Demo" för att maximera upplevelsen för besökare.
+
+## 33. Onboarding & RLS Felkorrigeringar (Bug Fixes)
+
+### Vad
+En serie kritiska buggar som gjorde att nya användare fastnade i loopar vid godkännande av användarvillkor, eller blev insläppta i appen utan konto, har identifierats och åtgärdats. Dessutom har 'Demoläge' och 'Live-chatt' lagts till i funktionerna för prenumeranter.
+
+### Varför
+När e-postbekräftelse slogs på (och Supabase PKCE-flöde började användas) uppstod en kedjereaktion:
+1. **Misslyckad Profilskapelse:** Vid registrering skapades ingen session (pga krav på e-postbekräftelse). RLS-regeln för `profiles` krävde dock en aktiv session (`auth.uid() = id`) för att få göra en `INSERT`. Detta ledde till att nya konton aldrig fick någon profilrad i databasen.
+2. **Loop i Policyn (Terms of Service):** När användaren sedan loggade in och godkände policyn, försökte koden uppdatera `tos_accepted = true` på en profil som inte fanns. Felet fångades inte av Supabase utan ignorerades (0 rader uppdaterades). Vid sidladdning trodde appen därför att policyn fortfarande var ogodkänd.
+3. **Onboarding Bypass:** Koden för att visa 'Skapa Hushåll'-rutan utvärderade `state.accounts.length === 0`. Men vid frånkoppling/felaktig profil laddade Zustand `DEFAULT_STATE` (som innehöll dummy-konton med `length === 3`). Därmed trodde appen felaktigt att användaren redan hade konton och släppte in dem i applikationen direkt, utan rättigheter.
+
+### Hur
+- **Supabase Auth Trigger:** Skapade SQL-funktionen `handle_new_user` och en databastrigger (`AFTER INSERT ON auth.users`) som automatiskt skapar profilraden på server-sidan med admin-behörighet (Security Definer), vilket förbigår RLS och garanterar att profilen existerar redan innan bekräftelsemailet klickas.
+- **RLS för Uppdateringar:** Implementerade `FOR UPDATE` RLS policy på `profiles`-tabellen för att uttryckligen tillåta användare att uppdatera sina egna rader (t.ex. `tos_accepted` och `role`).
+- **Förbättrad Gate-logik:** Onboarding-rutan (`needsOnboarding`) i `App.tsx` triggas numera säkert av `!householdId` (kontrollerar ifall hushåll ID saknas helt) istället för att lita på `accounts.length`. Detta förhindrar helt att dummy-data släpper in obehöriga.
+- **Förbättrad PKCE URL-detektion:** `AuthContext.tsx` kollar nu efter `code=` och `access_token=` i URL-hashen (samt negerar `type=recovery`) för att säkert fastställa om det är en lyckad e-postbekräftelse (och därefter visa 'Grattis din mejl är bekräftad'-rutan).
+- **Åtgärdat Databas-schema:** Lade till den saknade `name`-kolumnen (VARCHAR) i `households`-tabellen, vilket eliminerade schema error när användare fyllde i namnet på sitt hushåll.
+- **Åtkomst för alla:** Tog bort `role === 'owner'` spärren på knapparna till inställningsflikarna (`Allmänt` och `Konton`) i `ManageBills.tsx`.
+- **UI-Uppdatering för SaaS:** Live-chatt och Demoläge lades till som punkter i `SubscriptionFeaturesModal.tsx` och `LoginScreen.tsx` för att förtydliga appens värdeerbjudande.
