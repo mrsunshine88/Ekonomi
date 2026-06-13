@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useStore } from '../store';
 import { supabase } from '../supabase';
 
 export default function Onboarding() {

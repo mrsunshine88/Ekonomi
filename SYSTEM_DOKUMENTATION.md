@@ -596,11 +596,11 @@ Ett doldt krav för Android/Chrome för att betrakta en hemsida som en fullvärd
 
 ## Senaste Uppdateringar
 
-* **Felhantering (Chunk Load Errors):** Lade till en automatisk omladdning i ErrorBoundary vid \Failed to fetch dynamically imported module\-fel, s� att nya releaser automatiskt laddas om ifall klienten har cache-problem.
-* **Beh�ll inloggning vid fel:** �ndrade ErrorBoundary-knappen till att endast g�ra en \window.location.reload()\ ist�llet f�r att rensa \localStorage\. Detta f�rhindrar att anv�ndare blir ofrivilligt utloggade (d� Supabase auth token lagras d�r).
-* **Playwright E2E-tester:** Lade till \@playwright/test\ f�r end-to-end testning. Ett f�rsta smoke test (\e2e/app.spec.ts\) har implementerats som startar appen och verifierar inloggningsvyn utan konsolfel. Kan k�ras via \
+* **Felhantering (Chunk Load Errors):** Lade till en automatisk omladdning i ErrorBoundary vid \Failed to fetch dynamically imported module\-fel, s� att nya releaser automatiskt laddas om ifall klienten har cache-problem.
+* **Beh�ll inloggning vid fel:** �ndrade ErrorBoundary-knappen till att endast g�ra en \window.location.reload()\ ist�llet f�r att rensa \localStorage\. Detta f�rhindrar att anv�ndare blir ofrivilligt utloggade (d� Supabase auth token lagras d�r).
+* **Playwright E2E-tester:** Lade till \@playwright/test\ f�r end-to-end testning. Ett f�rsta smoke test (\e2e/app.spec.ts\) har implementerats som startar appen och verifierar inloggningsvyn utan konsolfel. Kan k�ras via \
 pm run test:e2e\.
-* **Excel-export f�rb�ttringar:** P� fliken 'Gemensamma R�kningar' sorteras numera alla utgifter per konto-namn (Hus konto, Andreas konto, Helenas konto etc.) innan de ritas ut. Detta l�ste problemet med att utgifterna l�g osorterade / blandade.
+* **Excel-export f�rb�ttringar:** P� fliken 'Gemensamma R�kningar' sorteras numera alla utgifter per konto-namn (Hus konto, Andreas konto, Helenas konto etc.) innan de ritas ut. Detta l�ste problemet med att utgifterna l�g osorterade / blandade.
 
   
 * **Dynamiska Administratörer:** Byggt ett säkert gränssnitt i admin-panelen för att lägga till och ta bort systemadministratörer dynamiskt. Använder tabellen system_admins och is_user_admin() RPC.
@@ -765,3 +765,14 @@ Tidigare kändes formulär och inställningar stela och otydliga (t.ex. dropdown
 - **Skapa Konto UI-Overhaul:** Inställningarna för att lägga till nya konton/personer (under fliken Konton) byggdes om från rullgardiner till en 3-stegs guide ("1. Typ av konto", "2. Namn", "3. Hur tar kontot emot pengar?"). Layouten använder grid-baserade kort som klickas i, med mjuk och beskrivande text ("En person" vs "Ett gemensamt mål") istället för versaler och tekniska beskrivningar.
 - **Rensning av Lås-vyn:** I inställningarna för "Lås upp månader/konton" togs de duplicerade knapparna för delade konton bort. Vyn visar nu istället en enda övergripande `Total kostnad (Hela månaden) 🔒`-knapp som låser upp hela månaden på ett klick, vilket speglar funktionaliteten i MonthView.
 - **Förenklad Text:** Uttryck som *"Mottar pengar via Swish"* har bytts ut till det mer standardiserade *"Betalningsmetod: Swish"* för ett renare utseende.
+
+
+## 2026-06-13 Enterprise Säkerhet & Onboarding
+
+- **Enterprise Admin-struktur:** Tabellen `system_admins` är nu ombyggd för högsta säkerhetsklassificering. Den använder `user_id` (UUID) som Primary Key med en Foreign Key-koppling direkt mot `auth.users(id)` och `ON DELETE CASCADE`. Detta innebär att om en admin raderar sitt konto utplånas deras admin-rättigheter omedelbart och permanent. Det förhindrar kontoövertagande ifall någon försöker registrera samma mejladress igen.
+
+- **Strikt E-postbekräftelse:** E-postbekräftelse är tvingande. Nyskapade konton hamnar i `auth.users` med `email_confirmed_at = null` och kan inte logga in. För att förhindra missbruk har vi även infört en databasfunktion `check_email_confirmed()` som blockerar återställning av lösenord för konton som inte har bekräftat sin e-postadress. Detta eliminerar alla bakdörrar.
+
+- **Självständig Onboarding:** Flödet för nya konton har städats upp. Tidigare dolda auto-skapanden av hushåll i `LoginScreen.tsx` har raderats. Nu hanterar `Onboarding.tsx` hela skapandet av hushållet på ett säkert sätt.
+
+- **Rätt Standardinställningar:** Vid nyskapade konton (via Onboarding) initieras `household_settings` nu med strikta standardvärden: endast `show_top_total` och `enable_management_buttons` är aktiverade, medan Swish- och överföringssammanställningar är dolda från start. Som kontrast förblir alla funktioner påslagna när man klickar "Prova Demo" för att maximera upplevelsen för besökare.
