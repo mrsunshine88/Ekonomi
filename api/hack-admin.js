@@ -11,17 +11,18 @@ export default async function handler(req, res) {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    // Sätt in apersson508@gmail.com igen
-    const { error } = await supabase.from('system_admins').insert([{ email: 'apersson508@gmail.com' }]);
+    // Försök anropa RPC:n först med service_role
+    const rpcRes = await supabase.rpc('add_system_admin', { target_email: 'apersson508@gmail.com' });
     
-    if (error) {
-      if (error.code === '23505') { // unique violation
-        return res.status(200).json({ success: true, message: 'Redan tillagd!' });
-      }
-      return res.status(500).json({ success: false, error: error.message });
-    }
+    // Om det misslyckas, hämta schemat för system_admins
+    const { data: rows, error: selectErr } = await supabase.from('system_admins').select('*').limit(1);
     
-    return res.status(200).json({ success: true, message: 'Gud-läget är återställt! Du är nu admin i databasen igen.' });
+    return res.status(200).json({ 
+      success: true, 
+      rpc_result: rpcRes,
+      table_sample: rows,
+      table_error: selectErr
+    });
   } catch (e) {
     return res.status(500).json({ success: false, error: e.message });
   }
