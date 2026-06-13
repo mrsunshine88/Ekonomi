@@ -789,9 +789,13 @@ export const useStore = create<StoreState>((set, get) => ({
     const currentState = get().state;
     if (get().isDemoMode) return;
     
-    const d = new Date();
-    const currentMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    const prevMonth = `${d.getMonth() === 0 ? d.getFullYear() - 1 : d.getFullYear()}-${String(d.getMonth() === 0 ? 12 : d.getMonth()).padStart(2, '0')}`;
+    const now = new Date();
+    const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevPrevDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+    const prevPrevMonth = `${prevPrevDate.getFullYear()}-${String(prevPrevDate.getMonth() + 1).padStart(2, '0')}`;
     
     const mockAccounts: Account[] = [
       { id: 'demo_person_1', name: 'Johan (Demo)', type: 'person', transferMethod: 'swish' },
@@ -810,7 +814,7 @@ export const useStore = create<StoreState>((set, get) => ({
       { id: 'demo_bill_8', name: 'CSN Maria', accountId: 'demo_person_2', defaultAmount: 1350, splitType: 'demo_person_2', interval: 'all', isArchived: false, warnIfZero: false },
       { id: 'demo_bill_9', name: 'Bilförsäkring', accountId: 'demo_shared', defaultAmount: 650, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
       { id: 'demo_bill_10', name: 'Drivmedel', accountId: 'demo_shared', defaultAmount: 1200, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
-      { id: 'demo_bill_11', name: 'Matkonto ICA', accountId: 'demo_shared', defaultAmount: 4500, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
+      { id: 'demo_bill_11', name: 'Matkonto ICA', accountId: 'demo_person_1', defaultAmount: 4500, splitType: 'equal', interval: 'all', isArchived: false, warnIfZero: false },
       { id: 'demo_bill_12', name: 'Gymkort', accountId: 'demo_person_1', defaultAmount: 399, splitType: 'demo_person_1', interval: 'all', isArchived: false, warnIfZero: false },
     ];
 
@@ -819,6 +823,21 @@ export const useStore = create<StoreState>((set, get) => ({
       accounts: mockAccounts,
       bills: mockBills,
       months: {
+        [prevPrevMonth]: {
+          monthId: prevPrevMonth,
+          billAmounts: {
+            demo_bill_1: 12000, demo_bill_2: 1100, demo_bill_3: 499, demo_bill_4: 159,
+            demo_bill_5: 119, demo_bill_6: 450, demo_bill_7: 1500, demo_bill_8: 1350,
+            demo_bill_9: 650, demo_bill_10: 1500, demo_bill_11: 4200, demo_bill_12: 399
+          },
+          handledPayments: {
+            'top_total_lock': true,
+            'transfer_demo_person_1_demo_shared': true,
+            'transfer_demo_person_2_demo_shared': true,
+            'swish_demo_person_1_demo_person_2': true,
+            'swish_demo_person_2_demo_person_1': true
+          }
+        },
         [prevMonth]: {
           monthId: prevMonth,
           billAmounts: {
