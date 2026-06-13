@@ -99,7 +99,7 @@ function App() {
   }
 
   // 2. HARD GATE: TOS & Privacy Policy
-  if (!tosAccepted) {
+  if (!tosAccepted && !isDemoMode) {
     return (
       <div className="container" style={{ minHeight: '100vh' }}>
         <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
