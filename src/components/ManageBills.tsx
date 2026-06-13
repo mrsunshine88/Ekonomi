@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { BillDefinition, PaymentInterval, PrivateBill } from '../types';
 import { useStore } from '../store';
 import { createPortal } from 'react-dom';
@@ -24,7 +24,13 @@ export default function ManageBills() {
   const onUnlockPrivateMonth = useStore(s => s.togglePrivateLock);
   const saveIncome = useStore(s => s.saveIncome);
   const removeIncome = useStore(s => s.removeIncome);
-  const [activeTab, setActiveTab] = useState<'bills' | 'accounts' | 'locks' | 'general' | 'salary'>('bills');
+  const [activeTab, setActiveTab] = useState<'bills' | 'accounts' | 'locks' | 'general' | 'salary'>(() => {
+    return (localStorage.getItem('settingsActiveTab') as any) || 'bills';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('settingsActiveTab', activeTab);
+  }, [activeTab]);
   
   // New/Edit Bill State
   const [editingBillId, setEditingBillId] = useState<string | null>(null);
@@ -293,7 +299,7 @@ export default function ManageBills() {
               
               <div style={{ marginTop: '1rem' }}>
                 {state.incomes?.filter(i => i.userId === user?.id && i.type === 'fixed').map(inc => (
-                  <div key={inc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div key={inc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', fontSize: '0.85rem', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <div>
                       <div style={{ fontWeight: 'bold' }}>{inc.name}</div>
                     </div>
@@ -380,7 +386,7 @@ export default function ManageBills() {
                    const nextMonthDate = new Date(d.getFullYear(), d.getMonth() + 1, 1);
                    const nextMonthStr = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
                    return (
-                     <div key={inc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                     <div key={inc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', fontSize: '0.85rem', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                        <div>
                          <div style={{ fontWeight: 'bold' }}>{inc.name} ({inc.payDate})</div>
                          <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Används för {nextMonthStr}</div>
