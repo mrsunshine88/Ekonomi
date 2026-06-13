@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { calculateMonth } from '../store';
 import { useAuth } from '../AuthContext';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { exportToExcel } from '../excel';
 
 import { useStore } from '../store';
@@ -686,13 +686,19 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
           <h3 style={{ color: '#10b981', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>💰 Inkomst över tid</h3>
           <div style={{ height: 200, width: '100%' }}>
             <ResponsiveContainer>
-              <BarChart data={timeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={timeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorInkomst" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                <Bar dataKey="Inkomst" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={60} />
-              </BarChart>
+                <Tooltip content={<CustomTooltip />} />
+                <Area type="monotone" dataKey="Inkomst" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorInkomst)" />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -701,13 +707,19 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
           <h3 style={{ color: '#f43f5e', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📉 Utgifter över tid</h3>
           <div style={{ height: 200, width: '100%' }}>
             <ResponsiveContainer>
-              <BarChart data={timeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={timeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorUtgift" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                <Bar dataKey="Utgift" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={60} />
-              </BarChart>
+                <Tooltip content={<CustomTooltip />} />
+                <Area type="monotone" dataKey="Utgift" stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#colorUtgift)" />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -716,13 +728,19 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
           <h3 style={{ color: '#3b82f6', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>✨ Kvar att leva på</h3>
           <div style={{ height: 200, width: '100%' }}>
             <ResponsiveContainer>
-              <BarChart data={timeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={timeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorKvar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                <Bar dataKey="Kvar" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60} />
-              </BarChart>
+                <Tooltip content={<CustomTooltip />} />
+                <Area type="monotone" dataKey="Kvar" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorKvar)" />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
