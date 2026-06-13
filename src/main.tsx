@@ -16,9 +16,12 @@ class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean,
     const isChunkLoadFailed = error?.message?.includes('Failed to fetch dynamically imported module') || error?.message?.includes('Importing a module script failed');
     
     if (isChunkLoadFailed) {
-      const reloaded = sessionStorage.getItem('chunk_failed_reload');
-      if (!reloaded) {
-        sessionStorage.setItem('chunk_failed_reload', 'true');
+      const lastReload = sessionStorage.getItem('chunk_failed_reload_time');
+      const now = Date.now();
+      
+      // If we haven't reloaded in the last 10 seconds, try to reload automatically
+      if (!lastReload || (now - parseInt(lastReload, 10) > 10000)) {
+        sessionStorage.setItem('chunk_failed_reload_time', now.toString());
         return { hasError: true, error, isReloading: true };
       }
     }
@@ -26,13 +29,19 @@ class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean,
     return { hasError: true, error, isReloading: false };
   }
 
-  componentDidMount() {
-    // Clear the flag after a successful load to allow future reloads if needed
-    sessionStorage.removeItem('chunk_failed_reload');
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  async componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     if (this.state.isReloading) {
+      // Unregister service workers to ensure we get fresh files from the server
+      if ('serviceWorker' in navigator) {
+        try {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const registration of registrations) {
+            await registration.unregister();
+          }
+        } catch (e) {
+          console.error('Service Worker unregistration failed:', e);
+        }
+      }
       window.location.reload();
       return;
     }
@@ -50,11 +59,25 @@ class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean,
       return (
         <div style={{ padding: '2rem', color: 'red' }}>
           <h2>Något gick fel!</h2>
+          <p>Det verkar som att appen har uppdaterats och din webbläsare har gamla filer cachade.</p>
           <pre>{this.state.error?.toString()}</pre>
           <pre>{this.state.error?.stack}</pre>
           <h3>React Component Stack:</h3>
           <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{this.state.componentStack}</pre>
-          <button onClick={() => { window.location.reload(); }}>Ladda om sidan</button>
+          <button 
+            onClick={async () => { 
+              if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                  await registration.unregister();
+                }
+              }
+              window.location.reload(); 
+            }}
+            style={{ padding: '10px 20px', fontSize: '16px', background: '#f43f5e', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', marginTop: '1rem' }}
+          >
+            Tvinga omladdning och rensa cache
+          </button>
         </div>
       );
     }
