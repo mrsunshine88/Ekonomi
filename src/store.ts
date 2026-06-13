@@ -51,6 +51,7 @@ interface StoreState {
   stopDemo: () => void;
 
   saveMonthlySalary: (payDate: string, amount: number) => Promise<void>;
+  removeMonthlySalary: (payDate: string) => Promise<void>;
 
   initCloud: (householdId: string | null, userId: string | null) => void;
   loadYear: (year: string) => Promise<void>;
@@ -1027,7 +1028,8 @@ export const useStore = create<StoreState>((set, get) => ({
         amount: amount
       }, { onConflict: 'household_id,user_id,pay_date' })
     );
-  }
+  },
+
 
 }));
 
