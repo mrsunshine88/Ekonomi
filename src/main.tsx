@@ -9,6 +9,11 @@ import * as Sentry from "@sentry/react";
 Sentry.init({
   dsn: "https://9f0dea41c5c429ec14fe555113b2fc7c@o4511558355910656.ingest.de.sentry.io/4511558367182928",
   enabled: import.meta.env.PROD, // Skicka bara loggar i produktion, inte när vi kodar lokalt
+  ignoreErrors: [
+    "Failed to register a ServiceWorker",
+    "Service Worker registration failed",
+    "AbortError: Failed to register a ServiceWorker"
+  ]
 });
 
 // Tysta unhandled promise rejections från Service Worker-registrering.
