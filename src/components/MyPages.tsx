@@ -8,7 +8,8 @@ export default function MyPages() {
   const toggleSharePrivateEconomy = useStore(s => s.toggleSharePrivateEconomy);
   const settings = useStore(s => s.state.settings);
   const updateSettings = useStore(s => s.updateSettings);
-  const personAccounts = useStore(s => s.state.accounts.filter(a => a.type === 'person'));
+  const accounts = useStore(s => s.state.accounts);
+  const personAccounts = accounts.filter(a => a.type === 'person');
   const updateProfileAccount = useStore(s => s.updateProfileAccount);
   const householdProfiles = useStore(s => s.state.householdProfiles) || [];
   const myProfile = householdProfiles.find(p => p.id === user?.id);
