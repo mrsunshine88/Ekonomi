@@ -42,7 +42,11 @@ export default function LoginScreen() {
         setSuccessMsg('En återställningslänk har skickats till din e-post. Kolla även skräpposten!');
         setIsForgotPassword(false);
       } catch (err: any) {
-        setError(err.message || 'Kunde inte skicka återställningslänk.');
+        let errMsg = err.message || 'Kunde inte skicka återställningslänk.';
+        if (errMsg.toLowerCase().includes('for security purposes') || errMsg.toLowerCase().includes('rate limit')) {
+          errMsg = 'Du försöker för snabbt. Av säkerhetsskäl, vänta en stund och försök igen.';
+        }
+        setError(errMsg);
       } finally {
         setLoading(false);
       }
@@ -84,7 +88,9 @@ export default function LoginScreen() {
       if (msg === 'User already registered') msg = 'E-postadressen används redan av ett annat konto.';
       if (msg.includes('Password should be at least')) msg = 'Lösenordet måste vara minst 6 tecken långt.';
       if (msg.includes('Email not confirmed')) msg = 'Du måste bekräfta din e-postadress. Kolla inkorgen!';
-      if (msg.includes('rate limit')) msg = 'Du har försökt för många gånger. Vänta en stund och försök igen.';
+      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('for security purposes')) {
+        msg = 'Du försöker för snabbt. Av säkerhetsskäl, vänta en stund och försök igen.';
+      }
       setError(msg);
     } finally {
       setLoading(false);
