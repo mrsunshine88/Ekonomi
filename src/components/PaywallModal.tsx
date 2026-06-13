@@ -27,8 +27,8 @@ export default function PaywallModal() {
       
       // Redirect to Stripe
       window.location.href = data.url;
-    } catch (e: any) {
-      alert('Kunde inte starta betalning: ' + e.message);
+    } catch (e: unknown) {
+      alert('Kunde inte starta betalning: ' + (e instanceof Error ? e.message : String(e)));
       console.error(e);
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { calculateMonth } from '../store';
+import type { AppState, CalculationResult } from '../types';
 import { useAuth } from '../AuthContext';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, LabelList } from 'recharts';
 import { exportToExcel } from '../excel';
@@ -14,12 +15,18 @@ const formatMonthName = (monthId: string) => {
   return `${monthNames[parseInt(month, 10) - 1]} ${year}`;
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number; name: string; color?: string; fill?: string; dataKey?: string }>;
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div style={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(10px)' }}>
         <p style={{ margin: '0 0 0.5rem 0', fontWeight: 'bold', color: 'var(--text-primary)' }}>{label}</p>
-        {payload.map((p: any) => (
+        {payload.map((p) => (
           <div key={p.dataKey} style={{ color: p.color || p.fill, margin: '0.25rem 0', display: 'flex', justifyContent: 'space-between', gap: '1.5rem', fontWeight: 500 }}>
             <span>{p.name}:</span>
             <span>{p.value > 0 ? '+' : ''}{p.value.toLocaleString('sv-SE')} kr</span>
@@ -95,7 +102,7 @@ export default function Statistics() {
     }
     
     let total = 0;
-    const billMap: any = {};
+    const billMap: Record<string, number> = {};
     
     activeBills.forEach(b => {
       const amt = amounts[b.id] !== undefined ? amounts[b.id] : b.defaultAmount;
@@ -213,7 +220,7 @@ export default function Statistics() {
   }
 
   // History Tables Data (Only for shared)
-  let history: any[] = [];
+  let history: { monthId: string; result: CalculationResult; totalShared: number; sharedDiff: number }[] = [];
   if (!isPrivate) {
     history = sortedMonths.map((monthId, idx) => {
       const result = calculateMonth(state, monthId);
@@ -491,7 +498,7 @@ export default function Statistics() {
                           )}
                         </td>
                         <td style={{ padding: '1rem' }}>
-                          {h.result.swishes.map((s: any, i: number) => {
+                          {h.result.swishes.map((s: { fromId: string; toId: string; amount: number }, i: number) => {
                             const fromName = state.accounts.find(a => a.id === s.fromId)?.name || s.fromId;
                             const toName = state.accounts.find(a => a.id === s.toId)?.name || s.toId;
                             return (
@@ -550,17 +557,17 @@ export default function Statistics() {
   );
 }
 
-function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any, user: any, sortedMonths: string[] }) {
+function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: AppState, user: { id: string; email?: string } | null, sortedMonths: string[] }) {
   const isDemoMode = useStore(s => s.isDemoMode);
   const user = isDemoMode && !realUser ? { id: 'demo_user_1', email: 'demo@smartekonomi.se' } : realUser;
   
   if (!user) return null;
 
-  const myProfile = state.householdProfiles?.find((p: any) => p.id === user.id);
+  const myProfile = state.householdProfiles?.find((p: { id: string }) => p.id === user?.id);
   const selectedAccountId = myProfile?.person_account_id;
   
-  const personAccounts = state.accounts.filter((a: any) => a.type === 'person');
-  const selectedAccount = personAccounts.find((a: any) => a.id === selectedAccountId);
+  const personAccounts = state.accounts.filter((a: { type: string }) => a.type === 'person');
+  const selectedAccount = personAccounts.find((a: { id: string }) => a.id === selectedAccountId);
 
   if (!selectedAccount) {
     return (
@@ -589,8 +596,8 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
       }
       const payMonthStr = `${payYear}-${String(payMonth).padStart(2, '0')}`;
       
-      state.monthlySalaries.forEach((s: any) => {
-        if (s.userId === user.id && s.payDate.startsWith(payMonthStr)) {
+      state.monthlySalaries.forEach((s: { userId: string; payDate: string; amount: number }) => {
+        if (s.userId === user?.id && s.payDate.startsWith(payMonthStr)) {
           totalIncome += s.amount;
         }
       });
@@ -600,7 +607,7 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
     
     let incomingSwish = 0;
     let outgoingSwish = 0;
-    sharedRes.swishes.forEach((t: any) => {
+    sharedRes.swishes.forEach((t: { fromId: string; toId: string; amount: number }) => {
       if (t.toId === selectedAccountId) incomingSwish += t.amount;
       if (t.fromId === selectedAccountId) outgoingSwish += t.amount;
     });
@@ -611,8 +618,8 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
 
     if (state.privateMonths?.[monthId]) {
       const pm = state.privateMonths[monthId];
-      const activePrivate = (state.privateBills || []).filter((b: any) => b.userId === user.id && !b.isArchived);
-      activePrivate.forEach((b: any) => {
+      const activePrivate = (state.privateBills || []).filter((b: { userId: string; isArchived?: boolean }) => b.userId === user?.id && !b.isArchived);
+      activePrivate.forEach((b: { id: string; defaultAmount: number }) => {
         const amt = pm.billAmounts?.[b.id] !== undefined ? pm.billAmounts[b.id] : b.defaultAmount;
         totalExpense += amt;
       });
@@ -620,8 +627,8 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
 
     const m = state.months[monthId];
     if (m) {
-      const activeShared = state.bills.filter((b: any) => !b.isArchived);
-      activeShared.forEach((b: any) => {
+      const activeShared = state.bills.filter((b: { isArchived?: boolean }) => !b.isArchived);
+      activeShared.forEach((b: { accountId: string; id: string; defaultAmount: number }) => {
         if (b.accountId === selectedAccountId) {
           const amt = m.billAmounts?.[b.id] !== undefined ? m.billAmounts[b.id] : b.defaultAmount;
           totalExpense += amt;
@@ -629,9 +636,9 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
       });
     }
 
-    if (sharedRes.transfersToShared[selectedAccountId]) {
-      Object.values(sharedRes.transfersToShared[selectedAccountId]).forEach((amt: any) => {
-        if (amt > 0) totalExpense += amt;
+    if (selectedAccountId && sharedRes.transfersToShared[selectedAccountId]) {
+      Object.values(sharedRes.transfersToShared[selectedAccountId]).forEach((amt) => {
+        if (Number(amt) > 0) totalExpense += Number(amt);
       });
     }
 
@@ -720,7 +727,7 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
                 <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomTooltip />} />
                 <Line type="monotone" dataKey="Inkomst" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981', strokeWidth: 2 }} activeDot={{ r: 6 }}>
-                  <LabelList dataKey="Inkomst" position="top" fill="var(--text-primary)" fontSize={12} formatter={(val: any) => `${Number(val).toLocaleString('sv-SE')} kr`} offset={10} />
+                  <LabelList dataKey="Inkomst" position="top" fill="var(--text-primary)" fontSize={12} formatter={(val: unknown) => `${Number(val || 0).toLocaleString('sv-SE')} kr`} offset={10} />
                 </Line>
               </LineChart>
             </ResponsiveContainer>
@@ -744,7 +751,7 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
                 <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomTooltip />} />
                 <Line type="monotone" dataKey="Utgift" stroke="#f43f5e" strokeWidth={3} dot={{ r: 4, fill: '#f43f5e', strokeWidth: 2 }} activeDot={{ r: 6 }}>
-                  <LabelList dataKey="Utgift" position="top" fill="var(--text-primary)" fontSize={12} formatter={(val: any) => `${Number(val).toLocaleString('sv-SE')} kr`} offset={10} />
+                  <LabelList dataKey="Utgift" position="top" fill="var(--text-primary)" fontSize={12} formatter={(val: unknown) => `${Number(val || 0).toLocaleString('sv-SE')} kr`} offset={10} />
                 </Line>
               </LineChart>
             </ResponsiveContainer>
@@ -768,7 +775,7 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any
                 <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip content={<CustomTooltip />} />
                 <Line type="monotone" dataKey="Kvar" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2 }} activeDot={{ r: 6 }}>
-                  <LabelList dataKey="Kvar" position="top" fill="var(--text-primary)" fontSize={12} formatter={(val: any) => `${Number(val).toLocaleString('sv-SE')} kr`} offset={10} />
+                  <LabelList dataKey="Kvar" position="top" fill="var(--text-primary)" fontSize={12} formatter={(val: unknown) => `${Number(val || 0).toLocaleString('sv-SE')} kr`} offset={10} />
                 </Line>
               </LineChart>
             </ResponsiveContainer>

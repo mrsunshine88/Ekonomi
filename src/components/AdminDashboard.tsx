@@ -36,8 +36,8 @@ export default function AdminDashboard() {
     try {
       const { data, error } = await supabase.rpc('get_vip_emails');
       if (error) throw error;
-      setVipList((data || []).map((row: any) => row.email).filter((e: string) => e !== 'apersson508@gmail.com'));
-    } catch (e: any) {
+      setVipList((data || []).map((row: { email: string }) => row.email).filter((e: string) => e !== 'apersson508@gmail.com'));
+    } catch (e: unknown) {
       console.error("Kunde inte hämta VIP-lista", e);
     }
   };
@@ -49,7 +49,7 @@ export default function AdminDashboard() {
       if (data && data.length > 0) {
         setStats({ total_members: data[0].total_members, active_households: data[0].active_households });
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Kunde inte hämta admin-statistik", e);
     }
   };
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
         
         setLoginDemoEnabled(data.find(d => d.key === 'login_demo_enabled')?.value === 'true');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Kunde inte hämta kontaktuppgifter", e);
     }
   };
@@ -96,8 +96,8 @@ export default function AdminDashboard() {
     try {
       const { data, error } = await supabase.rpc('get_system_admins');
       if (error) throw error;
-      setSystemAdmins((data || []).map((row: any) => row.email).filter((e: string) => e !== 'apersson508@gmail.com'));
-    } catch (e: any) {
+      setSystemAdmins((data || []).map((row: { email: string }) => row.email).filter((e: string) => e !== 'apersson508@gmail.com'));
+    } catch (e: unknown) {
       console.error("Kunde inte hämta system admins", e);
     }
   };
@@ -117,8 +117,8 @@ export default function AdminDashboard() {
       if (error) throw error;
       useStore.setState(s => ({ state: { ...s.state, paywallActive: !paywallActive } }));
       setMsg(paywallActive ? '✅ Betalväggen är nu AV.' : '🚨 Betalväggen är nu PÅ! Alla nya (och icke-VIP) kommer att tvingas betala.');
-    } catch (e: any) {
-      setMsg('❌ Admin Fel: ' + e.message);
+    } catch (e: unknown) {
+      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoading(false);
     }
@@ -132,8 +132,8 @@ export default function AdminDashboard() {
       if (error) throw error;
       setLoginDemoEnabled(newValue);
       setMsg(newValue ? '✅ Demoläge på inloggningssidan är PÅ.' : '❌ Demoläge på inloggningssidan är AV.');
-    } catch (e: any) {
-      setMsg('❌ Admin Fel: ' + e.message);
+    } catch (e: unknown) {
+      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoading(false);
     }
@@ -148,8 +148,8 @@ export default function AdminDashboard() {
       setMsg(`👑 ${vipEmail} har nu VIP-status (Gratis för alltid)!`);
       setVipEmail('');
       await fetchVipList();
-    } catch (e: any) {
-      setMsg('❌ Admin Fel: ' + e.message);
+    } catch (e: unknown) {
+      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoading(false);
     }
@@ -165,8 +165,8 @@ export default function AdminDashboard() {
       setMsg(`📉 VIP-status borttagen för ${emailToRevoke}.`);
       if (emailToRevoke === vipEmail) setVipEmail('');
       await fetchVipList();
-    } catch (e: any) {
-      setMsg('❌ Admin Fel: ' + e.message);
+    } catch (e: unknown) {
+      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoading(false);
     }
@@ -185,8 +185,8 @@ export default function AdminDashboard() {
         setNewAdminEmail('');
         await fetchSystemAdmins();
       }
-    } catch (e: any) {
-      setMsg('❌ Admin Fel: ' + e.message);
+    } catch (e: unknown) {
+      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoading(false);
     }
@@ -200,8 +200,8 @@ export default function AdminDashboard() {
       if (error) throw error;
       setMsg(`📉 Administratörsrättigheter borttagna för ${emailToRemove}.`);
       await fetchSystemAdmins();
-    } catch (e: any) {
-      setMsg('❌ Admin Fel: ' + e.message);
+    } catch (e: unknown) {
+      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoading(false);
     }
@@ -219,8 +219,8 @@ export default function AdminDashboard() {
       setStripeWebhook('');
       setStripePriceId('');
       await fetchStripeStatus();
-    } catch (e: any) {
-      setMsg('❌ Kunde inte spara nycklar: ' + e.message);
+    } catch (e: unknown) {
+      setMsg('❌ Kunde inte spara nycklar: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoading(false);
     }
@@ -246,8 +246,8 @@ export default function AdminDashboard() {
       }
       
       setMsg('📞 Kontaktuppgifter sparades!');
-    } catch (e: any) {
-      setMsg('❌ Kunde inte spara kontaktuppgifter: ' + (e.message || JSON.stringify(e)));
+    } catch (e: unknown) {
+      setMsg('❌ Kunde inte spara kontaktuppgifter: ' + ((e instanceof Error ? e.message : String(e)) || JSON.stringify(e)));
     } finally {
       setLoading(false);
     }

@@ -41,7 +41,7 @@ export default function ChatBubble() {
     fetchChatStatus();
 
     const channel = supabase.channel('global_settings_chat')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'global_settings', filter: 'key=eq.chat_open' }, (payload: any) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'global_settings', filter: 'key=eq.chat_open' }, (payload: { new: { [key: string]: string } }) => {
         setChatGlobalOpen(payload.new.value === 'true');
       })
       .subscribe();
@@ -88,16 +88,16 @@ export default function ChatBubble() {
     if (!sessionId) return;
 
     const channel = supabase.channel(`chat_${sessionId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${sessionId}` }, (payload: any) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${sessionId}` }, (payload: { new: { [key: string]: string } }) => {
         setMessages(prev => [...prev, payload.new]);
         
         if (payload.new.sender_type === 'admin' && !isOpenRef.current) {
           setUnreadCount(prev => prev + 1);
         }
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_sessions', filter: `id=eq.${sessionId}` }, (payload: any) => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_sessions', filter: `id=eq.${sessionId}` }, (payload: { new: { [key: string]: string } }) => {
         if (payload.new.status) {
-          setSessionStatus(payload.new.status);
+          setSessionStatus(payload.new.status as 'active' | 'waiting' | 'closed');
         }
       })
       .subscribe();

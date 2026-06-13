@@ -29,9 +29,9 @@ export default function Onboarding() {
       if (error) throw error;
       
       window.location.reload();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setJoinError('❌ ' + err.message);
+      setJoinError('❌ ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setJoinLoading(false);
     }
@@ -91,9 +91,9 @@ export default function Onboarding() {
       
       // Force reload state
       window.location.reload();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      alert(e.message || "Ett fel uppstod");
+      alert((e instanceof Error ? e.message : String(e)) || "Ett fel uppstod");
     } finally {
       setLoading(false);
     }

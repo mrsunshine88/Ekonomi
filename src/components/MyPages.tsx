@@ -59,8 +59,8 @@ export default function MyPages() {
           
           setMembers(prev => prev.filter(m => m.id !== memberId));
           setMsg(`✅ ${memberEmail} har tagits bort från hushållet.`);
-        } catch (e: any) {
-          setMsg('❌ Kunde inte ta bort medlem: ' + e.message);
+        } catch (e: unknown) {
+          setMsg('❌ Kunde inte ta bort medlem: ' + (e instanceof Error ? e.message : String(e)));
         } finally {
           setLoading(false);
           setConfirmModal({ visible: false, title: '', message: '', onConfirm: () => {} });
@@ -101,8 +101,8 @@ export default function MyPages() {
 
       await refreshHousehold();
       setMsg('✅ Du har gått med i hushållet!');
-    } catch (e: any) {
-      setMsg('❌ ' + e.message);
+    } catch (e: unknown) {
+      setMsg('❌ ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoading(false);
     }
@@ -121,7 +121,7 @@ export default function MyPages() {
       
       await refreshHousehold();
       setMsg('✅ Molnsynk och delning aktiverat!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       setMsg('❌ Kunde inte skapa molnsynk. Försök igen.');
     } finally {
@@ -138,8 +138,8 @@ export default function MyPages() {
       
       setMembers(members.map(m => m.id === memberId ? { ...m, role: newRole } : m));
       setMsg(`✅ Behörighet ändrad! Personen är nu ${newRole === 'owner' ? 'Medägare (full tillgång till gemensamma räkningar)' : 'Medlem (Låst läge)'}.`);
-    } catch (e: any) {
-      setMsg('❌ ' + e.message + '. (Tips: Kör SQL-skriptet för behörigheter om databasen blockerar)');
+    } catch (e: unknown) {
+      setMsg('❌ ' + (e instanceof Error ? e.message : String(e)) + '. (Tips: Kör SQL-skriptet för behörigheter om databasen blockerar)');
     } finally {
       setLoading(false);
     }
@@ -165,8 +165,8 @@ export default function MyPages() {
       setMsg('✅ Bekräftelselänk har skickats till både gamla och nya mejlen!');
       setNewEmail('');
       setCurrentPassword('');
-    } catch (e: any) {
-      setMsg('❌ ' + e.message);
+    } catch (e: unknown) {
+      setMsg('❌ ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoading(false);
     }
@@ -182,8 +182,8 @@ export default function MyPages() {
       setMsg('✅ Lösenordet har ändrats!');
       setNewPassword('');
       setCurrentPassword('');
-    } catch (e: any) {
-      setMsg('❌ ' + e.message);
+    } catch (e: unknown) {
+      setMsg('❌ ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoading(false);
     }
@@ -202,8 +202,8 @@ export default function MyPages() {
           if (error) throw error;
           
           await supabase.auth.signOut();
-        } catch (e: any) {
-          setMsg('❌ ' + e.message);
+        } catch (e: unknown) {
+          setMsg('❌ ' + (e instanceof Error ? e.message : String(e)));
           setLoading(false);
           setConfirmModal({ visible: false, title: '', message: '', onConfirm: () => {} });
         }
@@ -216,8 +216,8 @@ export default function MyPages() {
     try {
       await toggleSharePrivateEconomy(newState);
       setMsg(newState ? '✅ Din privata ekonomi delas nu med hushållet.' : '✅ Din privata ekonomi är nu privat igen.');
-    } catch (e: any) {
-      setMsg('❌ Fel: ' + e.message);
+    } catch (e: unknown) {
+      setMsg('❌ Fel: ' + (e instanceof Error ? e.message : String(e)));
     }
   };
 
@@ -268,8 +268,8 @@ export default function MyPages() {
           setMsg('❌ Du nekade tillåtelse för notiser i webbläsaren.');
         }
       }
-    } catch (e: any) {
-      setMsg('❌ Fel: ' + e.message);
+    } catch (e: unknown) {
+      setMsg('❌ Fel: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setPushLoading(false);
     }
@@ -285,8 +285,8 @@ export default function MyPages() {
         badge: '/icon-192x192.png'
       });
       setMsg('✅ Skickade en testnotis!');
-    } catch (e: any) {
-      setMsg('❌ Fel vid test av notis: ' + e.message);
+    } catch (e: unknown) {
+      setMsg('❌ Fel vid test av notis: ' + (e instanceof Error ? e.message : String(e)));
     }
   };
 
@@ -301,8 +301,8 @@ export default function MyPages() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       window.location.href = data.url;
-    } catch (e: any) {
-      setMsg('❌ Kunde inte öppna prenumeration: ' + e.message);
+    } catch (e: unknown) {
+      setMsg('❌ Kunde inte öppna prenumeration: ' + (e instanceof Error ? e.message : String(e)));
       setLoading(false);
     }
   };
@@ -397,8 +397,8 @@ export default function MyPages() {
                   try {
                     await updateSettings({ reminderDay: parseInt(e.target.value, 10) });
                     setMsg('✅ Påminnelsedatum har uppdaterats!');
-                  } catch (err: any) {
-                    setMsg('❌ Fel: ' + err.message);
+                  } catch (err: unknown) {
+                    setMsg('❌ Fel: ' + (err instanceof Error ? err.message : String(err)));
                   } finally {
                     setLoading(false);
                   }

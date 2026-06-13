@@ -65,13 +65,13 @@ export default function AdminChat() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_sessions' }, () => {
         fetchSessions();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'global_settings', filter: 'key=eq.chat_open' }, (payload: any) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'global_settings', filter: 'key=eq.chat_open' }, (payload: { new: { [key: string]: string } }) => {
         setChatOpen(payload.new.value === 'true');
       })
       .subscribe();
 
     const notifyChannel = supabase.channel('admin_chat_notifications')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: "sender_type=eq.user" }, (payload: any) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: "sender_type=eq.user" }, (payload: { new: { [key: string]: string } }) => {
         if (localStorage.getItem('chat_notifications') === 'true' && 'Notification' in window && Notification.permission === 'granted') {
            new Notification('Nytt Kundtjänst-meddelande', { body: payload.new.message });
         }
@@ -109,7 +109,7 @@ export default function AdminChat() {
     fetchMessages();
 
     const channel = supabase.channel(`admin_chat_${selectedSessionId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${selectedSessionId}` }, (payload: any) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${selectedSessionId}` }, (payload: { new: { [key: string]: string } }) => {
         setMessages(prev => [...prev, payload.new]);
       })
       .subscribe();
@@ -173,9 +173,9 @@ export default function AdminChat() {
             
             setNotificationsEnabled(true);
             localStorage.setItem('chat_notifications', 'true');
-          } catch (err: any) {
+          } catch (err: unknown) {
             console.error("Push subscription failed", err);
-            alert("Ett fel uppstod: " + (err.message || JSON.stringify(err)) + ". Om det står 'relation does not exist' måste du köra SQL-skriptet i Supabase.");
+            alert("Ett fel uppstod: " + ((err instanceof Error ? err.message : String(err)) || JSON.stringify(err)) + ". Om det står 'relation does not exist' måste du köra SQL-skriptet i Supabase.");
             // Fallback
             setNotificationsEnabled(true);
             localStorage.setItem('chat_notifications', 'true');

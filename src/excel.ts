@@ -85,7 +85,7 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
 
   sortedBills.forEach(bill => {
     const account = state.accounts.find(a => a.id === bill.accountId)?.name || 'Okänt konto';
-    const rowData: any[] = [bill.name, account];
+    const rowData: (string | number)[] = [bill.name, account];
     
     sortedMonths.forEach(monthId => {
       const monthData = state.months[monthId];
@@ -103,7 +103,7 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
   });
 
   // Totals
-  const totalRowData1: any[] = ["TOTALT", "Alla konton"];
+  const totalRowData1: (string | number)[] = ["TOTALT", "Alla konton"];
   sortedMonths.forEach(monthId => {
     const monthData = state.months[monthId];
     let total = 0;
@@ -208,7 +208,7 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
 
         let r3Count = 1;
         myPrivateBills.forEach(bill => {
-          const rowData: any[] = [bill.name];
+          const rowData: (string | number)[] = [bill.name];
           privateMonths.forEach(monthId => {
             const mData = state.privateMonths![monthId];
             const amount = mData.billAmounts[bill.id] !== undefined ? mData.billAmounts[bill.id] : bill.defaultAmount;
@@ -221,7 +221,7 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
         });
 
         // Totals
-        const totalRowData3: any[] = ["TOTALT"];
+        const totalRowData3: (string | number)[] = ["TOTALT"];
         privateMonths.forEach(monthId => {
           const mData = state.privateMonths![monthId];
           let total = 0;
@@ -267,9 +267,9 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
     }
 
     // -- BLAD 4: MIN LÖN / KVAR ATT LEVA PÅ --
-    const myProfile = state.householdProfiles?.find((p: any) => p.id === userId);
+    const myProfile = state.householdProfiles?.find((p) => p.id === userId);
     const selectedAccountId = myProfile?.person_account_id;
-    const selectedAccount = state.accounts.find((a: any) => a.id === selectedAccountId);
+    const selectedAccount = state.accounts.find((a) => a.id === selectedAccountId);
 
     if (selectedAccount) {
       const ws4 = wb.addWorksheet('Min Lön & Kvar', {
@@ -294,7 +294,7 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
           }
           const payMonthStr = `${payYear}-${String(payMonth).padStart(2, '0')}`;
           
-          state.monthlySalaries.forEach((s: any) => {
+          state.monthlySalaries.forEach((s) => {
             if (s.userId === userId && s.payDate.startsWith(payMonthStr)) {
               totalIncome += s.amount;
             }
@@ -305,7 +305,7 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
         
         let incomingSwish = 0;
         let outgoingSwish = 0;
-        sharedRes.swishes.forEach((t: any) => {
+        sharedRes.swishes.forEach((t) => {
           if (t.toId === selectedAccountId) incomingSwish += t.amount;
           if (t.fromId === selectedAccountId) outgoingSwish += t.amount;
         });
@@ -316,8 +316,8 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
 
         if (state.privateMonths?.[monthId]) {
           const pm = state.privateMonths[monthId];
-          const activePrivate = (state.privateBills || []).filter((b: any) => b.userId === userId && !b.isArchived);
-          activePrivate.forEach((b: any) => {
+          const activePrivate = (state.privateBills || []).filter((b) => b.userId === userId && !b.isArchived);
+          activePrivate.forEach((b) => {
             const amt = pm.billAmounts?.[b.id] !== undefined ? pm.billAmounts[b.id] : b.defaultAmount;
             totalExpense += amt;
           });
@@ -325,8 +325,8 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
 
         const m = state.months[monthId];
         if (m) {
-          const activeShared = state.bills.filter((b: any) => !b.isArchived);
-          activeShared.forEach((b: any) => {
+          const activeShared = state.bills.filter((b) => !b.isArchived);
+          activeShared.forEach((b) => {
             if (b.accountId === selectedAccountId) {
               const amt = m.billAmounts?.[b.id] !== undefined ? m.billAmounts[b.id] : b.defaultAmount;
               totalExpense += amt;
@@ -335,7 +335,7 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
         }
 
         if (selectedAccountId && sharedRes.transfersToShared[selectedAccountId]) {
-          Object.values(sharedRes.transfersToShared[selectedAccountId]).forEach((amt: any) => {
+          Object.values(sharedRes.transfersToShared[selectedAccountId]).forEach((amt) => {
             if (amt > 0) totalExpense += amt;
           });
         }

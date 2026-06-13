@@ -63,8 +63,8 @@ export default function UpdatePassword() {
       setTimeout(() => {
         setIsRecoveringPassword(false);
       }, 3000);
-    } catch (err: any) {
-      setError(err.message || 'Kunde inte uppdatera lösenordet.');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message : String(err)) || 'Kunde inte uppdatera lösenordet.');
     } finally {
       setLoading(false);
     }

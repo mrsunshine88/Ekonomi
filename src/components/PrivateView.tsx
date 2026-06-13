@@ -70,7 +70,7 @@ export default function PrivateView({ currentMonth }: Props) {
             onChange={e => setSelectedUserId(e.target.value)}
             style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff', width: '100%', cursor: 'pointer' }}
           >
-            {visibleProfiles.map((p: any) => (
+            {visibleProfiles.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.id === user.id ? 'Min privata ekonomi' : `${p.email ? p.email.split('@')[0] : 'Hushållsmedlem'}s privata ekonomi`}
               </option>
@@ -223,7 +223,7 @@ export default function PrivateView({ currentMonth }: Props) {
                                 }}
                                 min="0"
                                 style={{ 
-                                  fontSize: '0.9rem', padding: '0.4rem 1.8rem 0.4rem 0.5rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-primary)'
+                                  fontSize: '0.9rem', padding: '0.4rem 2.5rem 0.4rem 0.5rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-primary)'
                                 }}
                                 title="Varav amortering"
                               />

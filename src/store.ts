@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from './supabase';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { AppState, BillDefinition, CalculationResult, Account, SwishTransfer, PrivateBill } from './types';
 import toast from 'react-hot-toast';
 import { runRelationalMigration } from './migrateToRelational';
@@ -43,7 +44,7 @@ interface StoreState {
   isCloudLoaded: boolean;
   householdId: string | null;
   userId: string | null;
-  channel: any;
+  channel: RealtimeChannel | null;
   isDemoMode: boolean;
   realState: AppState | null;
 
@@ -186,7 +187,7 @@ export const useStore = create<StoreState>((set, get) => ({
           showTopTotal: settings.show_top_total,
           showPrivateTopTotal: settings.show_private_top_total
         } : { showSummary: true },
-        monthlySalaries: monthlySalariesData ? monthlySalariesData.map((s: any) => ({ userId: s.user_id, payDate: s.pay_date, amount: Number(s.amount) })) : []
+        monthlySalaries: monthlySalariesData ? monthlySalariesData.map((s: { user_id: string; pay_date: string; amount: number | string }) => ({ userId: s.user_id, payDate: s.pay_date, amount: Number(s.amount) })) : []
       };
 
       if (monthBillAmounts) {
@@ -685,7 +686,7 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ state: { ...state, settings: { ...state.settings, ...settingsUpdates } } });
     if (get().isDemoMode) return;
     if (householdId) {
-      const payload: any = { household_id: householdId };
+      const payload: Record<string, unknown> = { household_id: householdId };
       if (settingsUpdates.showSummary !== undefined) payload.show_summary = settingsUpdates.showSummary;
       if (settingsUpdates.showSwishSummary !== undefined) payload.show_swish_summary = settingsUpdates.showSwishSummary;
       if (settingsUpdates.showTransferSummary !== undefined) payload.show_transfer_summary = settingsUpdates.showTransferSummary;

@@ -25,7 +25,7 @@ export default function InstallPrompt() {
     setIsIOS(isIosDevice);
 
     // Lyssna på Android/Chrome's inbyggda event
-    const handleBeforeInstallPrompt = (e: any) => {
+    const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
       // Visa vår snygga ruta istället för den inbyggda fula

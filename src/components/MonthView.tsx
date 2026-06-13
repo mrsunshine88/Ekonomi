@@ -170,7 +170,7 @@ export default function MonthView({ currentMonth }: Props) {
                               }}
                               min="0"
                               style={{ 
-                                fontSize: '0.9rem', padding: '0.4rem 1.8rem 0.4rem 0.5rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-primary)'
+                                fontSize: '0.9rem', padding: '0.4rem 2.5rem 0.4rem 0.5rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-primary)'
                               }}
                               title="Varav amortering"
                             />

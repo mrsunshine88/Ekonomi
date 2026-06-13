@@ -57,8 +57,8 @@ export default function LoginScreen() {
         if (error) throw error;
         setSuccessMsg('En återställningslänk har skickats till din e-post. Kolla även skräpposten!');
         setIsForgotPassword(false);
-      } catch (err: any) {
-        let errMsg = err.message || 'Kunde inte skicka återställningslänk.';
+      } catch (err: unknown) {
+        let errMsg = (err instanceof Error ? err.message : String(err)) || 'Kunde inte skicka återställningslänk.';
         if (errMsg.toLowerCase().includes('for security purposes') || errMsg.toLowerCase().includes('rate limit')) {
           errMsg = 'Du försöker för snabbt. Av säkerhetsskäl, vänta en stund och försök igen.';
         }
@@ -98,8 +98,8 @@ export default function LoginScreen() {
           }
         }
       }
-    } catch (err: any) {
-      let msg = err.message || 'Ett fel uppstod';
+    } catch (err: unknown) {
+      let msg = (err instanceof Error ? err.message : String(err)) || 'Ett fel uppstod';
       if (msg === 'Invalid login credentials') msg = 'Fel e-postadress eller lösenord.';
       if (msg === 'User already registered') msg = 'E-postadressen används redan av ett annat konto.';
       if (msg.includes('Password should be at least')) msg = 'Lösenordet måste vara minst 6 tecken långt.';
