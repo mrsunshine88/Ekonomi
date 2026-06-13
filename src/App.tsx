@@ -20,7 +20,7 @@ import UpdatePassword from './components/Auth/UpdatePassword';
 import ChatBubble from './components/ChatBubble';
 
 function App() {
-  const { user, householdId, loading, isRecoveringPassword, isAdmin } = useAuth();
+  const { user, householdId, loading, isRecoveringPassword, isAdmin, tosAccepted } = useAuth();
   const initCloud = useStore(s => s.initCloud);
   const state = useStore(s => s.state);
   const isDemoMode = useStore(s => s.isDemoMode);
@@ -95,8 +95,8 @@ function App() {
     <div className="container">
       <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
       <TermsModal />
-      {needsOnboarding && <Onboarding />}
-      {!needsOnboarding && isPaywallBlocked && <PaywallModal />}
+      {tosAccepted && needsOnboarding && <Onboarding />}
+      {tosAccepted && !needsOnboarding && isPaywallBlocked && <PaywallModal />}
       
       {isDemoMode && (
         <div style={{ background: '#f59e0b', color: '#000', padding: '1rem', textAlign: 'center', borderRadius: '8px', marginBottom: '1rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
