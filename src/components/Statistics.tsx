@@ -157,7 +157,7 @@ export default function Statistics() {
     let min = Infinity;
     let max = -Infinity;
     sortedMonths.forEach(mId => {
-      const amounts = rawMonthsObj[mId].billAmounts || {};
+      const amounts = rawMonthsObj[mId]?.billAmounts || {};
       const amt = amounts[b.id] !== undefined ? amounts[b.id] : b.defaultAmount;
       if (amt > 0) { 
         if (amt < min) min = amt;
@@ -171,7 +171,7 @@ export default function Statistics() {
   // Calculate Movers
   const diffs = activeBills.map(b => {
     const paidHistory = sortedMonths.map(mId => {
-      const amounts = rawMonthsObj[mId].billAmounts || {};
+      const amounts = rawMonthsObj[mId]?.billAmounts || {};
       return amounts[b.id] !== undefined ? amounts[b.id] : b.defaultAmount;
     }).filter(amt => amt > 0); 
     
