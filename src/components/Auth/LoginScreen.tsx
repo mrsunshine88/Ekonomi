@@ -122,6 +122,11 @@ export default function LoginScreen() {
       icon: "📊",
       title: "EkonomiTB",
       desc: "Följ dina kostnader bakåt i historik och få full insyn med interaktiv statistik."
+    },
+    {
+      icon: "💬",
+      title: "Live-support & Demoläge",
+      desc: "Testkör appen säkert med låtsassiffror. Fastnar du? Chatta direkt med oss i appen så hjälper vi till."
     }
   ];
 

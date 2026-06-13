@@ -82,6 +82,18 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
               <strong style={{ color: '#fff' }}>Helt separerad privat ekonomi:</strong> Hantera dina egna privata utgifter och lån direkt i appen, helt skyddat från den gemensamma Swish-uträkningen. Välj själv om du vill dela en skrivskyddad vy med din partner för total transparens.
             </div>
           </div>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <span style={{ fontSize: '1.5rem' }}>🛠️</span>
+            <div>
+              <strong style={{ color: '#fff' }}>Demoläge:</strong> Testa appen innan du bestämmer dig. Klicka på "Testa Demo" för att utforska alla funktioner med låtsassiffror utan att påverka din riktiga data.
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <span style={{ fontSize: '1.5rem' }}>💬</span>
+            <div>
+              <strong style={{ color: '#fff' }}>Live-chatt support:</strong> Fastnat på något? Chattta direkt med oss inifrån appen (under öppettider) så hjälper vi dig att komma igång!
+            </div>
+          </div>
         </div>
 
         <button 
