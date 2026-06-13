@@ -594,20 +594,21 @@ export default function MyPages() {
             {members.map((m, index) => {
               const isFounder = index === 0;
               return (
-              <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap', gap: '1rem' }}>
+              <div key={m.id} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div>
-                  <div style={{ color: '#fff' }}>{m.email} {m.id === user?.id && '(Du)'} {isFounder && '👑 (Grundare)'}</div>
+                  <div style={{ color: '#fff', wordBreak: 'break-all' }}>{m.email} {m.id === user?.id && '(Du)'} {isFounder && '👑 (Grundare)'}</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{m.role === 'owner' ? 'Medägare' : 'Medlem'}</div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                   {/* Account linking dropdown */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Kopplat konto:</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)', flex: '1 1 auto' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Kopplat konto:</span>
                     <select
                       value={householdProfiles.find(p => p.id === m.id)?.person_account_id || ''}
                       onChange={(e) => updateProfileAccount(m.id, e.target.value || null)}
                       disabled={role !== 'owner'}
-                      style={{ padding: '0.4rem', borderRadius: '4px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid var(--border-color)', cursor: role === 'owner' ? 'pointer' : 'not-allowed', fontSize: '0.9rem' }}
+                      style={{ flex: 1, padding: '0.4rem', borderRadius: '4px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid var(--border-color)', cursor: role === 'owner' ? 'pointer' : 'not-allowed', fontSize: '0.9rem', width: '100%' }}
                     >
                       <option value="">-- Inget valt --</option>
                       {personAccounts.map(a => (
@@ -617,18 +618,18 @@ export default function MyPages() {
                   </div>
 
                   {role === 'owner' && m.id !== user?.id && (
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', flex: '1 1 auto', justifyContent: 'flex-start' }}>
                     <button 
                       onClick={() => handleToggleRole(m.id, m.role)}
                       disabled={loading}
-                      style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                      style={{ flex: '1 1 auto', background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '0.5rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
                     >
-                      {m.role === 'owner' ? 'Lås läge (Gör till Medlem)' : 'Lås upp (Gör till Medägare)'}
+                      {m.role === 'owner' ? 'Gör till Medlem' : 'Gör till Medägare'}
                     </button>
                     <button 
                       onClick={() => handleKickMember(m.id, m.email)}
                       disabled={loading}
-                      style={{ background: '#f43f5e', color: '#fff', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                      style={{ flex: '1 1 auto', background: '#f43f5e', color: '#fff', border: 'none', padding: '0.5rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
                     >
                       Kicka ut
                     </button>
