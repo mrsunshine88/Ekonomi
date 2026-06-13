@@ -820,3 +820,25 @@ Två stora uppdateringar gjordes för att hantera lån och inkomster mer profess
   4. Om "Amortering" lämnas tomt (t.ex. vid CSN där det dras automatiskt utan ränta), faller koden tillbaka på att `Amortering = Totalt Inmatat Belopp`.
   5. Skulden (progress-baren) i `Statistics.tsx` räknar numera ned uteslutande baserat på `billAmortization` från databasen istället för totalbeloppet, så att räntan inte felaktigt krymper lånet.
 - **Databas-Migrering:** Ett SQL-skript (`add_loan_columns.sql`) skapades som lade till kolumnerna `fixed_fee` på lån-tabellerna, och `amortization`, `interest`, `fee` på belopps-tabellerna (`month_bill_amounts` / `private_month_amounts`).
+
+## 35. UI/UX Uppfräschning & Realtids-Demo (Enterprise-polering)
+
+### Vad
+En rad estetiska och funktionella finjusteringar genomfördes för att höja appens premiumkänsla och göra utforskandet (Demoläget) mer kraftfullt:
+1. **Ytdiagram till Linjediagram:** Graferna i EkonomiTB byttes ut från fyllda AreaCharts till slimmade LineCharts med tydliga belopp på varje datapunkt, och en sammanfattande trend-indikator.
+2. **Realtidsuppdateringar i Demo:** Användare kan nu ändra siffror i demoläget och omedelbart se resultatet i graferna utan att behöva "låsa" månaden först.
+3. **Privata Demodata:** Låtsasdata för den privata vyn (Spotify, Gymkort, CSN, Sparande) lades till så att besökare omedelbart kan förstå den privata funktionens värde.
+4. **Z-index & Layout Buggar:** Modaler (t.ex. prenumerationsrutan) bröts ut ur sina föräldra-containrar för att inte klippas av på stora skärmar.
+5. **Tydlig kommunikation:** Inloggningssidans copy uppdaterades för att tydliggöra att Live-support-chatten är exklusiv för prenumeranter.
+
+### Varför
+- De tidigare fyllda diagrammen (AreaCharts) kändes för "avlånga" och överväldigande när det enbart fanns två månader att jämföra, och användaren saknade direkta summor på punkterna.
+- Användare som testade appen ville leka runt med siffrorna och direkt se hur EkonomiTB förändrades, men tidigare logik krävde att månaden var "låst" för att den skulle synas i statistiken.
+- CSS `overflow: hidden` på inloggningens vänsterpanel orsakade att breda modaler klipptes av i vissa webbläsare (som Edge på Desktop).
+
+### Hur
+- **Graferna:** `Statistics.tsx` byggdes om. `AreaChart` ersattes med `LineChart` med inbyggd `LabelList` som renderar summorna (`val.toLocaleString('sv-SE') kr`) direkt på linjen. En anpassad `renderTrend()`-funktion lades till som jämför senaste månaden med föregående och skriver ut differensen med pilar (▲ / ▼) och dynamiska färger ovanför varje graf.
+- **Demoläget i EkonomiTB:** En bypass lades in i `Statistics.tsx` filtreringslogik (`validMonths`). `if (isDemoMode) return true;` tvingar nu EkonomiTB att inkludera alla tillgängliga månader (även olåsta), vilket skapar omedelbar återkoppling vid siffror-tweakande.
+- **Privat Demodata:** `store.ts` utökades till att injecta mock-räkningar i `state.privateBills` och mock-belopp i `state.privateMonths` under `startDemo()`. En bugg som kopplade privatdata till den obefintliga inloggade användaren fixades genom att hårdkoda fallback-ID `demo_user_1` i de privata vyerna vid `isDemoMode`.
+- **Globala Modaler via Portals:** `SubscriptionFeaturesModal.tsx` lindades in i Reacts `createPortal(..., document.body)`. Detta bryter ut modalen ur den aktuella DOM-hierarkin och renderar den direkt på `body`, vilket fullständigt eliminerar alla z-index- och overflow-klippningar (t.ex. från `.login-info-section`).
+- **Input Styling (Amortering):** Layouten i `MonthView.tsx` för lån stuvades om. Den inbyggda `bill-amount-wrapper` som lägger till "kr" isolerades till att enbart omsluta "Totalt"-fältet, medan Amorterings-fältet fick en egen, ren input med tydlig kontrast och spacing så att siffror och valutor inte flöt in i varandra.
