@@ -20,7 +20,7 @@ interface AuthState {
 
 // Fånga hash-fragmentet innan Supabase Auth rensar det
 const initialHashStr = typeof window !== 'undefined' ? window.location.hash + window.location.search : '';
-const initiallyConfirmed = initialHashStr.includes('type=signup');
+const initiallyConfirmed = initialHashStr.includes('type=signup') || initialHashStr.includes('code=') || initialHashStr.includes('access_token=');
 
 const AuthContext = createContext<AuthState>({
   user: null,
@@ -140,6 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         if (event === 'PASSWORD_RECOVERY') {
           setIsRecoveringPassword(true);
+          setIsNewlyConfirmed(false); // Om det är password recovery är det inte en ny bekräftelse
         }
 
         const currentUserWasNull = !userRef.current; // Kollar ref för att undvika stale state i useEffect-closure
