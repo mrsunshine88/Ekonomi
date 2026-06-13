@@ -44,18 +44,14 @@ export default function LoginScreen() {
     if (isForgotPassword) {
       setLoading(true);
       try {
-        const { data: isConfirmed, error: rpcError } = await supabase.rpc('check_email_confirmed', { check_email: email });
-        
-        if (rpcError) throw rpcError;
-        if (!isConfirmed) {
-           throw new Error("Kunde inte hitta ett bekräftat konto med den e-postadressen. Har du klickat på länken i bekräftelsemejlet?");
-        }
-
+        // SÄKERT MÖNSTER: Vi anropar Supabase direkt utan att kolla om e-posten finns.
+        // Detta förhindrar "user enumeration" — ingen utomstående kan lista vilka konton som existerar.
+        // Supabase skickar bara ett mail om kontot finns, annars händer ingenting (men vi visar alltid samma meddelande).
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin
         });
         if (error) throw error;
-        setSuccessMsg('En återställningslänk har skickats till din e-post. Kolla även skräpposten!');
+        setSuccessMsg('Om e-postadressen finns i systemet skickas en återställningslänk inom kort. Kolla även skräpposten!');
         setIsForgotPassword(false);
       } catch (err: unknown) {
         let errMsg = (err instanceof Error ? err.message : String(err)) || 'Kunde inte skicka återställningslänk.';

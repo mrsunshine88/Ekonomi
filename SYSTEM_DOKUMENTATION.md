@@ -871,3 +871,147 @@ Tidigare förlitade sig appen enbart på lokala loggar (`console.error`) och den
 - **Konfiguration i `main.tsx`:** Sentry initieras innan React hinner börja rendera applikationen. Funktionen `Sentry.init` anropas med en specifik `DSN` (Data Source Name) som fungerar som adressen till projektet på Sentry.io.
 - **Produktions-spärr:** Initieringen innehåller konfigurationen `enabled: import.meta.env.PROD` för att säkerställa att Sentry *enbart* skickar iväg felrapporter när koden körs i produktion, och därmed hålla utvecklingsmiljön (`localhost`) fri från falska larm.
 - **ErrorBoundary-koppling:** Inuti vår befintliga, skräddarsydda `ErrorBoundary` i `main.tsx` utökades metoden `componentDidCatch(error)` till att anropa `Sentry.captureException(error)`. Detta bibehåller vårt användarvänliga fallback-UI ("Något gick fel!") samtidigt som felet sparas för teknisk granskning på Sentry.
+- **ErrorBoundary-koppling:** Inuti vår befintliga, skräddarsydda `ErrorBoundary` i `main.tsx` utökades metoden `componentDidCatch(error)` till att anropa `Sentry.captureException(error)`. Detta bibehåller vårt användarvänliga fallback-UI ("Något gick fel!") samtidigt som felet sparas för teknisk granskning på Sentry.
+
+---
+
+## 38. Fullständig Säkerhetshärdning (Supabase + Kod)
+
+### Vad
+En djupgående, fullständig säkerhetsgranskning och härdning av alla lager i systemet genomfördes. Arbetet kan delas in i fyra delar:
+1. **Supabase Database Linter-varningar** (alla funktioner härdade)
+2. **User Enumeration-attack** eliminerad i lösenordsåterställning
+3. **Förbättrade felmeddelanden** för nätverksfel
+4. **Playwright End-to-End-tester** (automatiserad testning av hela flödet)
+
+---
+
+### 38.1 Supabase Database Linter-härdning (SQL)
+
+#### Varför
+Supabase inbyggda säkerhetsgranskare (Database Linter) flaggade 3 kategorier av risker:
+1. `function_search_path_mutable` — En angripare med schemarättigheter kan teoretiskt skapa ett "evil schema" och lura databasen att köra fel kod när en privilegierad funktion exekverar.
+2. `anon_security_definer_function_executable` — Anonyma (ej inloggade) användare kunde direkt anropa admin-funktioner via REST API (`/rest/v1/rpc/...`), trots att koden inuti blockerade dem.
+3. `authenticated_security_definer_function_executable` — Inloggade användare utan admin-roll kunde anropa känsliga admin-funktioner.
+
+#### Hur
+En SQL-patch (`database_security_fixes.sql`) kördes i Supabase SQL Editor med tre sektioner:
+
+**Del 1 — `SET search_path = public` på alla funktioner:**
+Låser sökvägen så att databasen alltid hittar rätt inbyggda funktioner och inte kan luras av ett skadligt schema.
+
+**Del 2 — `REVOKE EXECUTE FROM anon`:**
+Blockerar anonyma helt från att ens nå dörrhandtaget på känsliga funktioner:
+- `add_system_admin`, `remove_system_admin`, `get_system_admins`, `get_admin_stats`
+- `set_admin_secret`, `delete_admin_secret`, `get_vip_emails`
+- `set_household_vip_by_email`, `revoke_household_vip_by_email`
+- `toggle_paywall`, `set_global_setting`, `set_user_role`
+- `handle_new_user`, `is_user_admin`, `update_chat_session_timestamp`, m.fl.
+
+**Del 3 — `REVOKE EXECUTE FROM authenticated` (enbart admin-funktioner):**
+Tar bort rättigheterna för inloggade vanliga användare att anropa känsliga admin-funktioner.
+*Undantagna* (behöver fortfarande vara körbara av inloggade): `delete_user`, `toggle_share_private_economy`, `user_in_household`, `update_chat_session_timestamp`, `check_email_confirmed`.
+
+#### Fil
+`database_security_fixes.sql` — Körs en gång i Supabase SQL Editor. Är idempotent (kan köras om utan bieffekter).
+
+---
+
+### 38.2 Eliminering av User Enumeration-sårbarhet
+
+#### Vad
+En *User Enumeration*-attack innebär att en angripare kan ta reda på vilka e-postadresser som har konton i systemet, genom att testa olika adresser och tolka felmeddelandena.
+
+#### Varför det var ett problem
+I den gamla lösenordsåterställningslogiken i `LoginScreen.tsx` anropades funktionen `check_email_confirmed` *innan* `resetPasswordForEmail`. Om e-posten inte hade ett bekräftat konto kastades ett specifikt fel: *"Kunde inte hitta ett bekräftat konto med den e-postadressen"*. En angripare kunde brute-forca e-postadresser och lista hela vår användarbas.
+
+#### Lösningen (fil: `src/components/Auth/LoginScreen.tsx`)
+`check_email_confirmed`-anropet togs helt bort. Nu anropas `supabase.auth.resetPasswordForEmail` direkt, alltid, oavsett om e-posten existerar eller inte. Supabase skickar bara ett mail om kontot finns — annars händer ingenting.
+
+Meddelandet som visas för användaren är nu alltid generiskt och avslöjar ingenting:
+> *"Om e-postadressen finns i systemet skickas en återställningslänk inom kort. Kolla även skräpposten!"*
+
+Detta är branschstandarden som används av Google, GitHub och alla moderna system.
+
+---
+
+### 38.3 Förbättrade Felmeddelanden & Sentry-integration i `safeDb`
+
+#### Vad
+Appens centrala databasanrops-wrapper (`safeDb` i `src/store.ts`) förbättrades för att ge användarvänliga, kontextuella felmeddelanden vid nätverksproblem, och för att skicka alla oväntade fel till Sentry.
+
+#### Varför
+Tidigare visade `safeDb` alltid samma generiska meddelande `"Nätverksfel. Försök igen."` oavsett vad som faktiskt gick fel. En användare på tunnelbanan utan signal fick samma meddelande som en användare vars databas-query kraschade av annan anledning.
+
+#### Lösningen (fil: `src/store.ts`)
+En hjälpfunktion `getNetworkErrorMessage(err)` lades till som analyserar feltypen:
+
+| Feltyp | Meddelande |
+|---|---|
+| `Failed to fetch` / `NetworkError` | "Ingen internetuppkoppling. Kontrollera din anslutning och försök igen." |
+| `timeout` / `timed out` | "Servern svarar inte just nu. Försök igen om en stund." |
+| Alla andra fel | "Något gick fel. Försök igen." + skickas till Sentry |
+
+Sentry-integration lades även till i `safeDb` via `Sentry.captureException(err)` på alla oväntade fel, så att varje databasfel loggas i Sentry-dashboarden med full stack trace.
+
+---
+
+### 38.4 End-to-End-tester med Playwright
+
+#### Vad
+Tre automatiserade End-to-End (E2E)-testfiler skapades med Playwright (Microsofts gratis testramverk för webbappar) som simulerar en riktig användares beteende i en riktig webbläsare (Chromium).
+
+#### Varför
+Appens befintliga Vitest-tester testar enbart isolerade logikfunktioner (2 stycken). Det finns ingen automatiserad kontroll på att hela flödet — inloggning, navigering, knappar — fungerar som det ska. Om en framtida kodändring råkar bryta inloggningssidan eller Statistics-vyn hittar vi det inte förrän en riktig användare rapporterar det.
+
+#### Testfiler
+
+**`e2e/auth.spec.ts` — Autentisering**
+- Inloggningssidan renderas korrekt med e-post- och lösenordsfält
+- Fel lösenord ger felmeddelande utan att trigga ErrorBoundary
+- Lösenordsåterställning visar korrekt generiskt meddelande (verifierar fix 38.2)
+- Demo-läget kan startas utan inloggning
+
+**`e2e/navigation.spec.ts` — App-navigering**
+- Appen startar utan ErrorBoundary ("Oops!"-texten syns aldrig)
+- Statistics-vyn (lazy-loadad) laddas och renderar utan blank skärm
+- Navigering mellan vyer fungerar korrekt
+
+**`e2e/robustness.spec.ts` — Robusthet & Edge Cases**
+- Sidan laddas på under 5 sekunder (prestandakontroll)
+- Inga kritiska JavaScript-konsolfel vid uppstart
+- Tom e-post vid inloggning kraschar inte appen
+- Extremt lång e-postinmatning (500 tecken) kraschar inte appen
+
+#### Köra testerna
+```bash
+npx playwright test
+```
+Playwright startar automatiskt dev-servern (`npm run dev`) och kör alla tre testfiler i Chromium. Konfiguration i `playwright.config.ts`.
+
+---
+
+### 38.5 Supabase Auth — Leaked Password Protection
+
+#### Vad
+En Auth-inställning aktiverades i Supabase Dashboard: **"Enable Leaked Password Protection"**.
+
+#### Varför
+Utan denna inställning kan användare registrera sig med lösenord som är kända från offentliga dataintrång (t.ex. `password123`, `123456`). Supabase kontrollerar nu varje nytt lösenord mot databasen HaveIBeenPwned.org och avvisar komprometterade lösenord automatiskt.
+
+#### Hur
+Aktiverat via: Supabase Dashboard → Authentication → Providers → Email → "Enable Leaked Password Protection" → Spara. Kräver noll kodändringar.
+
+---
+
+### Filförteckning — Ändringar i detta kapitel
+
+| Fil | Typ av ändring |
+|---|---|
+| `database_security_fixes.sql` | NY — SQL-patch som körs i Supabase. Låser search_path, återkallar rättigheter för anon och authenticated. |
+| `src/components/Auth/LoginScreen.tsx` | ÄNDRAD — Tog bort `check_email_confirmed`-anropet, visar nu generiskt meddelande vid lösenordsåterställning. |
+| `src/store.ts` | ÄNDRAD — `safeDb` förbättrad med nätverksfeldetektering och Sentry-integration. Sentry-import tillagd. |
+| `e2e/auth.spec.ts` | NY — E2E-tester för autentiseringsflödet. |
+| `e2e/navigation.spec.ts` | NY — E2E-tester för appnavigering i Demo-läge. |
+| `e2e/robustness.spec.ts` | NY — E2E-tester för robusthet och edge cases. |
+| `playwright.config.ts` | BEFINTLIG — Playwright-konfiguration (var redan på plats). |

@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { AppState, BillDefinition, CalculationResult, Account, SwishTransfer, PrivateBill } from './types';
 import toast from 'react-hot-toast';
+import * as Sentry from '@sentry/react';
 import { runRelationalMigration } from './migrateToRelational';
 import { safeParseAmount, safeParseBill, safeParseAccount, safeParsePrivateBill } from './validators';
 
@@ -21,11 +22,24 @@ const DEFAULT_STATE: AppState = {
   settings: { showSummary: true }
 };
 
-export const safeDb = async (promise: PromiseLike<any>, rollbackFn?: () => void) => {
+// Hjälpfunktion som kategoriserar nätverksfel och ger användarvänliga meddelanden
+const getNetworkErrorMessage = (err: unknown): string => {
+  const msg = err instanceof Error ? err.message.toLowerCase() : '';
+  if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('network request failed')) {
+    return 'Ingen internetuppkoppling. Kontrollera din anslutning och försök igen.';
+  }
+  if (msg.includes('timeout') || msg.includes('timed out')) {
+    return 'Servern svarar inte just nu. Försök igen om en stund.';
+  }
+  return 'Något gick fel. Försök igen.';
+};
+
+export const safeDb = async (promise: PromiseLike<{ error: { message?: string, details?: string } | null }>, rollbackFn?: () => void) => {
   try {
     const { error } = await promise;
     if (error) {
       console.error('Supabase error:', error);
+      Sentry.captureException(new Error(error.message || error.details || 'Supabase DB error'));
       toast.error(`Databasfel: ${error.message || error.details || 'Okänt fel'}`);
       if (rollbackFn) rollbackFn();
       return { error };
@@ -33,7 +47,9 @@ export const safeDb = async (promise: PromiseLike<any>, rollbackFn?: () => void)
     return { error: null };
   } catch (err) {
     console.error('Unexpected error:', err);
-    toast.error('Nätverksfel. Försök igen.');
+    const userMessage = getNetworkErrorMessage(err);
+    Sentry.captureException(err);
+    toast.error(userMessage);
     if (rollbackFn) rollbackFn();
     return { error: err };
   }
@@ -639,7 +655,7 @@ export const useStore = create<StoreState>((set, get) => ({
 
   unlockAccount: async (monthId, accountId) => {
     const { householdId, state } = get();
-    let unhandledPayments: string[] = [];
+    const unhandledPayments: string[] = [];
     const monthData = state.months[monthId];
     if (!monthData || !monthData.handledPayments) return;
     
@@ -697,7 +713,7 @@ export const useStore = create<StoreState>((set, get) => ({
       
       try {
         await safeDb(supabase.from('household_settings').upsert(payload, { onConflict: 'household_id' }));
-      } catch (e) {
+      } catch {
         // Fallback if SQL migration not yet run
         console.warn("Could not save new settings to DB. Run db_updates.sql.");
       }
@@ -1050,7 +1066,7 @@ export const useStore = create<StoreState>((set, get) => ({
     // Local update
     const existing = state.monthlySalaries || [];
     const idx = existing.findIndex(s => s.userId === userId && s.payDate === payDate);
-    let newList = [...existing];
+    const newList = [...existing];
     if (idx >= 0) {
       newList[idx] = { userId, payDate, amount };
     } else {
@@ -1099,7 +1115,7 @@ export function calculateMonth(state: AppState, monthId: string): CalculationRes
     const amount = amounts[bill.id] !== undefined ? amounts[bill.id] : bill.defaultAmount;
     const billAccount = state.accounts.find(a => a.id === bill.accountId);
     
-    let liabilities: Record<string, number> = {};
+    const liabilities: Record<string, number> = {};
     if (bill.splitType === 'equal') {
       const splitAmt = personAccounts.length > 0 ? amount / personAccounts.length : 0;
       personAccounts.forEach(p => { liabilities[p.id] = splitAmt; });

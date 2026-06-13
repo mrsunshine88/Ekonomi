@@ -63,7 +63,7 @@ function App() {
 
   const changeMonth = (delta: number) => {
     const [year, month] = currentMonth.split('-').map(Number);
-    let newDate = new Date(year, month - 1 + delta, 1);
+    const newDate = new Date(year, month - 1 + delta, 1);
     const newId = `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, '0')}`;
     setCurrentMonth(newId);
   };
