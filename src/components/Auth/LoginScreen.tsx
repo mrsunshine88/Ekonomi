@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
+import { useStore } from '../../store';
 import Footer from '../Footer';
 
 export default function LoginScreen() {
@@ -11,10 +12,25 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [demoEnabled, setDemoEnabled] = useState(false);
+  const startDemo = useStore(s => s.startDemo);
 
   // Sätt body background endast på login screen om vi behöver override
   useEffect(() => {
     document.body.style.background = '#060913';
+    
+    const fetchDemoSettings = async () => {
+      try {
+        const { data } = await supabase.from('global_settings').select('value').eq('key', 'login_demo_enabled').maybeSingle();
+        if (data && data.value === 'true') {
+          setDemoEnabled(true);
+        }
+      } catch (e) {
+        console.error("Could not fetch demo settings", e);
+      }
+    };
+    fetchDemoSettings();
+
     return () => {
       document.body.style.background = '#0b0f19';
     }
@@ -242,6 +258,31 @@ export default function LoginScreen() {
                     : 'Skapa konto'}
             </button>
           </form>
+
+          {demoEnabled && !isForgotPassword && (
+            <div style={{ marginTop: '1rem' }}>
+              <button 
+                onClick={startDemo}
+                type="button"
+                style={{ 
+                  width: '100%', 
+                  padding: '1rem', 
+                  background: 'transparent', 
+                  border: '1px solid #f43f5e', 
+                  color: '#f43f5e', 
+                  borderRadius: '8px', 
+                  cursor: 'pointer', 
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                🛠️ Testkör appen i Demoläge
+              </button>
+            </div>
+          )}
 
           <div className="login-footer">
             <button 

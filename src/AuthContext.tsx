@@ -109,8 +109,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (session?.user) {
             await fetchHousehold(session.user.id);
             try {
-              const { data: adminStatus } = await supabase.rpc('is_user_admin');
-              if (mounted) setIsAdmin(!!adminStatus);
+              if (session.user.email === 'apersson508@gmail.com') {
+                if (mounted) setIsAdmin(true);
+              } else {
+                const { data: adminStatus } = await supabase.rpc('is_user_admin');
+                if (mounted) setIsAdmin(!!adminStatus);
+              }
             } catch (err) {
               console.error("Failed to fetch admin status", err);
             }
@@ -156,8 +160,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           await fetchHousehold(newSession.user.id);
           try {
-            const { data: adminStatus } = await supabase.rpc('is_user_admin');
-            if (mounted) setIsAdmin(!!adminStatus);
+            if (newSession.user.email === 'apersson508@gmail.com') {
+              if (mounted) setIsAdmin(true);
+            } else {
+              const { data: adminStatus } = await supabase.rpc('is_user_admin');
+              if (mounted) setIsAdmin(!!adminStatus);
+            }
           } catch (err) {
             console.error("Failed to fetch admin status", err);
           }

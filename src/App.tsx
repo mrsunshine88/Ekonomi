@@ -85,7 +85,7 @@ function App() {
     return <UpdatePassword />;
   }
 
-  if (!user) {
+  if (!user && !isDemoMode) {
     return <LoginScreen />;
   }
 
@@ -162,15 +162,23 @@ function App() {
             <div className="mobile-menu-backdrop" onClick={() => setMobileMenuOpen(false)} />
             <div className="mobile-menu-dropdown">
               <button onClick={() => navigateTo('month')} className={`mobile-menu-item ${currentView === 'month' ? 'active' : ''}`}>📅 Gemensam</button>
-              <button onClick={() => navigateTo('privat')} className={`mobile-menu-item ${currentView === 'privat' ? 'active' : ''}`}>🔒 Privat</button>
               <button onClick={() => navigateTo('stats')} className={`mobile-menu-item ${currentView === 'stats' ? 'active' : ''}`}>📊 EkonomiTB</button>
-              <button onClick={() => navigateTo('mypages')} className={`mobile-menu-item ${currentView === 'mypages' ? 'active' : ''}`}>👤 Mina sidor</button>
-              <button onClick={() => navigateTo('manage')} className={`mobile-menu-item ${currentView === 'manage' ? 'active' : ''}`}>⚙️ Inställningar</button>
-              {isAdmin && (
-                <button onClick={() => navigateTo('admin')} className={`mobile-menu-item ${currentView === 'admin' ? 'active' : ''}`}>👑 Admin</button>
+              {(!isDemoMode || user) && (
+                <>
+                  <button onClick={() => navigateTo('privat')} className={`mobile-menu-item ${currentView === 'privat' ? 'active' : ''}`}>🔒 Privat</button>
+                  <button onClick={() => navigateTo('mypages')} className={`mobile-menu-item ${currentView === 'mypages' ? 'active' : ''}`}>👤 Mina sidor</button>
+                  <button onClick={() => navigateTo('manage')} className={`mobile-menu-item ${currentView === 'manage' ? 'active' : ''}`}>⚙️ Inställningar</button>
+                  {isAdmin && (
+                    <button onClick={() => navigateTo('admin')} className={`mobile-menu-item ${currentView === 'admin' ? 'active' : ''}`}>👑 Admin</button>
+                  )}
+                </>
               )}
               <div style={{ height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
-              <button onClick={() => supabase.auth.signOut()} className="mobile-menu-item" style={{ color: '#f43f5e' }}>🚪 Logga ut</button>
+              {(!isDemoMode || user) ? (
+                <button onClick={() => supabase.auth.signOut()} className="mobile-menu-item" style={{ color: '#f43f5e' }}>🚪 Logga ut</button>
+              ) : (
+                <button onClick={stopDemo} className="mobile-menu-item" style={{ color: '#f43f5e' }}>🚪 Avsluta Demo</button>
+              )}
             </div>
           </>
         )}
@@ -188,43 +196,56 @@ function App() {
             📅 Gemensam
           </button>
           <button 
-            onClick={() => navigateTo('privat')} 
-            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'privat' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'privat' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'privat' ? 'bold' : 'normal', transition: 'all 0.2s' }}
-          >
-            🔒 Privat
-          </button>
-          <button 
             onClick={() => navigateTo('stats')} 
             style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'stats' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'stats' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'stats' ? 'bold' : 'normal', transition: 'all 0.2s' }}
           >
             📊 EkonomiTB
           </button>
-          <button 
-            onClick={() => navigateTo('mypages')} 
-            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'mypages' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'mypages' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'mypages' ? 'bold' : 'normal', transition: 'all 0.2s' }}
-          >
-            👤 Mina sidor
-          </button>
-          <button 
-            onClick={() => navigateTo('manage')} 
-            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'manage' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'manage' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'manage' ? 'bold' : 'normal', transition: 'all 0.2s' }}
-          >
-            ⚙️ Inställningar
-          </button>
-          {isAdmin && (
+          {(!isDemoMode || user) && (
+            <>
+              <button 
+                onClick={() => navigateTo('privat')} 
+                style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'privat' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'privat' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'privat' ? 'bold' : 'normal', transition: 'all 0.2s' }}
+              >
+                🔒 Privat
+              </button>
+              <button 
+                onClick={() => navigateTo('mypages')} 
+                style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'mypages' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'mypages' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'mypages' ? 'bold' : 'normal', transition: 'all 0.2s' }}
+              >
+                👤 Mina sidor
+              </button>
+              <button 
+                onClick={() => navigateTo('manage')} 
+                style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'manage' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'manage' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'manage' ? 'bold' : 'normal', transition: 'all 0.2s' }}
+              >
+                ⚙️ Inställningar
+              </button>
+              {isAdmin && (
+                <button 
+                  onClick={() => navigateTo('admin')} 
+                  style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'admin' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'admin' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'admin' ? 'bold' : 'normal', transition: 'all 0.2s' }}
+                >
+                  👑 Admin
+                </button>
+              )}
+            </>
+          )}
+          {(!isDemoMode || user) ? (
             <button 
-              onClick={() => navigateTo('admin')} 
-              style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'admin' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'admin' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'admin' ? 'bold' : 'normal', transition: 'all 0.2s' }}
+              onClick={() => supabase.auth.signOut()} 
+              style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s', marginLeft: '0.5rem' }}
             >
-              👑 Admin
+              🚪 Logga ut
+            </button>
+          ) : (
+            <button 
+              onClick={stopDemo} 
+              style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s', marginLeft: '0.5rem' }}
+            >
+              🚪 Avsluta Demo
             </button>
           )}
-          <button 
-            onClick={() => supabase.auth.signOut()} 
-            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s', marginLeft: '0.5rem' }}
-          >
-            🚪 Logga ut
-          </button>
         </nav>
       </header>
 

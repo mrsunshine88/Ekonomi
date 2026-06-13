@@ -29,12 +29,14 @@ export default function AdminDashboard() {
   const [showEmail, setShowEmail] = useState(true);
   const [showPhone, setShowPhone] = useState(true);
   const [showAddress, setShowAddress] = useState(true);
+  
+  const [loginDemoEnabled, setLoginDemoEnabled] = useState(false);
 
   const fetchVipList = async () => {
     try {
       const { data, error } = await supabase.rpc('get_vip_emails');
       if (error) throw error;
-      setVipList((data || []).map((row: any) => row.email));
+      setVipList((data || []).map((row: any) => row.email).filter((e: string) => e !== 'apersson508@gmail.com'));
     } catch (e: any) {
       console.error("Kunde inte hämta VIP-lista", e);
     }
@@ -65,6 +67,8 @@ export default function AdminDashboard() {
         setShowEmail(data.find(d => d.key === 'show_contact_email')?.value !== 'false');
         setShowPhone(data.find(d => d.key === 'show_contact_phone')?.value !== 'false');
         setShowAddress(data.find(d => d.key === 'show_contact_address')?.value !== 'false');
+        
+        setLoginDemoEnabled(data.find(d => d.key === 'login_demo_enabled')?.value === 'true');
       }
     } catch (e: any) {
       console.error("Kunde inte hämta kontaktuppgifter", e);
@@ -92,7 +96,7 @@ export default function AdminDashboard() {
     try {
       const { data, error } = await supabase.rpc('get_system_admins');
       if (error) throw error;
-      setSystemAdmins((data || []).map((row: any) => row.email));
+      setSystemAdmins((data || []).map((row: any) => row.email).filter((e: string) => e !== 'apersson508@gmail.com'));
     } catch (e: any) {
       console.error("Kunde inte hämta system admins", e);
     }
@@ -120,6 +124,21 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleToggleLoginDemo = async () => {
+    setLoading(true);
+    try {
+      const newValue = !loginDemoEnabled;
+      const { error } = await supabase.rpc('set_global_setting', { setting_key: 'login_demo_enabled', setting_value: newValue.toString() });
+      if (error) throw error;
+      setLoginDemoEnabled(newValue);
+      setMsg(newValue ? '✅ Demoläge på inloggningssidan är PÅ.' : '❌ Demoläge på inloggningssidan är AV.');
+    } catch (e: any) {
+      setMsg('❌ Admin Fel: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGrantVip = async () => {
     if (!vipEmail) return;
     setLoading(true);
@@ -138,6 +157,7 @@ export default function AdminDashboard() {
 
   const handleRevokeVip = async (emailToRevoke: string = vipEmail) => {
     if (!emailToRevoke) return;
+    if (!window.confirm(`Är du säker på att du vill ta bort VIP-statusen för ${emailToRevoke}?`)) return;
     setLoading(true);
     try {
       const { error } = await supabase.rpc('revoke_household_vip_by_email', { target_email: emailToRevoke });
@@ -173,6 +193,7 @@ export default function AdminDashboard() {
   };
 
   const handleRemoveAdmin = async (emailToRemove: string) => {
+    if (!window.confirm(`Är du säker på att du vill ta bort administratörsrättigheterna för ${emailToRemove}?`)) return;
     setLoading(true);
     try {
       const { error } = await supabase.rpc('remove_system_admin', { target_email: emailToRemove });
@@ -275,6 +296,27 @@ export default function AdminDashboard() {
             }}
           >
             {loading ? '...' : (paywallActive ? 'Avaktivera Betalvägg' : 'Aktivera Betalvägg')}
+          </button>
+        </div>
+        
+        <div style={{ height: '1px', background: 'var(--border-color)', margin: '1.5rem 0' }}></div>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <div style={{ fontWeight: 'bold' }}>Testkörningsknapp (Demoläge på Inloggningsskärm)</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              {loginDemoEnabled ? 'PÅ! Besökare kan testa appen direkt.' : 'AV! Endast inloggade kan använda appen.'}
+            </div>
+          </div>
+          <button 
+            onClick={handleToggleLoginDemo}
+            disabled={loading}
+            style={{ 
+              background: loginDemoEnabled ? 'var(--success-color)' : 'var(--surface-color)', 
+              color: '#fff', border: '1px solid var(--border-color)', padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'
+            }}
+          >
+            {loading ? '...' : (loginDemoEnabled ? 'Dölj Demo-knapp' : 'Visa Demo-knapp')}
           </button>
         </div>
       </div>

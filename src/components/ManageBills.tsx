@@ -304,26 +304,8 @@ export default function ManageBills() {
 
       {activeTab === 'accounts' && (
         <div>
-          <h3 className="card-title">Befintliga Konton</h3>
-          <div className="bill-list" style={{ marginBottom: '2rem' }}>
-            {state.accounts.map(acc => (
-              <div key={acc.id} className="bill-row" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div>
-                  <div className="bill-name">{acc.name}</div>
-                  <div className="bill-meta">{acc.type === 'shared' ? 'Gemensamt konto' : 'Personligt konto'} • Betalningsmetod: {acc.transferMethod === 'transfer' ? 'Banköverföring' : 'Swish'}</div>
-                </div>
-                <button 
-                  onClick={() => onRemoveAccount(acc.id)}
-                  style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
-                >
-                  Ta bort
-                </button>
-              </div>
-            ))}
-          </div>
-
           <h3 className="card-title">Lägg till nytt konto</h3>
-          <div style={{ display: 'grid', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px' }}>
+          <div style={{ display: 'grid', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 'bold' }}>1. Typ av konto</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
@@ -397,6 +379,24 @@ export default function ManageBills() {
             <button onClick={handleAddAccount} style={{ background: 'var(--success-color)', color: '#fff', border: 'none', padding: '0.8rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.05rem', marginTop: '1rem' }}>
               + Skapa Kontot
             </button>
+          </div>
+
+          <h3 className="card-title">Befintliga Konton</h3>
+          <div className="bill-list" style={{ marginBottom: '2rem' }}>
+            {state.accounts.map(acc => (
+              <div key={acc.id} className="bill-row" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div>
+                  <div className="bill-name">{acc.name}</div>
+                  <div className="bill-meta">{acc.type === 'shared' ? 'Gemensamt konto' : 'Personligt konto'} • Betalningsmetod: {acc.transferMethod === 'transfer' ? 'Banköverföring' : 'Swish'}</div>
+                </div>
+                <button 
+                  onClick={() => onRemoveAccount(acc.id)}
+                  style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Ta bort
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -525,102 +525,8 @@ export default function ManageBills() {
 
       {activeTab === 'bills' && (
         <div>
-          <h3 className="card-title">Gemensamma Räkningar (Månadsvyn)</h3>
-          <div className="bill-list" style={{ marginBottom: '2rem' }}>
-            {state.bills.filter(b => !b.isArchived).map(bill => {
-              const account = state.accounts.find(a => a.id === bill.accountId);
-              let splitText = 'Delas lika';
-              if (bill.splitType !== 'equal') {
-                 const p = state.accounts.find(a => a.id === bill.splitType);
-                 if (p) splitText = `${p.name} betalar 100%`;
-              }
-              let intervalText = 'Varje månad';
-              if (bill.interval === 'odd') intervalText = 'Udda månader';
-              if (bill.interval === 'even') intervalText = 'Jämna månader';
-              if (bill.interval === 'custom') {
-                const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
-                intervalText = bill.customMonths && bill.customMonths.length > 0 
-                  ? `Specifika månader: ${bill.customMonths.sort((a,b)=>a-b).map(m => monthNamesShort[m-1]).join(', ')}`
-                  : 'Specifika månader (Inga valda)';
-              }
-              
-              return (
-                <div key={bill.id} className="bill-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div className="bill-name">
-                      {bill.name} {bill.isLoan && '💳 Lån'} {bill.warnIfZero && '⚠️ Varning'} {bill.isAutoTransfer && <span style={{ color: '#34d399', fontSize: '0.8rem' }}>↩️ Auto-överföring</span>}
-                    </div>
-                    <div className="bill-meta">{account?.name} • {splitText} • {intervalText}</div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    {role === 'owner' && (
-                      <>
-                        <button 
-                          onClick={() => handleEditBill(bill)}
-                          style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
-                        >
-                          Ändra
-                        </button>
-                        <button 
-                          onClick={() => setBillToDelete({ id: bill.id, type: 'shared' })}
-                          style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
-                        >
-                          Ta bort
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {(state.privateBills || []).filter(b => b.userId === user?.id && !b.isArchived).length > 0 && (
-            <>
-              <h3 className="card-title">Privata Räkningar</h3>
-              <div className="bill-list" style={{ marginBottom: '2rem' }}>
-                {(state.privateBills || []).filter(b => b.userId === user?.id && !b.isArchived).map(bill => {
-                  let intervalText = 'Varje månad';
-                  if (bill.interval === 'odd') intervalText = 'Udda månader';
-                  if (bill.interval === 'even') intervalText = 'Jämna månader';
-                  if (bill.interval === 'custom') {
-                    const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
-                    intervalText = bill.customMonths && bill.customMonths.length > 0 
-                      ? `Specifika månader: ${bill.customMonths.sort((a,b)=>a-b).map(m => monthNamesShort[m-1]).join(', ')}`
-                      : 'Specifika månader (Inga valda)';
-                  }
-
-                  return (
-                    <div key={bill.id} className="bill-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div className="bill-name">
-                          {bill.name} {bill.isLoan && '💳 Lån'} {bill.warnIfZero && '⚠️ Varning'}
-                        </div>
-                        <div className="bill-meta">Privat • {intervalText}</div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button 
-                          onClick={() => handleEditPrivateBill(bill)}
-                          style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
-                        >
-                          Ändra
-                        </button>
-                        <button 
-                          onClick={() => setBillToDelete({ id: bill.id, type: 'private' })}
-                          style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
-                        >
-                          Ta bort
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-
           <h3 className="card-title">{editingBillId ? 'Ändra Räkning' : 'Lägg till ny räkning'}</h3>
-          <div style={{ display: 'grid', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: editingBillId ? '2px solid var(--accent-color)' : 'none' }}>
+          <div style={{ display: 'grid', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', marginBottom: '2rem', border: editingBillId ? '2px solid var(--accent-color)' : 'none' }}>
             
             {!editingBillId && (
               <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
@@ -813,6 +719,100 @@ export default function ManageBills() {
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                       {newBillAutoTransfer === 'all' && '✅ Ingen behöver föra över – allt sköts automatiskt.'}
                       {newBillAutoTransfer !== 'all' && `✅ Bara ${state.accounts.find(a => a.id === newBillAutoTransfer)?.name || '?'} slipper föra över sin andel – de andra måste fortfarande göra det manuellt.`}
+          <h3 className="card-title">Gemensamma Räkningar (Månadsvyn)</h3>
+          <div className="bill-list" style={{ marginBottom: '2rem' }}>
+            {state.bills.filter(b => !b.isArchived).map(bill => {
+              const account = state.accounts.find(a => a.id === bill.accountId);
+              let splitText = 'Delas lika';
+              if (bill.splitType !== 'equal') {
+                 const p = state.accounts.find(a => a.id === bill.splitType);
+                 if (p) splitText = `${p.name} betalar 100%`;
+              }
+              let intervalText = 'Varje månad';
+              if (bill.interval === 'odd') intervalText = 'Udda månader';
+              if (bill.interval === 'even') intervalText = 'Jämna månader';
+              if (bill.interval === 'custom') {
+                const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+                intervalText = bill.customMonths && bill.customMonths.length > 0 
+                  ? `Specifika månader: ${bill.customMonths.sort((a,b)=>a-b).map(m => monthNamesShort[m-1]).join(', ')}`
+                  : 'Specifika månader (Inga valda)';
+              }
+              
+              return (
+                <div key={bill.id} className="bill-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div className="bill-name">
+                      {bill.name} {bill.isLoan && '💳 Lån'} {bill.warnIfZero && '⚠️ Varning'} {bill.isAutoTransfer && <span style={{ color: '#34d399', fontSize: '0.8rem' }}>↩️ Auto-överföring</span>}
+                    </div>
+                    <div className="bill-meta">{account?.name} • {splitText} • {intervalText}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {role === 'owner' && (
+                      <>
+                        <button 
+                          onClick={() => handleEditBill(bill)}
+                          style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          Ändra
+                        </button>
+                        <button 
+                          onClick={() => setBillToDelete({ id: bill.id, type: 'shared' })}
+                          style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          Ta bort
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {(state.privateBills || []).filter(b => b.userId === user?.id && !b.isArchived).length > 0 && (
+            <>
+              <h3 className="card-title">Privata Räkningar</h3>
+              <div className="bill-list" style={{ marginBottom: '2rem' }}>
+                {(state.privateBills || []).filter(b => b.userId === user?.id && !b.isArchived).map(bill => {
+                  let intervalText = 'Varje månad';
+                  if (bill.interval === 'odd') intervalText = 'Udda månader';
+                  if (bill.interval === 'even') intervalText = 'Jämna månader';
+                  if (bill.interval === 'custom') {
+                    const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
+                    intervalText = bill.customMonths && bill.customMonths.length > 0 
+                      ? `Specifika månader: ${bill.customMonths.sort((a,b)=>a-b).map(m => monthNamesShort[m-1]).join(', ')}`
+                      : 'Specifika månader (Inga valda)';
+                  }
+
+                  return (
+                    <div key={bill.id} className="bill-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div className="bill-name">
+                          {bill.name} {bill.isLoan && '💳 Lån'} {bill.warnIfZero && '⚠️ Varning'}
+                        </div>
+                        <div className="bill-meta">Privat • {intervalText}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button 
+                          onClick={() => handleEditPrivateBill(bill)}
+                          style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          Ändra
+                        </button>
+                        <button 
+                          onClick={() => setBillToDelete({ id: bill.id, type: 'private' })}
+                          style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          Ta bort
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
                     </div>
                   </div>
                 )}
