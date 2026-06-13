@@ -545,25 +545,31 @@ export default function Statistics() {
   );
 }
 
-function InkomstUtgiftView({ state, user, sortedMonths }: { state: any, user: any, sortedMonths: string[] }) {
-  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
-
+function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: any, user: any, sortedMonths: string[] }) {
+  const isDemoMode = useStore(s => s.isDemoMode);
+  const user = isDemoMode && !realUser ? { id: 'demo_user_1', email: 'demo@smartekonomi.se' } : realUser;
+  
   if (!user) return null;
 
-  const personAccounts = state.accounts.filter((a: any) => a.type === 'person');
+  const myProfile = state.householdProfiles?.find((p: any) => p.id === user.id);
+  const selectedAccountId = myProfile?.person_account_id;
   
-  if (personAccounts.length === 0) {
-    return <div style={{ color: 'var(--text-secondary)' }}>Inga personkonton hittades. Gå till Hantera Räkningar - Konton för att lägga till.</div>;
-  }
-
-  // Set default selected account if none is set
-  if (!selectedAccountId && personAccounts.length > 0) {
-    setSelectedAccountId(personAccounts[0].id);
-    return null; // Will re-render immediately
-  }
-
+  const personAccounts = state.accounts.filter((a: any) => a.type === 'person');
   const selectedAccount = personAccounts.find((a: any) => a.id === selectedAccountId);
-  if (!selectedAccount) return null;
+
+  if (!selectedAccount) {
+    return (
+      <div style={{ animation: 'fadeIn 0.3s ease', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '2rem', textAlign: 'center' }}>
+         <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>Inget personkonto kopplat</h3>
+         <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+           För att kunna räkna ut din personliga "Kvar att leva på" behöver systemet veta vilket konto i hushållet som är ditt.
+         </p>
+         <p style={{ color: 'var(--text-secondary)' }}>
+           <strong>Be en grundare eller medägare att gå in på "Mina sidor" och koppla ditt personkonto till dig i medlemslistan.</strong>
+         </p>
+      </div>
+    );
+  }
 
   // Bygg upp tidsdata
   const timeData = [...sortedMonths].map(monthId => {
@@ -646,22 +652,6 @@ function InkomstUtgiftView({ state, user, sortedMonths }: { state: any, user: an
         <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0 }}>
           Den här kalkylen räknar fram exakt hur mycket pengar du har kvar att leva på varje månad. Den tittar på din <strong style={{color: 'var(--text-primary)'}}>månadslön</strong> plus de pengar du <strong style={{color: 'var(--text-primary)'}}>får via Swish</strong>, vilket utgör din totala inkomst. Från detta dras dina <strong style={{color: 'var(--text-primary)'}}>privata räkningar</strong>, de <strong style={{color: 'var(--text-primary)'}}>gemensamma räkningarna som dras från ditt konto</strong>, överföringar till huskontot, samt Swish ut. Resten är dina fickpengar!
         </p>
-      </div>
-
-      <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-        <div>
-          <label style={{ color: 'var(--text-primary)', fontWeight: 'bold', display: 'block', marginBottom: '0.25rem' }}>Vilket är ditt personkonto?</label>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Välj kontot som du står för i hushållet, så räknar vi ut din personliga andel av de gemensamma utgifterna.</div>
-        </div>
-        <select 
-          value={selectedAccountId} 
-          onChange={e => setSelectedAccountId(e.target.value)}
-          style={{ padding: '0.6rem', borderRadius: '8px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid var(--accent-color)', fontSize: '1rem', minWidth: '200px', cursor: 'pointer', marginLeft: 'auto' }}
-        >
-          {personAccounts.map((a: any) => (
-            <option key={a.id} value={a.id}>{a.name}</option>
-          ))}
-        </select>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>

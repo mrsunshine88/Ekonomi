@@ -6,7 +6,10 @@ import { useAuth } from '../AuthContext';
 import toast from 'react-hot-toast';
 
 export default function ManageBills() {
-  const { user, role } = useAuth();
+  const { user: realUser, role } = useAuth();
+  const isDemoMode = useStore(s => s.isDemoMode);
+  const user = isDemoMode && !realUser ? { id: 'demo_user_1', email: 'demo@smartekonomi.se' } : realUser;
+  
   const state = useStore(s => s.state);
   const onAddBill = useStore(s => s.addBill);
   const onRemoveBill = useStore(s => s.removeBill);

@@ -65,6 +65,7 @@ interface StoreState {
   addAccount: (account: Account) => Promise<void>;
   removeAccount: (accountId: string) => Promise<void>;
   updateAccount: (account: Account) => Promise<void>;
+  updateProfileAccount: (userId: string, accountId: string | null) => Promise<void>;
   copyFromPreviousMonth: (monthId: string) => Promise<void>;
   togglePaymentStatus: (monthId: string, paymentId: string) => Promise<void>;
   confirmAnomaly: (monthId: string, billId: string) => Promise<void>;
@@ -146,7 +147,7 @@ export const useStore = create<StoreState>((set, get) => ({
         supabase.from('private_month_locks').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
         supabase.from('private_month_anomalies').select('*').eq('household_id', householdId).gte('month_id', lastYearDec),
         supabase.from('household_settings').select('*').eq('household_id', householdId).maybeSingle(),
-        supabase.from('profiles').select('id, email, share_private_economy, household_id').eq('household_id', householdId),
+        supabase.from('profiles').select('id, email, role, share_private_economy, household_id, person_account_id').eq('household_id', householdId),
         supabase.from('households').select('stripe_status').eq('id', householdId).maybeSingle(),
         supabase.from('global_settings').select('value').eq('key', 'paywall_active').maybeSingle(),
         supabase.from('user_monthly_salaries').select('*').eq('household_id', householdId).gte('pay_date', `${lastYearDec}-01`)
@@ -174,7 +175,7 @@ export const useStore = create<StoreState>((set, get) => ({
         })) : [],
         privateMonths: {},
         householdProfiles: profiles ? profiles.map(p => ({
-          id: p.id, email: p.email, share_private_economy: p.share_private_economy
+          id: p.id, email: p.email, role: p.role, share_private_economy: p.share_private_economy, person_account_id: p.person_account_id
         })) : [],
         settings: settings ? { 
           showSummary: settings.show_summary, 
@@ -747,6 +748,23 @@ export const useStore = create<StoreState>((set, get) => ({
     );
   },
 
+  updateProfileAccount: async (targetUserId: string, accountId: string | null) => {
+    if (!navigator.onLine) { toast.error('Du är offline.', { id: 'offline' }); return; }
+    const { state } = get();
+
+    // Local update
+    const profiles = state.householdProfiles || [];
+    const updatedProfiles = profiles.map(p => p.id === targetUserId ? { ...p, person_account_id: accountId || undefined } : p);
+    set({ state: { ...state, householdProfiles: updatedProfiles } });
+
+    if (get().isDemoMode) return;
+
+    // DB update
+    await safeDb(
+      supabase.from('profiles').update({ person_account_id: accountId }).eq('id', targetUserId)
+    );
+  },
+
   updatePrivateBillAmount: async (monthId, billId, amount, inputAmortization) => {
     if (!navigator.onLine) { toast.error('Du är offline. Ändringen sparades inte.', { id: 'offline' }); return; }
     const parseRes = safeParseAmount(amount);
@@ -988,7 +1006,26 @@ export const useStore = create<StoreState>((set, get) => ({
           },
           handledPayments: {}
         }
-      }
+      },
+      privateBills: [
+        { id: 'demo_priv_1', userId: 'demo_user_1', name: 'Spotify', defaultAmount: 119, interval: 'all', isShared: false, warnIfZero: false },
+        { id: 'demo_priv_2', userId: 'demo_user_1', name: 'Gymkort', defaultAmount: 399, interval: 'all', isShared: false, warnIfZero: false },
+        { id: 'demo_priv_3', userId: 'demo_user_1', name: 'CSN', defaultAmount: 1500, interval: 'all', isShared: false, warnIfZero: false },
+        { id: 'demo_priv_4', userId: 'demo_user_1', name: 'Sparande', defaultAmount: 3000, interval: 'all', isShared: false, warnIfZero: false }
+      ],
+      privateMonths: {
+        [prevPrevMonth]: { monthId: prevPrevMonth, billAmounts: { demo_priv_1: 119, demo_priv_2: 399, demo_priv_3: 1500, demo_priv_4: 3000 }, handledPayments: { 'top_total_lock': true }, isLocked: true },
+        [prevMonth]: { monthId: prevMonth, billAmounts: { demo_priv_1: 119, demo_priv_2: 399, demo_priv_3: 1500, demo_priv_4: 3000 }, handledPayments: { 'top_total_lock': true }, isLocked: true },
+        [currentMonth]: { monthId: currentMonth, billAmounts: { demo_priv_1: 119, demo_priv_2: 399, demo_priv_3: 1500, demo_priv_4: 3000 }, handledPayments: {}, isLocked: false }
+      },
+      monthlySalaries: [
+        { userId: 'demo_user_1', payDate: `${prevPrevMonth}-25`, amount: 28500 },
+        { userId: 'demo_user_1', payDate: `${prevMonth}-25`, amount: 28500 },
+        { userId: 'demo_user_1', payDate: `${currentMonth}-25`, amount: 28500 }
+      ],
+      householdProfiles: [
+        { id: 'demo_user_1', email: 'demo@smartekonomi.se', role: 'owner', share_private_economy: false, person_account_id: 'demo_person_1' }
+      ]
     };
 
     set({ realState: currentState, state: mockState, isDemoMode: true });

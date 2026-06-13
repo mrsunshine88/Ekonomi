@@ -63,8 +63,11 @@ export interface PrivateMonthData {
 
 export interface Profile {
   id: string;
+  email?: string;
+  role?: string;
   display_name?: string;
   share_private_economy?: boolean;
+  person_account_id?: string;
 }
 
 export interface MonthlySalary {

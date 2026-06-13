@@ -8,6 +8,8 @@ export default function MyPages() {
   const toggleSharePrivateEconomy = useStore(s => s.toggleSharePrivateEconomy);
   const settings = useStore(s => s.state.settings);
   const updateSettings = useStore(s => s.updateSettings);
+  const personAccounts = useStore(s => s.state.accounts.filter(a => a.type === 'person'));
+  const updateProfileAccount = useStore(s => s.updateProfileAccount);
   const householdProfiles = useStore(s => s.state.householdProfiles) || [];
   const myProfile = householdProfiles.find(p => p.id === user?.id);
   const isSharingPrivate = myProfile?.share_private_economy || false;
@@ -591,13 +593,30 @@ export default function MyPages() {
             {members.map((m, index) => {
               const isFounder = index === 0;
               return (
-              <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                   <div style={{ color: '#fff' }}>{m.email} {m.id === user?.id && '(Du)'} {isFounder && '👑 (Grundare)'}</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{m.role === 'owner' ? 'Medägare' : 'Medlem'}</div>
                 </div>
-                {role === 'owner' && m.id !== user?.id && (
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
+                  {/* Account linking dropdown */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Kopplat konto:</span>
+                    <select
+                      value={householdProfiles.find(p => p.id === m.id)?.person_account_id || ''}
+                      onChange={(e) => updateProfileAccount(m.id, e.target.value || null)}
+                      disabled={role !== 'owner'}
+                      style={{ padding: '0.4rem', borderRadius: '4px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid var(--border-color)', cursor: role === 'owner' ? 'pointer' : 'not-allowed', fontSize: '0.9rem' }}
+                    >
+                      <option value="">-- Inget valt --</option>
+                      {personAccounts.map(a => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {role === 'owner' && m.id !== user?.id && (
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <button 
                       onClick={() => handleToggleRole(m.id, m.role)}
                       disabled={loading}
@@ -613,7 +632,8 @@ export default function MyPages() {
                       Kicka ut
                     </button>
                   </div>
-                )}
+                  )}
+                </div>
               </div>
             )})}
           </div>
