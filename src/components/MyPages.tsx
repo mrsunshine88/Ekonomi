@@ -596,7 +596,7 @@ export default function MyPages() {
                   <div style={{ color: '#fff' }}>{m.email} {m.id === user?.id && '(Du)'} {isFounder && '👑 (Grundare)'}</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{m.role === 'owner' ? 'Medägare' : 'Medlem'}</div>
                 </div>
-                {role === 'owner' && m.id !== user?.id && !isFounder && (
+                {role === 'owner' && m.id !== user?.id && (
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                     <button 
                       onClick={() => handleToggleRole(m.id, m.role)}
