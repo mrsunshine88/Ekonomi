@@ -265,6 +265,105 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
         };
       }
     }
+
+    // -- BLAD 4: MIN LÖN / KVAR ATT LEVA PÅ --
+    const myProfile = state.householdProfiles?.find((p: any) => p.id === userId);
+    const selectedAccountId = myProfile?.person_account_id;
+    const selectedAccount = state.accounts.find((a: any) => a.id === selectedAccountId);
+
+    if (selectedAccount) {
+      const ws4 = wb.addWorksheet('Min Lön & Kvar', {
+        views: [{ state: 'frozen', ySplit: 1 }]
+      });
+
+      const header4 = ["Månad", "Lön / Swish In", "Totala Utgifter", "Kvar att leva på"];
+      const headerRow4 = ws4.addRow(header4);
+      styleHeaderRow(headerRow4);
+
+      let r4Count = 1;
+
+      sortedMonths.forEach(monthId => {
+        let totalIncome = 0;
+        if (state.monthlySalaries) {
+          const [mYear, mMonth] = monthId.split('-').map(Number);
+          let payYear = mYear;
+          let payMonth = mMonth - 1;
+          if (payMonth === 0) {
+            payMonth = 12;
+            payYear -= 1;
+          }
+          const payMonthStr = `${payYear}-${String(payMonth).padStart(2, '0')}`;
+          
+          state.monthlySalaries.forEach((s: any) => {
+            if (s.userId === userId && s.payDate.startsWith(payMonthStr)) {
+              totalIncome += s.amount;
+            }
+          });
+        }
+
+        const sharedRes = calculateMonth(state, monthId);
+        
+        let incomingSwish = 0;
+        let outgoingSwish = 0;
+        sharedRes.swishes.forEach((t: any) => {
+          if (t.toId === selectedAccountId) incomingSwish += t.amount;
+          if (t.fromId === selectedAccountId) outgoingSwish += t.amount;
+        });
+
+        totalIncome += incomingSwish;
+
+        let totalExpense = 0;
+
+        if (state.privateMonths?.[monthId]) {
+          const pm = state.privateMonths[monthId];
+          const activePrivate = (state.privateBills || []).filter((b: any) => b.userId === userId && !b.isArchived);
+          activePrivate.forEach((b: any) => {
+            const amt = pm.billAmounts?.[b.id] !== undefined ? pm.billAmounts[b.id] : b.defaultAmount;
+            totalExpense += amt;
+          });
+        }
+
+        const m = state.months[monthId];
+        if (m) {
+          const activeShared = state.bills.filter((b: any) => !b.isArchived);
+          activeShared.forEach((b: any) => {
+            if (b.accountId === selectedAccountId) {
+              const amt = m.billAmounts?.[b.id] !== undefined ? m.billAmounts[b.id] : b.defaultAmount;
+              totalExpense += amt;
+            }
+          });
+        }
+
+        if (selectedAccountId && sharedRes.transfersToShared[selectedAccountId]) {
+          Object.values(sharedRes.transfersToShared[selectedAccountId]).forEach((amt: any) => {
+            if (amt > 0) totalExpense += amt;
+          });
+        }
+
+        totalExpense += outgoingSwish;
+
+        const leftover = totalIncome - totalExpense;
+
+        const row = ws4.addRow([monthId, totalIncome, totalExpense, leftover]);
+        r4Count++;
+        if (r4Count % 2 === 0) row.eachCell(c => c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } });
+      });
+
+      if (r4Count > 1) {
+        formatCurrencyCells(ws4, 2, r4Count, 2, 4);
+      }
+
+      ws4.columns = [
+        { width: 15 },
+        { width: 25 },
+        { width: 25 },
+        { width: 25 }
+      ];
+      ws4.autoFilter = {
+        from: { row: 1, column: 1 },
+        to: { row: 1, column: 4 }
+      };
+    }
   }
 
   // Generate blob and download

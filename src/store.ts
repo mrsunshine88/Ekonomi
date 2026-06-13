@@ -1019,7 +1019,7 @@ export const useStore = create<StoreState>((set, get) => ({
         [currentMonth]: { monthId: currentMonth, billAmounts: { demo_priv_1: 119, demo_priv_2: 399, demo_priv_3: 1500, demo_priv_4: 3000 }, handledPayments: {}, isLocked: false }
       },
       monthlySalaries: [
-        { userId: 'demo_user_1', payDate: `${prevPrevMonth}-25`, amount: 28500 },
+        { userId: 'demo_user_1', payDate: `${prevPrevMonth}-25`, amount: 30770 },
         { userId: 'demo_user_1', payDate: `${prevMonth}-25`, amount: 28500 },
         { userId: 'demo_user_1', payDate: `${currentMonth}-25`, amount: 28500 }
       ],
