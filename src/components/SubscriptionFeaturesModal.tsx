@@ -68,7 +68,7 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>📊</span>
             <div>
-              <strong style={{ color: '#fff' }}>EkonomiTB (Historik & Statistik):</strong> Följ dina kostnader bakåt i tiden med interaktiva grafer, spåra hur era lån minskar, och exportera proffsigt designade Excel-filer med ett klick.
+              <strong style={{ color: '#fff' }}>Statistik:</strong> Följ dina kostnader bakåt i tiden med interaktiva grafer, spåra hur era lån minskar, och exportera proffsigt designade Excel-filer med ett klick.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>

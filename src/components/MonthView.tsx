@@ -214,7 +214,7 @@ export default function MonthView({ currentMonth }: Props) {
           {!useStore.getState().isDemoMode && (
             <div style={{ marginTop: '2rem', textAlign: 'center', background: 'rgba(0,0,0,0.2)', padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', width: '100%', maxWidth: '600px' }}>
               <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Osäker på hur det funkar?</h3>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Fyll appen med påhittad testdata så du kan utforska EkonomiTB och se hur en månad ser ut när allt är klart.</p>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Fyll appen med påhittad testdata så du kan utforska Statistik-fliken och se hur en månad ser ut när allt är klart.</p>
               <button 
                 onClick={() => useStore.getState().startDemo()}
                 style={{ background: 'var(--accent-gradient)', color: '#fff', border: 'none', padding: '1rem 2rem', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)' }}

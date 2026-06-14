@@ -13,7 +13,7 @@ Appen stÃ¶der ett obegrÃ¤nsat antal gemensamma konton och personliga konton,
 **Appens fem huvudvyer (i ordning uppifrÃ¥n och ner i menyn):**
 - `ðŸ“… MÃ¥nadsvy` â€“ Gemensamma rÃ¤kningar, mata in belopp, markera som Ã¶verfÃ¶rda.
 - `ðŸ”’ Privat` â€“ Personliga utgifter och privata lÃ¥n, synliga enbart fÃ¶r dig.
-- `ðŸ“Š EkonomiTB` â€“ Historisk statistik, grafer, skuld-avbetalningskontroll.
+- `ðŸ“Š Statistik` â€“ Historisk statistik, grafer, skuld-avbetalningskontroll.
 - `ðŸ‘¤ Mina sidor` â€“ Kontoinformation, hushÃ¥llskod och lÃ¤mna-hushÃ¥ll.
 - `âš™ï¸ InstÃ¤llningar` â€“ Hantera rÃ¤kningar, konton, lÃ¥s och allmÃ¤nna instÃ¤llningar.
 
@@ -255,14 +255,14 @@ HushÃ¥llsmedlemmar vill ha en komplett bild av *all* sin ekonomi pÃ¥ ett st�
 ## 12. Skulder & LÃ¥nespÃ¥rning (Avbetalningskontroll)
 
 ### Vad:
-MÃ¶jlighet att markera en rÃ¤kning (privat eller gemensam) som ett lÃ¥n/skuld med en ursprunglig totalsumma. EkonomiTB visar en visuell progress-bar som krymper varje gÃ¥ng en mÃ¥nad lÃ¥ses.
+MÃ¶jlighet att markera en rÃ¤kning (privat eller gemensam) som ett lÃ¥n/skuld med en ursprunglig totalsumma. Statistik visar en visuell progress-bar som krymper varje gÃ¥ng en mÃ¥nad lÃ¥ses.
 
 ### Hur:
 - `bills` och `private_bills` i databasen har kolumnerna `is_loan boolean` och `total_debt numeric`.
 - I `âš™ï¸ InstÃ¤llningar â†’ RÃ¤kningar` finns kryssrutan **"ðŸ’³ Detta Ã¤r en skuld/ett lÃ¥n som ska betalas av Ã¶ver tid"**. NÃ¤r den kryssas i visas ett fÃ¤lt fÃ¶r ursprunglig skuldsumma.
-- I `EkonomiTB` berÃ¤knas `paidSoFar` dynamiskt: fÃ¶r varje lÃ¥st mÃ¥nad summeras inmatat belopp fÃ¶r den rÃ¤kningen.
+- I `Statistik` berÃ¤knas `paidSoFar` dynamiskt: fÃ¶r varje lÃ¥st mÃ¥nad summeras inmatat belopp fÃ¶r den rÃ¤kningen.
 - Formeln: `remaining = max(0, totalDebt - paidSoFar)`, `progress = min(100, paidSoFar / totalDebt * 100)`.
-- Progress-baren visas i sektionen **"ðŸ’³ Skulder & LÃ¥n"** i EkonomiTB.
+- Progress-baren visas i sektionen **"ðŸ’³ Skulder & LÃ¥n"** i Statistik.
 - NÃ¤r `progress >= 100` visas "ðŸŽ‰ Fullt betald!" med grÃ¶n fÃ¤rg.
 
 ### VarfÃ¶r:
@@ -305,7 +305,7 @@ En etta fÃ¶r mycket pÃ¥ slutet kan fÃ¶rstÃ¶ra hela mÃ¥nadskalkylen. Sy
 
 ---
 
-## 15. Analys & EkonomiTB (Statistik)
+## 15. Analys & Statistik (Statistik)
 
 ### Vad:
 Historisk data visualiserad med interaktiva grafer och tabeller.
@@ -355,7 +355,7 @@ SÃ¤ker och tydlig hantering av vilka som Ã¤r med i hushÃ¥llet, vem som fÃ
 | `src/components/MonthView.tsx` | Gemensam mÃ¥nadsvy: inmatning, kopiera fÃ¶rra mÃ¥naden, betalningsmarkering, lÃ¥s-visning. |
 | `src/components/PrivateView.tsx` | Privat vy: filtrerar `privateBills` pÃ¥ `userId`, inmatning, lÃ¥sning av privata mÃ¥nader. |
 | `src/components/Summary.tsx` | Sammanfattningsrutan med Swish- och Ã–verfÃ¶ringsrekommendationer. |
-| `src/components/Statistics.tsx` | EkonomiTB: grafer (recharts), skuld-progress-bars, Excel-knapp, Gemensam/Privat-vÃ¤xel. |
+| `src/components/Statistics.tsx` | Statistik: grafer (recharts), skuld-progress-bars, Excel-knapp, Gemensam/Privat-vÃ¤xel. |
 | `src/components/ManageBills.tsx` | InstÃ¤llningspanelen: RÃ¤kningar (inkl. LÃ¥n-kryssruta och Automatisk Ã¶verfÃ¶ring-kryssruta), Konton, LÃ¥s upp (uppdelat Gemensam/Privat), AllmÃ¤nt. Responsiv flik-layout (knappar pÃ¥ dator, `<select>`-rullgardin pÃ¥ mobil). |
 | `src/components/MyPages.tsx` | Mina sidor: e-post/lÃ¶senordsÃ¤ndring, hushÃ¥llskod, lÃ¤mna hushÃ¥ll. |
 | `src/index.css` | Hela appens design: mÃ¶rkt glassmorphism-tema, CSS-variabler, mobilmedia-queries, hamburgermeny-animationer, `.settings-tabs-desktop` / `.settings-tabs-mobile`-klasser. |
@@ -372,7 +372,7 @@ FÃ¶rvandlingen av appen frÃ¥n ett robust hobby-projekt till en fullfjÃ¤dra
 ### Hur (De 3 Faserna):
 **Fas 1: Tydlig Felhantering & Code Splitting (React Suspense)**
 - Alla databasanrop hanteras av en global wrapper (`safeDb`) som fÃ¥ngar fel och visar snygga, icke-blockerande popups (React Hot Toast) om t.ex. nÃ¤tverket bryts. Inga "tysta fel" existerar lÃ¤ngre.
-- Tunga vyer som `Statistics.tsx` laddas med `React.lazy()` och `<Suspense>`. Det gÃ¶r att appen startar omedelbart, och statistikmodulen hÃ¤mtas enbart nÃ¤r anvÃ¤ndaren klickar pÃ¥ fliken "EkonomiTB".
+- Tunga vyer som `Statistics.tsx` laddas med `React.lazy()` och `<Suspense>`. Det gÃ¶r att appen startar omedelbart, och statistikmodulen hÃ¤mtas enbart nÃ¤r anvÃ¤ndaren klickar pÃ¥ fliken "Statistik".
 
 **Fas 2: Modern TillstÃ¥ndshantering (Zustand)**
 - Gammal "Prop Drilling" (dÃ¤r variabler skickas genom lager pÃ¥ lager av komponenter) Ã¤r helt eliminerad. 
@@ -444,7 +444,7 @@ Stripe kommunicerar med tre dolda serverless-funktioner byggda i Node.js, placer
 
 Appens statistikdel och hanteringsflÃ¶de har kontinuerligt moderniserats fÃ¶r att ge en "Wow"-kÃ¤nsla och absolut tillfÃ¶rlitlighet.
 
-### 21.1 Nya EkonomiTB (Insikter)
+### 21.1 Nya Statistik (Insikter)
 Statistik-vyn (`Statistics.tsx`) har byggts om i grunden:
 - **"Glassmorphism" Design**: Ersatt Ã¤ldre grÃ¤nssnitt och tabeller med mÃ¶rka, transparenta kort med moderna indikatorer.
 - **PÃ¥litlig Data-filtrering**: Koden filtrerar bort alla mÃ¥nader som inte har markerats som "hanterade" (`is_handled = true` eller `isLocked = true` fÃ¶r privata mÃ¥nader). Detta fÃ¶rhindrar att halvt ifyllda, framtida mÃ¥nader stÃ¶r statistik och genomsnittskostnader.
@@ -463,7 +463,7 @@ Appens databas uppdaterades med kolumnen `show_top_total` i tabellen `household_
 Tidigare kunde appen fÃ¶rsÃ¶ka spara data Ã¤ven vid bristande internetanslutning, vilket orsakade tysta fel och fÃ¶rlorad data nÃ¤r sidan laddades om. Nu Ã¤r samtliga mutationer i `store.ts` skyddade med `navigator.onLine`. Om anvÃ¤ndaren tappar tÃ¤ckningen, visas omedelbart en rÃ¶d fel-notis via `react-hot-toast` och sparningen avbryts direkt i klienten.
 
 ### 21.5 Historik & Arkivering av Data
-IstÃ¤llet fÃ¶r att ladda ner all historisk data vid varje inloggning (vilket skulle bli lÃ¥ngsamt efter nÃ¥gra Ã¥rs anvÃ¤ndning) begrÃ¤nsas dataladdningen automatiskt till innevarande Ã¥r. FÃ¶r att Ã¤ndÃ¥ ge tillgÃ¥ng till historik finns nu en "HÃ¤mta Ã¤ldre Ã¥r"-knapp i *EkonomiTB*. Denna knapp anropar `loadYear(year)` on-demand och minskar initial laddningstid drastiskt, samtidigt som gammal data fÃ¶rblir 100% tillgÃ¤nglig.
+IstÃ¤llet fÃ¶r att ladda ner all historisk data vid varje inloggning (vilket skulle bli lÃ¥ngsamt efter nÃ¥gra Ã¥rs anvÃ¤ndning) begrÃ¤nsas dataladdningen automatiskt till innevarande Ã¥r. FÃ¶r att Ã¤ndÃ¥ ge tillgÃ¥ng till historik finns nu en "HÃ¤mta Ã¤ldre Ã¥r"-knapp i *Statistik*. Denna knapp anropar `loadYear(year)` on-demand och minskar initial laddningstid drastiskt, samtidigt som gammal data fÃ¶rblir 100% tillgÃ¤nglig.
 
 ---
 
@@ -738,7 +738,7 @@ Tidigare kändes formulär och inställningar stela och otydliga (t.ex. dropdown
 Ett låtsas-läge (mock-state) för helt nya användare (utan räkningar) där appen fylls med realistisk testdata, historik och låsta månader.
 
 ### Varför
-För att minska tröskeln för nya användare att förstå appens värde. Genom att utforska färdig data i Gemensam vy och EkonomiTB kan användaren se slutmålet innan de börjar bygga sin egen ekonomi.
+För att minska tröskeln för nya användare att förstå appens värde. Genom att utforska färdig data i Gemensam vy och Statistik kan användaren se slutmålet innan de börjar bygga sin egen ekonomi.
 
 ### Hur
 - Ett tillfälligt UI-state (isDemoMode, ealState) infördes i src/store.ts via Zustand.
@@ -825,7 +825,7 @@ Två stora uppdateringar gjordes för att hantera lån och inkomster mer profess
 
 ### Vad
 En rad estetiska och funktionella finjusteringar genomfördes för att höja appens premiumkänsla och göra utforskandet (Demoläget) mer kraftfullt:
-1. **Ytdiagram till Linjediagram:** Graferna i EkonomiTB byttes ut från fyllda AreaCharts till slimmade LineCharts med tydliga belopp på varje datapunkt, och en sammanfattande trend-indikator.
+1. **Ytdiagram till Linjediagram:** Graferna i Statistik byttes ut från fyllda AreaCharts till slimmade LineCharts med tydliga belopp på varje datapunkt, och en sammanfattande trend-indikator.
 2. **Realtidsuppdateringar i Demo:** Användare kan nu ändra siffror i demoläget och omedelbart se resultatet i graferna utan att behöva "låsa" månaden först.
 3. **Privata Demodata:** Låtsasdata för den privata vyn (Spotify, Gymkort, CSN, Sparande) lades till så att besökare omedelbart kan förstå den privata funktionens värde.
 4. **Z-index & Layout Buggar:** Modaler (t.ex. prenumerationsrutan) bröts ut ur sina föräldra-containrar för att inte klippas av på stora skärmar.
@@ -833,12 +833,12 @@ En rad estetiska och funktionella finjusteringar genomfördes för att höja app
 
 ### Varför
 - De tidigare fyllda diagrammen (AreaCharts) kändes för "avlånga" och överväldigande när det enbart fanns två månader att jämföra, och användaren saknade direkta summor på punkterna.
-- Användare som testade appen ville leka runt med siffrorna och direkt se hur EkonomiTB förändrades, men tidigare logik krävde att månaden var "låst" för att den skulle synas i statistiken.
+- Användare som testade appen ville leka runt med siffrorna och direkt se hur Statistik förändrades, men tidigare logik krävde att månaden var "låst" för att den skulle synas i statistiken.
 - CSS `overflow: hidden` på inloggningens vänsterpanel orsakade att breda modaler klipptes av i vissa webbläsare (som Edge på Desktop).
 
 ### Hur
 - **Graferna:** `Statistics.tsx` byggdes om. `AreaChart` ersattes med `LineChart` med inbyggd `LabelList` som renderar summorna (`val.toLocaleString('sv-SE') kr`) direkt på linjen. En anpassad `renderTrend()`-funktion lades till som jämför senaste månaden med föregående och skriver ut differensen med pilar (▲ / ▼) och dynamiska färger ovanför varje graf.
-- **Demoläget i EkonomiTB:** En bypass lades in i `Statistics.tsx` filtreringslogik (`validMonths`). `if (isDemoMode) return true;` tvingar nu EkonomiTB att inkludera alla tillgängliga månader (även olåsta), vilket skapar omedelbar återkoppling vid siffror-tweakande.
+- **Demoläget i Statistik:** En bypass lades in i `Statistics.tsx` filtreringslogik (`validMonths`). `if (isDemoMode) return true;` tvingar nu Statistik att inkludera alla tillgängliga månader (även olåsta), vilket skapar omedelbar återkoppling vid siffror-tweakande.
 - **Privat Demodata:** `store.ts` utökades till att injecta mock-räkningar i `state.privateBills` och mock-belopp i `state.privateMonths` under `startDemo()`. En bugg som kopplade privatdata till den obefintliga inloggade användaren fixades genom att hårdkoda fallback-ID `demo_user_1` i de privata vyerna vid `isDemoMode`.
 - **Globala Modaler via Portals:** `SubscriptionFeaturesModal.tsx` lindades in i Reacts `createPortal(..., document.body)`. Detta bryter ut modalen ur den aktuella DOM-hierarkin och renderar den direkt på `body`, vilket fullständigt eliminerar alla z-index- och overflow-klippningar (t.ex. från `.login-info-section`).
 - **Input Styling (Amortering):** Layouten i `MonthView.tsx` för lån stuvades om. Den inbyggda `bill-amount-wrapper` som lägger till "kr" isolerades till att enbart omsluta "Totalt"-fältet, medan Amorterings-fältet fick en egen, ren input med tydlig kontrast och spacing så att siffror och valutor inte flöt in i varandra.
@@ -1144,7 +1144,7 @@ För att göra appen mer välkomnande och enkel att förstå för nya (och befin
 ### Hur:
 - **Ny Komponent (`src/components/StartPage.tsx`):** En visuell överblicksvy med 5 eleganta rutor ("Gemensam", "Statistik", "Privat", "Mina sidor", "Inställningar").
 - **Tydliga Förklaringar:** Varje ruta har en ikon, en rubrik och en kort beskrivning som förklarar exakt vad vyn gör (t.ex. "Översikt över din privata ekonomi. Se månadens räkningar.").
-- **Omdöpning av EkonomiTB:** För att göra appen mer självförklarande har fliken "EkonomiTB" döpts om till "Statistik" i alla menyer och rubriker.
+- **Omdöpning av Statistik:** För att göra appen mer självförklarande har fliken "Statistik" döpts om till "Statistik" i alla menyer och rubriker.
 - **Smart Tillbaka-navigering:** Istället för att användare alltid skickas till "Gemensam" när de stänger en undermeny (t.ex. Inställningar eller Mina Sidor), leds de nu konsekvent tillbaka till Startsidan ("← Tillbaka till Startsida").
 
 ### Varför:

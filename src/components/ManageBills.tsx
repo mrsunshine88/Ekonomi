@@ -887,7 +887,7 @@ export default function ManageBills() {
             {newBillIsLoan && (
               <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid var(--accent-color)', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                  Ange den <strong>ursprungliga totala skulden</strong> här. Appen kommer automatiskt att räkna ihop alla inmatade belopp över alla låsta månader och visa hur mycket du har betalat av i EkonomiTB.
+                  Ange den <strong>ursprungliga totala skulden</strong> här. Appen kommer automatiskt att räkna ihop alla inmatade belopp över alla låsta månader och visa hur mycket du har betalat av i Statistik-fliken.
                 </p>
                 <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
                   <div>

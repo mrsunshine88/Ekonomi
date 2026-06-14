@@ -35,7 +35,7 @@ export default function UpdatePassword() {
     },
     {
       icon: "📊",
-      title: "EkonomiTB",
+      title: "Statistik",
       desc: "Följ dina kostnader bakåt i historik och få full insyn med interaktiv statistik."
     }
   ];

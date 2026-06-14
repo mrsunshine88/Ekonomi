@@ -372,5 +372,5 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
   // Generate blob and download
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(blob, "EkonomiTB_Sammanstallning.xlsx");
+  saveAs(blob, "Statistik_Sammanstallning.xlsx");
 };
