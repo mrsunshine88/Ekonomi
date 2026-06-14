@@ -221,14 +221,15 @@ export default function ChatBubble() {
             </div>
             <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
               <button onClick={() => setIsOpen(false)} title="Minimera" style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.5rem', lineHeight: '10px', paddingBottom: '8px' }}>_</button>
-              <button onClick={() => {
-                if (sessionStatus === 'closed') {
-                  setSessionId(null);
-                  setSessionStatus(null);
-                  setMessages([]);
+              <button onClick={async () => {
+                if (sessionId && sessionStatus !== 'closed') {
+                  await supabase.from('chat_sessions').update({ status: 'closed' }).eq('id', sessionId);
                 }
+                setSessionId(null);
+                setSessionStatus(null);
+                setMessages([]);
                 setIsOpen(false);
-              }} title="Stäng" style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+              }} title="Avsluta chatt" style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
             </div>
           </div>
 
