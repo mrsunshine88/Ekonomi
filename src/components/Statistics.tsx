@@ -475,14 +475,14 @@ export default function Statistics() {
 
           {!isPrivate && history.length > 0 && (
             <div className="card">
-              <h3 className="card-title">Huskonto & Swish - Historik</h3>
+              <h3 className="card-title">Huskonto & Överföringar - Historik</h3>
               <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
                   <thead>
                     <tr>
                       <th style={{ padding: '1rem', borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)', textAlign: 'left', fontWeight: 'bold' }}>Månad</th>
                       <th style={{ padding: '1rem', borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)', textAlign: 'left', fontWeight: 'bold' }}>Summa till Huskonto</th>
-                      <th style={{ padding: '1rem', borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)', textAlign: 'left', fontWeight: 'bold' }}>Swishar</th>
+                      <th style={{ padding: '1rem', borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)', textAlign: 'left', fontWeight: 'bold' }}>Överföringar</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -503,7 +503,7 @@ export default function Statistics() {
                             const toName = (state.accounts || []).find(a => a.id === s.toId)?.name || s.toId;
                             return (
                               <div key={i} style={{ fontSize: '0.85rem', marginBottom: '0.2rem' }}>
-                                <span style={{ color: '#3b82f6', fontWeight: 600 }}>{fromName}</span> swishade <span style={{ color: '#10b981', fontWeight: 600 }}>{toName}</span>: {Math.round(s.amount).toLocaleString('sv-SE')} kr
+                                <span style={{ color: '#3b82f6', fontWeight: 600 }}>{fromName}</span> förde över till <span style={{ color: '#10b981', fontWeight: 600 }}>{toName}</span>: {Math.round(s.amount).toLocaleString('sv-SE')} kr
                               </div>
                             );
                           })}
