@@ -697,7 +697,7 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: App
       <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.5rem', marginBottom: '2rem' }}>
         <h3 style={{ margin: '0 0 1rem 0', color: 'var(--text-primary)' }}>💡 Hur fungerar uträkningen?</h3>
         <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0 }}>
-          Den här kalkylen räknar fram exakt hur mycket pengar du har kvar att leva på varje månad. Den tittar på din <strong style={{color: 'var(--text-primary)'}}>månadslön</strong> plus de pengar du <strong style={{color: 'var(--text-primary)'}}>får via Swish</strong>, vilket utgör din totala inkomst. Från detta dras dina <strong style={{color: 'var(--text-primary)'}}>privata räkningar</strong>, de <strong style={{color: 'var(--text-primary)'}}>gemensamma räkningarna som dras från ditt konto</strong>, överföringar till huskontot, samt Swish ut. Resten är dina fickpengar!
+          Den här kalkylen räknar fram exakt hur mycket pengar du har kvar att leva på varje månad. Den tittar på din <strong style={{color: 'var(--text-primary)'}}>månadslön</strong> plus de pengar du <strong style={{color: 'var(--text-primary)'}}>får överfört från andra i hushållet</strong>, vilket utgör din totala inkomst. Från detta dras dina <strong style={{color: 'var(--text-primary)'}}>privata räkningar</strong>, de <strong style={{color: 'var(--text-primary)'}}>gemensamma räkningarna som dras från ditt konto</strong>, överföringar till huskontot, samt <strong style={{color: 'var(--text-primary)'}}>överföringar du gör till andra</strong>. Resten är dina fickpengar!
         </p>
       </div>
 
