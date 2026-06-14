@@ -48,10 +48,10 @@ export default function StartPage({ navigateTo, isAdmin }: StartPageProps) {
   };
 
   return (
-    <div className="start-page" style={{ padding: '2rem 1rem', maxWidth: '1000px', margin: '0 auto', animation: 'fadeIn 0.5s ease' }}>
+    <div className="start-page" style={{ padding: '0 1rem 2rem', maxWidth: '1000px', margin: '0 auto', animation: 'fadeIn 0.5s ease' }}>
       
       {/* Hero Section */}
-      <div style={{ textAlign: 'center', marginBottom: '4rem', marginTop: '2rem' }}>
+      <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
         <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem', background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: '1.2' }}>
           Slipp miniräknaren. Spara tid och få full kontroll över hushållets ekonomi.
         </h2>
