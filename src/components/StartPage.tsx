@@ -36,11 +36,12 @@ export default function StartPage({ navigateTo }: StartPageProps) {
     <div className="start-page" style={{ padding: '0 1rem 2rem', maxWidth: '1000px', margin: '0 auto', animation: 'fadeIn 0.5s ease' }}>
       
       {/* Hero Section */}
-      <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-        <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem', background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: '1.2' }}>
-          Slipp miniräknaren. Spara tid och få full kontroll över hushållets ekonomi.
-        </h2>
-        <p style={{ fontSize: '1.15rem', color: 'var(--text-secondary)', maxWidth: '700px', margin: '0 auto', lineHeight: '1.6' }}>
+      <div style={{ textAlign: 'center', marginBottom: '3rem', marginTop: '1rem' }}>
+        <h1 className="login-hero-title" style={{ marginTop: '0', textAlign: 'center' }}>
+          Slipp miniräknaren. <br/>
+          <span className="text-gradient">Spara tid och få full kontroll<br/>över hushållets ekonomi.</span>
+        </h1>
+        <p className="login-hero-subtitle" style={{ maxWidth: '600px', margin: '0 auto' }}>
           SmartEkonomi räknar automatiskt ut vem som ska betala vad, håller privat ekonomi separat och visar hur era kostnader utvecklas över tid.
         </p>
       </div>
