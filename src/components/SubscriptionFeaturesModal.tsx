@@ -101,7 +101,7 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>💬</span>
             <div>
-              <strong style={{ color: '#fff' }}>Live-chatt support:</strong> Fastnat på något? Chattta direkt med oss inifrån appen (under öppettider) så hjälper vi dig att komma igång!
+              <strong style={{ color: '#fff' }}>Live-chatt support:</strong> Fastnat på något? Chatta direkt med oss inifrån appen (under öppettider) så hjälper vi dig att komma igång!
             </div>
           </div>
         </div>
