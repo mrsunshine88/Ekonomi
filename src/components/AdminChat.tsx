@@ -109,8 +109,11 @@ export default function AdminChat() {
     fetchMessages();
 
     const channel = supabase.channel(`admin_chat_${selectedSessionId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${selectedSessionId}` }, (payload: { new: { [key: string]: string } }) => {
-        setMessages(prev => [...prev, payload.new]);
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${selectedSessionId}` }, (payload: { new: { [key: string]: any } }) => {
+        setMessages(prev => {
+          if (prev.some(m => m.id === payload.new.id)) return prev;
+          return [...prev, payload.new];
+        });
       })
       .subscribe();
 
@@ -196,11 +199,19 @@ export default function AdminChat() {
     if (!inputText.trim() || !selectedSessionId) return;
 
     try {
-      await supabase.from('chat_messages').insert({
+      const { data: insertedMsg, error } = await supabase.from('chat_messages').insert({
         session_id: selectedSessionId,
         sender_type: 'admin',
         message: inputText.trim()
+      }).select().single();
+      
+      if (error) throw error;
+      
+      setMessages(prev => {
+        if (prev.some(m => m.id === insertedMsg.id)) return prev;
+        return [...prev, insertedMsg];
       });
+
       setInputText('');
     } catch (err) {
       console.error("Fel när meddelande skickades", err);

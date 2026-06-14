@@ -88,8 +88,11 @@ export default function ChatBubble() {
     if (!sessionId) return;
 
     const channel = supabase.channel(`chat_${sessionId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${sessionId}` }, (payload: { new: { [key: string]: string } }) => {
-        setMessages(prev => [...prev, payload.new]);
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `session_id=eq.${sessionId}` }, (payload: { new: { [key: string]: any } }) => {
+        setMessages(prev => {
+          if (prev.some(m => m.id === payload.new.id)) return prev;
+          return [...prev, payload.new];
+        });
         
         if (payload.new.sender_type === 'admin' && !isOpenRef.current) {
           setUnreadCount(prev => prev + 1);
@@ -153,15 +156,22 @@ export default function ChatBubble() {
       }
 
       // Insert message
-      const { error: msgErr } = await supabase
+      const { data: insertedMsg, error: msgErr } = await supabase
         .from('chat_messages')
         .insert({
           session_id: currentSessionId,
           sender_type: 'user',
           message: inputText.trim()
-        });
+        })
+        .select()
+        .single();
         
       if (msgErr) throw msgErr;
+
+      setMessages(prev => {
+        if (prev.some(m => m.id === insertedMsg.id)) return prev;
+        return [...prev, insertedMsg];
+      });
 
       // Trigger push notification directly via Vercel instead of relying on Supabase Webhooks
       fetch('/api/send-push', {
