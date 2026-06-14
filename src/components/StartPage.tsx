@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface StartPageProps {
   navigateTo: (view: 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'start') => void;
   isAdmin: boolean;
