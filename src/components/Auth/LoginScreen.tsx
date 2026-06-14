@@ -113,12 +113,12 @@ export default function LoginScreen() {
     {
       icon: "🏠",
       title: "Gemensam ekonomi",
-      desc: "Samla alla hushållets räkningar på ett ställe. SmartEkonomi räknar automatiskt ut vem som ska betala vad och hur mycket som ska föras över."
+      desc: "Samla alla hushållets räkningar på ett ställe. Räknar automatiskt ut varje persons andel av hushållets kostnader."
     },
     {
       icon: "💰",
       title: "Privat ekonomi",
-      desc: "Få koll på dina egna utgifter i en privat vy som inte påverkar den gemensamma ekonomin. Se enkelt vart pengarna tar vägen och upptäck kostnader som kan minskas."
+      desc: "Få koll på dina egna utgifter separat från hushållets ekonomi."
     },
     {
       icon: "📈",
@@ -137,13 +137,13 @@ export default function LoginScreen() {
       {/* Vänster sida: Info och Features */}
       <div className="login-info-section">
         <div className="login-info-content">
-          <div className="brand-badge">🏠 Gemensam ekonomi</div>
+          <div className="brand-badge">🏠 SmartEkonomi</div>
           <h1 className="login-hero-title">
             Släng miniräknaren. <br/>
             <span className="text-gradient">Spara tid och pengar varje månad.</span>
           </h1>
           <p className="login-hero-subtitle">
-            SmartEkonomi hjälper dig att få full koll på den gemensamma ekonomin utan Excel, miniräknare eller onödiga diskussioner.
+            SmartEkonomi hjälper hushåll att automatiskt räkna ut hur kostnader ska delas och ger full kontroll över både gemensam och privat ekonomi.
           </p>
 
           <div className="features-grid">
@@ -161,12 +161,11 @@ export default function LoginScreen() {
           <div style={{ marginTop: '3rem', padding: '1.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem', fontWeight: 600 }}>Varför hushåll väljer SmartEkonomi</h3>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Slipper miniräknaren</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Slipper Excel</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Slipper diskussioner om vem som ska betala vad</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Full kontroll över hushållets ekonomi</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Tydlig statistik över tid</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Fungerar för både gemensam och privat ekonomi</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Automatisk uppdelning av hushållets kostnader</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Separat hantering av gemensam och privat ekonomi</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Slipper manuella uträkningar och Excel</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Statistik som visar hur ekonomin utvecklas över tid</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Fungerar för hela hushållet i en gemensam app</li>
             </ul>
           </div>
 
