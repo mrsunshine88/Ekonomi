@@ -89,7 +89,7 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>🔒</span>
             <div>
-              <strong style={{ color: '#fff' }}>Helt separerad privat ekonomi:</strong> Hantera dina egna privata utgifter och lån direkt i appen, helt skyddat från den gemensamma Swish-uträkningen. Välj själv om du vill dela en skrivskyddad vy med din partner för total transparens.
+              <strong style={{ color: '#fff' }}>Din privata ekonomi förblir privat:</strong> Hantera dina egna privata utgifter och lån direkt i appen, helt skyddat från den gemensamma Swish-uträkningen. Välj själv om du vill dela en skrivskyddad vy med din partner för total transparens.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
