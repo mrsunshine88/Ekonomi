@@ -1249,6 +1249,7 @@ En omfattande revidering av copy och UX på flera nyckelsidor för att göra app
   - **Navigationsboxar:** Kalla menybeskrivningar byttes mot värdedriven copy. "Inställningar" lovar nu att man kan *"Anpassa ekonomin"*, och "Mina sidor" lovar *"Full kontroll över ditt konto"*.
   - **Ärlighet i Steg 3:** Löften om automatisk "sparkalkylator" ströks för att undvika falska förväntningar. Istället lovar vi det appen faktiskt gör: en *"tydlig bild av hushållets ekonomi"*.
   - **Borttagning av Admin-box:** Admin-menyn dolts helt från Startsidan (den nås fortfarande i sidomenyn) för att behålla startsidan ren för vanliga hushållssysslor.
+  - **Hero Layout (WOW-faktor):** Hero-sektionen fick samma premium-design som Inloggningssidan via `.login-hero-title` och `.text-gradient`. Ett tidigare överdimensionerat toppmarginal-avstånd (`4rem` -> `1rem` på mobiler) reducerades också för att skapa en mycket tightare och mer inbjudande välkomstvy.
 - **Prenumerationsrutan (`SubscriptionFeaturesModal.tsx`):**
   - Textväggar bröts ner till skannbara, snabba punktlistor med bockar (✅) framför, så att kunden på 3 sekunder ser värdet innan de betalar.
 - **Terminologibyte (Swish -> Överföringar i `Summary.tsx` & `Statistics.tsx`):**
