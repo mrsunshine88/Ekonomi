@@ -152,7 +152,7 @@ export default function Summary({ currentMonth }: Props) {
                     const tNameRaw = (toPerson?.name || '').replace(/ kontot?|konto/gi, '').trim();
                     const fName = fNameRaw.charAt(0).toUpperCase() + fNameRaw.slice(1).toLowerCase();
                     const tName = tNameRaw.charAt(0).toUpperCase() + tNameRaw.slice(1).toLowerCase();
-                    return `${fName} swishar till ${tName}`;
+                    return `${fName} för över till ${tName}`;
                   })()}
                 </div>
                 <div className="swish-amount">{swish.amount.toLocaleString('sv-SE', { maximumFractionDigits: 0 })} kr</div>
