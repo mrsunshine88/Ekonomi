@@ -102,8 +102,8 @@ export default function StartPage({ navigateTo, isAdmin }: StartPageProps) {
           <div style={{ fontSize: '2.5rem' }}>⚙️</div>
           <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Inställningar</h3>
           <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5', fontSize: '0.95rem' }}>
-            Konfigurera SmartEkonomi.<br/><br/>
-            Lägg till räkningar, inkomster och konton samt bestäm hur hushållets kostnader ska fördelas.
+            Anpassa ekonomin efter ert hushåll.<br/><br/>
+            Lägg till räkningar, inkomster och konton samt välj hur kostnaderna ska fördelas mellan hushållets medlemmar.
           </p>
         </div>
 
@@ -112,26 +112,12 @@ export default function StartPage({ navigateTo, isAdmin }: StartPageProps) {
           <div style={{ fontSize: '2.5rem' }}>👤</div>
           <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Mina sidor</h3>
           <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5', fontSize: '0.95rem' }}>
-            Hantera ditt konto.<br/><br/>
-            Ändra profiluppgifter, hantera prenumeration, integritet och notiser.
+            Full kontroll över ditt konto.<br/><br/>
+            Hantera prenumeration, notiser, integritet och dina personliga inställningar på ett och samma ställe.
           </p>
         </div>
 
-        {/* Admin (if isAdmin) */}
-        {isAdmin && (
-          <div 
-            onClick={() => navigateTo('admin')} 
-            style={{ ...boxStyle, background: 'rgba(16, 185, 129, 0.05)', borderColor: 'rgba(16, 185, 129, 0.3)' }} 
-            onMouseEnter={adminHandleMouseEnter} 
-            onMouseLeave={adminHandleMouseLeave}
-          >
-            <div style={{ fontSize: '2.5rem' }}>👑</div>
-            <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#10b981' }}>Admin</h3>
-            <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5', fontSize: '0.95rem' }}>
-              Administratörspanel för systemet. Hantera funktioner och användare.
-            </p>
-          </div>
-        )}
+
       </div>
 
       {/* Så fungerar det */}
@@ -162,7 +148,7 @@ export default function StartPage({ navigateTo, isAdmin }: StartPageProps) {
               <span>3️⃣</span> Få koll på utgifter och sparmöjligheter
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.5', margin: 0 }}>
-              Se exakt vart pengarna går varje månad. Upptäck onödiga kostnader och se vad du kan spara både privat och i hushållet.
+              Se exakt vart pengarna går varje månad och få en tydlig bild av hushållets ekonomi.
             </p>
           </div>
 
@@ -180,7 +166,7 @@ export default function StartPage({ navigateTo, isAdmin }: StartPageProps) {
 
       {/* Därför använder hushåll SmartEkonomi */}
       <div style={{ padding: '2.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid var(--border-color)', marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '2rem', marginBottom: '2rem', textAlign: 'center' }}>Därför använder hushåll SmartEkonomi</h2>
+        <h2 style={{ fontSize: '2rem', marginBottom: '2rem', textAlign: 'center' }}>Varför hushåll väljer SmartEkonomi</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.1rem' }}>
