@@ -269,7 +269,7 @@ export default function Statistics() {
   return (
     <div style={{ padding: '0 1rem', paddingBottom: '3rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <h2 style={{ margin: 0 }}>EkonomiTB - Insikter</h2>
+        <h2 style={{ margin: 0 }}>Statistik - Insikter</h2>
         <button 
           onClick={() => exportToExcel(state, user?.id)}
           style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '0.6rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
