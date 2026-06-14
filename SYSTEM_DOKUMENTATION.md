@@ -1232,3 +1232,30 @@ Texterna i prenumerationsrutan (`SubscriptionFeaturesModal.tsx`) skrevs om för 
 
 ### Varför:
 Konverteringsoptimering (CRO). Målgruppen för appen letar i första hand efter en lösning på vardagsfriktion och irritation kring vem som betalat vad, inte efter komplexa algoritmer eller "PWA-teknik". Att bryta ner 59 kr/månad till "Mindre än 2 kr per dag" gör priset psykologiskt extremt lätt att acceptera. Sammantaget lyfter detta prenumerationsrutan från att vara en "utvecklar-featurelista" till en slipad försäljningspitch.
+
+---
+
+## 29. Copywriting och UX-Polering (Juni 2026)
+
+### Vad:
+En omfattande revidering av copy och UX på flera nyckelsidor för att göra appen mer säljande, professionell och användarvänlig. Detta inkluderar Inloggningssidan, Startsidan, Prenumerationsrutan, Sammanställningar (Swish-terminologi) och formulärsnavigering.
+
+### Hur:
+- **Inloggningssidan (`LoginScreen.tsx`):**
+  - Hero-texten skärptes till: *"SmartEkonomi hjälper hushåll att automatiskt räkna ut hur kostnader ska delas och ger full kontroll över både gemensam och privat ekonomi."* Detta ger ett bättre flyt och minskar onödig text.
+  - Sälj-listan ("Varför välja oss") trimmades från upprepningar till 5 knivskarpa punkter utan överlappning (bl.a. betonades *"Separat hantering av gemensam och privat ekonomi"*).
+  - Huvudbadge ändrades från "Gemensam ekonomi" till varumärket "SmartEkonomi".
+- **Startsidan (`StartPage.tsx`):**
+  - **Navigationsboxar:** Kalla menybeskrivningar byttes mot värdedriven copy. "Inställningar" lovar nu att man kan *"Anpassa ekonomin"*, och "Mina sidor" lovar *"Full kontroll över ditt konto"*.
+  - **Ärlighet i Steg 3:** Löften om automatisk "sparkalkylator" ströks för att undvika falska förväntningar. Istället lovar vi det appen faktiskt gör: en *"tydlig bild av hushållets ekonomi"*.
+  - **Borttagning av Admin-box:** Admin-menyn dolts helt från Startsidan (den nås fortfarande i sidomenyn) för att behålla startsidan ren för vanliga hushållssysslor.
+- **Prenumerationsrutan (`SubscriptionFeaturesModal.tsx`):**
+  - Textväggar bröts ner till skannbara, snabba punktlistor med bockar (✅) framför, så att kunden på 3 sekunder ser värdet innan de betalar.
+- **Terminologibyte (Swish -> Överföringar i `Summary.tsx` & `Statistics.tsx`):**
+  - Raderade hårdkodad terminologi kring "Swishar till" för generella banköverföringar. Det står nu "för över till" om kontot är inställt på banköverföring.
+  - Fixade ett grammatiskt fel där svenska namn som slutar på "s konto" (t.ex. "Helenas konto") oavsiktligt strippades fel. Systemet identifierar nu "Helenas" och konverterar det till "Helena" för ett snyggare UI (t.ex. "Helena för över till hus kontot").
+- **Scroll-bugg fixad (`ManageBills.tsx`):**
+  - När formuläret för att ändra en räkning flyttades från botten till toppen av sidan, scrollade "Ändra"-knappen fortfarande användaren ner till botten av sidan (`document.body.scrollHeight`). Detta fixades så att `window.scrollTo` nu pekar uppåt (`top: 0`), vilket skapar ett logiskt och naturligt flow.
+
+### Varför:
+Dessa till synes små ändringar bygger enormt mycket förtroende. En potentiell användare dömer appens pålitlighet utifrån hur professionell copyn är och hur smooth UX-flödena (som scroll och konsekvent terminologi) känns. Att ta bort upprepningar, rensa "developer-speak" och fixa knasiga formuleringar (som "Helenas för över") förvandlar systemet från en hobbyapp till en Premium-tjänst.
