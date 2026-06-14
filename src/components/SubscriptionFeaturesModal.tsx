@@ -32,6 +32,9 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
           <div style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#fff', marginBottom: '0.25rem' }}>
             Endast 59 kr / månad
           </div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '0.75rem', fontStyle: 'italic' }}>
+            Mindre än 2 kr per dag för hela hushållet
+          </div>
           <div style={{ color: '#10b981', fontSize: '1.1rem', fontWeight: 'bold' }}>
             🎁 Prova gratis i 14 dagar
           </div>
@@ -54,6 +57,12 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
+            <span style={{ fontSize: '1.5rem' }}>❤️</span>
+            <div>
+              <strong style={{ color: '#fff' }}>Mindre ekonomiskt tjafs:</strong> Alla kostnader samlas på ett ställe och systemet räknar automatiskt ut vem som ska betala vad. Ingen behöver hålla reda på siffrorna manuellt.
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>🔔</span>
             <div>
               <strong style={{ color: '#fff' }}>Automatiska Push-påminnelser:</strong> Appen håller koll i bakgrunden och skickar en diskret notis till telefonen när det är dags att pricka av månadens räkningar.
@@ -62,19 +71,19 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>🧠</span>
             <div>
-              <strong style={{ color: '#fff' }}>Smart felskrivningskontroll:</strong> Vårt system analyserar er historik och varnar direkt om du råkar trycka in en nolla för mycket på elräkningen.
+              <strong style={{ color: '#fff' }}>Smart felskrivningskontroll:</strong> Systemet upptäcker ovanligt höga eller låga belopp och varnar om något verkar fel.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>📊</span>
             <div>
-              <strong style={{ color: '#fff' }}>Statistik:</strong> Följ dina kostnader bakåt i tiden med interaktiva grafer, spåra hur era lån minskar, och exportera proffsigt designade Excel-filer med ett klick.
+              <strong style={{ color: '#fff' }}>Statistik:</strong> Följ kostnader över tid, se tydliga trender och exportera till Excel med ett klick.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>📱</span>
             <div>
-              <strong style={{ color: '#fff' }}>Äkta app-känsla (PWA):</strong> Installera appen direkt på hemskärmen på både Android och iPhone – utan att behöva gå via krångliga App Stores.
+              <strong style={{ color: '#fff' }}>Installera som app på mobilen:</strong> Lägg SmartEkonomi direkt på hemskärmen på Android och iPhone utan att behöva ladda ner från någon appbutik.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
