@@ -211,10 +211,7 @@ function App() {
         )}
 
         <div style={{ textAlign: 'center' }}>
-          <h1 style={{ margin: 0, marginBottom: currentView === 'start' ? '0' : '0.5rem' }}>SmartEkonomi</h1>
-          {currentView !== 'start' && (
-            <p style={{ margin: 0 }}>Automatisk uträkning av hushållets räkningar</p>
-          )}
+          <h1 style={{ margin: 0, marginBottom: '0.5rem' }}>SmartEkonomi</h1>
         </div>
         {/* Desktop nav - hidden on mobile via CSS */}
         <nav className="nav-container">
