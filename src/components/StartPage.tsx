@@ -86,7 +86,7 @@ export default function StartPage({ navigateTo, isAdmin }: StartPageProps) {
           <div style={{ fontSize: '2.5rem' }}>🔒</div>
           <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Privat</h3>
           <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5', fontSize: '0.95rem' }}>
-            Din privata vy där du kan hantera egna inkomster, sparande och personliga utgifter.
+            Din privata vy där du kan hantera egna inkomster och personliga utgifter.
           </p>
         </div>
 
