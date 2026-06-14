@@ -4,7 +4,7 @@ import { supabase } from '../supabase';
 import { createPortal } from 'react-dom';
 
 interface InfoModalProps {
-  type: 'tos' | 'privacy' | 'contact';
+  type: 'tos' | 'privacy' | 'contact' | 'faq';
   onClose: () => void;
 }
 
@@ -27,6 +27,42 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
     phone: true
   });
   const [loading, setLoading] = useState(false);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+
+  const faqs = [
+    {
+      category: "💡 Betalning & pris",
+      questions: [
+        { q: "Är appen gratis?", a: "59 kr/månad (mindre än 2 kr per dag för hela hushållet).\n14 dagars gratis prov." },
+        { q: "Hur avslutar jag prenumerationen?", a: "Under Mina sidor klickar du på \"Hantera prenumeration\" och följer länken till Stripe där du avslutar prenumerationen." }
+      ]
+    },
+    {
+      category: "🏠 Gemensam ekonomi",
+      questions: [
+        { q: "Hur fungerar uträkningen?", a: "Appen räknar ut hur kostnader ska delas baserat på era inlagda gemensamma kostnader." },
+        { q: "Hur delar vi räkningar?", a: "Du kan välja 0%, 50% eller 100% per räkning." }
+      ]
+    },
+    {
+      category: "⚙️ Inställningar",
+      questions: [
+        { q: "Hur ändrar jag räkningar?", a: "Du kan redigera eller ta bort alla räkningar i Inställningar." }
+      ]
+    },
+    {
+      category: "🔒 Privat ekonomi",
+      questions: [
+        { q: "Vad är Privat-fliken?", a: "Dina egna inkomster och utgifter som inte påverkar den gemensamma ekonomin." }
+      ]
+    },
+    {
+      category: "📊 Statistik",
+      questions: [
+        { q: "Vad visar statistiken?", a: "Utvecklingen av inkomster, utgifter och kvarvarande pengar över tid." }
+      ]
+    }
+  ];
 
   useEffect(() => {
     if (type === 'contact') {
@@ -57,7 +93,8 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
   const titles = {
     tos: 'Användarvillkor (Terms of Service)',
     privacy: 'Integritetspolicy (GDPR)',
-    contact: 'Kontakt'
+    contact: 'Kontakt',
+    faq: 'Frågor & Svar'
   };
 
   return createPortal(
@@ -147,6 +184,72 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                 </div>
               )}
             </>
+          )}
+
+          {type === 'faq' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <p style={{ color: 'var(--text-secondary)', marginTop: '-0.5rem', marginBottom: '0.5rem' }}>
+                Här hittar du snabba svar om hur SmartEkonomi fungerar.
+              </p>
+              
+              {faqs.map((group, groupIndex) => (
+                <div key={groupIndex} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <h3 style={{ color: '#fff', fontSize: '1.1rem', margin: '0 0 0.5rem 0' }}>{group.category}</h3>
+                  {group.questions.map((item, qIndex) => {
+                    const index = groupIndex * 100 + qIndex; // unikt id
+                    const isOpen = openFaqIndex === index;
+                    return (
+                      <div 
+                        key={qIndex} 
+                        style={{ 
+                          background: 'rgba(255,255,255,0.05)', 
+                          borderRadius: '8px', 
+                          overflow: 'hidden',
+                          border: '1px solid rgba(255,255,255,0.1)'
+                        }}
+                      >
+                        <button
+                          onClick={() => setOpenFaqIndex(isOpen ? null : index)}
+                          style={{
+                            width: '100%',
+                            padding: '1rem',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#fff',
+                            fontWeight: 'bold',
+                            fontSize: '0.95rem',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <span>{item.q}</span>
+                          <span style={{ 
+                            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', 
+                            transition: 'transform 0.2s ease',
+                            color: 'var(--text-secondary)'
+                          }}>
+                            ▼
+                          </span>
+                        </button>
+                        <div style={{
+                          maxHeight: isOpen ? '200px' : '0',
+                          overflow: 'hidden',
+                          transition: 'max-height 0.3s ease',
+                          background: 'rgba(0,0,0,0.2)'
+                        }}>
+                          <div style={{ padding: '0 1rem 1rem 1rem', color: 'var(--text-secondary)', whiteSpace: 'pre-line' }}>
+                            {item.a}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>

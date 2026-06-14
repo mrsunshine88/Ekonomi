@@ -3,7 +3,7 @@ import InfoModal from './InfoModal';
 import SubscriptionFeaturesModal from './SubscriptionFeaturesModal';
 
 export default function Footer() {
-  const [modalType, setModalType] = useState<'tos' | 'privacy' | 'contact' | 'features' | null>(null);
+  const [modalType, setModalType] = useState<'tos' | 'privacy' | 'contact' | 'features' | 'faq' | null>(null);
 
   return (
     <>
@@ -43,6 +43,12 @@ export default function Footer() {
             style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
           >
             Kontakt
+          </button>
+          <button 
+            onClick={() => setModalType('faq')}
+            style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
+          >
+            Frågor & Svar (FAQ)
           </button>
         </div>
         <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
