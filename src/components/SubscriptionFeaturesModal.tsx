@@ -39,7 +39,7 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
             🎁 Prova gratis i 14 dagar
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem', marginBottom: 0 }}>
-            Ingen bindningstid. Avsluta när du vill. Priset gäller per hushåll, så hela familjen kan använda appen för en och samma summa.
+            Ingen bindningstid. Avsluta när du vill. Priset gäller per hushåll – hela familjen kan använda appen för en och samma summa.
           </p>
         </div>
 
@@ -47,61 +47,61 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>👥</span>
             <div>
-              <strong style={{ color: '#fff' }}>En prenumeration för hela hemmet:</strong> Endast en person i hushållet behöver betala. Resten av familjen bjuds in via en kod och använder appen helt gratis.
+              <strong style={{ color: '#fff' }}>En prenumeration för hela hemmet:</strong> Endast en person i hushållet behöver betala. Resten bjuds in via kod och använder appen gratis.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>⚡</span>
             <div>
-              <strong style={{ color: '#fff' }}>Automatisk kostnadsfördelning:</strong> Mata in månadens räkningar och låt appen automatiskt räkna ut vem som ska betala vad. Släng miniräknaren och glöm krångliga Excel-ark.
+              <strong style={{ color: '#fff' }}>Automatisk kostnadsfördelning:</strong> Mata in månadens räkningar och låt appen räkna ut hur kostnaderna ska delas automatiskt.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>❤️</span>
             <div>
-              <strong style={{ color: '#fff' }}>Mindre ekonomiskt tjafs:</strong> Alla kostnader samlas på ett ställe och systemet räknar automatiskt ut vem som ska betala vad. Ingen behöver hålla reda på siffrorna manuellt.
+              <strong style={{ color: '#fff' }}>Mindre ekonomiskt tjafs:</strong> Alla hushållets kostnader samlas på ett ställe och fördelas automatiskt – utan manuella uträkningar.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>🔔</span>
             <div>
-              <strong style={{ color: '#fff' }}>Automatiska Push-påminnelser:</strong> Appen håller koll i bakgrunden och skickar en diskret notis till telefonen när det är dags att pricka av månadens räkningar.
+              <strong style={{ color: '#fff' }}>Automatiska påminnelser:</strong> Appen håller koll och skickar notiser när det är dags att hantera räkningar.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>🧠</span>
             <div>
-              <strong style={{ color: '#fff' }}>Smart felskrivningskontroll:</strong> Systemet upptäcker ovanligt höga eller låga belopp och varnar om något verkar fel.
+              <strong style={{ color: '#fff' }}>Smart kontroll:</strong> Upptäcker ovanliga belopp och varnar om något ser fel ut.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>📊</span>
             <div>
-              <strong style={{ color: '#fff' }}>Statistik:</strong> Följ kostnader över tid, se tydliga trender och exportera till Excel med ett klick.
+              <strong style={{ color: '#fff' }}>Statistik över tid:</strong> Följ kostnader, se trender och exportera till Excel.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>📱</span>
             <div>
-              <strong style={{ color: '#fff' }}>Installera som app på mobilen:</strong> Lägg SmartEkonomi direkt på hemskärmen på Android och iPhone utan att behöva ladda ner från någon appbutik.
+              <strong style={{ color: '#fff' }}>Installera som app:</strong> Lägg SmartEkonomi direkt på hemskärmen – ingen appbutik behövs.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>🔒</span>
             <div>
-              <strong style={{ color: '#fff' }}>Din privata ekonomi förblir privat:</strong> Hantera dina egna privata utgifter och lån direkt i appen, helt skyddat från den gemensamma Swish-uträkningen. Välj själv om du vill dela en skrivskyddad vy med din partner för total transparens.
+              <strong style={{ color: '#fff' }}>Din privata ekonomi förblir privat:</strong> Dina privata utgifter hålls helt separata från hushållets gemensamma ekonomi. Du kan själv välja om du vill dela en översikt.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>🛠️</span>
             <div>
-              <strong style={{ color: '#fff' }}>Demoläge:</strong> Testa appen innan du bestämmer dig. Klicka på "Testa Demo" för att utforska alla funktioner med låtsassiffror utan att påverka din riktiga data.
+              <strong style={{ color: '#fff' }}>Demoläge:</strong> Testa appen med låtsasdata innan du börjar använda den på riktigt.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>💬</span>
             <div>
-              <strong style={{ color: '#fff' }}>Live-chatt support:</strong> Fastnat på något? Chatta direkt med oss inifrån appen (under öppettider) så hjälper vi dig att komma igång!
+              <strong style={{ color: '#fff' }}>Live-chatt support:</strong> Få hjälp direkt i appen via chattbubblan när den är tillgänglig.
             </div>
           </div>
         </div>
