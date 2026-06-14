@@ -276,7 +276,7 @@ function App() {
           )}
 
           {currentView === 'start' ? (
-            <StartPage navigateTo={navigateTo} isAdmin={isAdmin} />
+            <StartPage navigateTo={navigateTo} />
           ) : currentView === 'admin' && isAdmin ? (
             <div>
               <button className="back-button" onClick={() => setCurrentView('start')}>← Tillbaka till Startsida</button>

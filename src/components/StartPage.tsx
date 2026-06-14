@@ -2,10 +2,9 @@ import React from 'react';
 
 interface StartPageProps {
   navigateTo: (view: 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'start') => void;
-  isAdmin: boolean;
 }
 
-export default function StartPage({ navigateTo, isAdmin }: StartPageProps) {
+export default function StartPage({ navigateTo }: StartPageProps) {
   const boxStyle = {
     background: 'rgba(255,255,255,0.02)', 
     border: '1px solid var(--border-color)', 
@@ -30,20 +29,6 @@ export default function StartPage({ navigateTo, isAdmin }: StartPageProps) {
     e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
     e.currentTarget.style.transform = 'translateY(0)';
     e.currentTarget.style.borderColor = 'var(--border-color)';
-    e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-  };
-
-  const adminHandleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)';
-    e.currentTarget.style.transform = 'translateY(-4px)';
-    e.currentTarget.style.borderColor = '#10b981';
-    e.currentTarget.style.boxShadow = '0 8px 15px rgba(16, 185, 129, 0.2)';
-  };
-
-  const adminHandleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.currentTarget.style.background = 'rgba(16, 185, 129, 0.05)';
-    e.currentTarget.style.transform = 'translateY(0)';
-    e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.3)';
     e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
   };
 
