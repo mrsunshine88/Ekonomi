@@ -111,34 +111,24 @@ export default function LoginScreen() {
 
   const features = [
     {
-      icon: "⚡",
-      title: "Splitwise-matematik i realtid",
-      desc: "Mata in månadens räkningar och låt vår motor räkna ut nettobeloppet på en bråkdel av en sekund. Släng miniräknaren och glöm krångliga Excel-ark."
+      icon: "🏠",
+      title: "Gemensam ekonomi",
+      desc: "Samla alla hushållets räkningar på ett ställe. SmartEkonomi räknar automatiskt ut exakt hur mycket varje person ska betala och föra över till kontot."
     },
     {
-      icon: "👥",
-      title: "En prenumeration för hela hemmet",
-      desc: "Endast en person behöver betala. Resten av familjen bjuds in via en kod och använder appen helt gratis."
+      icon: "💰",
+      title: "Privat ekonomi",
+      desc: "Få koll på dina egna utgifter i en privat vy som inte påverkar den gemensamma ekonomin. Se direkt vilka kostnader du kan minska för att spara mer pengar."
     },
     {
-      icon: "🔔",
-      title: "Automatiska Push-påminnelser",
-      desc: "Appen håller koll i bakgrunden och skickar en diskret notis till telefonen när det är dags att pricka av månadens räkningar."
+      icon: "📈",
+      title: "Statistik",
+      desc: "Följ hushållets ekonomi över tid med tydliga grafer och insikter. Se hur kostnaderna förändras och upptäck var pengarna tar vägen."
     },
     {
-      icon: "🧠",
-      title: "Smart felskrivningskontroll",
-      desc: "Vårt system analyserar er historik och varnar direkt om du råkar trycka in en nolla för mycket på elräkningen."
-    },
-    {
-      icon: "📊",
-      title: "EkonomiTB",
-      desc: "Följ dina kostnader bakåt i historik och få full insyn med interaktiv statistik."
-    },
-    {
-      icon: "💬",
-      title: "Live-support & Demoläge",
-      desc: "Testkör appen säkert med låtsassiffror. När du sedan skapat konto och prenumererat låses vår live-chatt upp i appen."
+      icon: "💎",
+      title: "Prova gratis i 14 dagar",
+      desc: "Skapa ett konto på några minuter och se hur mycket tid och pengar hushållet kan spara redan första månaden."
     }
   ];
 
@@ -150,10 +140,10 @@ export default function LoginScreen() {
           <div className="brand-badge">Premium Economy</div>
           <h1 className="login-hero-title">
             Släng miniräknaren. <br/>
-            <span className="text-gradient">Vi löser hushållsekonomin.</span>
+            <span className="text-gradient">Spara tid och pengar varje månad.</span>
           </h1>
           <p className="login-hero-subtitle">
-            Den smartaste plattformen för att automatisera, dela och räkna ut månadens utgifter för hela ditt hushåll – oavsett om ni är två eller du kör själv.
+            SmartEkonomi hjälper par och familjer att få full koll på ekonomin utan Excel, miniräknare eller onödiga diskussioner.
           </p>
 
           <div className="features-grid">
