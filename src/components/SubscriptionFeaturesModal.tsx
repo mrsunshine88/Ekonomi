@@ -53,7 +53,7 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>⚡</span>
             <div>
-              <strong style={{ color: '#fff' }}>Splitwise-matematik i realtid:</strong> Mata in månadens räkningar och låt vår motor räkna ut nettobeloppet på en bråkdel av en sekund. Släng miniräknaren och glöm krångliga Excel-ark.
+              <strong style={{ color: '#fff' }}>Automatisk kostnadsfördelning:</strong> Mata in månadens räkningar och låt appen automatiskt räkna ut vem som ska betala vad. Släng miniräknaren och glöm krångliga Excel-ark.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
