@@ -19,6 +19,7 @@ import Footer from './components/Footer';
 import UpdatePassword from './components/Auth/UpdatePassword';
 import ChatBubble from './components/ChatBubble';
 import ConfirmedModal from './components/Auth/ConfirmedModal';
+import StartPage from './components/StartPage';
 
 function App() {
   const { user, householdId, loading, isRecoveringPassword, isAdmin, tosAccepted, isNewlyConfirmed, setIsNewlyConfirmed } = useAuth();
@@ -26,8 +27,8 @@ function App() {
   const state = useStore(s => s.state);
   const isDemoMode = useStore(s => s.isDemoMode);
   const stopDemo = useStore(s => s.stopDemo);
-  const [currentView, setCurrentView] = useState<'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin'>(() => {
-    return (localStorage.getItem('smartEkonomi_currentView') as any) || 'month';
+  const [currentView, setCurrentView] = useState<'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin'>(() => {
+    return (localStorage.getItem('smartEkonomi_currentView') as any) || 'start';
   });
 
   useEffect(() => {
@@ -36,7 +37,7 @@ function App() {
 
   // Återställ vy när man byter användare
   useEffect(() => {
-    setCurrentView('month');
+    setCurrentView('start');
   }, [user?.id]);
   
   useEffect(() => {
@@ -64,7 +65,7 @@ function App() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navigateTo = (view: 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin') => {
+  const navigateTo = (view: 'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin') => {
     setCurrentView(view);
     setMobileMenuOpen(false);
   };
@@ -186,8 +187,9 @@ function App() {
           <>
             <div className="mobile-menu-backdrop" onClick={() => setMobileMenuOpen(false)} />
             <div className="mobile-menu-dropdown">
+              <button onClick={() => navigateTo('start')} className={`mobile-menu-item ${currentView === 'start' ? 'active' : ''}`}>🏠 Startsida</button>
               <button onClick={() => navigateTo('month')} className={`mobile-menu-item ${currentView === 'month' ? 'active' : ''}`}>📅 Gemensam</button>
-              <button onClick={() => navigateTo('stats')} className={`mobile-menu-item ${currentView === 'stats' ? 'active' : ''}`}>📊 EkonomiTB</button>
+              <button onClick={() => navigateTo('stats')} className={`mobile-menu-item ${currentView === 'stats' ? 'active' : ''}`}>📊 Statistik</button>
               <button onClick={() => navigateTo('privat')} className={`mobile-menu-item ${currentView === 'privat' ? 'active' : ''}`}>🔒 Privat</button>
               {(!isDemoMode || user) && (
                 <>
@@ -215,6 +217,12 @@ function App() {
         {/* Desktop nav - hidden on mobile via CSS */}
         <nav className="nav-container">
           <button 
+            onClick={() => navigateTo('start')} 
+            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'start' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'start' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'start' ? 'bold' : 'normal', transition: 'all 0.2s' }}
+          >
+            🏠 Startsida
+          </button>
+          <button 
             onClick={() => navigateTo('month')} 
             style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'month' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'month' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'month' ? 'bold' : 'normal', transition: 'all 0.2s' }}
           >
@@ -224,7 +232,7 @@ function App() {
             onClick={() => navigateTo('stats')} 
             style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'stats' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'stats' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'stats' ? 'bold' : 'normal', transition: 'all 0.2s' }}
           >
-            📊 EkonomiTB
+            📊 Statistik
           </button>
           <button 
             onClick={() => navigateTo('privat')} 
@@ -274,14 +282,16 @@ function App() {
         </nav>
       </header>
 
-      {currentView === 'admin' && isAdmin ? (
+      {currentView === 'start' ? (
+        <StartPage navigateTo={navigateTo} isAdmin={isAdmin} />
+      ) : currentView === 'admin' && isAdmin ? (
         <div>
-          <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Gemensam</button>
+          <button className="back-button" onClick={() => setCurrentView('start')}>← Tillbaka till Startsida</button>
           <AdminDashboard />
         </div>
       ) : currentView === 'mypages' ? (
         <div>
-          <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Gemensam</button>
+          <button className="back-button" onClick={() => setCurrentView('start')}>← Tillbaka till Startsida</button>
           <MyPages />
         </div>
       ) : currentView === 'manage' ? (
@@ -290,7 +300,7 @@ function App() {
         </div>
       ) : currentView === 'stats' ? (
         <div>
-          <button className="back-button" onClick={() => setCurrentView('month')}>← Tillbaka till Gemensam</button>
+          <button className="back-button" onClick={() => setCurrentView('start')}>← Tillbaka till Startsida</button>
           <Suspense fallback={<div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Laddar statistik...</div>}>
             <Statistics />
           </Suspense>
