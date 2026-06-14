@@ -1165,3 +1165,19 @@ En inbyggd chatt-funktion för kommunikation mellan användare och support/admin
 
 ### Varför:
 En chatt måste kännas blixtsnabb och 100% pålitlig. Genom att hantera utgående meddelanden lokalt direkt ("Optimistic UI") löstes inte bara buggen med det försvunna första meddelandet, utan hela chatten upplevs nu mycket snabbare.
+
+
+---
+
+## 25. Avslut av Chattsessioner (Livscykel)
+
+### Vad:
+Hantering av en chattsessions livscykel, från skapande till stängning, för att säkerställa att kundtjänstens vy över aktiva ärenden hålls ren.
+
+### Hur:
+- **Minimera ("_"):** Döljer fönstret lokalt i klienten via React-state (`isOpen = false`). Sessionen förblir `active` (eller `waiting`) i databasen och kundtjänst kan fortfarande svara på den.
+- **Avsluta ("✕"):** Stänger fönstret, men gör även ett aktivt databasanrop för att sätta `status = 'closed'` på sessionen i tabellen `chat_sessions`. Det lokala statet rensas helt (`sessionId = null`, tömda meddelanden).
+- **Kundtjänstens vy (`AdminChat.tsx`):** Prenumererar via realtid enbart på chattar med status `waiting` eller `active`. När en användare klickar på krysset försvinner sessionen omedelbart från listan i admin-gränssnittet, vilket skapar ett självränsande kö-system.
+
+### Varför:
+Utan en funktion för att expliciet stänga ärenden skulle kundtjänstens lista fyllas upp av "klara" konversationer. Att integrera avslutet i den naturliga "stäng-knappen" gör att användarna automatiskt städar upp efter sig när de är nöjda med hjälpen de fått.
