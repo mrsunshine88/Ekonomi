@@ -156,192 +156,187 @@ function App() {
     );
   }
 
+  const navButtonStyles = (view: string) => ({
+    padding: '0.8rem 1.2rem',
+    fontSize: '1rem',
+    background: currentView === view ? 'var(--accent-gradient)' : 'transparent',
+    color: currentView === view ? 'white' : 'var(--text-secondary)',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontWeight: currentView === view ? 'bold' as const : 'normal' as const,
+    transition: 'all 0.2s',
+    textAlign: 'left' as const,
+    width: '100%'
+  });
+
   return (
-    <div className="container">
+    <div className="app-layout">
       <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
       
-      {isDemoMode && (
-        <div style={{ background: '#f59e0b', color: '#000', padding: '1rem', textAlign: 'center', borderRadius: '8px', marginBottom: '1rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          <span>🛠️ Du utforskar just nu appen i Demo-läge. Inget du gör här sparas.</span>
-          <button 
-            onClick={stopDemo}
-            style={{ background: '#000', color: '#fff', border: 'none', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            Avsluta Demo
-          </button>
-        </div>
-      )}
-
-      <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem', position: 'relative' }}>
-        {/* Mobile hamburger button - only visible on mobile */}
-        <button
-          className="hamburger-btn"
-          onClick={() => setMobileMenuOpen(prev => !prev)}
-          aria-label="Meny"
-        >
-          {mobileMenuOpen ? '✕' : '☰'}
-        </button>
-
-        {/* Mobile dropdown overlay - only visible on mobile when open */}
-        {mobileMenuOpen && (
-          <>
-            <div className="mobile-menu-backdrop" onClick={() => setMobileMenuOpen(false)} />
-            <div className="mobile-menu-dropdown">
-              <button onClick={() => navigateTo('start')} className={`mobile-menu-item ${currentView === 'start' ? 'active' : ''}`}>🏠 Startsida</button>
-              <button onClick={() => navigateTo('month')} className={`mobile-menu-item ${currentView === 'month' ? 'active' : ''}`}>📅 Gemensam</button>
-              <button onClick={() => navigateTo('stats')} className={`mobile-menu-item ${currentView === 'stats' ? 'active' : ''}`}>📊 Statistik</button>
-              <button onClick={() => navigateTo('privat')} className={`mobile-menu-item ${currentView === 'privat' ? 'active' : ''}`}>🔒 Privat</button>
-              {(!isDemoMode || user) && (
-                <>
-                  <button onClick={() => navigateTo('mypages')} className={`mobile-menu-item ${currentView === 'mypages' ? 'active' : ''}`}>👤 Mina sidor</button>
-                  <button onClick={() => navigateTo('manage')} className={`mobile-menu-item ${currentView === 'manage' ? 'active' : ''}`}>⚙️ Inställningar</button>
-                  {isAdmin && (
-                    <button onClick={() => navigateTo('admin')} className={`mobile-menu-item ${currentView === 'admin' ? 'active' : ''}`}>👑 Admin</button>
-                  )}
-                </>
-              )}
-              <div style={{ height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
-              {(!isDemoMode || user) ? (
-                <button onClick={() => supabase.auth.signOut()} className="mobile-menu-item" style={{ color: '#f43f5e' }}>🚪 Logga ut</button>
-              ) : (
-                <button onClick={stopDemo} className="mobile-menu-item" style={{ color: '#f43f5e' }}>🚪 Avsluta Demo</button>
-              )}
-            </div>
-          </>
-        )}
-
-        <div style={{ textAlign: 'center' }}>
-          <h1 style={{ margin: 0, marginBottom: '0.5rem' }}>SmartEkonomi</h1>
-        </div>
-        {/* Desktop nav - hidden on mobile via CSS */}
-        <nav className="nav-container">
-          <button 
-            onClick={() => navigateTo('start')} 
-            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'start' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'start' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'start' ? 'bold' : 'normal', transition: 'all 0.2s' }}
-          >
-            🏠 Startsida
-          </button>
-          <button 
-            onClick={() => navigateTo('month')} 
-            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'month' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'month' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'month' ? 'bold' : 'normal', transition: 'all 0.2s' }}
-          >
-            📅 Gemensam
-          </button>
-          <button 
-            onClick={() => navigateTo('stats')} 
-            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'stats' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'stats' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'stats' ? 'bold' : 'normal', transition: 'all 0.2s' }}
-          >
-            📊 Statistik
-          </button>
-          <button 
-            onClick={() => navigateTo('privat')} 
-            style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'privat' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'privat' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'privat' ? 'bold' : 'normal', transition: 'all 0.2s' }}
-          >
-            🔒 Privat
-          </button>
+      {/* DESKTOP SIDEBAR */}
+      <aside className="desktop-sidebar">
+        <h1 style={{ margin: 0, marginBottom: '2rem', fontSize: '1.8rem', background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          SmartEkonomi
+        </h1>
+        
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+          <button onClick={() => navigateTo('start')} style={navButtonStyles('start')}>🏠 Startsida</button>
+          <button onClick={() => navigateTo('month')} style={navButtonStyles('month')}>📅 Gemensam</button>
+          <button onClick={() => navigateTo('stats')} style={navButtonStyles('stats')}>📊 Statistik</button>
+          <button onClick={() => navigateTo('privat')} style={navButtonStyles('privat')}>🔒 Privat</button>
+          
           {(!isDemoMode || user) && (
             <>
-              <button 
-                onClick={() => navigateTo('mypages')} 
-                style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'mypages' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'mypages' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'mypages' ? 'bold' : 'normal', transition: 'all 0.2s' }}
-              >
-                👤 Mina sidor
-              </button>
-              <button 
-                onClick={() => navigateTo('manage')} 
-                style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'manage' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'manage' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'manage' ? 'bold' : 'normal', transition: 'all 0.2s' }}
-              >
-                ⚙️ Inställningar
-              </button>
+              <button onClick={() => navigateTo('mypages')} style={navButtonStyles('mypages')}>👤 Mina sidor</button>
+              <button onClick={() => navigateTo('manage')} style={navButtonStyles('manage')}>⚙️ Inställningar</button>
               {isAdmin && (
-                <button 
-                  onClick={() => navigateTo('admin')} 
-                  style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: currentView === 'admin' ? 'var(--accent-gradient)' : 'transparent', color: currentView === 'admin' ? 'white' : 'var(--text-secondary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: currentView === 'admin' ? 'bold' : 'normal', transition: 'all 0.2s' }}
-                >
-                  👑 Admin
-                </button>
+                <button onClick={() => navigateTo('admin')} style={navButtonStyles('admin')}>👑 Admin</button>
               )}
             </>
           )}
+        </nav>
+
+        {/* Utloggning i botten */}
+        <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
           {(!isDemoMode || user) ? (
             <button 
               onClick={() => supabase.auth.signOut()} 
-              style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s', marginLeft: '0.5rem' }}
+              style={{ width: '100%', padding: '0.8rem', fontSize: '1rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s' }}
             >
               🚪 Logga ut
             </button>
           ) : (
             <button 
               onClick={stopDemo} 
-              style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s', marginLeft: '0.5rem' }}
+              style={{ width: '100%', padding: '0.8rem', fontSize: '1rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s' }}
             >
               🚪 Avsluta Demo
             </button>
           )}
-        </nav>
-      </header>
-
-      {currentView === 'start' ? (
-        <StartPage navigateTo={navigateTo} isAdmin={isAdmin} />
-      ) : currentView === 'admin' && isAdmin ? (
-        <div>
-          <button className="back-button" onClick={() => setCurrentView('start')}>← Tillbaka till Startsida</button>
-          <AdminDashboard />
         </div>
-      ) : currentView === 'mypages' ? (
-        <div>
-          <button className="back-button" onClick={() => setCurrentView('start')}>← Tillbaka till Startsida</button>
-          <MyPages />
-        </div>
-      ) : currentView === 'manage' ? (
-        <div>
-          <ManageBills />
-        </div>
-      ) : currentView === 'stats' ? (
-        <div>
-          <button className="back-button" onClick={() => setCurrentView('start')}>← Tillbaka till Startsida</button>
-          <Suspense fallback={<div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Laddar statistik...</div>}>
-            <Statistics />
-          </Suspense>
-        </div>
-      ) : currentView === 'privat' ? (
-        <>
-          <div className="month-selector">
-            <button onClick={() => changeMonth(-1)}>← Föregående</button>
-            <button className="primary" style={{ cursor: 'default' }}>{getMonthDisplay(currentMonth)}</button>
-            <button onClick={() => changeMonth(1)}>Nästa →</button>
-          </div>
+      </aside>
 
-          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-            <button 
-              onClick={() => useStore.getState().copyPrivateFromPreviousMonth(currentMonth)}
-              style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', background: 'var(--surface-color)' }}
-            >
-              📄 Hämta siffror från förra månaden
-            </button>
-          </div>
+      {/* MAIN CONTENT AREA */}
+      <main className="main-content">
+        
+        {/* MOBILE HEADER (Only visible on mobile) */}
+        <div className="mobile-header">
+          <button
+            className="hamburger-btn"
+            onClick={() => setMobileMenuOpen(prev => !prev)}
+            aria-label="Meny"
+          >
+            {mobileMenuOpen ? '✕' : '☰'}
+          </button>
+          
+          <h1 style={{ margin: 0, fontSize: '1.5rem', background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            SmartEkonomi
+          </h1>
+          
+          {mobileMenuOpen && (
+            <>
+              <div className="mobile-menu-backdrop" onClick={() => setMobileMenuOpen(false)} />
+              <div className="mobile-menu-dropdown">
+                <button onClick={() => navigateTo('start')} className={`mobile-menu-item ${currentView === 'start' ? 'active' : ''}`}>🏠 Startsida</button>
+                <button onClick={() => navigateTo('month')} className={`mobile-menu-item ${currentView === 'month' ? 'active' : ''}`}>📅 Gemensam</button>
+                <button onClick={() => navigateTo('stats')} className={`mobile-menu-item ${currentView === 'stats' ? 'active' : ''}`}>📊 Statistik</button>
+                <button onClick={() => navigateTo('privat')} className={`mobile-menu-item ${currentView === 'privat' ? 'active' : ''}`}>🔒 Privat</button>
+                {(!isDemoMode || user) && (
+                  <>
+                    <button onClick={() => navigateTo('mypages')} className={`mobile-menu-item ${currentView === 'mypages' ? 'active' : ''}`}>👤 Mina sidor</button>
+                    <button onClick={() => navigateTo('manage')} className={`mobile-menu-item ${currentView === 'manage' ? 'active' : ''}`}>⚙️ Inställningar</button>
+                    {isAdmin && (
+                      <button onClick={() => navigateTo('admin')} className={`mobile-menu-item ${currentView === 'admin' ? 'active' : ''}`}>👑 Admin</button>
+                    )}
+                  </>
+                )}
+                <div style={{ height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
+                {(!isDemoMode || user) ? (
+                  <button onClick={() => supabase.auth.signOut()} className="mobile-menu-item" style={{ color: '#f43f5e' }}>🚪 Logga ut</button>
+                ) : (
+                  <button onClick={stopDemo} className="mobile-menu-item" style={{ color: '#f43f5e' }}>🚪 Avsluta Demo</button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
 
-          <PrivateView currentMonth={currentMonth} />
-        </>
-      ) : (
-        <>
-          <div className="month-selector">
-            <button onClick={() => changeMonth(-1)}>← Föregående</button>
-            <button className="primary" style={{ cursor: 'default' }}>{getMonthDisplay(currentMonth)}</button>
-            <button onClick={() => changeMonth(1)}>Nästa →</button>
-          </div>
-
-          {(state.settings?.showTransferSummary === true || state.settings?.showSwishSummary === true) && (
-            <Summary currentMonth={currentMonth} />
+        <div className="container">
+          {isDemoMode && (
+            <div style={{ background: '#f59e0b', color: '#000', padding: '1rem', textAlign: 'center', borderRadius: '8px', marginBottom: '2rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <span>🛠️ Du utforskar just nu appen i Demo-läge. Inget du gör här sparas.</span>
+              <button 
+                onClick={stopDemo}
+                style={{ background: '#000', color: '#fff', border: 'none', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Avsluta Demo
+              </button>
+            </div>
           )}
 
+          {currentView === 'start' ? (
+            <StartPage navigateTo={navigateTo} isAdmin={isAdmin} />
+          ) : currentView === 'admin' && isAdmin ? (
+            <div>
+              <button className="back-button" onClick={() => setCurrentView('start')}>← Tillbaka till Startsida</button>
+              <AdminDashboard />
+            </div>
+          ) : currentView === 'mypages' ? (
+            <div>
+              <button className="back-button" onClick={() => setCurrentView('start')}>← Tillbaka till Startsida</button>
+              <MyPages />
+            </div>
+          ) : currentView === 'manage' ? (
+            <div>
+              <ManageBills />
+            </div>
+          ) : currentView === 'stats' ? (
+            <div>
+              <button className="back-button" onClick={() => setCurrentView('start')}>← Tillbaka till Startsida</button>
+              <Suspense fallback={<div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Laddar statistik...</div>}>
+                <Statistics />
+              </Suspense>
+            </div>
+          ) : currentView === 'privat' ? (
+            <>
+              <div className="month-selector">
+                <button onClick={() => changeMonth(-1)}>← Föregående</button>
+                <button className="primary" style={{ cursor: 'default' }}>{getMonthDisplay(currentMonth)}</button>
+                <button onClick={() => changeMonth(1)}>Nästa →</button>
+              </div>
 
+              <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                <button 
+                  onClick={() => useStore.getState().copyPrivateFromPreviousMonth(currentMonth)}
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', background: 'var(--surface-color)' }}
+                >
+                  📄 Hämta siffror från förra månaden
+                </button>
+              </div>
 
-          <MonthView currentMonth={currentMonth} />
-        </>
-      )}
+              <PrivateView currentMonth={currentMonth} />
+            </>
+          ) : (
+            <>
+              <div className="month-selector">
+                <button onClick={() => changeMonth(-1)}>← Föregående</button>
+                <button className="primary" style={{ cursor: 'default' }}>{getMonthDisplay(currentMonth)}</button>
+                <button onClick={() => changeMonth(1)}>Nästa →</button>
+              </div>
 
-      <Footer />
+              {(state.settings?.showTransferSummary === true || state.settings?.showSwishSummary === true) && (
+                <Summary currentMonth={currentMonth} />
+              )}
+
+              <MonthView currentMonth={currentMonth} />
+            </>
+          )}
+
+          <Footer />
+        </div>
+      </main>
+
       <ChatBubble />
     </div>
   );
