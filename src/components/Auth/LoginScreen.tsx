@@ -143,7 +143,7 @@ export default function LoginScreen() {
             <span className="text-gradient">Spara tid och pengar varje månad.</span>
           </h1>
           <p className="login-hero-subtitle">
-            SmartEkonomi hjälper par och familjer att få full koll på ekonomin utan Excel, miniräknare eller onödiga diskussioner.
+            SmartEkonomi hjälper dig att få full koll på den gemensamma ekonomin utan Excel, miniräknare eller onödiga diskussioner.
           </p>
 
           <div className="features-grid">
@@ -156,6 +156,18 @@ export default function LoginScreen() {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div style={{ marginTop: '3rem', padding: '1.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem', fontWeight: 600 }}>Därför använder hushåll SmartEkonomi</h3>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Slipper miniräknaren</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Slipper Excel</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Slipper diskussioner om vem som ska betala vad</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Full kontroll över hushållets ekonomi</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Tydlig statistik över tid</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Fungerar för både gemensam och privat ekonomi</li>
+            </ul>
           </div>
 
           <div style={{ marginTop: '2rem' }}>
