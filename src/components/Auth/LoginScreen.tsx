@@ -113,12 +113,12 @@ export default function LoginScreen() {
     {
       icon: "🏠",
       title: "Gemensam ekonomi",
-      desc: "Samla alla hushållets räkningar på ett ställe. SmartEkonomi räknar automatiskt ut exakt hur mycket varje person ska betala och föra över till kontot."
+      desc: "Samla alla hushållets räkningar på ett ställe. SmartEkonomi räknar automatiskt ut vem som ska betala vad och hur mycket som ska föras över."
     },
     {
       icon: "💰",
       title: "Privat ekonomi",
-      desc: "Få koll på dina egna utgifter i en privat vy som inte påverkar den gemensamma ekonomin. Se direkt vilka kostnader du kan minska för att spara mer pengar."
+      desc: "Få koll på dina egna utgifter i en privat vy som inte påverkar den gemensamma ekonomin. Se enkelt vart pengarna tar vägen och upptäck kostnader som kan minskas."
     },
     {
       icon: "📈",
@@ -128,7 +128,7 @@ export default function LoginScreen() {
     {
       icon: "💎",
       title: "Prova gratis i 14 dagar",
-      desc: "Skapa ett konto på några minuter och se hur mycket tid och pengar hushållet kan spara redan första månaden."
+      desc: "Skapa ett konto på några minuter och upptäck hur enkelt det kan vara att hålla koll på ekonomin."
     }
   ];
 
@@ -137,7 +137,7 @@ export default function LoginScreen() {
       {/* Vänster sida: Info och Features */}
       <div className="login-info-section">
         <div className="login-info-content">
-          <div className="brand-badge">Premium Economy</div>
+          <div className="brand-badge">🏠 Gemensam ekonomi</div>
           <h1 className="login-hero-title">
             Släng miniräknaren. <br/>
             <span className="text-gradient">Spara tid och pengar varje månad.</span>
@@ -159,7 +159,7 @@ export default function LoginScreen() {
           </div>
 
           <div style={{ marginTop: '3rem', padding: '1.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem', fontWeight: 600 }}>Därför använder hushåll SmartEkonomi</h3>
+            <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem', fontWeight: 600 }}>Varför hushåll väljer SmartEkonomi</h3>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Slipper miniräknaren</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Slipper Excel</li>
