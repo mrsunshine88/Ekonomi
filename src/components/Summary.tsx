@@ -1,6 +1,18 @@
 import { useState } from 'react';
 import { useStore, calculateMonth } from '../store';
 
+const formatPersonName = (rawName: string) => {
+  let name = rawName.replace(/ kontot?|konto/gi, '').trim();
+  name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  
+  // Ta bort genitiv-s (t.ex. Helenas -> Helena, Annas -> Anna) men behåll för namn som genuint slutar på s
+  if (name.endsWith('s') && !['Andreas', 'Linus', 'Tobias', 'Mattias', 'Thomas', 'Jonas', 'Elias', 'Lukas', 'Marcus', 'Pontus', 'Rasmus', 'Hampus'].includes(name)) {
+    name = name.slice(0, -1);
+  }
+  
+  return name;
+};
+
 interface Props {
   currentMonth: string;
 }
@@ -105,8 +117,7 @@ export default function Summary({ currentMonth }: Props) {
                 <div key={paymentId} className={`summary-item ${isPaid ? 'paid' : ''}`} style={{ transition: 'background 0.3s', background: isPaid ? 'rgba(16, 185, 129, 0.15)' : 'rgba(0, 0, 0, 0.2)' }}>
                   <div className="summary-label">
                     {(() => {
-                      const pName = person.name.replace(/ kontot?|konto/gi, '').trim();
-                      const fromName = pName.charAt(0).toUpperCase() + pName.slice(1).toLowerCase();
+                      const fromName = formatPersonName(person.name);
                       const toName = sharedAcc.name.toLowerCase();
                       return `${fromName} ${isTransfer ? 'för över till' : 'swishar till'} ${toName}`;
                     })()}
@@ -148,10 +159,8 @@ export default function Summary({ currentMonth }: Props) {
               <div key={index} className={`swish-result ${isPaid ? 'paid' : ''}`} style={{ position: 'relative', transition: 'all 0.3s', opacity: isPaid ? 0.8 : 1 }}>
                 <div className="swish-text">
                   {(() => {
-                    const fNameRaw = (fromPerson?.name || '').replace(/ kontot?|konto/gi, '').trim();
-                    const tNameRaw = (toPerson?.name || '').replace(/ kontot?|konto/gi, '').trim();
-                    const fName = fNameRaw.charAt(0).toUpperCase() + fNameRaw.slice(1).toLowerCase();
-                    const tName = tNameRaw.charAt(0).toUpperCase() + tNameRaw.slice(1).toLowerCase();
+                    const fName = formatPersonName(fromPerson?.name || '');
+                    const tName = formatPersonName(toPerson?.name || '');
                     return `${fName} för över till ${tName}`;
                   })()}
                 </div>

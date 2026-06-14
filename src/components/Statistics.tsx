@@ -38,6 +38,18 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   return null;
 };
 
+const formatPersonName = (rawName: string) => {
+  let name = rawName.replace(/ kontot?|konto/gi, '').trim();
+  name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  
+  // Ta bort genitiv-s (t.ex. Helenas -> Helena, Annas -> Anna) men behåll för namn som genuint slutar på s
+  if (name.endsWith('s') && !['Andreas', 'Linus', 'Tobias', 'Mattias', 'Thomas', 'Jonas', 'Elias', 'Lukas', 'Marcus', 'Pontus', 'Rasmus', 'Hampus'].includes(name)) {
+    name = name.slice(0, -1);
+  }
+  
+  return name;
+};
+
 export default function Statistics() {
   const state = useStore(s => s.state);
   const loadYear = useStore(s => s.loadYear);
@@ -499,8 +511,8 @@ export default function Statistics() {
                         </td>
                         <td style={{ padding: '1rem' }}>
                           {h.result.swishes.map((s: { fromId: string; toId: string; amount: number }, i: number) => {
-                            const fromName = (state.accounts || []).find(a => a.id === s.fromId)?.name || s.fromId;
-                            const toName = (state.accounts || []).find(a => a.id === s.toId)?.name || s.toId;
+                            const fromName = formatPersonName((state.accounts || []).find(a => a.id === s.fromId)?.name || s.fromId);
+                            const toName = formatPersonName((state.accounts || []).find(a => a.id === s.toId)?.name || s.toId);
                             return (
                               <div key={i} style={{ fontSize: '0.85rem', marginBottom: '0.2rem' }}>
                                 <span style={{ color: '#3b82f6', fontWeight: 600 }}>{fromName}</span> förde över till <span style={{ color: '#10b981', fontWeight: 600 }}>{toName}</span>: {Math.round(s.amount).toLocaleString('sv-SE')} kr

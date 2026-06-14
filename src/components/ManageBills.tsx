@@ -144,7 +144,7 @@ export default function ManageBills() {
     setNewBillFixedFee(bill.fixedFee !== undefined ? bill.fixedFee.toString() : '');
     setNewBillAutoTransfer(bill.isAutoTransfer || '');
     
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleEditPrivateBill = (bill: PrivateBill) => {
@@ -159,7 +159,7 @@ export default function ManageBills() {
     setNewBillTotalDebt(bill.totalDebt !== undefined ? bill.totalDebt.toString() : '');
     setNewBillFixedFee(bill.fixedFee !== undefined ? bill.fixedFee.toString() : '');
     
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleConfirmDelete = async () => {
