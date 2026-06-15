@@ -1275,3 +1275,11 @@ För att minimera den kognitiva belastningen för användaren (särskilt helt ny
 - Genom att välja "Lägg till en Person (Hushållsmedlem)" förstår appen automatiskt att det handlar om person-till-person överföringar. Texten förklarar direkt varför valet finns: *👉 Detta krävs för att appen ska räkna ut om ni är skyldiga varandra pengar*.
 - Genom att välja "Lägg till ett Gemensamt Bankkonto" förstår appen automatiskt att det är en pott/banköverföring. Förklaringen lyder: *👉 Detta krävs för att se hur mycket ni ska sätta in*.
 - Detta gör det fullständigt intuitivt för nya användare att snabbt sätta upp den perfekta hushållsstrukturen (t.ex. Andreas -> Hus kontot, Helena -> Hus kontot, Andreas -> Helena).
+
+### 21.7 Centraliserad Kontokoppling (Makt till Administratören)
+**Vad:** 
+Rullgardinsmenyn "Kopplat konto" har raderats helt från "Mina Sidor". Istället har en ny sektion ("Koppla Inlogg till Person") skapats under fliken "Konton" i Inställningar. Denna sektion är endast synlig för användare med behörighetsnivån `owner`. Här listas alla e-postadresser som har loggat in i hushållet, och administratören får koppla varje e-postadress till ett specifikt virtuellt Personkonto (t.ex. "Andreas" eller "Helena"). Den inloggade ägaren kopplar även sig själv här. Samtidigt rensades överflödig hjälptext i "Lägg till räkning"-vyn för ett minimalistiskt UI.
+
+**Varför:** 
+1. **Säkerhet & Kontroll:** En inbjuden medlem ska inte själv kunna klicka runt och byta ut vem de representerar i hushållet, det skapar risk för felräkningar.
+2. **UX & Logik:** Tidigare skapades personerna (de virtuella kontona) under Inställningar, men kopplingen till e-postadressen gjordes under Mina Sidor. Detta var ologiskt och kändes splittrat. Nu är "Skapa Person" och "Koppla Inlogg till Person" samlat på en och samma skärm, vilket ger administratören (ägaren) en tydlig dashboard-upplevelse och total kontroll.
