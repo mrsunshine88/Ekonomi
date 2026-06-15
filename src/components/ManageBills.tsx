@@ -649,22 +649,37 @@ export default function ManageBills() {
                             </button>
                           </div>
                         )}
-                        {[...state.accounts].sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => {
-                          if (acc.type === 'shared') return null;
+                        {Object.keys(handled).map(paymentId => {
+                          if (!handled[paymentId] || paymentId === 'top_total_lock') return null;
                           
-                          let isIndividuallyLocked = false;
-                          Object.keys(handled).forEach(paymentId => {
-                            if (handled[paymentId] && paymentId !== 'top_total_lock') {
-                              if (paymentId.includes(acc.id)) isIndividuallyLocked = true;
+                          let label = '';
+                          if (paymentId.startsWith('transfer_')) {
+                            const parts = paymentId.split('_');
+                            const person = state.accounts.find(a => a.id === parts[1]);
+                            const shared = state.accounts.find(a => a.id === parts.slice(2).join('_'));
+                            if (person && shared) label = `${person.name} för över till ${shared.name}`;
+                          } else if (paymentId.startsWith('swish_')) {
+                            const parts = paymentId.split('_');
+                            let fromId, toId;
+                            if (parts.length > 3 && parts[2] === 'to') {
+                               fromId = parts[1];
+                               toId = parts.slice(3).join('_');
+                            } else {
+                               fromId = parts[1];
+                               toId = parts[2];
                             }
-                          });
+                            const fromPerson = state.accounts.find(a => a.id === fromId);
+                            const toPerson = state.accounts.find(a => a.id === toId);
+                            if (fromPerson && toPerson) label = `${fromPerson.name} för över till ${toPerson.name}`;
+                          }
+                          
+                          if (!label) return null;
 
-                          if (!isIndividuallyLocked) return null;
                           return (
-                            <div key={acc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-color)', padding: '0.75rem', borderRadius: '8px' }}>
-                              <span>{acc.name} 🔒</span>
+                            <div key={paymentId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-color)', padding: '0.75rem', borderRadius: '8px' }}>
+                              <span>{label} 🔒</span>
                               <button 
-                                onClick={() => onUnlockAccount(monthId, acc.id)}
+                                onClick={() => useStore.getState().togglePaymentStatus(monthId, paymentId)}
                                 style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', border: '1px solid #3b82f6', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
                               >
                                 🔓 Lås upp
