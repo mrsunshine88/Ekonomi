@@ -111,7 +111,6 @@ export default function Summary({ currentMonth }: Props) {
 
               const paymentId = `transfer_${personId}_${sharedId}`;
               const isPaid = handled[paymentId];
-              const isTransfer = sharedAcc.transferMethod === 'transfer';
 
               return (
                 <div key={paymentId} className={`summary-item ${isPaid ? 'paid' : ''}`} style={{ transition: 'background 0.3s', background: isPaid ? 'rgba(16, 185, 129, 0.15)' : 'rgba(0, 0, 0, 0.2)' }}>
@@ -128,10 +127,10 @@ export default function Summary({ currentMonth }: Props) {
                   {enableManagementButtons && (
                     <button 
                       onClick={() => { if (!isPaid) handleToggle(paymentId); }}
-                      style={{ marginTop: '1.5rem', padding: '0.5rem 1.5rem', fontSize: '0.9rem', fontWeight: 600, background: isPaid ? 'var(--success-color)' : 'transparent', color: isPaid ? '#fff' : 'var(--text-secondary)', border: isPaid ? '2px solid var(--success-color)' : '2px solid var(--text-secondary)', borderRadius: '20px', cursor: isPaid ? 'default' : 'pointer', opacity: missingSharedBills.length > 0 ? 0.6 : 1 }}
+                      style={{ marginTop: '1.5rem', background: isPaid ? 'var(--success-color)' : 'transparent', color: isPaid ? '#fff' : 'var(--text-secondary)', border: isPaid ? '2px solid var(--success-color)' : '2px solid var(--text-secondary)', padding: '0.5rem 1.5rem', borderRadius: '20px', cursor: isPaid ? 'default' : 'pointer', fontWeight: 600, fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: missingSharedBills.length > 0 ? 0.6 : 1 }}
                       disabled={isPaid}
                     >
-                      {isPaid ? '🔒 Överfört (Låst)' : 'Markera som överfört'}
+                      {isPaid ? '🔒 Låst' : '✅ Markera som klar'}
                     </button>
                   )}
                 </div>
@@ -168,10 +167,10 @@ export default function Summary({ currentMonth }: Props) {
                 {enableManagementButtons && (
                   <button 
                     onClick={() => { if (!isPaid) handleToggle(paymentId); }}
-                    style={{ marginTop: '1.5rem', padding: '0.5rem 1.5rem', fontSize: '0.9rem', fontWeight: 600, background: isPaid ? 'var(--success-color)' : 'transparent', color: isPaid ? '#fff' : 'inherit', border: isPaid ? '2px solid var(--success-color)' : '2px solid currentColor', borderRadius: '20px', cursor: isPaid ? 'default' : 'pointer', opacity: missingPersonBills.length > 0 ? 0.6 : 1 }}
+                    style={{ marginTop: '1.5rem', background: isPaid ? 'var(--success-color)' : 'transparent', color: isPaid ? '#fff' : 'var(--text-secondary)', border: isPaid ? '2px solid var(--success-color)' : '2px solid var(--text-secondary)', padding: '0.5rem 1.5rem', borderRadius: '20px', cursor: isPaid ? 'default' : 'pointer', fontWeight: 600, fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: missingPersonBills.length > 0 ? 0.6 : 1 }}
                     disabled={isPaid}
                   >
-                    {isPaid ? '🔒 Överfört (Låst)' : 'Markera som överfört'}
+                    {isPaid ? '🔒 Låst' : '✅ Markera som klar'}
                   </button>
                 )}
               </div>
