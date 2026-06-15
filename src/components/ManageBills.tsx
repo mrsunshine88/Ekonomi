@@ -514,10 +514,13 @@ export default function ManageBills() {
           <h3 className="card-title">Lägg till nytt konto</h3>
           <div style={{ display: 'grid', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 'bold' }}>1. Typ av konto</label>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 'bold' }}>1. Vad vill du lägga till?</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                 <button
-                  onClick={() => setNewAccType('person')}
+                  onClick={() => {
+                    setNewAccType('person');
+                    setNewAccTransferMethod('swish');
+                  }}
                   style={{
                     background: newAccType === 'person' ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)',
                     border: newAccType === 'person' ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
@@ -525,12 +528,18 @@ export default function ManageBills() {
                     padding: '1rem', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.5rem'
                   }}
                 >
-                  <strong style={{ fontSize: '1.05rem' }}>👤 En person</strong>
-                  <span style={{ fontSize: '0.85rem', color: newAccType === 'person' ? 'rgba(255,255,255,0.9)' : 'var(--text-secondary)', lineHeight: '1.4', fontWeight: 'normal' }}>En vanlig profil för någon i hushållet.</span>
+                  <strong style={{ fontSize: '1.05rem' }}>👤 Lägg till en Person (Hushållsmedlem)</strong>
+                  <span style={{ fontSize: '0.85rem', color: newAccType === 'person' ? 'rgba(255,255,255,0.9)' : 'var(--text-secondary)', lineHeight: '1.4', fontWeight: 'normal' }}>
+                    Lägg till dig själv och de andra i hushållet.<br/>
+                    <em style={{ opacity: 0.8, fontSize: '0.8rem', marginTop: '0.4rem', display: 'block' }}>👉 Detta krävs för att appen ska räkna ut om ni är skyldiga varandra pengar (t.ex. "Andreas för över till Helena").</em>
+                  </span>
                 </button>
 
                 <button
-                  onClick={() => setNewAccType('shared')}
+                  onClick={() => {
+                    setNewAccType('shared');
+                    setNewAccTransferMethod('transfer');
+                  }}
                   style={{
                     background: newAccType === 'shared' ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)',
                     border: newAccType === 'shared' ? '1px solid var(--accent-color)' : '1px solid var(--border-color)',
@@ -538,49 +547,24 @@ export default function ManageBills() {
                     padding: '1rem', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '0.5rem'
                   }}
                 >
-                  <strong style={{ fontSize: '1.05rem' }}>🏦 Ett gemensamt mål</strong>
-                  <span style={{ fontSize: '0.85rem', color: newAccType === 'shared' ? 'rgba(255,255,255,0.9)' : 'var(--text-secondary)', lineHeight: '1.4', fontWeight: 'normal' }}>Exempelvis hushållskassan eller matkontot.</span>
+                  <strong style={{ fontSize: '1.05rem' }}>🏦 Lägg till ett Gemensamt Bankkonto / Kort</strong>
+                  <span style={{ fontSize: '0.85rem', color: newAccType === 'shared' ? 'rgba(255,255,255,0.9)' : 'var(--text-secondary)', lineHeight: '1.4', fontWeight: 'normal' }}>
+                    Ett gemensamt konto där ni sätter in pengar för räkningar och mat.<br/>
+                    <em style={{ opacity: 0.8, fontSize: '0.8rem', marginTop: '0.4rem', display: 'block' }}>👉 Detta krävs för att se hur mycket ni ska sätta in (t.ex. "Andreas för över till Hus kontot").</em>
+                  </span>
                 </button>
               </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-              <label style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 'bold' }}>2. Namn på kontot/personen</label>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 'bold' }}>2. Vad heter personen / kontot?</label>
               <input 
                 type="text" 
-                placeholder={newAccType === 'person' ? "T.ex. Johan eller Maria" : "T.ex. Gemensamma Ica-kortet"} 
+                placeholder={newAccType === 'person' ? "T.ex. Johan eller Maria" : "T.ex. Hus kontot eller Ica-kortet"} 
                 value={newAccName} 
                 onChange={e => setNewAccName(e.target.value)} 
                 style={{ padding: '0.8rem', fontSize: '1.05rem', marginBottom: 0 }}
               />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-              <label style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 'bold' }}>3. Hur tar kontot emot pengar?</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
-                <button
-                  onClick={() => setNewAccTransferMethod('swish')}
-                  style={{
-                    background: newAccTransferMethod === 'swish' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255,255,255,0.05)',
-                    border: newAccTransferMethod === 'swish' ? '1px solid #3b82f6' : '1px solid var(--border-color)',
-                    color: newAccTransferMethod === 'swish' ? '#60a5fa' : 'var(--text-primary)',
-                    padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', textAlign: 'center', fontWeight: 'bold'
-                  }}
-                >
-                  📱 Swish
-                </button>
-                <button
-                  onClick={() => setNewAccTransferMethod('transfer')}
-                  style={{
-                    background: newAccTransferMethod === 'transfer' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.05)',
-                    border: newAccTransferMethod === 'transfer' ? '1px solid #10b981' : '1px solid var(--border-color)',
-                    color: newAccTransferMethod === 'transfer' ? '#34d399' : 'var(--text-primary)',
-                    padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', textAlign: 'center', fontWeight: 'bold'
-                  }}
-                >
-                  🏦 Banköverföring
-                </button>
-              </div>
             </div>
 
             <button onClick={handleAddAccount} style={{ background: 'var(--success-color)', color: '#fff', border: 'none', padding: '0.8rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.05rem', marginTop: '1rem' }}>
@@ -792,172 +776,204 @@ export default function ManageBills() {
               </div>
             </div>
             
+            {/* 1. Account & Split */}
             {newBillScope === 'shared' && (
-              <>
-                <select value={newBillAccount} onChange={e => setNewBillAccount(e.target.value)}>
-                  <option value="" disabled>-- Välj vilket konto räkningen dras ifrån --</option>
-                  {[...state.accounts].sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => (
-                    <option key={acc.id} value={acc.id}>{acc.name}</option>
-                  ))}
-                </select>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
+                <div>
+                  <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>Betalas från konto</label>
+                  <select value={newBillAccount} onChange={e => setNewBillAccount(e.target.value)} style={{ width: '100%', marginBottom: 0 }}>
+                    <option value="" disabled>-- Välj vilket konto räkningen dras ifrån --</option>
+                    {[...state.accounts].sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => (
+                      <option key={acc.id} value={acc.id}>{acc.name}</option>
+                    ))}
+                  </select>
+                </div>
                 
-                <select value={newBillSplit} onChange={e => setNewBillSplit(e.target.value)}>
-                  <option value="equal">Delas lika på alla personer (Gemensam)</option>
-                  {state.accounts.filter(a => a.type === 'person').sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => (
-                    <option key={acc.id} value={acc.id}>{acc.name} betalar 100%</option>
-                  ))}
-                </select>
-              </>
-            )}
-
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
-              <input 
-                type="checkbox" 
-                checked={newBillWarn} 
-                onChange={e => setNewBillWarn(e.target.checked)} 
-                style={{ width: 'auto' }}
-              />
-              Varna med röd färg om jag glömmer fylla i denna (När den förväntas)
-            </label>
-
-            {newBillWarn && (
-              <div style={{ paddingLeft: '1.5rem', marginTop: '-0.5rem', marginBottom: '0.5rem' }}>
-                <select value={newBillInterval} onChange={e => setNewBillInterval(e.target.value as PaymentInterval)} style={{ width: '100%', marginBottom: newBillInterval === 'custom' ? '0.5rem' : 0 }}>
-                  <option value="all">Betalas: Varje månad</option>
-                  <option value="odd">Betalas: Udda månader (Jan, Mar, Maj...)</option>
-                  <option value="even">Betalas: Jämna månader (Feb, Apr, Jun...)</option>
-                  <option value="custom">Betalas: Välj specifika månader</option>
-                </select>
-
-                {newBillInterval === 'custom' && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px' }}>
-                    <div style={{ width: '100%', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                      Välj vilka månader räkningen kommer:
-                    </div>
-                    {['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'].map((m, index) => {
-                      const monthNum = index + 1;
-                      const isSelected = newBillCustomMonths.includes(monthNum);
-                      return (
-                        <button
-                          key={m}
-                          onClick={() => {
-                            if (isSelected) {
-                              setNewBillCustomMonths(prev => prev.filter(num => num !== monthNum));
-                            } else {
-                              setNewBillCustomMonths(prev => [...prev, monthNum]);
-                            }
-                          }}
-                          style={{
-                            background: isSelected ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)',
-                            color: isSelected ? '#fff' : 'var(--text-secondary)',
-                            border: isSelected ? 'none' : '1px solid var(--border-color)',
-                            padding: '0.5rem',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            flex: '1 0 calc(25% - 0.5rem)',
-                            minWidth: '60px',
-                            fontWeight: isSelected ? 'bold' : 'normal'
-                          }}
-                        >
-                          {m}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)', marginTop: '0.5rem' }}>
-              <input 
-                type="checkbox" 
-                checked={newBillIsLoan} 
-                onChange={e => {
-                  setNewBillIsLoan(e.target.checked);
-                  if (!e.target.checked) {
-                    setNewBillTotalDebt('');
-                    setNewBillFixedFee('');
-                  }
-                }} 
-                style={{ width: 'auto' }}
-              />
-              💳 Detta är en skuld/ett lån som ska betalas av över tid
-            </label>
-
-            {newBillIsLoan && (
-              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', borderLeft: '3px solid var(--accent-color)', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                  Ange den <strong>ursprungliga totala skulden</strong> här. Appen kommer automatiskt att räkna ihop alla inmatade belopp över alla låsta månader och visa hur mycket du har betalat av i Statistik-fliken.
-                </p>
-                <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
-                  <div>
-                    <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Total startskuld (kr)</label>
-                    <input 
-                      type="number" 
-                      placeholder="T.ex. 10000" 
-                      value={newBillTotalDebt} 
-                      onChange={e => setNewBillTotalDebt(e.target.value)} 
-                      style={{ width: '100%', marginBottom: 0 }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Fast avgift / månad (kr)</label>
-                    <input 
-                      type="number" 
-                      placeholder="T.ex. 50" 
-                      value={newBillFixedFee} 
-                      onChange={e => setNewBillFixedFee(e.target.value)} 
-                      style={{ width: '100%', marginBottom: 0 }}
-                    />
-                  </div>
+                <div>
+                  <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>Hur ska räkningen delas?</label>
+                  <select value={newBillSplit} onChange={e => setNewBillSplit(e.target.value)} style={{ width: '100%', marginBottom: 0 }}>
+                    <option value="equal">Delas lika på alla personer (Gemensam)</option>
+                    {state.accounts.filter(a => a.type === 'person').sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => (
+                      <option key={acc.id} value={acc.id}>{acc.name} betalar 100%</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}
 
-            {newBillScope === 'shared' && (
-              <div style={{ marginTop: '0.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+            {/* 2. Default Amount */}
+            <div style={{ marginTop: '1rem' }}>
+              <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>Standardbelopp (Frivilligt)</label>
+              <input 
+                type="number" 
+                placeholder="0" 
+                value={newBillDefault} 
+                onChange={e => setNewBillDefault(e.target.value)} 
+                style={{ width: '100%', marginBottom: '0.25rem' }}
+              />
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Fylls i automatiskt i månadsvyn.</span>
+            </div>
+
+            {/* 3. Smarta Inställningar */}
+            <div style={{ marginTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
+              <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', fontSize: '1rem' }}>Smarta inställningar</h4>
+
+              {/* Varning */}
+              <div style={{ marginBottom: '1rem', background: newBillWarn ? 'rgba(16, 185, 129, 0.1)' : 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: newBillWarn ? '1px solid #10b981' : '1px solid transparent', transition: 'all 0.2s' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer' }}>
                   <input 
                     type="checkbox" 
-                    checked={newBillAutoTransfer !== ''} 
-                    onChange={e => setNewBillAutoTransfer(e.target.checked ? 'all' : '')} 
-                    style={{ width: 'auto' }}
+                    checked={newBillWarn} 
+                    onChange={e => setNewBillWarn(e.target.checked)} 
+                    style={{ width: '1.2rem', height: '1.2rem', marginTop: '0.1rem', cursor: 'pointer' }}
                   />
-                  ↩️ Automatisk överföring (räknas bort från summan "att föra över")
+                  <div>
+                    <div style={{ color: newBillWarn ? '#10b981' : 'var(--text-primary)', fontWeight: 'bold', marginBottom: '0.2rem' }}>Påminn mig om denna saknas</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Varnar med röd färg i månadsvyn om du glömmer fylla i den.</div>
+                  </div>
                 </label>
-                
-                {newBillAutoTransfer !== '' && (
-                  <div style={{ marginTop: '0.8rem', marginLeft: '2rem', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', borderLeft: '2px solid var(--accent-color)' }}>
-                    <label style={{ display: 'block', marginBottom: '0.4rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Vem har autogiro / vem gäller detta för?</label>
-                    <select 
-                      value={newBillAutoTransfer} 
-                      onChange={e => setNewBillAutoTransfer(e.target.value)}
-                      style={{ marginBottom: '0.5rem' }}
-                    >
-                      <option value="all">Alla (Pengarna räknas bort för alla)</option>
-                      {state.accounts.filter(a => a.type === 'person').sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => (
-                        <option key={acc.id} value={acc.id}>
-                          Bara {acc.name} (Räknas endast bort för {acc.name})
-                        </option>
-                      ))}
+
+                {newBillWarn && (
+                  <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                    <select value={newBillInterval} onChange={e => setNewBillInterval(e.target.value as PaymentInterval)} style={{ width: '100%', marginBottom: newBillInterval === 'custom' ? '0.5rem' : 0 }}>
+                      <option value="all">Betalas: Varje månad</option>
+                      <option value="odd">Betalas: Udda månader (Jan, Mar, Maj...)</option>
+                      <option value="even">Betalas: Jämna månader (Feb, Apr, Jun...)</option>
+                      <option value="custom">Betalas: Välj specifika månader</option>
                     </select>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      {newBillAutoTransfer === 'all' && '✅ Ingen behöver föra över – allt sköts automatiskt.'}
-                      {newBillAutoTransfer !== 'all' && `✅ Bara ${state.accounts.find(a => a.id === newBillAutoTransfer)?.name || '?'} slipper föra över sin andel – de andra måste fortfarande göra det manuellt.`}
+
+                    {newBillInterval === 'custom' && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px' }}>
+                        <div style={{ width: '100%', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                          Välj vilka månader räkningen kommer:
+                        </div>
+                        {['Jan', 'Feb', 'Mar', 'Apr', 'Maj', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'].map((m, index) => {
+                          const monthNum = index + 1;
+                          const isSelected = newBillCustomMonths.includes(monthNum);
+                          return (
+                            <button
+                              key={m}
+                              onClick={() => {
+                                if (isSelected) {
+                                  setNewBillCustomMonths(prev => prev.filter(num => num !== monthNum));
+                                } else {
+                                  setNewBillCustomMonths(prev => [...prev, monthNum]);
+                                }
+                              }}
+                              style={{
+                                background: isSelected ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)',
+                                color: isSelected ? '#fff' : 'var(--text-secondary)',
+                                border: isSelected ? 'none' : '1px solid var(--border-color)',
+                                padding: '0.5rem',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                flex: '1 0 calc(25% - 0.5rem)',
+                                minWidth: '60px',
+                                fontWeight: isSelected ? 'bold' : 'normal'
+                              }}
+                            >
+                              {m}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Lån */}
+              <div style={{ marginBottom: '1rem', background: newBillIsLoan ? 'rgba(59, 130, 246, 0.1)' : 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: newBillIsLoan ? '1px solid #3b82f6' : '1px solid transparent', transition: 'all 0.2s' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={newBillIsLoan} 
+                    onChange={e => {
+                      setNewBillIsLoan(e.target.checked);
+                      if (!e.target.checked) {
+                        setNewBillTotalDebt('');
+                        setNewBillFixedFee('');
+                      }
+                    }} 
+                    style={{ width: '1.2rem', height: '1.2rem', marginTop: '0.1rem', cursor: 'pointer' }}
+                  />
+                  <div>
+                    <div style={{ color: newBillIsLoan ? '#3b82f6' : 'var(--text-primary)', fontWeight: 'bold', marginBottom: '0.2rem' }}>Detta är ett lån / en skuld</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Hanteras separat för att betalas av över tid.</div>
+                  </div>
+                </label>
+
+                {newBillIsLoan && (
+                  <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                      Ange den <strong>ursprungliga totala skulden</strong> här. Appen räknar automatiskt ihop vad du betalat.
+                    </p>
+                    <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
+                      <div>
+                        <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Total startskuld (kr)</label>
+                        <input 
+                          type="number" 
+                          placeholder="T.ex. 10000" 
+                          value={newBillTotalDebt} 
+                          onChange={e => setNewBillTotalDebt(e.target.value)} 
+                          style={{ width: '100%', marginBottom: 0 }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.25rem' }}>Fast avgift / månad (kr)</label>
+                        <input 
+                          type="number" 
+                          placeholder="T.ex. 50" 
+                          value={newBillFixedFee} 
+                          onChange={e => setNewBillFixedFee(e.target.value)} 
+                          style={{ width: '100%', marginBottom: 0 }}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
-            )}
 
-
-
-            <input 
-              type="number" 
-              placeholder="Standardbelopp (Frivilligt)" 
-              value={newBillDefault} 
-              onChange={e => setNewBillDefault(e.target.value)} 
-            />
+              {/* Autogiro */}
+              {newBillScope === 'shared' && (
+                <div style={{ marginBottom: '1rem', background: newBillAutoTransfer !== '' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: newBillAutoTransfer !== '' ? '1px solid #f59e0b' : '1px solid transparent', transition: 'all 0.2s' }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={newBillAutoTransfer !== ''} 
+                      onChange={e => setNewBillAutoTransfer(e.target.checked ? 'all' : '')} 
+                      style={{ width: '1.2rem', height: '1.2rem', marginTop: '0.1rem', cursor: 'pointer' }}
+                    />
+                    <div>
+                      <div style={{ color: newBillAutoTransfer !== '' ? '#f59e0b' : 'var(--text-primary)', fontWeight: 'bold', marginBottom: '0.2rem' }}>Dras via Autogiro</div>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Räknas bort från summan som du måste föra över manuellt.</div>
+                    </div>
+                  </label>
+                  
+                  {newBillAutoTransfer !== '' && (
+                    <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                      <label style={{ display: 'block', marginBottom: '0.4rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Vem har autogirot?</label>
+                      <select 
+                        value={newBillAutoTransfer} 
+                        onChange={e => setNewBillAutoTransfer(e.target.value)}
+                        style={{ marginBottom: '0.5rem', width: '100%' }}
+                      >
+                        <option value="all">Alla (Pengarna dras direkt från gemensamt konto)</option>
+                        {state.accounts.filter(a => a.type === 'person').sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => (
+                          <option key={acc.id} value={acc.id}>
+                            Bara {acc.name} (Dras från {acc.name}s egna konto)
+                          </option>
+                        ))}
+                      </select>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        {newBillAutoTransfer === 'all' && 'Ingen behöver föra över denna summa manuellt.'}
+                        {newBillAutoTransfer !== 'all' && `Bara ${state.accounts.find(a => a.id === newBillAutoTransfer)?.name || '?'} slipper föra över sin andel manuellt.`}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             
             <div style={{ display: 'flex', gap: '1rem' }}>
               <button onClick={handleSaveBill} style={{ flex: 1, background: 'var(--success-color)', color: '#fff', border: 'none', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
