@@ -578,7 +578,7 @@ export default function ManageBills() {
               <div key={acc.id} className="bill-row" style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div>
                   <div className="bill-name">{acc.name}</div>
-                  <div className="bill-meta">{acc.type === 'shared' ? 'Gemensamt konto' : 'Personligt konto'} • Betalningsmetod: {acc.transferMethod === 'transfer' ? 'Banköverföring' : 'Swish'}</div>
+                  <div className="bill-meta">{acc.type === 'shared' ? 'Gemensamt konto' : 'Personligt konto'}</div>
                 </div>
                 <button 
                   onClick={() => onRemoveAccount(acc.id)}
