@@ -789,15 +789,17 @@ export default function ManageBills() {
                   </select>
                 </div>
                 
-                <div>
-                  <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>Hur ska räkningen delas?</label>
-                  <select value={newBillSplit} onChange={e => setNewBillSplit(e.target.value)} style={{ width: '100%', marginBottom: 0 }}>
-                    <option value="equal">Delas lika på alla personer (Gemensam)</option>
-                    {state.accounts.filter(a => a.type === 'person').sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => (
-                      <option key={acc.id} value={acc.id}>{acc.name} betalar 100%</option>
-                    ))}
-                  </select>
-                </div>
+                {state.accounts.filter(a => a.type === 'person').length > 1 && (
+                  <div>
+                    <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>Hur ska räkningen delas?</label>
+                    <select value={newBillSplit} onChange={e => setNewBillSplit(e.target.value)} style={{ width: '100%', marginBottom: 0 }}>
+                      <option value="equal">Delas lika på alla personer (Gemensam)</option>
+                      {state.accounts.filter(a => a.type === 'person').sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => (
+                        <option key={acc.id} value={acc.id}>{acc.name} betalar 100%</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
             )}
 
