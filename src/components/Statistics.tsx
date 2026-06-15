@@ -39,7 +39,7 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
 };
 
 const formatPersonName = (rawName: string) => {
-  let name = rawName.replace(/ kontot?|konto/gi, '').trim();
+  let name = rawName.replace(/\bkontot?\b/gi, '').trim();
   name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
   
   // Ta bort genitiv-s (t.ex. Helenas -> Helena, Annas -> Anna) men behåll för namn som genuint slutar på s

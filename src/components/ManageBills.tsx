@@ -452,10 +452,10 @@ export default function ManageBills() {
                   onChange={(e) => onUpdateSettings({ showSwishSummary: e.target.checked })}
                   style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
                 />
-                Visa sammanställning för Swish högst upp i månadsvyn
+                Visa sammanställning för personliga överföringar högst upp i månadsvyn
               </label>
               <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', marginLeft: '2.5rem', fontSize: '0.9rem' }}>
-                Visar en ruta med vem som är skyldig vem pengar (Swish personer emellan).
+                Visar en ruta med vem som är skyldig vem pengar (överföringar personer emellan).
               </p>
             </div>
 

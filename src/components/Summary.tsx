@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useStore, calculateMonth } from '../store';
 
 const formatPersonName = (rawName: string) => {
-  let name = rawName.replace(/ kontot?|konto/gi, '').trim();
+  let name = rawName.replace(/\bkontot?\b/gi, '').trim();
   name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
   
   // Ta bort genitiv-s (t.ex. Helenas -> Helena, Annas -> Anna) men behåll för namn som genuint slutar på s
@@ -119,7 +119,7 @@ export default function Summary({ currentMonth }: Props) {
                     {(() => {
                       const fromName = formatPersonName(person.name);
                       const toName = sharedAcc.name.toLowerCase();
-                      return `${fromName} ${isTransfer ? 'för över till' : 'swishar till'} ${toName}`;
+                      return `${fromName} för över till ${toName}`;
                     })()}
                   </div>
                   <div className="summary-value highlight-value" style={{ filter: isPaid ? 'brightness(0.8)' : 'none' }}>
@@ -131,7 +131,7 @@ export default function Summary({ currentMonth }: Props) {
                       style={{ marginTop: '1.5rem', padding: '0.5rem 1.5rem', fontSize: '0.9rem', fontWeight: 600, background: isPaid ? 'var(--success-color)' : 'transparent', color: isPaid ? '#fff' : 'var(--text-secondary)', border: isPaid ? '2px solid var(--success-color)' : '2px solid var(--text-secondary)', borderRadius: '20px', cursor: isPaid ? 'default' : 'pointer', opacity: missingSharedBills.length > 0 ? 0.6 : 1 }}
                       disabled={isPaid}
                     >
-                      {isPaid ? (isTransfer ? '🔒 Överfört (Låst)' : '🔒 Swishat (Låst)') : (isTransfer ? 'Markera som överfört' : 'Markera som Swishat')}
+                      {isPaid ? '🔒 Överfört (Låst)' : 'Markera som överfört'}
                     </button>
                   )}
                 </div>
@@ -171,7 +171,7 @@ export default function Summary({ currentMonth }: Props) {
                     style={{ marginTop: '1.5rem', padding: '0.5rem 1.5rem', fontSize: '0.9rem', fontWeight: 600, background: isPaid ? 'var(--success-color)' : 'transparent', color: isPaid ? '#fff' : 'inherit', border: isPaid ? '2px solid var(--success-color)' : '2px solid currentColor', borderRadius: '20px', cursor: isPaid ? 'default' : 'pointer', opacity: missingPersonBills.length > 0 ? 0.6 : 1 }}
                     disabled={isPaid}
                   >
-                    {isPaid ? (toPerson?.transferMethod === 'transfer' ? '🔒 Överfört (Låst)' : '🔒 Swishat (Låst)') : (toPerson?.transferMethod === 'transfer' ? 'Markera som Överfört' : 'Markera som Swishat')}
+                    {isPaid ? '🔒 Överfört (Låst)' : 'Markera som överfört'}
                   </button>
                 )}
               </div>
@@ -180,7 +180,7 @@ export default function Summary({ currentMonth }: Props) {
         </div>
       ) : (
         <div style={{ textAlign: 'center', marginTop: '2rem', padding: '2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Inga swishar behövs denna månad! 🎉</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Inga överföringar behövs denna månad! 🎉</p>
         </div>
       ))}
     </div>
