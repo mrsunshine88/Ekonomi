@@ -8,9 +8,6 @@ export default function MyPages() {
   const toggleSharePrivateEconomy = useStore(s => s.toggleSharePrivateEconomy);
   const settings = useStore(s => s.state.settings);
   const updateSettings = useStore(s => s.updateSettings);
-  const accounts = useStore(s => s.state.accounts);
-  const personAccounts = accounts.filter(a => a.type === 'person');
-  const updateProfileAccount = useStore(s => s.updateProfileAccount);
   const householdProfiles = useStore(s => s.state.householdProfiles) || [];
   const myProfile = householdProfiles.find(p => p.id === user?.id);
   const isSharingPrivate = myProfile?.share_private_economy || false;
@@ -601,22 +598,6 @@ export default function MyPages() {
                 </div>
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                  {/* Account linking dropdown */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)', flex: '1 1 auto' }}>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Kopplat konto:</span>
-                    <select
-                      value={householdProfiles.find(p => p.id === m.id)?.person_account_id || ''}
-                      onChange={(e) => updateProfileAccount(m.id, e.target.value || null)}
-                      disabled={role !== 'owner'}
-                      style={{ flex: 1, padding: '0.4rem', borderRadius: '4px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid var(--border-color)', cursor: role === 'owner' ? 'pointer' : 'not-allowed', fontSize: '0.9rem', width: '100%' }}
-                    >
-                      <option value="">-- Inget valt --</option>
-                      {personAccounts.map(a => (
-                        <option key={a.id} value={a.id}>{a.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
                   {role === 'owner' && m.id !== user?.id && (
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', flex: '1 1 auto', justifyContent: 'flex-start' }}>
                     <button 

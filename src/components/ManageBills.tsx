@@ -24,6 +24,9 @@ export default function ManageBills() {
   const onUnlockPrivateMonth = useStore(s => s.togglePrivateLock);
   const saveIncome = useStore(s => s.saveIncome);
   const removeIncome = useStore(s => s.removeIncome);
+  const householdProfiles = useStore(s => s.state.householdProfiles) || [];
+  const updateProfileAccount = useStore(s => s.updateProfileAccount);
+  const personAccounts = state.accounts.filter(a => a.type === 'person');
   const [activeTab, setActiveTab] = useState<'bills' | 'accounts' | 'locks' | 'general' | 'salary'>(() => {
     return (localStorage.getItem('settingsActiveTab') as any) || 'bills';
   });
@@ -589,6 +592,35 @@ export default function ManageBills() {
               </div>
             ))}
           </div>
+          
+          {role === 'owner' && (
+            <>
+              <h3 className="card-title" style={{ marginTop: '2.5rem', paddingTop: '2.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>Koppla Inlogg till Person</h3>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                Här väljer du vilken person i appen som tillhör vilken inloggad e-postadress. Detta krävs för att medlemmar ska se sina egna uträkningar.
+              </p>
+              <div className="bill-list" style={{ marginBottom: '2rem' }}>
+                {householdProfiles.map(profile => (
+                  <div key={profile.id} className="bill-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div className="bill-name">{profile.email} {profile.id === user?.id && '(Du)'}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)', flex: '1 1 auto' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Kopplat konto:</span>
+                      <select
+                        value={profile.person_account_id || ''}
+                        onChange={(e) => updateProfileAccount(profile.id, e.target.value || null)}
+                        style={{ flex: 1, padding: '0.4rem', borderRadius: '4px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: '0.9rem', minWidth: '150px' }}
+                      >
+                        <option value="">-- Inget valt --</option>
+                        {personAccounts.map(a => (
+                          <option key={a.id} value={a.id}>{a.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 
