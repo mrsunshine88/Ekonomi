@@ -826,9 +826,8 @@ export default function ManageBills() {
                 placeholder="0" 
                 value={newBillDefault} 
                 onChange={e => setNewBillDefault(e.target.value)} 
-                style={{ width: '100%', marginBottom: '0.25rem' }}
+                style={{ width: '100%' }}
               />
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Fylls i automatiskt i månadsvyn.</span>
             </div>
 
             {/* 3. Smarta Inställningar */}
