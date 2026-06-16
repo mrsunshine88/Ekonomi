@@ -112,7 +112,12 @@ function App() {
   }
 
   if (!user && !isDemoMode) {
-    return <LoginScreen />;
+    return (
+      <>
+        <LoginScreen />
+        <ChatBubble />
+      </>
+    );
   }
 
   // 1. HARD GATE: Grattis-rutan vid ny bekräftelse

@@ -4,6 +4,7 @@ import { useStore } from '../store';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../AuthContext';
 import toast from 'react-hot-toast';
+import * as xlsx from 'xlsx';
 
 export default function ManageBills() {
   const { user: realUser, role } = useAuth();
@@ -198,6 +199,123 @@ export default function ManageBills() {
       transferMethod: newAccTransferMethod
     });
     setNewAccName('');
+  };
+
+  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = event.target?.result;
+        const workbook = xlsx.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const json: any[][] = xlsx.utils.sheet_to_json(sheet, { header: 1 });
+        
+        if (json.length < 2) {
+          toast.error("Excel-filen är för kort eller tom.");
+          return;
+        }
+
+        // Hitta header raden. Vi antar rad 3 baserat på bilden (index 2), eller letar efter "Kategori"
+        let headerRowIdx = -1;
+        for (let i = 0; i < Math.min(10, json.length); i++) {
+          if (json[i].some(cell => typeof cell === 'string' && cell.toLowerCase().includes('kategori'))) {
+            headerRowIdx = i;
+            break;
+          }
+        }
+
+        if (headerRowIdx === -1) {
+          toast.error("Hittade inte rubriken 'Kategori' i filen.");
+          return;
+        }
+
+        const headers = json[headerRowIdx].map(h => typeof h === 'string' ? h.toLowerCase() : '');
+        const kategoriIdx = headers.findIndex(h => h.includes('kategori'));
+        const rakningIdx = headers.findIndex(h => h.includes('räkning'));
+        
+        // Hitta första månaden (första kolumnen med "belopp" under en månad). I bilden är belopp under Januari och Februari.
+        // Så vi letar efter en kolumn som har nummer värden
+        let firstAmountIdx = -1;
+        for(let i = Math.max(kategoriIdx, rakningIdx) + 1; i < headers.length; i++) {
+            if (headers[i].includes('belopp')) {
+                firstAmountIdx = i;
+                break;
+            }
+        }
+        
+        if (firstAmountIdx === -1) {
+            // Fallback: Ta kolumnen efter "räkning" om belopp inte finns
+            firstAmountIdx = rakningIdx + 1;
+        }
+
+        if (kategoriIdx === -1 || rakningIdx === -1) {
+          toast.error("Saknar kolumner för 'Kategori' eller 'Räkning'.");
+          return;
+        }
+
+        let addedCount = 0;
+        let currentCategory = "";
+
+        for (let i = headerRowIdx + 1; i < json.length; i++) {
+          const row = json[i];
+          if (!row || row.length === 0) continue;
+
+          let category = row[kategoriIdx];
+          if (category && typeof category === 'string' && category.trim() !== '') {
+            currentCategory = category.trim();
+          }
+
+          const rakning = row[rakningIdx];
+          if (!rakning || typeof rakning !== 'string' || rakning.trim() === '' || rakning.toLowerCase() === 'totalt' || rakning.toLowerCase() === 'andreas' || rakning.toLowerCase() === 'helena') {
+            continue; // Skippa summeringar och tomma rader
+          }
+
+          let amountStr = row[firstAmountIdx];
+          let amount = 0;
+          if (typeof amountStr === 'number') {
+            amount = amountStr;
+          } else if (typeof amountStr === 'string') {
+             amount = parseFloat(amountStr.replace(/[^0-9,-]+/g, '').replace(',', '.'));
+             if (isNaN(amount)) amount = 0;
+          }
+
+          // Kontrollera om kontot finns, annars skapa det
+          let account = state.accounts.find(a => a.name.toLowerCase() === currentCategory.toLowerCase());
+          if (!account) {
+            // Avgör typ: Innehåller "konto" -> oftast person eller gemensamt. Vi kan defaulta till 'shared'.
+            account = {
+              id: crypto.randomUUID(),
+              name: currentCategory,
+              type: 'shared',
+              transferMethod: 'transfer'
+            };
+            onAddAccount(account);
+          }
+
+          const billData: BillDefinition = {
+            id: crypto.randomUUID(),
+            name: rakning.trim(),
+            accountId: account.id,
+            splitType: 'equal', // Default
+            defaultAmount: amount,
+            interval: 'all'
+          };
+          onAddBill(billData);
+          addedCount++;
+        }
+
+        toast.success(`✅ Importerade ${addedCount} räkningar från Excel!`);
+        if (e.target) e.target.value = ''; // Nollställ
+      } catch (err) {
+        console.error(err);
+        toast.error("Kunde inte läsa in Excel-filen.");
+      }
+    };
+    reader.readAsBinaryString(file);
   };
 
   return (
@@ -763,7 +881,15 @@ export default function ManageBills() {
 
       {activeTab === 'bills' && (
         <div>
-          <h3 className="card-title">{editingBillId ? 'Ändra Räkning' : 'Lägg till ny räkning'}</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 className="card-title" style={{ margin: 0 }}>{editingBillId ? 'Ändra Räkning' : 'Lägg till ny räkning'}</h3>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <label style={{ cursor: 'pointer', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid #10b981', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                    📥 Importera Excel
+                    <input type="file" accept=".xlsx, .xls" onChange={handleImportExcel} style={{ display: 'none' }} />
+                </label>
+            </div>
+          </div>
           <div style={{ display: 'grid', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', marginBottom: '2rem', border: editingBillId ? '2px solid var(--accent-color)' : 'none' }}>
             
             {!editingBillId && (

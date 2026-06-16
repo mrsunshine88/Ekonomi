@@ -22,6 +22,7 @@ export default function AdminChat() {
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -225,14 +226,42 @@ export default function AdminChat() {
 
   if (loading) return <div>Laddar chatt-systemet...</div>;
 
+  const fullscreenStyles: React.CSSProperties = isFullscreen ? {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 99999,
+    background: '#0b0f19',
+    padding: '20px',
+    height: '100vh',
+    display: 'flex',
+    flexDirection: 'column'
+  } : { display: 'flex', flexDirection: 'column', height: '100%' };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={fullscreenStyles}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '12px', flexWrap: 'wrap', gap: '15px' }}>
         <div>
           <h2 style={{ margin: 0 }}>Kundservice</h2>
           <p style={{ margin: '5px 0 0', color: 'var(--text-secondary)' }}>Hantera live-chattar från användare</p>
         </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button 
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            style={{ 
+              padding: '10px 20px', 
+              background: 'rgba(255,255,255,0.1)', 
+              border: 'none', 
+              borderRadius: '8px', 
+              color: 'white', 
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            {isFullscreen ? '✖ Stäng Helskärm' : '🔲 Helskärm'}
+          </button>
           <button 
             onClick={toggleNotifications}
             style={{ 
@@ -286,7 +315,7 @@ export default function AdminChat() {
                 }}
               >
                 <div>
-                  <div style={{ fontWeight: 'bold' }}>{s.profiles?.email || 'Okänd Användare'}</div>
+                  <div style={{ fontWeight: 'bold' }}>{s.profiles?.email || 'Oinloggad Besökare'}</div>
                   <div style={{ fontSize: '0.8rem', color: s.status === 'waiting' ? '#f43f5e' : '#10b981' }}>
                     {s.status === 'waiting' ? 'Väntar...' : 'Aktiv'}
                   </div>
@@ -307,7 +336,7 @@ export default function AdminChat() {
             <>
               <div style={{ padding: '15px', borderBottom: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 style={{ margin: 0, wordBreak: 'break-all', flex: 1, minWidth: '200px' }}>
-                  Konversation med {sessions.find(s => s.id === selectedSessionId)?.profiles?.email}
+                  Konversation med {sessions.find(s => s.id === selectedSessionId)?.profiles?.email || 'Oinloggad Besökare'}
                 </h3>
                 <button onClick={() => handleCloseSession(selectedSessionId)} style={{ background: 'transparent', border: '1px solid #f43f5e', color: '#f43f5e', borderRadius: '4px', padding: '8px 12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Avsluta Ärende</button>
               </div>

@@ -1283,3 +1283,32 @@ Rullgardinsmenyn "Kopplat konto" har raderats helt från "Mina Sidor". Istället
 **Varför:** 
 1. **Säkerhet & Kontroll:** En inbjuden medlem ska inte själv kunna klicka runt och byta ut vem de representerar i hushållet, det skapar risk för felräkningar.
 2. **UX & Logik:** Tidigare skapades personerna (de virtuella kontona) under Inställningar, men kopplingen till e-postadressen gjordes under Mina Sidor. Detta var ologiskt och kändes splittrat. Nu är "Skapa Person" och "Koppla Inlogg till Person" samlat på en och samma skärm, vilket ger administratören (ägaren) en tydlig dashboard-upplevelse och total kontroll.
+
+---
+
+## 30. Nya Funktioner: Besökarchatt, Excel-import & UI-Förbättringar (Juni 2026)
+
+### 30.1 Chatt för oinloggade besökare
+**Vad:** Kundtjänstchatten (`ChatBubble.tsx`) finns nu tillgänglig direkt på inloggningsskärmen. Besökare kan starta en chatt utan att skapa ett konto.
+**Hur:** En `visitor_id` kolumn lades till i `chat_sessions`-tabellen och `user_id` gjordes valfri (`DROP NOT NULL`). Klienten genererar ett unikt sessions-ID som lagras i `localStorage` (`visitor_session_id`). Detta ID används för att återansluta besökaren till sin konversation även om sidan laddas om. I administratörsvyn (`AdminChat.tsx`) visas dessa användare tydligt som "Oinloggad Besökare".
+**Varför:** Sänker tröskeln för att kontakta support. Nya användare som har frågor kring prissättning eller funktioner innan de registrerar sig kan nu få direkt hjälp, vilket ökar konverteringen.
+
+### 30.2 Excel-import av räkningar
+**Vad:** En "Importera Excel"-knapp har lagts till i Hantera Räkningar (`ManageBills.tsx`).
+**Hur:** Vi integrerade biblioteket `xlsx`. När användaren laddar upp sin budget-fil i Excel-format letar systemet automatiskt upp kolumner för *Kategori*, *Räkning* och *Belopp*. 
+- Om en kategori (t.ex. "Hus kontot") saknas i systemet, skapas det automatiskt ett gemensamt konto. 
+- Räkningarna läggs in med första månadens belopp som `defaultAmount`.
+**Varför:** Enormt värdeskapande (Onboarding). Hushåll som vill flytta till appen slipper sitta och manuellt skriva in sina 30+ räkningar. Filen laddas upp, och på två sekunder är hela deras ekonomiska struktur uppbyggd.
+
+### 30.3 "Mina Sidor" - Tab-uppdelning
+**Vad:** Den tidigare mycket långa och oöverskådliga vyn "Mina Sidor" har delats upp i tre separata flikar.
+**Hur:** Introducerade ett lokalt `activeTab`-state (profil, household, settings) i `MyPages.tsx` som sparas i `localStorage` för att minnas var användaren var. 
+- **Min Profil & Säkerhet:** Inloggning, lösenord, Radera konto.
+- **Hushåll & Medlemmar:** Inbjudningskoder, delning av privat ekonomi, utsparkning av medlemmar.
+- **Inställningar & Premium:** Notis-datum och Stripe-prenumeration.
+**Varför:** Minskad kognitiv belastning (UX). Användaren möts inte längre av en vägg av text och "Farlig zon"-varningar, utan kan navigera smidigt baserat på vad de vill utföra.
+
+### 30.4 Helskärmsläge i Kundservice (Admin)
+**Vad:** En "Helskärm"-knapp i `AdminChat.tsx`.
+**Hur:** Vid klick togglas ett state (`isFullscreen`) som applicerar en `fixed`-position över hela webläsarfönstret med `z-index: 99999`. 
+**Varför:** Kundtjänst kan ibland vara intensivt. Att kunna expandera chattverktyget över hela skärmen tar bort störande meny-element och ger maximal arbetsyta, särskilt uppskattat när admin sitter på en mobil enhet.

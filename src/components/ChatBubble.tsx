@@ -51,20 +51,29 @@ export default function ChatBubble() {
     };
   }, []);
 
-  // Fetch existing session and messages if user is logged in
+  // Fetch existing session and messages if user is logged in or visitor
   useEffect(() => {
-    if (!user || !chatGlobalOpen) return;
+    const visitorId = localStorage.getItem('visitor_session_id');
+    if (!chatGlobalOpen || (!user && !visitorId)) return;
 
     const initChat = async () => {
       // Find active or waiting session
-      const { data: sessionData } = await supabase
+      let query = supabase
         .from('chat_sessions')
         .select('id, status')
-        .eq('user_id', user.id)
         .in('status', ['waiting', 'active'])
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
+
+      if (user) {
+        query = query.eq('user_id', user.id);
+      } else if (visitorId) {
+        query = query.eq('visitor_id', visitorId);
+      } else {
+        return;
+      }
+
+      const { data: sessionData } = await query.maybeSingle();
 
       if (sessionData) {
         setSessionId(sessionData.id);
@@ -136,7 +145,8 @@ export default function ChatBubble() {
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim() || !user || isSending) return;
+    const visitorId = localStorage.getItem('visitor_session_id');
+    if (!inputText.trim() || (!user && !visitorId) || isSending) return;
     
     setIsSending(true);
     let currentSessionId = sessionId;
@@ -144,9 +154,13 @@ export default function ChatBubble() {
     try {
       // Create session if it doesn't exist
       if (!currentSessionId) {
+        const insertData: any = {};
+        if (user) insertData.user_id = user.id;
+        else if (visitorId) insertData.visitor_id = visitorId;
+
         const { data: newSession, error: sessionErr } = await supabase
           .from('chat_sessions')
-          .insert({ user_id: user.id })
+          .insert(insertData)
           .select('id')
           .single();
           
@@ -194,7 +208,8 @@ export default function ChatBubble() {
     }
   };
 
-  if (!chatGlobalOpen || !user) return null;
+  const visitorId = localStorage.getItem('visitor_session_id');
+  if (!chatGlobalOpen || (!user && !visitorId)) return null;
 
   return (
     <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>

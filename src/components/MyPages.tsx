@@ -16,6 +16,13 @@ export default function MyPages() {
   const [msg, setMsg] = useState('');
   const [isPushEnabled, setIsPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'profile' | 'household' | 'settings'>(() => {
+    return (localStorage.getItem('myPagesActiveTab') as any) || 'profile';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('myPagesActiveTab', activeTab);
+  }, [activeTab]);
 
   const [confirmModal, setConfirmModal] = useState<{ visible: boolean; title: string; message: string; onConfirm: () => void }>({ visible: false, title: '', message: '', onConfirm: () => {} });
 
@@ -344,7 +351,28 @@ export default function MyPages() {
 
       {msg && <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', borderLeft: '4px solid var(--accent-color)' }}>{msg}</div>}
 
-      {householdId && (
+      <div className="settings-tabs-desktop" style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1.5rem', paddingBottom: '0.5rem', overflowX: 'auto' }}>
+        <button 
+          onClick={() => setActiveTab('profile')}
+          style={{ background: activeTab === 'profile' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'profile' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'profile' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'profile' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
+        >
+          👤 Min Profil & Säkerhet
+        </button>
+        <button 
+          onClick={() => setActiveTab('household')}
+          style={{ background: activeTab === 'household' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'household' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'household' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'household' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
+        >
+          🏠 Hushåll & Medlemmar
+        </button>
+        <button 
+          onClick={() => setActiveTab('settings')}
+          style={{ background: activeTab === 'settings' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'settings' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'settings' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'settings' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
+        >
+          ⚙️ Inställningar & Premium
+        </button>
+      </div>
+
+      {activeTab === 'household' && householdId && (
         <div style={{ marginBottom: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <h3 style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>🔒 Integritet och Delning</h3>
 
@@ -373,7 +401,11 @@ export default function MyPages() {
               {isSharingPrivate ? 'Sluta dela privat ekonomi' : 'Dela min privata ekonomi'}
             </button>
           </div>
+        </div>
+      )}
 
+      {activeTab === 'settings' && householdId && (
+        <div style={{ marginBottom: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <h3 style={{ color: 'var(--text-primary)', marginBottom: '1rem', marginTop: '1.5rem' }}>🔔 Påminnelser (Push-notiser)</h3>
           <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
@@ -454,7 +486,7 @@ export default function MyPages() {
         </div>
       )}
 
-      {householdId && (
+      {activeTab === 'settings' && householdId && (
         <div style={{ marginBottom: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <h3 style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>💎 Prenumeration</h3>
           <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
@@ -484,6 +516,7 @@ export default function MyPages() {
         </div>
       )}
 
+      {activeTab === 'profile' && (
       <div style={{ marginBottom: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <h3 style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>⚙️ Hantera inloggning</h3>
         
@@ -523,8 +556,9 @@ export default function MyPages() {
           <button onClick={handleUpdatePassword} disabled={loading} style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Byt Lösenord</button>
         </div>
       </div>
+      )}
 
-      {!householdId ? (
+      {activeTab === 'household' && !householdId && (
         <div style={{ marginBottom: '2rem' }}>
           <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>☁️ Säkra din data i molnet</h3>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
@@ -552,7 +586,9 @@ export default function MyPages() {
             </div>
           </div>
         </div>
-      ) : (
+      )}
+
+      {activeTab === 'household' && householdId && (
         <div style={{ marginBottom: '2rem' }}>
           {role === 'owner' && (
             <>
@@ -623,6 +659,7 @@ export default function MyPages() {
         </div>
       )}
 
+      {activeTab === 'profile' && (
       <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)' }}>
         <h3 style={{ color: '#f43f5e', marginBottom: '0.5rem' }}>Farlig zon</h3>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', fontSize: '0.9rem' }}>
@@ -668,6 +705,7 @@ export default function MyPages() {
           </button>
         </div>
       </div>
+      )}
 
     </div>
     </>

@@ -263,7 +263,7 @@ export default function MonthView({ currentMonth }: Props) {
               }}
               disabled={handled['top_total_lock']}
             >
-              {handled['top_total_lock'] ? '🔒 Låst' : '✅ Markera som hanterad'}
+              {handled['top_total_lock'] ? '🔒 Låst' : '✅ Markera som klar'}
             </button>
           )}
         </div>
