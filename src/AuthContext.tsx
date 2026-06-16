@@ -147,6 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setRole(null);
               setTosAccepted(false);
               setSetupStatus('new_user');
+              sessionStorage.removeItem('setupWizardState');
             }
           }
         }
@@ -212,6 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setRole(null);
           setTosAccepted(false);
           setSetupStatus('new_user');
+          sessionStorage.removeItem('setupWizardState');
         }
       } catch (err) {
         console.error("Unexpected error in onAuthStateChange:", err);
