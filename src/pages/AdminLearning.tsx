@@ -9,34 +9,35 @@ interface Candidate {
   first_discovered_at: string;
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  BILL: '🧾 Räkning',
+  FIXED_INCOME: '💰 Fast inkomst',
+  VARIABLE_INCOME: '📈 Rörlig inkomst',
+};
+
 export default function AdminLearning() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [approving, setApproving] = useState<string | null>(null);
 
   useEffect(() => {
     checkAdminAndLoadData();
   }, []);
 
   const checkAdminAndLoadData = async () => {
+    setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setIsAdmin(false);
-        setLoading(false);
-        return;
-      }
+      if (!session) { setIsAdmin(false); setLoading(false); return; }
 
-      const { data, error } = await supabase.from('global_learning_candidates_view')
+      const { data, error } = await supabase
+        .from('global_learning_candidates_view')
         .select('*')
         .order('household_count', { ascending: false });
 
-      if (error) {
-        setIsAdmin(false);
-      } else {
-        setIsAdmin(true);
-        setCandidates(data || []);
-      }
+      if (error) { setIsAdmin(false); }
+      else { setIsAdmin(true); setCandidates(data || []); }
     } catch (e) {
       console.error(e);
       setIsAdmin(false);
@@ -46,8 +47,9 @@ export default function AdminLearning() {
   };
 
   const approveCandidate = async (candidate: Candidate) => {
-    if (!confirm(`Vill du godkänna ${candidate.normalized_name} som en global SYSTEM-regel?`)) return;
-
+    if (!confirm(`Godkänn "${candidate.normalized_name}" som global SYSTEM-regel?`)) return;
+    const key = `${candidate.normalized_name}-${candidate.transaction_direction}-${candidate.category}`;
+    setApproving(key);
     try {
       const { error } = await supabase.rpc('admin_approve_system_rule', {
         p_normalized_name: candidate.normalized_name,
@@ -55,107 +57,163 @@ export default function AdminLearning() {
         p_category: candidate.category,
         p_household_count: candidate.household_count
       });
-
       if (error) throw error;
-
-      alert(`✅ ${candidate.normalized_name} är nu en global SYSTEM-regel!`);
-      checkAdminAndLoadData();
+      setCandidates(prev => prev.filter(c =>
+        !(c.normalized_name === candidate.normalized_name &&
+          c.transaction_direction === candidate.transaction_direction &&
+          c.category === candidate.category)
+      ));
     } catch (e: any) {
       alert('Kunde inte godkänna: ' + e.message);
+    } finally {
+      setApproving(null);
     }
   };
 
-  if (loading) return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Laddar...</div>;
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40vh' }}>
+        <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🧠</div>
+          <div>Laddar inlärningsdata...</div>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     return (
-      <div style={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-        <div style={{ background: 'var(--surface-color)', border: '1px solid rgba(239,68,68,0.3)', padding: '2rem', borderRadius: '1rem', maxWidth: '400px', textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
-          <h1 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Åtkomst nekad</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Du måste ha administratörsrättigheter för att se denna sida.</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40vh', padding: '1rem' }}>
+        <div style={{ textAlign: 'center', background: 'var(--surface-color)', border: '1px solid rgba(239,68,68,0.3)', padding: '2rem', borderRadius: '1rem', maxWidth: '360px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>🔒</div>
+          <h2 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Åtkomst nekad</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Du behöver administratörsbehörighet.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '1.5rem' }}>
-      <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-          <div style={{ fontSize: '2rem' }}>🧠</div>
-          <div>
-            <h1 style={{ color: 'var(--text-primary)', margin: 0 }}>Global Inlärning</h1>
-            <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.9rem' }}>Konsensusmotor för Crowdsourcad Bankimport</p>
-          </div>
-          <button onClick={checkAdminAndLoadData} style={{ marginLeft: 'auto', padding: '0.4rem 1rem', fontSize: '0.85rem', background: 'var(--surface-color)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '0.5rem', cursor: 'pointer' }}>
+    <div style={{ padding: '1rem', maxWidth: '680px', margin: '0 auto' }}>
+
+      {/* Header */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.25rem' }}>
+          <h1 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.4rem', fontWeight: 700 }}>
+            🧠 Global Inlärning
+          </h1>
+          <button
+            onClick={checkAdminAndLoadData}
+            style={{ flexShrink: 0, padding: '0.4rem 0.8rem', fontSize: '0.8rem', background: 'var(--surface-color)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '0.5rem', cursor: 'pointer' }}
+          >
             🔄 Uppdatera
           </button>
         </div>
+        <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+          Konsensusmotor — godkänn kandidater som globala systemregler
+        </p>
+      </div>
 
-        <div style={{ background: 'var(--surface-color)', border: '1px solid var(--border-color)', borderRadius: '1rem', overflow: 'hidden' }}>
-          <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem' }}>✨ Kandidater redo för godkännande</h2>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Visar kandidater med ≥ 1 hushåll</span>
-          </div>
-
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Namn (Normaliserat)</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Riktning</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Kategori</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 500, textAlign: 'right' }}>Unika Hushåll</th>
-                  <th style={{ padding: '0.75rem 1rem', fontWeight: 500, textAlign: 'center' }}>Åtgärd</th>
-                </tr>
-              </thead>
-              <tbody>
-                {candidates.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                      Inga starka kandidater just nu. Data börjar samlas in automatiskt när användare registrerar sig!
-                    </td>
-                  </tr>
-                ) : (
-                  candidates.map((c, i) => (
-                    <tr key={i} style={{ borderTop: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '0.85rem 1rem', color: 'var(--text-primary)', fontWeight: 600 }}>
-                        {c.normalized_name}
-                      </td>
-                      <td style={{ padding: '0.85rem 1rem' }}>
-                        <span style={{
-                          padding: '0.2rem 0.5rem', borderRadius: '0.3rem', fontSize: '0.75rem', fontWeight: 500,
-                          background: c.transaction_direction === 'IN' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                          color: c.transaction_direction === 'IN' ? '#10b981' : '#ef4444'
-                        }}>
-                          {c.transaction_direction === 'IN' ? '↑ IN' : '↓ OUT'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                        {c.category}
-                      </td>
-                      <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
-                        <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>{c.household_count}</span>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: '0.3rem' }}>st</span>
-                      </td>
-                      <td style={{ padding: '0.85rem 1rem', textAlign: 'center' }}>
-                        <button
-                          onClick={() => approveCandidate(c)}
-                          className="primary"
-                          style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
-                        >
-                          ✅ Godkänn
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+      {/* Statistik-chips */}
+      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+        <div style={{ background: 'var(--surface-color)', border: '1px solid var(--border-color)', borderRadius: '0.75rem', padding: '0.6rem 1rem', fontSize: '0.85rem' }}>
+          <span style={{ color: 'var(--text-secondary)' }}>Kandidater: </span>
+          <strong style={{ color: 'var(--text-primary)' }}>{candidates.length}</strong>
+        </div>
+        <div style={{ background: 'var(--surface-color)', border: '1px solid var(--border-color)', borderRadius: '0.75rem', padding: '0.6rem 1rem', fontSize: '0.85rem' }}>
+          <span style={{ color: 'var(--text-secondary)' }}>Tröskel: </span>
+          <strong style={{ color: 'var(--text-primary)' }}>≥ 1 hushåll</strong>
         </div>
       </div>
+
+      {/* Kandidat-kort */}
+      {candidates.length === 0 ? (
+        <div style={{
+          background: 'var(--surface-color)', border: '1px solid var(--border-color)',
+          borderRadius: '1rem', padding: '2.5rem 1.5rem', textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>✨</div>
+          <p style={{ color: 'var(--text-primary)', fontWeight: 600, marginBottom: '0.4rem' }}>Inga kandidater just nu</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+            Data samlas in automatiskt när användare importerar bankfiler eller registrerar sig.
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {candidates.map((c, i) => {
+            const key = `${c.normalized_name}-${c.transaction_direction}-${c.category}`;
+            const isApproving = approving === key;
+            return (
+              <div key={i} style={{
+                background: 'var(--surface-color)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '1rem',
+                padding: '1rem 1.1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+              }}>
+                {/* Röst-antal */}
+                <div style={{
+                  flexShrink: 0, width: '48px', height: '48px',
+                  borderRadius: '0.75rem', background: 'rgba(99,102,241,0.12)',
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#818cf8', lineHeight: 1 }}>{c.household_count}</span>
+                  <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>hushåll</span>
+                </div>
+
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem', marginBottom: '0.3rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.normalized_name}
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    <span style={{
+                      padding: '0.15rem 0.5rem', borderRadius: '0.3rem', fontSize: '0.72rem', fontWeight: 600,
+                      background: c.transaction_direction === 'IN' ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+                      color: c.transaction_direction === 'IN' ? '#10b981' : '#ef4444'
+                    }}>
+                      {c.transaction_direction === 'IN' ? '↑ Inkomst' : '↓ Utgift'}
+                    </span>
+                    <span style={{
+                      padding: '0.15rem 0.5rem', borderRadius: '0.3rem', fontSize: '0.72rem', fontWeight: 500,
+                      background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)'
+                    }}>
+                      {CATEGORY_LABELS[c.category] || c.category}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Godkänn-knapp */}
+                <button
+                  onClick={() => approveCandidate(c)}
+                  disabled={isApproving}
+                  style={{
+                    flexShrink: 0,
+                    padding: '0.5rem 0.9rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                    background: isApproving ? 'var(--border-color)' : '#6366f1',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '0.6rem',
+                    cursor: isApproving ? 'not-allowed' : 'pointer',
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  {isApproving ? '⏳' : '✅ OK'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', textAlign: 'center', marginTop: '1.5rem' }}>
+        Godkända regler aktiveras omedelbart för alla användare i systemet.
+      </p>
     </div>
   );
 }
