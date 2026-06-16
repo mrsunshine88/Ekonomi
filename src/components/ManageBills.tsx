@@ -1163,9 +1163,8 @@ export default function ManageBills() {
                   </button>
                 )}
                 {!isDemoMode && (
-                  <label style={{ cursor: 'pointer', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid #10b981', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.9rem', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}>
-                      <span>📥 Importera Bankfil</span>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 'normal', opacity: 0.8 }}>SEB, Swedbank, Länsförsäkringar (.xlsx)</span>
+                  <label style={{ cursor: 'pointer', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid #10b981', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                      📥 Importera Bankfil / Excel
                       <input type="file" accept=".xlsx, .xls, .xlsm" onChange={handleImportExcel} style={{ display: 'none' }} />
                   </label>
                 )}
