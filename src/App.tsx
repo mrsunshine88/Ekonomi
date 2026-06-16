@@ -190,11 +190,11 @@ function App() {
           <button onClick={() => navigateTo('month')} style={navButtonStyles('month')}>📅 Gemensam</button>
           <button onClick={() => navigateTo('stats')} style={navButtonStyles('stats')}>📊 Statistik</button>
           <button onClick={() => navigateTo('privat')} style={navButtonStyles('privat')}>🔒 Privat</button>
+          <button onClick={() => navigateTo('manage')} style={navButtonStyles('manage')}>⚙️ Inställningar</button>
           
           {(!isDemoMode || user) && (
             <>
               <button onClick={() => navigateTo('mypages')} style={navButtonStyles('mypages')}>👤 Mina sidor</button>
-              <button onClick={() => navigateTo('manage')} style={navButtonStyles('manage')}>⚙️ Inställningar</button>
               {isAdmin && (
                 <button onClick={() => navigateTo('admin')} style={navButtonStyles('admin')}>👑 Admin</button>
               )}
@@ -247,10 +247,10 @@ function App() {
                 <button onClick={() => navigateTo('month')} className={`mobile-menu-item ${currentView === 'month' ? 'active' : ''}`}>📅 Gemensam</button>
                 <button onClick={() => navigateTo('stats')} className={`mobile-menu-item ${currentView === 'stats' ? 'active' : ''}`}>📊 Statistik</button>
                 <button onClick={() => navigateTo('privat')} className={`mobile-menu-item ${currentView === 'privat' ? 'active' : ''}`}>🔒 Privat</button>
+                <button onClick={() => navigateTo('manage')} className={`mobile-menu-item ${currentView === 'manage' ? 'active' : ''}`}>⚙️ Inställningar</button>
                 {(!isDemoMode || user) && (
                   <>
                     <button onClick={() => navigateTo('mypages')} className={`mobile-menu-item ${currentView === 'mypages' ? 'active' : ''}`}>👤 Mina sidor</button>
-                    <button onClick={() => navigateTo('manage')} className={`mobile-menu-item ${currentView === 'manage' ? 'active' : ''}`}>⚙️ Inställningar</button>
                     {isAdmin && (
                       <button onClick={() => navigateTo('admin')} className={`mobile-menu-item ${currentView === 'admin' ? 'active' : ''}`}>👑 Admin</button>
                     )}
