@@ -54,6 +54,14 @@ export default function AdminDashboard() {
   
   const [loginDemoEnabled, setLoginDemoEnabled] = useState(false);
 
+  // Dölj meddelanden automatiskt efter 5 sekunder
+  useEffect(() => {
+    if (msg) {
+      const timer = setTimeout(() => setMsg(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [msg]);
+
   const fetchMembersList = async () => {
     try {
       const { data, error } = await supabase.rpc('admin_get_all_users');
