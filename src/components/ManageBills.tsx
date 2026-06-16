@@ -1161,10 +1161,12 @@ export default function ManageBills() {
                     🧪 Testa Bank-import
                   </button>
                 )}
-                <label style={{ cursor: 'pointer', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid #10b981', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.9rem', fontWeight: 'bold' }}>
-                    📥 Importera Excel
-                    <input type="file" accept=".xlsx, .xls, .xlsm" onChange={handleImportExcel} style={{ display: 'none' }} />
-                </label>
+                {!isDemoMode && (
+                  <label style={{ cursor: 'pointer', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid #10b981', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                      📥 Importera Excel
+                      <input type="file" accept=".xlsx, .xls, .xlsm" onChange={handleImportExcel} style={{ display: 'none' }} />
+                  </label>
+                )}
             </div>
           </div>
           <div style={{ display: 'grid', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', marginBottom: '2rem', border: editingBillId ? '2px solid var(--accent-color)' : 'none' }}>
