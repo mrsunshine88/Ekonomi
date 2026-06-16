@@ -653,7 +653,7 @@ export default function AdminDashboard() {
                       <button 
                         onClick={() => handleToggleVip(m.email, m.is_vip)}
                         disabled={loading}
-                        style={{ flex: '1 1 45%', background: m.is_vip ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.1)', color: m.is_vip ? '#10b981' : '#fff', border: `1px solid ${m.is_vip ? '#10b981' : 'transparent'}`, padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
+                        style={{ flex: '1 1 45%', background: m.is_vip ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.1)', color: m.is_vip ? '#10b981' : '#fff', border: `1px solid ${m.is_vip ? '#10b981' : 'transparent'}`, padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', display: m.email === 'apersson508@gmail.com' ? 'none' : 'block' }}
                       >
                         {m.is_vip ? '💎 VIP' : 'Gör till VIP'}
                       </button>

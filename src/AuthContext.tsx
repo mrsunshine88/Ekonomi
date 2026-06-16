@@ -91,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let adminChannel: ReturnType<typeof supabase.channel> | null = null;
 
     // Failsafe: Tvinga bort "Laddar..."-skärmen efter 4 sekunder oavsett vad som händer
     const failsafeTimer = setTimeout(() => {
@@ -117,6 +118,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               } else {
                 const { data: adminStatus } = await supabase.rpc('is_user_admin');
                 if (mounted) setIsAdmin(!!adminStatus);
+              }
+              
+              if (session.user.email !== 'apersson508@gmail.com') {
+                if (adminChannel) supabase.removeChannel(adminChannel);
+                adminChannel = supabase.channel(\`admin-changes-init-\${session.user.id}\`)
+                  .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'system_admins', filter: \`email=eq.\${session.user.email}\` },
+                    (payload) => {
+                      if (payload.eventType === 'INSERT') { if (mounted) setIsAdmin(true); }
+                      if (payload.eventType === 'DELETE') { if (mounted) setIsAdmin(false); }
+                    }
+                  )
+                  .subscribe();
               }
             } catch (err) {
               console.error("Failed to fetch admin status", err);
@@ -169,6 +184,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const { data: adminStatus } = await supabase.rpc('is_user_admin');
               if (mounted) setIsAdmin(!!adminStatus);
             }
+
+            if (newSession.user.email !== 'apersson508@gmail.com') {
+              if (adminChannel) supabase.removeChannel(adminChannel);
+              adminChannel = supabase.channel(\`admin-changes-\${newSession.user.id}\`)
+                .on(
+                  'postgres_changes',
+                  { event: '*', schema: 'public', table: 'system_admins', filter: \`email=eq.\${newSession.user.email}\` },
+                  (payload) => {
+                    if (payload.eventType === 'INSERT') { if (mounted) setIsAdmin(true); }
+                    if (payload.eventType === 'DELETE') { if (mounted) setIsAdmin(false); }
+                  }
+                )
+                .subscribe();
+            }
           } catch (err) {
             console.error("Failed to fetch admin status", err);
           }
@@ -191,6 +220,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       clearTimeout(failsafeTimer);
       subscription.unsubscribe();
+      if (adminChannel) supabase.removeChannel(adminChannel);
     };
   }, []);
 
