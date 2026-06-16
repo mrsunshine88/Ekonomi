@@ -11,8 +11,9 @@ export default function AdminDashboard() {
   const [stripeSecret, setStripeSecret] = useState('');
   const [stripeWebhook, setStripeWebhook] = useState('');
   const [stripePriceId, setStripePriceId] = useState('');
-  const [vipEmail, setVipEmail] = useState('');
-  const [vipList, setVipList] = useState<string[]>([]);
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [membersList, setMembersList] = useState<any[]>([]);
+  const [memberSearch, setMemberSearch] = useState('');
   const [stats, setStats] = useState<{ 
     total_members: number, 
     active_households: number, 
@@ -37,8 +38,7 @@ export default function AdminDashboard() {
   const [stripeConfigured, setStripeConfigured] = useState<boolean | null>(null);
   const [stripeReason, setStripeReason] = useState<string | null>(null);
 
-  const [systemAdmins, setSystemAdmins] = useState<string[]>([]);
-  const [newAdminEmail, setNewAdminEmail] = useState('');
+  
 
   const [contactCompany, setContactCompany] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -52,13 +52,13 @@ export default function AdminDashboard() {
   
   const [loginDemoEnabled, setLoginDemoEnabled] = useState(false);
 
-  const fetchVipList = async () => {
+  const fetchMembersList = async () => {
     try {
-      const { data, error } = await supabase.rpc('get_vip_emails');
+      const { data, error } = await supabase.rpc('admin_get_all_users');
       if (error) throw error;
-      setVipList((data || []).map((row: { email: string }) => row.email).filter((e: string) => e !== 'apersson508@gmail.com'));
+      setMembersList(data || []);
     } catch (e: unknown) {
-      console.error("Kunde inte hämta VIP-lista", e);
+      console.error("Kunde inte hämta medlemmar", e);
     }
   };
 
@@ -132,22 +132,11 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchSystemAdmins = async () => {
-    try {
-      const { data, error } = await supabase.rpc('get_system_admins');
-      if (error) throw error;
-      setSystemAdmins((data || []).map((row: { email: string }) => row.email).filter((e: string) => e !== 'apersson508@gmail.com'));
-    } catch (e: unknown) {
-      console.error("Kunde inte hämta system admins", e);
-    }
-  };
-
   useEffect(() => {
-    fetchVipList();
+    fetchMembersList();
     fetchStats();
     fetchContactSettings();
     fetchStripeStatus();
-    fetchSystemAdmins();
   }, []);
 
   const handleTogglePaywall = async () => {
@@ -179,15 +168,14 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleGrantVip = async () => {
-    if (!vipEmail) return;
+  const handleToggleVip = async (email: string, isVip: boolean) => {
     setLoading(true);
     try {
-      const { error } = await supabase.rpc('set_household_vip_by_email', { target_email: vipEmail });
+      const rpcName = isVip ? 'revoke_household_vip_by_email' : 'set_household_vip_by_email';
+      const { error } = await supabase.rpc(rpcName, { target_email: email });
       if (error) throw error;
-      setMsg(`👑 ${vipEmail} har nu VIP-status (Gratis för alltid)!`);
-      setVipEmail('');
-      await fetchVipList();
+      setMsg(isVip ? `📉 VIP-status borttagen för ${email}.` : `👑 ${email} har nu VIP-status!`);
+      await fetchMembersList();
     } catch (e: unknown) {
       setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -195,16 +183,16 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleRevokeVip = async (emailToRevoke: string = vipEmail) => {
-    if (!emailToRevoke) return;
-    if (!window.confirm(`Är du säker på att du vill ta bort VIP-statusen för ${emailToRevoke}?`)) return;
+  const handleToggleAdmin = async (email: string, isAdmin: boolean) => {
+    if (email === 'apersson508@gmail.com') return;
     setLoading(true);
     try {
-      const { error } = await supabase.rpc('revoke_household_vip_by_email', { target_email: emailToRevoke });
+      const rpcName = isAdmin ? 'remove_system_admin' : 'add_system_admin';
+      const { data, error } = await supabase.rpc(rpcName, { target_email: email });
       if (error) throw error;
-      setMsg(`📉 VIP-status borttagen för ${emailToRevoke}.`);
-      if (emailToRevoke === vipEmail) setVipEmail('');
-      await fetchVipList();
+      if (data && data !== 'Success') setMsg(`ℹ️ ${data}`);
+      else setMsg(isAdmin ? `📉 Administratörsrättigheter borttagna för ${email}.` : `👑 ${email} är nu admin!`);
+      await fetchMembersList();
     } catch (e: unknown) {
       setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -212,19 +200,14 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleAddAdmin = async () => {
-    if (!newAdminEmail) return;
+  const handleToggleBan = async (id: string, isBanned: boolean) => {
+    if (!window.confirm(`Är du säker på att du vill ${isBanned ? 'låsa upp' : 'blockera'} denna användare?`)) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('add_system_admin', { target_email: newAdminEmail });
+      const { error } = await supabase.rpc('admin_ban_user', { target_user_id: id, ban: !isBanned });
       if (error) throw error;
-      if (data && data !== 'Success') {
-        setMsg(`ℹ️ ${data}`);
-      } else {
-        setMsg(`👑 ${newAdminEmail} är nu en systemadministratör!`);
-        setNewAdminEmail('');
-        await fetchSystemAdmins();
-      }
+      setMsg(`🔒 Användaren har ${isBanned ? 'låsts upp' : 'blockerats'}.`);
+      await fetchMembersList();
     } catch (e: unknown) {
       setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -232,14 +215,15 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleRemoveAdmin = async (emailToRemove: string) => {
-    if (!window.confirm(`Är du säker på att du vill ta bort administratörsrättigheterna för ${emailToRemove}?`)) return;
+  const handleDeleteUser = async (id: string, email: string) => {
+    if (!window.confirm(`Varning! Är du HELT SÄKER på att du vill radera ${email} permanent från databasen?`)) return;
     setLoading(true);
     try {
-      const { error } = await supabase.rpc('remove_system_admin', { target_email: emailToRemove });
+      const { error } = await supabase.rpc('admin_delete_user', { target_user_id: id });
       if (error) throw error;
-      setMsg(`📉 Administratörsrättigheter borttagna för ${emailToRemove}.`);
-      await fetchSystemAdmins();
+      setMsg(`🗑️ Användaren ${email} är raderad.`);
+      await fetchMembersList();
+      await fetchStats();
     } catch (e: unknown) {
       setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -301,10 +285,15 @@ export default function AdminDashboard() {
         <>
           {/* General Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div 
+              onClick={() => setShowMembersModal(true)}
+              style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', transition: 'background 0.2s' }}
+              onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+              onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+            >
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👥</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#fff' }}>{stats.total_members}</div>
-              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Totala Medlemmar</div>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Totala Medlemmar (Klicka)</div>
             </div>
             <div style={{ background: 'rgba(16, 185, 129, 0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💎</div>
@@ -471,60 +460,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
-        <h3 style={{ marginBottom: '0.5rem' }}>VIP-Kunder</h3>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Ge ett hushåll gratis tillgång för alltid.</p>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-          <input 
-            type="email" 
-            placeholder="E-postadress..." 
-            value={vipEmail} 
-            onChange={e => setVipEmail(e.target.value)}
-            style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff', minWidth: '200px' }}
-          />
-          <button 
-            onClick={handleGrantVip} 
-            disabled={loading || !vipEmail} 
-            style={{ padding: '0.75rem 1.5rem', background: 'var(--accent-gradient)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            Ge VIP
-          </button>
-        </div>
-
-        {vipList.length > 0 && (
-          <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '1rem' }}>
-            <h4 style={{ marginBottom: '1rem', color: '#fff' }}>👑 Aktiva VIP-konton</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {vipList.map(email => (
-                <div key={email} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '8px' }}>
-                  <span style={{ color: '#fff' }}>{email}</span>
-                  <button onClick={() => handleRevokeVip(email)} disabled={loading} style={{ background: 'transparent', border: '1px solid #f43f5e', color: '#f43f5e', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Ta bort</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
-        <h3 style={{ marginBottom: '0.5rem' }}>Administratörer</h3>
-        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Lägg till fler som ska ha tillgång till denna admin-panel. (Superadmin 'apersson508' är alltid inbyggd och osynlig i denna lista).</p>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-          <input 
-            type="email" 
-            placeholder="E-postadress..." 
-            value={newAdminEmail} 
-            onChange={e => setNewAdminEmail(e.target.value)}
-            style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff', minWidth: '200px' }}
-          />
-          <button 
-            onClick={handleAddAdmin} 
-            disabled={loading || !newAdminEmail} 
-            style={{ padding: '0.75rem 1.5rem', background: 'var(--accent-gradient)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            Gör till admin
-          </button>
-        </div>
+      {/* VIP & Admin UI replaced by MembersModal */}
 
         {systemAdmins.length > 0 && (
           <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '1rem' }}>
@@ -677,7 +613,73 @@ export default function AdminDashboard() {
         >
           Spara nycklar säkert i kassavalvet
         </button>
-      </div>
+      
+      {showMembersModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 100000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' }}>
+          <div style={{ background: '#1e293b', width: '100%', maxWidth: '900px', maxHeight: '90vh', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0 }}>👥 Medlemslista</h2>
+              <button onClick={() => setShowMembersModal(false)} style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
+            </div>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+              <input 
+                type="text" 
+                placeholder="🔍 Filtrera på e-post..." 
+                value={memberSearch}
+                onChange={e => setMemberSearch(e.target.value)}
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
+              />
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+              {membersList.filter(m => m.email.toLowerCase().includes(memberSearch.toLowerCase())).map(m => (
+                <div key={m.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', borderLeft: m.is_banned ? '4px solid #f43f5e' : '4px solid transparent' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div>
+                      <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: m.is_banned ? '#f43f5e' : '#fff' }}>
+                        {m.email} {m.is_banned && '(BLOCKERAD)'}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        Senast inloggad: {m.last_sign_in_at ? new Date(m.last_sign_in_at).toLocaleString('sv-SE') : 'Aldrig'}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button 
+                        onClick={() => handleToggleVip(m.email, m.is_vip)}
+                        disabled={loading}
+                        style={{ background: m.is_vip ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.1)', color: m.is_vip ? '#10b981' : '#fff', border: `1px solid ${m.is_vip ? '#10b981' : 'transparent'}`, padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                      >
+                        {m.is_vip ? '💎 VIP' : 'Gör till VIP'}
+                      </button>
+                      <button 
+                        onClick={() => handleToggleAdmin(m.email, m.is_admin)}
+                        disabled={loading || m.email === 'apersson508@gmail.com'}
+                        style={{ background: m.is_admin ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.1)', color: m.is_admin ? '#a855f7' : '#fff', border: `1px solid ${m.is_admin ? '#a855f7' : 'transparent'}`, padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                      >
+                        {m.is_admin ? '👑 Admin' : 'Gör till Admin'}
+                      </button>
+                      <button 
+                        onClick={() => handleToggleBan(m.id, m.is_banned)}
+                        disabled={loading || m.email === 'apersson508@gmail.com'}
+                        style={{ background: m.is_banned ? 'rgba(244, 63, 94, 0.2)' : 'rgba(255,255,255,0.1)', color: m.is_banned ? '#f43f5e' : '#fff', border: `1px solid ${m.is_banned ? '#f43f5e' : 'transparent'}`, padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                      >
+                        {m.is_banned ? 'Lås upp' : 'Blockera'}
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteUser(m.id, m.email)}
+                        disabled={loading || m.email === 'apersson508@gmail.com'}
+                        style={{ background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                      >
+                        Radera
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {membersList.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Inga medlemmar hittades.</div>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
