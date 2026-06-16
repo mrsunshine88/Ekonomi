@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Shield, Check, Trash2, Database, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Shield, Check, Database, Sparkles } from 'lucide-react';
 import { supabase } from '../supabase';
 
 interface Candidate {
@@ -28,10 +28,6 @@ export default function AdminLearning() {
         return;
       }
 
-      // We have an is_user_admin() RPC we can call, but since we are just checking if we can view the page, 
-      // we can try fetching the view. If RLS fails or we get empty due to no data, we handle it.
-      // Wait, global_learning_candidates_view doesn't have RLS, but the underlying table does!
-      // If the user is admin, they can read the underlying table. Let's just try fetching.
       const { data, error } = await supabase.from('global_learning_candidates_view')
         .select('*')
         .order('household_count', { ascending: false });
@@ -166,4 +162,3 @@ export default function AdminLearning() {
     </div>
   );
 }
-import { Sparkles } from 'lucide-react';

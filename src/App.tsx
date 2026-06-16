@@ -66,7 +66,7 @@ function App() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navigateTo = (view: 'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin') => {
+  const navigateTo = (view: 'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'admin_learning') => {
     setCurrentView(view);
     setMobileMenuOpen(false);
   };

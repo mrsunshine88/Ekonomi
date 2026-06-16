@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, CheckCircle, ArrowRight, Play, Upload, Plus, Trash2, Home, User, Check, Users, Sparkles, Building2 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../supabase';
 import { useAuth } from '../AuthContext';
 import BankImportModal from './BankImportModal';
 import { normalizeLearningString } from '../utils/normalization';
@@ -58,7 +57,7 @@ export default function SetupWizard() {
   
   useEffect(() => {
     supabase.from('global_settings').select('value').eq('key', 'paywall_active').maybeSingle()
-      .then(({ data }) => setPaywallActive(data?.value === 'true'));
+      .then(({ data }: { data: { value: string } | null }) => setPaywallActive(data?.value === 'true'));
   }, []);
   
   const [state, setState] = useState<WizardState>({
