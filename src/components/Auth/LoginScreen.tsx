@@ -127,6 +127,11 @@ export default function LoginScreen() {
       desc: "Följ hushållets ekonomi över tid med tydliga grafer och insikter. Se hur kostnaderna förändras och upptäck var pengarna tar vägen."
     },
     {
+      icon: "⚡",
+      title: "Smart Bank-import",
+      desc: "Ladda upp din bankfil så sorterar systemet automatiskt in både räkningar och inkomster. Botemedlet mot Tomt Konto-syndromet!"
+    },
+    {
       icon: "💎",
       title: "Prova gratis i 14 dagar",
       desc: "Skapa ett konto på några minuter och upptäck hur enkelt det kan vara att hålla koll på ekonomin."
@@ -164,7 +169,7 @@ export default function LoginScreen() {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Automatisk uppdelning av hushållets kostnader</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Separat hantering av gemensam och privat ekonomi</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Importera gamla Excel-budgeten med ett klick</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Smart bank-import som automatiskt upptäcker utgifter och lön</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Slipper manuella uträkningar och tjafs</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Statistik som visar hur ekonomin utvecklas över tid</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Fungerar för hela hushållet i en gemensam app</li>

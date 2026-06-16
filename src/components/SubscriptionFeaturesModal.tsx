@@ -59,7 +59,7 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>📥</span>
             <div>
-              <strong style={{ color: '#fff' }}>Importera från Excel:</strong> Ladda upp din befintliga budget. Appen skapar automatiskt konton och lägger in alla räkningar blixtsnabbt.
+              <strong style={{ color: '#fff' }}>Smart Bank-import:</strong> Ladda upp din bankfil. Appen upptäcker automatiskt både utgifter och inkomster (lön) och lär sig för varje månad.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
