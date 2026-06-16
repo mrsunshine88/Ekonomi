@@ -322,8 +322,18 @@ export default function SetupWizard() {
           <button 
             disabled={!state.householdName.trim() || !state.members[0].name.trim() || loadingMsg !== ''}
             onClick={() => setStep(2)} 
-            className="primary-btn" 
-            style={{ width: '100%' }}
+            style={{ 
+              width: '100%', 
+              background: (!state.householdName.trim() || !state.members[0].name.trim() || loadingMsg !== '') ? 'rgba(99, 102, 241, 0.4)' : 'var(--accent-color)', 
+              color: '#fff', 
+              padding: '1rem', 
+              border: 'none', 
+              borderRadius: '8px', 
+              cursor: (!state.householdName.trim() || !state.members[0].name.trim() || loadingMsg !== '') ? 'not-allowed' : 'pointer', 
+              fontWeight: 'bold',
+              fontSize: '1.1rem',
+              transition: 'all 0.2s'
+            }}
           >
             Nästa
           </button>
