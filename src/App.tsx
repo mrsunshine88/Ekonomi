@@ -150,7 +150,7 @@ function App() {
     );
   }
 
-  const isReadOnlyMode = setupStatus === 'readonly_user';
+  const isReadOnlyMode = setupStatus === 'readonly_user' && state.paywallActive;
 
   // 3. HARD GATE: Paywall
   const isPaywallBlocked = state.paywallActive && state.stripeStatus !== 'vip' && state.stripeStatus !== 'active' && !isAdmin;
