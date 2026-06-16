@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Shield, Check, Database, Sparkles } from 'lucide-react';
 import { supabase } from '../supabase';
 
 interface Candidate {
@@ -58,7 +57,7 @@ export default function AdminLearning() {
       });
 
       if (error) throw error;
-      
+
       alert(`✅ ${candidate.normalized_name} är nu en global SYSTEM-regel!`);
       checkAdminAndLoadData();
     } catch (e: any) {
@@ -66,89 +65,87 @@ export default function AdminLearning() {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-white/50">Laddar...</div>;
+  if (loading) return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Laddar...</div>;
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-        <div className="bg-slate-900 border border-red-500/30 p-8 rounded-2xl max-w-md w-full text-center">
-          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-2">Åtkomst nekad</h1>
-          <p className="text-slate-400">Du måste ha administratörsrättigheter för att se denna sida.</p>
+      <div style={{ minHeight: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+        <div style={{ background: 'var(--surface-color)', border: '1px solid rgba(239,68,68,0.3)', padding: '2rem', borderRadius: '1rem', maxWidth: '400px', textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
+          <h1 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Åtkomst nekad</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>Du måste ha administratörsrättigheter för att se denna sida.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-4 md:p-8">
-      <div className="max-w-5xl mx-auto space-y-6">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center">
-            <Database className="w-6 h-6 text-indigo-400" />
-          </div>
+    <div style={{ padding: '1.5rem' }}>
+      <div style={{ maxWidth: '960px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+          <div style={{ fontSize: '2rem' }}>🧠</div>
           <div>
-            <h1 className="text-3xl font-bold text-white">Global Inlärning</h1>
-            <p className="text-slate-400">Konsensusmotor för Crowdsourcad Bankimport</p>
+            <h1 style={{ color: 'var(--text-primary)', margin: 0 }}>Global Inlärning</h1>
+            <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.9rem' }}>Konsensusmotor för Crowdsourcad Bankimport</p>
           </div>
+          <button onClick={checkAdminAndLoadData} style={{ marginLeft: 'auto', padding: '0.4rem 1rem', fontSize: '0.85rem', background: 'var(--surface-color)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '0.5rem', cursor: 'pointer' }}>
+            🔄 Uppdatera
+          </button>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-          <div className="p-6 border-b border-slate-800 flex justify-between items-center">
-            <h2 className="text-lg font-medium text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-indigo-400" />
-              Kandidater redo för godkännande
-            </h2>
-            <div className="text-sm text-slate-400">
-              Visar kandidater med ≥ 1 hushåll
-            </div>
+        <div style={{ background: 'var(--surface-color)', border: '1px solid var(--border-color)', borderRadius: '1rem', overflow: 'hidden' }}>
+          <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1rem' }}>✨ Kandidater redo för godkännande</h2>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Visar kandidater med ≥ 1 hushåll</span>
           </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr className="bg-slate-800/50 text-slate-400 text-sm">
-                  <th className="p-4 font-medium">Namn (Normaliserat)</th>
-                  <th className="p-4 font-medium">Riktning</th>
-                  <th className="p-4 font-medium">Kategori</th>
-                  <th className="p-4 font-medium text-right">Unika Hushåll</th>
-                  <th className="p-4 font-medium text-center">Åtgärd</th>
+                <tr style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Namn (Normaliserat)</th>
+                  <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Riktning</th>
+                  <th style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>Kategori</th>
+                  <th style={{ padding: '0.75rem 1rem', fontWeight: 500, textAlign: 'right' }}>Unika Hushåll</th>
+                  <th style={{ padding: '0.75rem 1rem', fontWeight: 500, textAlign: 'center' }}>Åtgärd</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/50">
+              <tbody>
                 {candidates.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-slate-500">
-                      Inga starka kandidater just nu.
+                    <td colSpan={5} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      Inga starka kandidater just nu. Data börjar samlas in automatiskt när användare registrerar sig!
                     </td>
                   </tr>
                 ) : (
                   candidates.map((c, i) => (
-                    <tr key={i} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="p-4">
-                        <span className="font-medium text-white">{c.normalized_name}</span>
+                    <tr key={i} style={{ borderTop: '1px solid var(--border-color)' }}>
+                      <td style={{ padding: '0.85rem 1rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+                        {c.normalized_name}
                       </td>
-                      <td className="p-4">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${c.transaction_direction === 'IN' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                          {c.transaction_direction}
+                      <td style={{ padding: '0.85rem 1rem' }}>
+                        <span style={{
+                          padding: '0.2rem 0.5rem', borderRadius: '0.3rem', fontSize: '0.75rem', fontWeight: 500,
+                          background: c.transaction_direction === 'IN' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                          color: c.transaction_direction === 'IN' ? '#10b981' : '#ef4444'
+                        }}>
+                          {c.transaction_direction === 'IN' ? '↑ IN' : '↓ OUT'}
                         </span>
                       </td>
-                      <td className="p-4 text-slate-300">
+                      <td style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                         {c.category}
                       </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <span className="text-lg font-bold text-white">{c.household_count}</span>
-                          <span className="text-sm text-slate-500">st</span>
-                        </div>
+                      <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
+                        <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>{c.household_count}</span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginLeft: '0.3rem' }}>st</span>
                       </td>
-                      <td className="p-4 text-center">
+                      <td style={{ padding: '0.85rem 1rem', textAlign: 'center' }}>
                         <button
                           onClick={() => approveCandidate(c)}
-                          className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-lg transition-colors inline-flex items-center gap-2"
+                          className="primary"
+                          style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
                         >
-                          <Check className="w-4 h-4" />
-                          Godkänn
+                          ✅ Godkänn
                         </button>
                       </td>
                     </tr>
