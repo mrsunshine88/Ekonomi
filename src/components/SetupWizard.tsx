@@ -28,7 +28,7 @@ interface WizardState {
   householdName: string;
   members: { id: string; name: string; isChild: boolean }[];
   bills: { id: string; name: string; amount: number; account: string; interval: string; isCustom?: boolean }[];
-  incomes: { id: string; name: string; amount: number; account: string; isCustom?: boolean }[];
+  incomes: { id: string; name: string; amount: number; account: string; isCustom?: boolean; type?: 'fixed' | 'variable'; pay_date?: string }[];
 }
 
 const AnimatedNumber = ({ value }: { value: number }) => {
@@ -174,7 +174,13 @@ export default function SetupWizard() {
         p_household_name: state.householdName.trim(),
         p_members: membersToCreate,
         p_bills: state.bills.filter(b => b.amount > 0 && b.name.trim()).map(b => ({ name: b.name.trim(), amount: b.amount, account: b.account, interval: b.interval })),
-        p_incomes: state.incomes.filter(i => i.amount > 0 && i.name.trim()).map(i => ({ name: i.name.trim(), amount: i.amount, account: i.account }))
+        p_incomes: state.incomes.filter(i => i.amount > 0 && i.name.trim()).map(i => ({ 
+          name: i.name.trim(), 
+          amount: i.amount, 
+          account: i.account,
+          type: i.type || 'fixed',
+          pay_date: i.pay_date || null
+        }))
       });
       
       if (error) throw error;
@@ -271,7 +277,16 @@ export default function SetupWizard() {
       const accName = targetAcc ? targetAcc.name : state.members[0]?.name || 'Gemensamt';
       
       if (row.isIncoming) {
-        newIncomes.push({ id: crypto.randomUUID(), name: row.rawDescription.trim(), amount: row.amount, account: accName });
+        const descUpper = row.rawDescription.toUpperCase();
+        const isSalary = descUpper.includes('LÖN') || descUpper.includes('SALARY') || descUpper.includes('UTBETALNING') || descUpper.includes('FÖRSÄKRINGSKASSAN');
+        newIncomes.push({ 
+          id: crypto.randomUUID(), 
+          name: row.rawDescription.trim(), 
+          amount: row.amount, 
+          account: accName,
+          type: isSalary ? 'variable' : 'fixed',
+          pay_date: isSalary ? row.date : undefined
+        });
       } else {
         newBills.push({ id: crypto.randomUUID(), name: row.rawDescription.trim(), amount: row.amount, account: accName, interval: 'all' });
       }

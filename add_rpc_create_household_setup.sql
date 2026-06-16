@@ -47,10 +47,10 @@ BEGIN
     
     -- 5. Create incomes
     IF p_incomes IS NOT NULL THEN
-        FOR v_income IN SELECT * FROM jsonb_to_recordset(p_incomes) AS x(name text, amount numeric, account text)
+        FOR v_income IN SELECT * FROM jsonb_to_recordset(p_incomes) AS x(name text, amount numeric, account text, type text, pay_date text)
         LOOP
-            INSERT INTO user_incomes (id, household_id, name, amount, type, user_id)
-            VALUES (gen_random_uuid(), v_household_id, v_income.name, v_income.amount, 'fixed', auth.uid());
+            INSERT INTO user_incomes (id, household_id, name, amount, type, pay_date, user_id)
+            VALUES (gen_random_uuid(), v_household_id, v_income.name, v_income.amount, COALESCE(v_income.type, 'fixed'), CASE WHEN v_income.pay_date IS NOT NULL THEN v_income.pay_date::DATE ELSE NULL END, auth.uid());
         END LOOP;
     END IF;
     
