@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BankParseResult, ParsedBankRow } from '../utils/bankParser';
-import { Account } from '../types';
+import type { BankParseResult, ParsedBankRow } from '../utils/bankParser';
+import type { Account } from '../types';
 
 interface BankImportModalProps {
   parseResult: BankParseResult;

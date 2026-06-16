@@ -7,6 +7,8 @@ import toast from 'react-hot-toast';
 import * as xlsx from 'xlsx';
 import BankImportModal from './BankImportModal';
 import { parseBankData } from '../utils/bankParser';
+import type { BankParseResult, ParsedBankRow } from '../utils/bankParser';
+import { supabase } from '../supabase';
 
 export default function ManageBills() {
   const { user: realUser, role } = useAuth();

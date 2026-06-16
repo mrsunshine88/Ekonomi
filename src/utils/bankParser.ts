@@ -1,4 +1,4 @@
-import { HouseholdImportRule } from '../types';
+import type { HouseholdImportRule } from '../types';
 
 export interface ParsedBankRow {
   originalIndex: number;
@@ -149,7 +149,7 @@ export function parseBankData(
 
     // If no account guessed, default to the first shared account
     if (!suggestedAccount) {
-        const sharedAcc = householdAccounts.find(a => true); // In ManageBills we pass shared accounts first
+        const sharedAcc = householdAccounts.find(() => true); // In ManageBills we pass shared accounts first
         suggestedAccount = sharedAcc ? sharedAcc.id : null;
     }
 
