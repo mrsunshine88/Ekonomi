@@ -42,6 +42,13 @@ BEGIN
             FROM accounts a
             WHERE a.household_id = v_household_id AND a.name = v_bill.account
             LIMIT 1;
+
+            -- Auto-learn rule for this bill
+            INSERT INTO household_import_rules (household_id, search_string, target_id, rule_target_type, is_bill, rule_type, usage_count)
+            SELECT v_household_id, UPPER(v_bill.name), a.id, 'ACCOUNT', true, 'USER', 5
+            FROM accounts a
+            WHERE a.household_id = v_household_id AND a.name = v_bill.account
+            LIMIT 1;
         END LOOP;
     END IF;
     
@@ -51,6 +58,10 @@ BEGIN
         LOOP
             INSERT INTO user_incomes (id, household_id, name, amount, type, pay_date, user_id)
             VALUES (gen_random_uuid(), v_household_id, v_income.name, v_income.amount, COALESCE(v_income.type, 'fixed'), CASE WHEN v_income.pay_date IS NOT NULL THEN v_income.pay_date::DATE ELSE NULL END, auth.uid());
+
+            -- Auto-learn rule for this income
+            INSERT INTO household_import_rules (household_id, search_string, target_id, rule_target_type, is_bill, rule_type, usage_count)
+            VALUES (v_household_id, UPPER(v_income.name), auth.uid(), 'USER', false, 'USER', 5);
         END LOOP;
     END IF;
     

@@ -245,7 +245,27 @@ export default function SetupWizard() {
         const mockAccounts = state.members.filter(m => m.name.trim()).map(m => ({ id: m.id, name: m.name, type: 'person' }));
         const mockProfiles = mockAccounts.map(a => ({ id: a.id, display_name: a.name }));
         
-        const result = parseBankData(json, [], mockAccounts as any, mockProfiles, [], []);
+        // Lär av redan inlagda räkningar/inkomster (skapa temporära regler för denna session)
+        const tempRules: any[] = [
+          ...state.bills.map(b => ({
+            id: b.id,
+            search_string: b.name.toUpperCase().replace(/[^A-Z0-9ÅÄÖ ]/g, ' ').replace(/\s+/g, ' ').trim(), // Förenklad normalize
+            is_bill: true,
+            rule_target_type: 'ACCOUNT',
+            target_id: state.members.find(m => m.name === b.account)?.id || mockAccounts[0]?.id,
+            usage_count: 5
+          })),
+          ...state.incomes.map(i => ({
+            id: i.id,
+            search_string: i.name.toUpperCase().replace(/[^A-Z0-9ÅÄÖ ]/g, ' ').replace(/\s+/g, ' ').trim(),
+            is_bill: false,
+            rule_target_type: 'USER',
+            target_id: state.members.find(m => m.name === i.account)?.id || mockProfiles[0]?.id,
+            usage_count: 5
+          }))
+        ];
+
+        const result = parseBankData(json, tempRules, mockAccounts as any, mockProfiles, [], []);
         
         // Auto-assign owner
         const setOwner = (arr: any[]) => {
