@@ -9,6 +9,14 @@ export interface ParsedBankRow {
   isIncoming: boolean;
   confidenceScore: number;
   
+  // New UI mapping
+  matchLevel: 'confirmed' | 'new_discovery' | 'needs_review' | 'no_match';
+  matchedVia: string;
+  aliasMatched?: string;
+  historicalMin?: number;
+  historicalMax?: number;
+  isAmountNormal?: boolean;
+  
   // Bill targets
   suggestedAccountId: string | null;
   selectedAccountId: string | null;
@@ -45,7 +53,7 @@ export function normalizeBankString(str: string): string {
   // Remove common bank/company noise words
   const noiseWords = [
     ' AB', ' AKTIEBOLAG', ' SVERIGE', ' AUTOGIRO', ' BG', ' PG', ' KORTKÖP', 
-    ' KORTTRANSAKTION', ' ÖVERFÖRING', ' SWISH', ' BETALNING', ' KONTO', ' INC', ' LLC'
+    ' KORTTRANSAKTION', ' ÖVERFÖRING', ' SWISH', ' BETALNING', ' KONTO', ' INC', ' LLC', '.COM'
   ];
   
   for (const noise of noiseWords) {
@@ -59,13 +67,38 @@ export function normalizeBankString(str: string): string {
   return s;
 }
 
+const SYSTEM_CATEGORIES: Record<string, string[]> = {
+  SUBSCRIPTIONS: ["NETFLIX", "HBO MAX", "DISNEY", "VIAPLAY", "STORYTEL", "BOOKBEAT", "SPOTIFY"],
+  INSURANCE: ["FOLKSAM", "IF", "LÄNSFÖRSÄKRINGAR", "HEDVIG"],
+  LOANS: ["CSN", "SBAB", "SANTANDER"],
+  UTILITIES: ["FORTUM", "EON", "VATTENFALL", "SKELLEFTEÅ KRAFT", "MÄLARENERGI", "GÖTEBORG ENERGI", "ÖRESUNDSKRAFT"],
+  UNIONS: ["UNIONEN", "KOMMUNAL", "IF METALL", "AKAVIA", "VISION", "ST"],
+  TRANSPORT: ["TRANSPORTSTYRELSEN", "EASYPARK", "PARKSTER", "CARPAY", "VOLVO FINANS"],
+  FINANCE: ["KLARNA", "RESURS", "SVEA BANK", "IKANO", "COLLECTOR", "ANYFIN"],
+  TELECOM: ["TELIA", "TELE2", "TRE", "HALLON", "VIMLA", "BAHNHOF"],
+  SERVICES: ["GOOGLE ONE", "AMAZON", "AUDIBLE"]
+};
+
+const SYSTEM_ALIASES: Record<string, string> = {
+  "NETFLIX.COM": "NETFLIX",
+  "NETFLIX*": "NETFLIX",
+  "HBOMAX": "HBO MAX",
+  "GOOGLE": "GOOGLE ONE",
+  "GOOGLEONE": "GOOGLE ONE",
+  "LF FINANS": "LÄNSFÖRSÄKRINGAR",
+  "LF HYPOTEK": "LÄNSFÖRSÄKRINGAR"
+};
+
+const SYSTEM_BILLS_ALL = Object.values(SYSTEM_CATEGORIES).flat();
+
 export function parseBankData(
   jsonData: any[][], 
   rules: HouseholdImportRule[],
   householdAccounts: { id: string, name: string }[],
-  householdProfiles: { id: string, display_name?: string, email?: string }[] = []
+  householdProfiles: { id: string, display_name?: string, email?: string }[] = [],
+  knownBills: { accountId: string, defaultAmount: number }[] = [],
+  knownIncomes: { userId: string, amount: number }[] = []
 ): BankParseResult {
-  
   // 1. Detect Columns
   let dateIdx = -1;
   let descIdx = -1;
@@ -123,36 +156,48 @@ export function parseBankData(
     const amount = Math.abs(rawAmountNum);
     const normalized = normalizeBankString(String(rawDesc));
     
-    // Find matching rule
-    let matchedRule: HouseholdImportRule | null = null;
-    let highestConfidence = 0;
-
-    for (const rule of rules) {
-      if (normalized.includes(rule.search_string) || rule.search_string.includes(normalized)) {
-        // Fastighetsmäklare-regel: Kolla även riktningen. En inkomst kan inte trigga en "is_bill=true"-regel
-        if ((rule.is_bill && isIncoming) || (!rule.is_bill && !isIncoming)) {
-            continue; // Mismatch mellan inkomst/utgift och regeln
-        }
-
-        const lenRatio = Math.min(normalized.length, rule.search_string.length) / Math.max(normalized.length, rule.search_string.length);
-        let confidence = Math.round(lenRatio * 100);
-        
-        confidence = Math.min(99, confidence + (rule.usage_count * 2));
-        if (normalized === rule.search_string) confidence = 100;
-
-        if (confidence > highestConfidence) {
-          highestConfidence = confidence;
-          matchedRule = rule;
-        }
-      }
-    }
-
+    let matchLevel: ParsedBankRow['matchLevel'] = 'no_match';
+    let matchedVia = 'Ingen regel hittades';
+    let aliasMatched: string | undefined;
+    let isRecognized = false;
     let suggestedAccount = null;
     let suggestedUser = null;
     let isSuggestedBill = false;
     let isSuggestedIncome = false;
+    let highestConfidence = 0;
+
+    // Check Alias
+    let searchString = normalized;
+    const tokens = normalized.split(' ');
+    for (const [alias, realName] of Object.entries(SYSTEM_ALIASES)) {
+      if (tokens.includes(alias) || searchString.includes(alias)) {
+         searchString = realName;
+         aliasMatched = `${alias} → ${realName}`;
+         break;
+      }
+    }
+
+    // 1. Hushållets minne
+    let matchedRule: HouseholdImportRule | null = null;
+    for (const rule of rules) {
+      if (searchString.includes(rule.search_string) || rule.search_string.includes(searchString)) {
+        if ((rule.is_bill && isIncoming) || (!rule.is_bill && !isIncoming)) {
+            continue; // Direction mismatch
+        }
+        
+        // Find best match if multiple
+        const confidence = rule.usage_count; // Simplified heuristic
+        if (confidence >= highestConfidence) {
+            highestConfidence = confidence;
+            matchedRule = rule;
+        }
+      }
+    }
 
     if (matchedRule) {
+      matchLevel = 'confirmed';
+      matchedVia = `Tidigare import (${matchedRule.usage_count} gånger)`;
+      isRecognized = true;
       if (matchedRule.is_bill && matchedRule.rule_target_type === 'ACCOUNT') {
         isSuggestedBill = true;
         suggestedAccount = matchedRule.target_id;
@@ -161,36 +206,55 @@ export function parseBankData(
         suggestedUser = matchedRule.target_id;
       }
     } else {
-      // Fallbacks if no rule matched
-      if (isIncoming) {
-        if (normalized.includes('LÖN') || normalized.includes('SALARY') || normalized.includes('LON')) {
-          isSuggestedIncome = true;
-          highestConfidence = Math.max(highestConfidence, 70); // Basic heuristic guess
+      // 2. SYSTEM_BILLS
+      if (!isIncoming) {
+        const sysMatch = SYSTEM_BILLS_ALL.find(sb => searchString === sb || tokens.includes(sb));
+        if (sysMatch) {
+          matchLevel = 'new_discovery';
+          matchedVia = `SYSTEM-regel ${sysMatch}`;
+          isSuggestedBill = true;
+          isRecognized = true;
         }
-      } else {
-        // It's outgoing. Check if description matches any account name
-        for (const acc of householdAccounts) {
-          if (normalized.includes(acc.name.toUpperCase())) {
-            suggestedAccount = acc.id;
-            highestConfidence = Math.max(highestConfidence, 60);
-            break;
+      }
+
+      // 3. Textmönster
+      if (matchLevel === 'no_match') {
+        if (isIncoming) {
+          if (searchString.includes('LÖN') || searchString.includes('SALARY') || searchString.includes('LON') || searchString.includes('UTBETALNING')) {
+            isSuggestedIncome = true;
+            matchLevel = 'needs_review';
+            matchedVia = 'Textanalys (Lön/Utbetalning)';
+          }
+        } else {
+          for (const acc of householdAccounts) {
+            if (searchString.includes(acc.name.toUpperCase())) {
+              suggestedAccount = acc.id;
+              isSuggestedBill = true;
+              matchLevel = 'needs_review';
+              matchedVia = `Textanalys (Kontonamn: ${acc.name})`;
+              break;
+            }
+          }
+          if (searchString.includes('AUTOGIRO')) {
+             isSuggestedBill = true;
+             matchLevel = 'needs_review';
+             matchedVia = 'Textanalys (Autogiro)';
           }
         }
       }
     }
 
-    // Default target logic if none found
-    if (!isIncoming && !suggestedAccount) {
+    // Default target logic if none found (fallback selection)
+    if (!isIncoming && !suggestedAccount && isSuggestedBill) {
       const sharedAcc = householdAccounts.find(() => true);
       suggestedAccount = sharedAcc ? sharedAcc.id : null;
     }
-    if (isIncoming && !suggestedUser) {
+    if (isIncoming && !suggestedUser && isSuggestedIncome) {
       const firstUser = householdProfiles.find(() => true);
       suggestedUser = firstUser ? firstUser.id : null;
     }
 
-    const isRecognized = !!matchedRule;
-    if (!isRecognized) {
+    if (!isRecognized && matchLevel === 'no_match') {
       unknownCount++;
     }
 
@@ -198,24 +262,65 @@ export function parseBankData(
       recognizedSuggestedCount++;
     }
 
+    // Amount validation
+    let historicalMin: number | undefined;
+    let historicalMax: number | undefined;
+    let isAmountNormal = true;
+
+    if (matchLevel === 'confirmed') {
+      if (isSuggestedBill && suggestedAccount) {
+        // Find expected amount
+        const matchingBills = knownBills.filter(b => b.accountId === suggestedAccount);
+        if (matchingBills.length > 0) {
+           const avg = matchingBills.reduce((sum, b) => sum + b.defaultAmount, 0) / matchingBills.length;
+           if (avg > 0) {
+              historicalMin = Math.round(avg * 0.85);
+              historicalMax = Math.round(avg * 1.15);
+              if (amount < historicalMin || amount > historicalMax) {
+                 isAmountNormal = false;
+              }
+           }
+        }
+      } else if (isSuggestedIncome && suggestedUser) {
+        const matchingIncomes = knownIncomes.filter(i => i.userId === suggestedUser);
+        if (matchingIncomes.length > 0) {
+           const avg = matchingIncomes.reduce((sum, i) => sum + i.amount, 0) / matchingIncomes.length;
+           if (avg > 0) {
+              historicalMin = Math.round(avg * 0.85);
+              historicalMax = Math.round(avg * 1.15);
+              if (amount < historicalMin || amount > historicalMax) {
+                 isAmountNormal = false;
+              }
+           }
+        }
+      }
+    }
+
     parsedRows.push({
       originalIndex: i,
       date: String(rawDate).trim(),
       rawDescription: String(rawDesc).trim(),
-      normalizedDescription: normalized,
+      normalizedDescription: searchString,
       amount,
       isIncoming,
       confidenceScore: highestConfidence,
       
+      matchLevel,
+      matchedVia,
+      aliasMatched,
+      historicalMin,
+      historicalMax,
+      isAmountNormal,
+      
       suggestedAccountId: suggestedAccount,
       selectedAccountId: suggestedAccount,
       isSuggestedBill,
-      selectedAsBill: isSuggestedBill,
+      selectedAsBill: isSuggestedBill && (matchLevel === 'confirmed' || matchLevel === 'new_discovery'),
       
       suggestedUserId: suggestedUser,
       selectedUserId: suggestedUser,
       isSuggestedIncome,
-      selectedAsIncome: isSuggestedIncome,
+      selectedAsIncome: isSuggestedIncome && (matchLevel === 'confirmed' || matchLevel === 'new_discovery'),
       
       isRecognized
     });
@@ -224,11 +329,17 @@ export function parseBankData(
   // Sort and split
   const suggestedIncomes = parsedRows
     .filter(r => r.isSuggestedIncome)
-    .sort((a, b) => b.confidenceScore - a.confidenceScore);
+    .sort((a, b) => {
+       const order = { 'confirmed': 0, 'new_discovery': 1, 'needs_review': 2, 'no_match': 3 };
+       return order[a.matchLevel] - order[b.matchLevel];
+    });
 
   const suggestedBills = parsedRows
     .filter(r => r.isSuggestedBill)
-    .sort((a, b) => b.confidenceScore - a.confidenceScore);
+    .sort((a, b) => {
+       const order = { 'confirmed': 0, 'new_discovery': 1, 'needs_review': 2, 'no_match': 3 };
+       return order[a.matchLevel] - order[b.matchLevel];
+    });
     
   const otherTransactions = parsedRows
     .filter(r => !r.isSuggestedBill && !r.isSuggestedIncome)

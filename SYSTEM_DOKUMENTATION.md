@@ -1353,25 +1353,29 @@ Rullgardinsmenyn "Kopplat konto" har raderats helt från "Mina Sidor". Istället
 ## 15. Bank-import & Minnesfunktion ("Botemedlet mot Tomt Konto-syndromet")
 
 ### Vad:
-En premium-funktion som låter användaren ladda upp en bankfil (t.ex. SEB, Swedbank, Länsförsäkringar) i form av Excel/CSV. Appen läser filen och upptäcker automatiskt både **Utgifter (Räkningar)** och **Inkomster (Lön/Utbetalningar)**. Den lär sig dessutom av användarens val och bygger upp ett smart minne.
+En premium-funktion som lÃ¥ter anvÃ¤ndaren ladda upp en bankfil (t.ex. SEB, Swedbank, LÃ¤nsfÃ¶rsÃ¤kringar). Appen lÃ¤ser filen och mappar automatiskt bÃ¥de **Utgifter (RÃ¤kningar)** och **Inkomster (LÃ¶n/Utbetalningar)** till rÃ¤tt konton och personer. Den skapar lÃ¤rdomar fÃ¶r att bygga ett sÃ¶mlÃ¶st hushÃ¥llsminne Ã¶ver tid.
 
 ### Hur:
-Funktionen är uppbyggd i tre skyddslager för hög datakvalitet:
+Import-logiken (`bankParser.ts`) har gÃ¥tt igenom en radikal ombyggnation och bygger nu pÃ¥ en deterministisk **4-stegs hierarki** med tillhÃ¶rande UX-fÃ¤rgkodning, istÃ¤llet fÃ¶r otydliga procentuella "AI-scores".
 
-1. **Ordlistan (SYSTEM-regler):**
-   Vid initiering laddas databasen (`household_import_rules`) med standardregler.
-2. **Hushållets Minne (USER-regler):**
-   När användaren importerar och gör egna val (t.ex. "FORTNOX AB" -> Inkomst för Andreas) sparas detta.
-3. **Mänsklig Granskning (BankImportModal):**
-   Parsern (`bankParser.ts`) tvättar datan och delar upp raderna i Inkomster (positiva saldon) och Utgifter (negativa saldon). Med hjälp av en *Confidence Score* sorteras de bästa förslagen överst i modalen. Lön tilldelas en *Användare*, medan Räkningar tilldelas ett *Konto*.
+1. **HushÃ¥llets Minne (🟢 BekrÃ¤ftad)**
+   - Appen kollar fÃ¶rst om transaktionen matchar ett mÃ¶nster som hushÃ¥llet sjÃ¤lva (via `household_import_rules`) tidigare importerat.
+   - **Beloppskontroll:** FÃ¶r inkomster och utgifter kontrolleras ocksÃ¥ om summan ligger inom ett *Historiskt intervall* (±15% frÃ¥n standardbeloppet). Visar omedelbart varningsflagga om Netflix kostar 899 kr istÃ¤llet fÃ¶r 159 kr.
+2. **SYSTEM-kategorier & Alias (🟣 Ny upptÃ¤ckt)**
+   - Om inget hushÃ¥llsminne finns, mappar parsern transaktionen mot ett inlÃ¤rt bibliotek (`SYSTEM_CATEGORIES` och `SYSTEM_ALIASES`).
+   - SÃ¤kra alias normaliserar bankskrÃ¤p (t.ex. "NETFLIX.COM" -> "NETFLIX") fÃ¶r att hitta rÃ¤tt i kategorier som *Prenumerationer*, *FÃ¶rsÃ¤kringar* och *LÃ¥n*. Korta osÃ¤kra alias ("LF" eller "MAX") undviks fÃ¶r att eliminera falska trÃ¤ffar.
+3. **Textanalys (🟡 BehÃ¶ver granskas)**
+   - Transaktioner som innehÃ¥ller nyckelord som "LÃ–N", "SALARY", "AUTOGIRO", eller matchar exakt pÃ¥ ett gemensamt kontonamn ("Huskontot"). Dessa auto-markeras inte utan hjÃ¤lper bara anvÃ¤ndaren att lÃ¤ttare placera posten.
+4. **Ingen Match (⚪ GrÃ¥)**
+   - OkÃ¤nda transaktioner. Ignoreras fÃ¶r import.
 
-**Databas (`household_import_rules`):**
-För att hantera både inkomster och utgifter utan att blanda ID:n används en flexibel pekar-struktur:
-- `is_bill` (bool): True = utgift, False = inkomst.
-- `rule_target_type` (string): 'ACCOUNT' (för konton) eller 'USER' (för personer i hushållet).
-- `target_id` (uuid): Pekar på rätt enhet beroende på `rule_target_type`.
+**AnvÃ¤ndargrÃ¤nssnitt & FÃ¶rtroende (`BankImportModal.tsx`):**
+- **Filtrering & FÃ¤rgkodning:** AnvÃ¤ndaren kan enkelt fÃ¶ljtrera rader pÃ¥ `[Alla]`, `[Nya upptÃ¤ckter]` eller `[BehÃ¶ver granskas]`. Detta minskar larmtrÃ¶tthet och lÃ¥ter dem vÃ¤lja bort "bruset" (grÃ¥ rader).
+- **Extrem Transparens ("Visa varfÃ¶r"):** Ingen magi ska fÃ¶rsigrÃ¥ i dolda algoritmer. Genom att klicka pÃ¥ `▼ Visa varfÃ¶r` under en rad kan anvÃ¤ndaren exakt se hur appen fattat sitt beslut: Ursprunglig text, Alias-omvandling och MatchningskÃ¤lla.
+- **Explicit InlÃ¤rning:** "LÃ¤r SmartEkonomi att detta Ã¤r rÃ¤tt konto"-checkboxen finns vid varje val och Ã¤r Ã¤kta. Avbockas den sÃ¥ vÃ¤grar systemet skriva en regel till databasen. Inga bakgÃ¥rds-AI-regler skapas utan explicit consent.
+- **Aldrig Automatiskt:** Trots all trÃ¤ffsÃ¤kerhet sker ingen direktimport in i databasen fÃ¶rrÃ¤n anvÃ¤ndaren klickar `Importera valda` lÃ¤ngst ner. MÃ¤nsklig handpÃ¥lÃ¤ggning Ã¤r en ofrÃ¥nkomlig sÃ¤kerhetsventil.
 
-### Varför:
-Det absolut största hindret för att använda en ekonomiapp är "Tomt Konto-syndromet" – den höga tröskeln att lägga in 30 räkningar manuellt. Genom att automatiskt sortera in både löner och räkningar via en enkel bank-import reduceras friktionen till noll. Systemet framstår som "magiskt", vilket bygger enormt förtroende och lojalitet utan att vi behöver använda tunga eller oberäkneliga LLM-modeller.
+### VarfÃ¶r:
+Filosofin bygger pÃ¥ tillit och kontroll. Om systemet utger sig fÃ¶r att "Vara sÃ¤kert till 86%" bygger det omedvetet upp osÃ¤kerhet ("hur vet ni de sista 14%?"). Med konkreta begrepp som "Ny upptÃ¤ckt", transparanta fÃ¤rger och explicit beloppsvalidering kÃ¤nns produkten vuxen, professionell och pÃ¥litlig. FÃ¶rtroendet Ã¤r centralt nÃ¤r appen skÃ¶ter hushÃ¥llets mest kÃ¤nsliga information.
 
 ---

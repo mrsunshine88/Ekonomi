@@ -19,6 +19,20 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
   ]);
   
   const [showOther, setShowOther] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'new' | 'review'>('all');
+  const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
+  const [learnRules, setLearnRules] = useState<Record<number, boolean>>({});
+
+  const toggleExpand = (index: number) => {
+    setExpandedRows(prev => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  const handleToggleLearn = (index: number) => {
+    setLearnRules(prev => {
+      const current = prev[index] ?? true; // Default is true
+      return { ...prev, [index]: !current };
+    });
+  };
 
   const handleToggleRow = (index: number) => {
     setRows(current => {
@@ -49,11 +63,17 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
   };
 
   const handleConfirm = () => {
-    // Only return rows that are selected AND have a valid target
+    // Return rows with their learnRule preference embedded, so ManageBills knows whether to save the rule
     const selected = rows.filter(r => 
       (r.selectedAsBill && r.selectedAccountId) || 
       (r.selectedAsIncome && r.selectedUserId)
-    );
+    ).map(r => {
+       const originalIndex = rows.findIndex(x => x === r);
+       return {
+         ...r,
+         shouldLearnRule: learnRules[originalIndex] ?? true // default true
+       };
+    });
     onConfirm(selected);
   };
 
@@ -62,6 +82,20 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
   const otherRows = rows.filter(r => !r.isSuggestedBill && !r.isSuggestedIncome);
   
   const selectedCount = rows.filter(r => r.selectedAsBill || r.selectedAsIncome).length;
+  const autoRecognizedCount = rows.filter(r => r.matchLevel === 'confirmed' || r.matchLevel === 'new_discovery').length;
+  const needsReviewCount = rows.filter(r => r.matchLevel === 'needs_review').length;
+
+  const filteredIncomes = suggestedIncomeRows.filter(r => {
+    if (filter === 'new') return r.matchLevel === 'new_discovery';
+    if (filter === 'review') return r.matchLevel === 'needs_review';
+    return true;
+  });
+
+  const filteredBills = suggestedBillRows.filter(r => {
+    if (filter === 'new') return r.matchLevel === 'new_discovery';
+    if (filter === 'review') return r.matchLevel === 'needs_review';
+    return true;
+  });
 
   return createPortal(
     <div style={{
@@ -89,88 +123,171 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
 
         <div style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem' }}>
           {/* Summary Box */}
-          <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '1.25rem', marginBottom: '2rem' }}>
-            <h3 style={{ color: '#fff', marginTop: 0, marginBottom: '1rem', fontSize: '1.2rem' }}>Sammanfattning</h3>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', color: '#e2e8f0' }}>
-              {parseResult.summary.suggestedIncomesCount > 0 && (
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ color: '#10b981' }}>✓</span> 
-                  Vi hittade {parseResult.summary.suggestedIncomesCount} inkommande utbetalning(ar)
-                </li>
-              )}
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> 
-                Vi hittade {parseResult.summary.suggestedCount} föreslagna räkningar 
-                <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontSize: '0.9rem' }}>(varav {parseResult.summary.recognizedSuggestedCount} känns igen)</span>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> 
-                {parseResult.summary.otherCount} övriga transaktioner
-              </li>
-            </ul>
+          <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.5rem' }}>
+            <h3 style={{ color: '#fff', margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              🧠 SmartEkonomi hittade {autoRecognizedCount} återkommande betalningar automatiskt.
+            </h3>
+            {needsReviewCount > 0 && (
+              <p style={{ color: '#fbbf24', margin: '0.5rem 0 0 0', fontWeight: 'bold' }}>
+                {needsReviewCount} behöver granskas.
+              </p>
+            )}
+            <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
+              ({parseResult.summary.otherCount} okända övriga transaktioner ignoreras)
+            </p>
           </div>
 
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-            SmartEkonomi kommer ihåg dina val och blir smartare för varje import.
-          </p>
+          {/* Filter Tabs */}
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+            <button 
+              onClick={() => setFilter('all')}
+              style={{ background: filter === 'all' ? 'rgba(255,255,255,0.1)' : 'transparent', border: filter === 'all' ? '1px solid var(--border-color)' : '1px solid transparent', color: filter === 'all' ? '#fff' : 'var(--text-secondary)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer' }}
+            >
+              Alla
+            </button>
+            <button 
+              onClick={() => setFilter('new')}
+              style={{ background: filter === 'new' ? 'rgba(167, 139, 250, 0.2)' : 'transparent', border: filter === 'new' ? '1px solid #a78bfa' : '1px solid transparent', color: filter === 'new' ? '#a78bfa' : 'var(--text-secondary)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer' }}
+            >
+              Nya upptäckter
+            </button>
+            <button 
+              onClick={() => setFilter('review')}
+              style={{ background: filter === 'review' ? 'rgba(251, 191, 36, 0.2)' : 'transparent', border: filter === 'review' ? '1px solid #fbbf24' : '1px solid transparent', color: filter === 'review' ? '#fbbf24' : 'var(--text-secondary)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer' }}
+            >
+              Behöver granskas
+            </button>
+          </div>
 
           {/* Suggested Incomes */}
-          {suggestedIncomeRows.length > 0 && (
+          {filteredIncomes.length > 0 && (
             <>
               <h3 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
                 Föreslagna inkomster (Lön / Utbetalningar)
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
-                {suggestedIncomeRows.map((row, idx) => {
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
+                {filteredIncomes.map((row, idx) => {
                   const originalIndex = rows.findIndex(r => r === row);
-                  const isVeryConfident = row.confidenceScore >= 80;
+                  const isExpanded = expandedRows[originalIndex];
+                  const learnChecked = learnRules[originalIndex] ?? true;
                   
+                  let bgColor = 'rgba(255,255,255,0.03)';
+                  let borderColor = 'transparent';
+                  let iconColor = 'var(--text-secondary)';
+                  let statusText = '';
+                  
+                  if (row.matchLevel === 'confirmed') {
+                    bgColor = row.selectedAsIncome ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.03)';
+                    borderColor = row.selectedAsIncome ? 'rgba(16, 185, 129, 0.3)' : 'transparent';
+                    iconColor = '#10b981';
+                    statusText = '🟢 Bekräftad';
+                  } else if (row.matchLevel === 'new_discovery') {
+                    bgColor = row.selectedAsIncome ? 'rgba(167, 139, 250, 0.15)' : 'rgba(255,255,255,0.03)';
+                    borderColor = row.selectedAsIncome ? 'rgba(167, 139, 250, 0.4)' : 'transparent';
+                    iconColor = '#a78bfa';
+                    statusText = '🟣 Ny upptäckt';
+                  } else if (row.matchLevel === 'needs_review') {
+                    bgColor = row.selectedAsIncome ? 'rgba(251, 191, 36, 0.1)' : 'rgba(251, 191, 36, 0.05)';
+                    borderColor = row.selectedAsIncome ? 'rgba(251, 191, 36, 0.4)' : 'rgba(251, 191, 36, 0.2)';
+                    iconColor = '#fbbf24';
+                    statusText = '🟡 Behöver granskas';
+                  }
+
                   return (
                     <div key={idx} style={{ 
-                      display: 'grid', gridTemplateColumns: 'auto 2fr 1fr 1fr', gap: '1rem', alignItems: 'center',
-                      background: row.selectedAsIncome ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.03)', 
-                      border: '1px solid', borderColor: row.selectedAsIncome ? 'rgba(59, 130, 246, 0.3)' : 'transparent',
-                      padding: '0.75rem 1rem', borderRadius: '8px',
+                      display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                      background: bgColor, 
+                      border: `1px solid ${borderColor}`,
+                      padding: '1rem', borderRadius: '8px',
                       transition: 'all 0.2s'
                     }}>
-                      <input 
-                        type="checkbox" 
-                        checked={row.selectedAsIncome}
-                        onChange={() => handleToggleRow(originalIndex)}
-                        style={{ cursor: 'pointer', width: '1.2rem', height: '1.2rem', accentColor: '#3b82f6' }}
-                      />
-                      <div>
-                        <div style={{ fontWeight: 'bold', color: '#fff' }}>{row.rawDescription}</div>
-                        {isVeryConfident ? (
-                          <div style={{ fontSize: '0.8rem', color: '#3b82f6', display: 'flex', gap: '4px', alignItems: 'center' }}>
-                            ✨ Sannolikt en inkomst ({row.confidenceScore}%)
+                      <div style={{ display: 'grid', gridTemplateColumns: 'auto 2fr 1fr 1fr', gap: '1rem', alignItems: 'center' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={row.selectedAsIncome}
+                          onChange={() => handleToggleRow(originalIndex)}
+                          style={{ cursor: 'pointer', width: '1.2rem', height: '1.2rem', accentColor: iconColor }}
+                        />
+                        <div>
+                          <div style={{ fontWeight: 'bold', color: '#fff' }}>{row.rawDescription}</div>
+                          <div style={{ fontSize: '0.85rem', color: iconColor, marginTop: '0.2rem', fontWeight: '500' }}>
+                            {statusText}
                           </div>
-                        ) : (
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                            Säkerhet: {row.confidenceScore}%
+                        </div>
+                        <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#3b82f6' }}>
+                          +{row.amount.toLocaleString('sv-SE')} kr
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Tillhör person:</div>
+                          <select 
+                            value={row.selectedUserId || ''}
+                            onChange={(e) => handleUserChange(originalIndex, e.target.value)}
+                            style={{ 
+                              width: '100%', padding: '0.4rem', borderRadius: '4px', 
+                              background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--border-color)',
+                              fontSize: '0.9rem'
+                            }}
+                          >
+                            <option value="" disabled>Välj person...</option>
+                            {profiles.map(p => (
+                              <option key={p.id} value={p.id}>{p.display_name || p.email}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Lär appen & Visa varför */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '0.5rem', marginLeft: '2.2rem' }}>
+                        <button 
+                          onClick={() => toggleExpand(originalIndex)}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '0.85rem', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          {isExpanded ? '▲ Dölj varför' : '▼ Visa varför'}
+                        </button>
+                        
+                        {row.selectedAsIncome && (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={learnChecked}
+                                onChange={() => handleToggleLearn(originalIndex)}
+                                style={{ cursor: 'pointer' }}
+                              />
+                              Lär SmartEkonomi att detta är rätt person
+                            </label>
+                            {!learnChecked && (
+                              <span style={{ fontSize: '0.75rem', color: '#f87171' }}>
+                                SmartEkonomi kommer inte lära sig av valet.
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
-                      <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#3b82f6' }}>
-                        +{row.amount} kr
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '2px' }}>Tillhör person:</div>
-                        <select 
-                          value={row.selectedUserId || ''}
-                          onChange={(e) => handleUserChange(originalIndex, e.target.value)}
-                          style={{ 
-                            width: '100%', padding: '0.4rem', borderRadius: '4px', 
-                            background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid var(--border-color)',
-                            fontSize: '0.9rem'
-                          }}
-                        >
-                          <option value="" disabled>Välj person...</option>
-                          {profiles.map(p => (
-                            <option key={p.id} value={p.id}>{p.display_name || p.email}</option>
-                          ))}
-                        </select>
-                      </div>
+
+                      {/* Visa varför detaljer */}
+                      {isExpanded && (
+                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', marginLeft: '2.2rem', marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div><strong>Ursprunglig text:</strong> {row.rawDescription}</div>
+                          {row.aliasMatched && (
+                            <div><strong>Alias-matchning:</strong> {row.aliasMatched}</div>
+                          )}
+                          {!row.aliasMatched && (
+                            <div><strong>Normaliserad text:</strong> {row.normalizedDescription}</div>
+                          )}
+                          <div><strong>Matchad via:</strong> <span style={{ color: '#fff' }}>{row.matchedVia}</span></div>
+                          
+                          {row.matchLevel === 'confirmed' && row.historicalMin !== undefined && row.historicalMax !== undefined && (
+                            <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: row.isAmountNormal ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)', borderRadius: '6px', border: row.isAmountNormal ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(244, 63, 94, 0.3)', color: row.isAmountNormal ? '#10b981' : '#f43f5e' }}>
+                              {row.isAmountNormal ? (
+                                <>✓ Beloppet ligger inom normalt intervall (Tidigare betalningar: {row.historicalMin}–{row.historicalMax} kr)</>
+                              ) : (
+                                <>⚠ Beloppet avviker från tidigare betalningar (Normalt intervall: {row.historicalMin}–{row.historicalMax} kr. Nu: {row.amount} kr)</>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -179,67 +296,139 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
           )}
 
           {/* Suggested Bills */}
-          <h3 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-            Föreslagna räkningar
-          </h3>
-          {suggestedBillRows.length === 0 ? (
-            <p style={{ color: 'var(--text-secondary)' }}>Inga räkningar hittades automatiskt denna gång.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
-              {suggestedBillRows.map((row, idx) => {
-                const originalIndex = rows.findIndex(r => r === row);
-                const isVeryConfident = row.confidenceScore >= 80;
-                
-                return (
-                  <div key={idx} style={{ 
-                    display: 'grid', gridTemplateColumns: 'auto 2fr 1fr 1fr', gap: '1rem', alignItems: 'center',
-                    background: row.selectedAsBill ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.03)', 
-                    border: '1px solid', borderColor: row.selectedAsBill ? 'rgba(16, 185, 129, 0.3)' : 'transparent',
-                    padding: '0.75rem 1rem', borderRadius: '8px',
-                    transition: 'all 0.2s'
-                  }}>
-                    <input 
-                      type="checkbox" 
-                      checked={row.selectedAsBill}
-                      onChange={() => handleToggleRow(originalIndex)}
-                      style={{ cursor: 'pointer', width: '1.2rem', height: '1.2rem', accentColor: '#10b981' }}
-                    />
-                    <div>
-                      <div style={{ fontWeight: 'bold', color: '#fff' }}>{row.rawDescription}</div>
-                      {isVeryConfident ? (
-                        <div style={{ fontSize: '0.8rem', color: '#10b981', display: 'flex', gap: '4px', alignItems: 'center' }}>
-                          ✨ Vi är ganska säkra på denna ({row.confidenceScore}%)
+          {filteredBills.length > 0 && (
+            <>
+              <h3 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginTop: '2rem' }}>
+                Föreslagna räkningar
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '2rem' }}>
+                {filteredBills.map((row, idx) => {
+                  const originalIndex = rows.findIndex(r => r === row);
+                  const isExpanded = expandedRows[originalIndex];
+                  const learnChecked = learnRules[originalIndex] ?? true;
+                  
+                  let bgColor = 'rgba(255,255,255,0.03)';
+                  let borderColor = 'transparent';
+                  let iconColor = 'var(--text-secondary)';
+                  let statusText = '';
+                  
+                  if (row.matchLevel === 'confirmed') {
+                    bgColor = row.selectedAsBill ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.03)';
+                    borderColor = row.selectedAsBill ? 'rgba(16, 185, 129, 0.3)' : 'transparent';
+                    iconColor = '#10b981';
+                    statusText = '🟢 Bekräftad';
+                  } else if (row.matchLevel === 'new_discovery') {
+                    bgColor = row.selectedAsBill ? 'rgba(167, 139, 250, 0.15)' : 'rgba(255,255,255,0.03)';
+                    borderColor = row.selectedAsBill ? 'rgba(167, 139, 250, 0.4)' : 'transparent';
+                    iconColor = '#a78bfa';
+                    statusText = '🟣 Ny upptäckt';
+                  } else if (row.matchLevel === 'needs_review') {
+                    bgColor = row.selectedAsBill ? 'rgba(251, 191, 36, 0.1)' : 'rgba(251, 191, 36, 0.05)';
+                    borderColor = row.selectedAsBill ? 'rgba(251, 191, 36, 0.4)' : 'rgba(251, 191, 36, 0.2)';
+                    iconColor = '#fbbf24';
+                    statusText = '🟡 Behöver granskas';
+                  }
+                  
+                  return (
+                    <div key={idx} style={{ 
+                      display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                      background: bgColor, 
+                      border: `1px solid ${borderColor}`,
+                      padding: '1rem', borderRadius: '8px',
+                      transition: 'all 0.2s'
+                    }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'auto 2fr 1fr 1fr', gap: '1rem', alignItems: 'center' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={row.selectedAsBill}
+                          onChange={() => handleToggleRow(originalIndex)}
+                          style={{ cursor: 'pointer', width: '1.2rem', height: '1.2rem', accentColor: iconColor }}
+                        />
+                        <div>
+                          <div style={{ fontWeight: 'bold', color: '#fff' }}>{row.rawDescription}</div>
+                          <div style={{ fontSize: '0.85rem', color: iconColor, marginTop: '0.2rem', fontWeight: '500' }}>
+                            {statusText}
+                          </div>
                         </div>
-                      ) : (
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                          Säkerhet: {row.confidenceScore}%
+                        <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#fff' }}>
+                          -{row.amount.toLocaleString('sv-SE')} kr
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Dras från konto:</div>
+                          <select 
+                            value={row.selectedAccountId || ''}
+                            onChange={(e) => handleAccountChange(originalIndex, e.target.value)}
+                            style={{ 
+                              width: '100%', padding: '0.4rem', borderRadius: '4px', 
+                              background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--border-color)',
+                              fontSize: '0.9rem'
+                            }}
+                          >
+                            <option value="" disabled>Välj konto...</option>
+                            {accounts.map(acc => (
+                              <option key={acc.id} value={acc.id}>{acc.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Lär appen & Visa varför */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '0.5rem', marginLeft: '2.2rem' }}>
+                        <button 
+                          onClick={() => toggleExpand(originalIndex)}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '0.85rem', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          {isExpanded ? '▲ Dölj varför' : '▼ Visa varför'}
+                        </button>
+                        
+                        {row.selectedAsBill && (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={learnChecked}
+                                onChange={() => handleToggleLearn(originalIndex)}
+                                style={{ cursor: 'pointer' }}
+                              />
+                              Lär SmartEkonomi att detta är rätt konto
+                            </label>
+                            {!learnChecked && (
+                              <span style={{ fontSize: '0.75rem', color: '#f87171' }}>
+                                SmartEkonomi kommer inte lära sig av valet.
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Visa varför detaljer */}
+                      {isExpanded && (
+                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', marginLeft: '2.2rem', marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div><strong>Ursprunglig text:</strong> {row.rawDescription}</div>
+                          {row.aliasMatched && (
+                            <div><strong>Alias-matchning:</strong> {row.aliasMatched}</div>
+                          )}
+                          {!row.aliasMatched && (
+                            <div><strong>Normaliserad text:</strong> {row.normalizedDescription}</div>
+                          )}
+                          <div><strong>Matchad via:</strong> <span style={{ color: '#fff' }}>{row.matchedVia}</span></div>
+                          
+                          {row.matchLevel === 'confirmed' && row.historicalMin !== undefined && row.historicalMax !== undefined && (
+                            <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: row.isAmountNormal ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)', borderRadius: '6px', border: row.isAmountNormal ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(244, 63, 94, 0.3)', color: row.isAmountNormal ? '#10b981' : '#f43f5e' }}>
+                              {row.isAmountNormal ? (
+                                <>✓ Beloppet ligger inom normalt intervall (Tidigare betalningar: {row.historicalMin}–{row.historicalMax} kr)</>
+                              ) : (
+                                <>⚠ Beloppet avviker från tidigare betalningar (Normalt intervall: {row.historicalMin}–{row.historicalMax} kr. Nu: {row.amount} kr)</>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
-                    <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#fff' }}>
-                      -{row.amount} kr
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '2px' }}>Dras från konto:</div>
-                      <select 
-                        value={row.selectedAccountId || ''}
-                        onChange={(e) => handleAccountChange(originalIndex, e.target.value)}
-                        style={{ 
-                          width: '100%', padding: '0.4rem', borderRadius: '4px', 
-                          background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid var(--border-color)',
-                          fontSize: '0.9rem'
-                        }}
-                      >
-                        <option value="" disabled>Välj konto...</option>
-                        {accounts.map(acc => (
-                          <option key={acc.id} value={acc.id}>{acc.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </>
           )}
 
           {/* Other Transactions */}

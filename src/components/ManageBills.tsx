@@ -210,8 +210,9 @@ export default function ManageBills() {
   const [showBankModal, setShowBankModal] = useState(false);
   const [householdRules, setHouseholdRules] = useState<HouseholdImportRule[]>([]);
 
-  const handleConfirmBankImport = async (selectedRows: ParsedBankRow[]) => {
+  const handleConfirmBankImport = async (selectedRows: (ParsedBankRow & { shouldLearnRule?: boolean })[]) => {
     let addedCount = 0;
+    let learnedCount = 0;
     
     // Fetch household_id
     const { data: profile } = await supabase.from('profiles').select('household_id').eq('id', user?.id).single();
@@ -232,7 +233,7 @@ export default function ManageBills() {
         await saveIncome(incomeData);
         addedCount++;
         
-        if (householdId) {
+        if (householdId && row.shouldLearnRule !== false) {
           const existingRule = householdRules.find(r => r.search_string === row.normalizedDescription);
           if (existingRule) {
             await supabase.from('household_import_rules')
@@ -241,6 +242,7 @@ export default function ManageBills() {
                 last_seen_at: new Date().toISOString() 
               })
               .eq('id', existingRule.id);
+            learnedCount++;
           } else {
             await supabase.from('household_import_rules').insert({
               household_id: householdId,
@@ -252,6 +254,7 @@ export default function ManageBills() {
               usage_count: 1,
               matched_examples: [row.rawDescription]
             });
+            learnedCount++;
           }
         }
       } else {
@@ -272,7 +275,7 @@ export default function ManageBills() {
         await onAddBill(billData);
         addedCount++;
         
-        if (householdId) {
+        if (householdId && row.shouldLearnRule !== false) {
           const existingRule = householdRules.find(r => r.search_string === row.normalizedDescription);
           if (existingRule) {
             await supabase.from('household_import_rules')
@@ -281,6 +284,7 @@ export default function ManageBills() {
                 last_seen_at: new Date().toISOString() 
               })
               .eq('id', existingRule.id);
+            learnedCount++;
           } else {
             await supabase.from('household_import_rules').insert({
               household_id: householdId,
@@ -292,11 +296,18 @@ export default function ManageBills() {
               usage_count: 1,
               matched_examples: [row.rawDescription]
             });
+            learnedCount++;
           }
         }
       }
     }
-    toast.success(`✅ Importerade ${addedCount} transaktioner!`);
+    
+    if (learnedCount > 0) {
+      toast.success(`✅ Importerade ${addedCount} transaktioner!\n🧠 SmartEkonomi lärde sig ${learnedCount} mönster.`);
+    } else {
+      toast.success(`✅ Importerade ${addedCount} transaktioner!`);
+    }
+    
     setShowBankModal(false);
   };
 
@@ -351,7 +362,9 @@ export default function ManageBills() {
           // Detta är inte SmartEkonomi-mallen. Kör standard bank-import!
           const { data: rules } = await supabase.from('household_import_rules').select('*');
           const safeRules = rules || [];
-          const result = parseBankData(json, safeRules, state.accounts, householdProfiles);
+          const knownBills = state.bills.map(b => ({ accountId: b.accountId, defaultAmount: b.defaultAmount }));
+          const knownIncomes = state.incomes ? state.incomes.map(i => ({ userId: i.userId, amount: i.amount })) : [];
+          const result = parseBankData(json, safeRules, state.accounts, householdProfiles, knownBills, knownIncomes);
           
           setHouseholdRules(safeRules);
           setBankParseResult(result);
@@ -384,7 +397,9 @@ export default function ManageBills() {
           // Detta är inte SmartEkonomi-mallen. Kör standard bank-import!
           const { data: rules } = await supabase.from('household_import_rules').select('*');
           const safeRules = rules || [];
-          const result = parseBankData(json, safeRules, state.accounts);
+          const knownBills = state.bills.map(b => ({ accountId: b.accountId, defaultAmount: b.defaultAmount }));
+          const knownIncomes = state.incomes ? state.incomes.map(i => ({ userId: i.userId, amount: i.amount })) : [];
+          const result = parseBankData(json, safeRules, state.accounts, householdProfiles, knownBills, knownIncomes);
           
           setHouseholdRules(safeRules);
           setBankParseResult(result);
