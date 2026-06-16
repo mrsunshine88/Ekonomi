@@ -271,7 +271,7 @@ export default function LoginScreen() {
                 style={{ 
                   width: '100%', 
                   padding: '1rem', 
-                  background: 'var(--accent-gradient)', 
+                  background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', 
                   border: 'none', 
                   color: '#fff', 
                   borderRadius: '8px', 
@@ -282,7 +282,7 @@ export default function LoginScreen() {
                   justifyContent: 'center',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  boxShadow: '0 4px 15px rgba(168, 85, 247, 0.4)'
+                  boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)'
                 }}
               >
                 🛠️ Testa appen i Demoläge
