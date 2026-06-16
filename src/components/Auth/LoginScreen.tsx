@@ -164,7 +164,8 @@ export default function LoginScreen() {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Automatisk uppdelning av hushållets kostnader</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Separat hantering av gemensam och privat ekonomi</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Slipper manuella uträkningar och Excel</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Importera gamla Excel-budgeten med ett klick</li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Slipper manuella uträkningar och tjafs</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Statistik som visar hur ekonomin utvecklas över tid</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Fungerar för hela hushållet i en gemensam app</li>
             </ul>

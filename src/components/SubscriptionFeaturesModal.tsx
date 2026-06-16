@@ -57,6 +57,12 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
+            <span style={{ fontSize: '1.5rem' }}>📥</span>
+            <div>
+              <strong style={{ color: '#fff' }}>Importera från Excel:</strong> Ladda upp din befintliga budget. Appen skapar automatiskt konton och lägger in alla räkningar blixtsnabbt.
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>❤️</span>
             <div>
               <strong style={{ color: '#fff' }}>Mindre ekonomiskt tjafs:</strong> Alla hushållets kostnader samlas på ett ställe och fördelas automatiskt – utan manuella uträkningar.

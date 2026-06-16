@@ -89,7 +89,7 @@ export default function StartPage({ navigateTo }: StartPageProps) {
           <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Inställningar</h3>
           <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5', fontSize: '0.95rem' }}>
             Anpassa ekonomin efter ert hushåll.<br/><br/>
-            Lägg till räkningar, inkomster och konton samt välj hur kostnaderna ska fördelas mellan hushållets medlemmar.
+            Importera din Excel-fil så skapas konton och räkningar automatiskt, eller lägg till dem manuellt.
           </p>
         </div>
 
@@ -116,7 +116,7 @@ export default function StartPage({ navigateTo }: StartPageProps) {
               <span>1️⃣</span> Lägg in räkningar
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.5', margin: 0 }}>
-              El, försäkringar, lån, internet och andra fasta kostnader.
+              El, försäkringar, lån, internet och andra fasta kostnader. Importera direkt från Excel eller lägg till dem manuellt.
             </p>
           </div>
 
@@ -159,7 +159,7 @@ export default function StartPage({ navigateTo }: StartPageProps) {
             <span>✅</span> Slipper miniräknaren
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.1rem' }}>
-            <span>✅</span> Slipper Excel
+            <span>✅</span> Importera gamla Excel-budgeten med ett klick
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.1rem' }}>
             <span>✅</span> Slipper diskussioner om vem som ska betala vad
