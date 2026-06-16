@@ -485,7 +485,7 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
                     : 'transparent';
 
                   return (
-                    <div className="bank-import-row" style={{ 
+                    <div key={idx} className="bank-import-row" style={{ 
                       background: bgClass, 
                       border: '1px solid', borderColor: borderClass,
                       padding: '0.5rem 1rem', borderRadius: '8px',
