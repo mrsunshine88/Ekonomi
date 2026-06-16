@@ -73,6 +73,7 @@ export default function SetupWizard() {
   const [joinError, setJoinError] = useState('');
   
   const [parseResult, setParseResult] = useState<BankParseResult | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, BankParseResult>>({});
 
   useEffect(() => {
     const saved = sessionStorage.getItem('setupWizardState');
@@ -200,10 +201,10 @@ export default function SetupWizard() {
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUploadForMember = (e: React.ChangeEvent<HTMLInputElement>, memberId: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setLoadingMsg('Analyserar bankfil...');
+    setLoadingMsg(`Analyserar bankfil för ${state.members.find(m => m.id === memberId)?.name || 'medlem'}...`);
     setImportError('');
     
     const reader = new FileReader();
@@ -239,7 +240,13 @@ export default function SetupWizard() {
         const mockProfiles = mockAccounts.map(a => ({ id: a.id, display_name: a.name }));
         
         const result = parseBankData(json, [], mockAccounts as any, mockProfiles, [], []);
-        setParseResult(result);
+        
+        // Auto-assign owner
+        result.parsedRows.forEach(row => {
+          row.selectedUserId = memberId;
+        });
+
+        setUploadedFiles(prev => ({ ...prev, [memberId]: result }));
         setLoadingMsg('');
       } catch (err: any) {
         setImportError('Ett fel uppstod: ' + err.message);
@@ -435,22 +442,117 @@ export default function SetupWizard() {
       );
     }
 
+    const validMembers = state.members.filter(m => m.name.trim() && !m.isChild);
+    const hasAnyUpload = Object.keys(uploadedFiles).length > 0;
+    const isSingle = validMembers.length === 1;
+    const uploadCount = Object.keys(uploadedFiles).length;
+    const totalCount = validMembers.length;
+
+    const handleCombineAndReview = () => {
+      const allRows: ParsedBankRow[] = [];
+      Object.values(uploadedFiles).forEach(res => {
+         allRows.push(...res.parsedRows);
+      });
+      setParseResult({
+        parsedRows: allRows,
+        totalImported: allRows.length,
+        totalExpenses: allRows.filter(r => !r.isIncoming).length,
+        totalIncomes: allRows.filter(r => r.isIncoming).length,
+        totalInternal: 0,
+        duplicateCount: 0,
+        ignoredCount: 0
+      });
+    };
+
     return (
       <div className="wizard-container">
         <div className="wizard-card">
-          <h2>Importera bankfil</h2>
-          <p>Ladda ner en export från din bank (Excel/CSV) och välj den här.</p>
+          <h2>Importera bankfiler</h2>
+          <p>{isSingle ? 'Ladda upp en kontoexport från banken (Excel/CSV).' : 'Ladda upp en kontoexport från banken (Excel/CSV) för respektive vuxen.'}</p>
           
-          <div style={{ border: '2px dashed var(--border-color)', padding: '2rem', borderRadius: '12px', marginTop: '2rem', marginBottom: '2rem' }}>
-            {loadingMsg ? (
-              <p>{loadingMsg}</p>
-            ) : (
-              <input type="file" accept=".csv, .xlsx, .xls" onChange={handleFileUpload} style={{ width: '100%' }} />
+          <div style={{ marginTop: '2rem', marginBottom: '2rem', textAlign: 'left' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1rem' }}>
+              <h3 style={{ color: 'var(--text-secondary)', margin: 0 }}>{isSingle ? 'Bankfil' : 'Bankfiler'}</h3>
+              {!isSingle && (
+                <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: uploadCount > 0 ? 'var(--success-color)' : 'var(--text-muted)' }}>
+                  {uploadCount > 0 && '✓ '} {uploadCount} av {totalCount} bankfiler uppladdade
+                </span>
+              )}
+            </div>
+
+            {validMembers.map(m => {
+              const res = uploadedFiles[m.id];
+              return (
+                <div key={m.id} style={{ 
+                  background: 'rgba(0,0,0,0.2)', 
+                  border: '1px solid var(--border-color)', 
+                  padding: '1.5rem', 
+                  borderRadius: '12px', 
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ fontSize: '1.1rem' }}>
+                      {res ? (
+                        <span style={{ color: 'var(--success-color)', fontWeight: 'bold' }}>
+                          ✓ {isSingle ? 'Bankfil uppladdad' : `${m.name} - Bankfil uppladdad`} ({res.parsedRows.length} transaktioner)
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>
+                          ○ {isSingle ? 'Ingen bankfil uppladdad' : `${m.name} - Bankfil saknas`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {!res && (
+                    <div style={{ position: 'relative' }}>
+                      <input 
+                        type="file" 
+                        accept=".csv, .xlsx, .xls" 
+                        onChange={(e) => handleFileUploadForMember(e, m.id)} 
+                        style={{ 
+                          position: 'absolute', top: 0, left: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' 
+                        }} 
+                      />
+                      <button className="secondary-btn" style={{ width: '100%', pointerEvents: 'none' }}>
+                        Ladda upp bankfil{isSingle ? '' : ` för ${m.name}`}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            
+            {!isSingle && (
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '1.5rem', fontStyle: 'italic' }}>
+                Ladda gärna upp allas bankfiler för bästa resultat, men du kan fortsätta med en fil och lägga till fler senare.
+              </p>
             )}
-            {importError && <p style={{ color: 'var(--danger-color)', marginTop: '1rem' }}>{importError}</p>}
+          </div>
+
+          {loadingMsg && <p style={{ color: 'var(--accent-color)', marginBottom: '1rem' }}>{loadingMsg}</p>}
+          {importError && <p style={{ color: 'var(--danger-color)', marginBottom: '1rem' }}>{importError}</p>}
+          
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button onClick={() => setStep(2)} className="secondary-btn" style={{ flex: 1 }}>Tillbaka</button>
+            <button 
+              onClick={handleCombineAndReview} 
+              className="primary-btn" 
+              style={{ flex: 2, opacity: hasAnyUpload ? 1 : 0.5, cursor: hasAnyUpload ? 'pointer' : 'not-allowed' }}
+              disabled={!hasAnyUpload}
+            >
+              Fortsätt ➔
+            </button>
           </div>
           
-          <button onClick={() => setStep(2)} className="secondary-btn" style={{ width: '100%' }}>Tillbaka</button>
+          <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+            <button onClick={handleSkipToPaywall} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', textDecoration: 'underline', cursor: 'pointer' }}>
+              Jag vill lägga in allt senare ➔
+            </button>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Du kan börja med ett tomt hushåll och lägga in allt själv senare.</p>
+          </div>
         </div>
       </div>
     );
