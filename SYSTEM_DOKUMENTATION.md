@@ -1345,6 +1345,13 @@ Rullgardinsmenyn "Kopplat konto" har raderats helt från "Mina Sidor". Istället
 **Vad:** Ett helt nytt, interaktivt onboarding-flöde där nya användare sätter upp sin hushållsekonomi och sedan möts av betalväggen *innan* de kommer in i appen.
 **Hur (`SetupWizard.tsx`):**
 - Systemet guidar användaren genom steg: Val av namn på hushållet, val av hushållskonstellation, inmatning/importering av räkningar och inkomster.
+
+#### 32.1.1 Dynamisk Multi-User Bankimport (Steg 3)
+**Vad:** Istället för en ensam uppladdningsknapp anpassas bankimporten dynamiskt efter hur många vuxna som lagts till i hushållet, vilket eliminerar mentala glapp för par och familjer.
+**Hur:**
+- **Dynamisk UX:** Om hushållet består av 1 vuxen visas en ren vy med *en* uppladdningsknapp och inga namn. Om det består av fler loopar systemet ut varje person: *Andreas - Bankfil saknas*, *Emma - Bankfil saknas*, tillsammans med individuella uppladdningsknappar och en progressionsräknare högst upp (t.ex. *1 av 2 bankfiler uppladdade*).
+- **Auto-märkning:** När en användare klickar på Emmas knapp, skickas hennes ID med in i `bankParser.ts`. Parsen stämplar automatiskt `selectedUserId = Emma_ID` på alla transaktioner från hennes fil. Detta gör att i den gemensamma granskningen slipper paret sortera vems utgift som är vems – allt är redan färdigsorterat.
+- **Flexibilitet:** Systemet uppmanar till att båda ska ladda upp filer direkt (*"Ladda gärna upp allas bankfiler för bästa resultat..."*), men tillåter dem att fortsätta direkt om t.ex. sambon inte är hemma.
 - **Premium Sammanställning (Steg 4):** Istället för en enkel lista visas en lyxig dashboard med tre färgkodade "Cards" (Inkomst, Utgift, Sparutrymme) och siffror som animerat räknar upp från noll. Detta förstärker "Wow"-känslan och psykologin kring hur mycket pengar de faktiskt har kvar.
 - **Atomisk Databas-commit (`create_initial_household_setup`):** Insamlad data paketeras och skickas via *ett enda* anrop till en PostgreSQL RPC-funktion. Funktionen stämplar nu användaren direkt med `setup_status = 'completed'` istället för readonly.
 

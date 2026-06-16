@@ -242,9 +242,14 @@ export default function SetupWizard() {
         const result = parseBankData(json, [], mockAccounts as any, mockProfiles, [], []);
         
         // Auto-assign owner
-        result.parsedRows.forEach(row => {
-          row.selectedUserId = memberId;
-        });
+        const setOwner = (arr: any[]) => {
+          arr.forEach((row: any) => {
+            row.selectedUserId = memberId;
+          });
+        };
+        setOwner(result.suggestedIncomes);
+        setOwner(result.suggestedBills);
+        setOwner(result.otherTransactions);
 
         setUploadedFiles(prev => ({ ...prev, [memberId]: result }));
         setLoadingMsg('');
@@ -449,19 +454,30 @@ export default function SetupWizard() {
     const totalCount = validMembers.length;
 
     const handleCombineAndReview = () => {
-      const allRows: ParsedBankRow[] = [];
+      const combinedResult = {
+        suggestedIncomes: [] as any[],
+        suggestedBills: [] as any[],
+        otherTransactions: [] as any[],
+        summary: {
+          suggestedIncomesCount: 0,
+          suggestedCount: 0,
+          recognizedSuggestedCount: 0,
+          otherCount: 0,
+          unknownCount: 0,
+        }
+      };
+
       Object.values(uploadedFiles).forEach(res => {
-         allRows.push(...res.parsedRows);
+         combinedResult.suggestedIncomes.push(...res.suggestedIncomes);
+         combinedResult.suggestedBills.push(...res.suggestedBills);
+         combinedResult.otherTransactions.push(...res.otherTransactions);
+         combinedResult.summary.suggestedIncomesCount += res.summary.suggestedIncomesCount;
+         combinedResult.summary.suggestedCount += res.summary.suggestedCount;
+         combinedResult.summary.recognizedSuggestedCount += res.summary.recognizedSuggestedCount;
+         combinedResult.summary.otherCount += res.summary.otherCount;
+         combinedResult.summary.unknownCount += res.summary.unknownCount;
       });
-      setParseResult({
-        parsedRows: allRows,
-        totalImported: allRows.length,
-        totalExpenses: allRows.filter(r => !r.isIncoming).length,
-        totalIncomes: allRows.filter(r => r.isIncoming).length,
-        totalInternal: 0,
-        duplicateCount: 0,
-        ignoredCount: 0
-      });
+      setParseResult(combinedResult);
     };
 
     return (
@@ -497,7 +513,7 @@ export default function SetupWizard() {
                     <div style={{ fontSize: '1.1rem' }}>
                       {res ? (
                         <span style={{ color: 'var(--success-color)', fontWeight: 'bold' }}>
-                          ✓ {isSingle ? 'Bankfil uppladdad' : `${m.name} - Bankfil uppladdad`} ({res.parsedRows.length} transaktioner)
+                          ✓ {isSingle ? 'Bankfil uppladdad' : `${m.name} - Bankfil uppladdad`} ({res.suggestedIncomes.length + res.suggestedBills.length + res.otherTransactions.length} transaktioner)
                         </span>
                       ) : (
                         <span style={{ color: 'var(--text-muted)' }}>
