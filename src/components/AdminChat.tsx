@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../supabase';
 import { useAuth } from '../AuthContext';
 
@@ -240,7 +241,7 @@ export default function AdminChat() {
     flexDirection: 'column'
   } : { display: 'flex', flexDirection: 'column', height: '100%' };
 
-  return (
+  const chatContent = (
     <div style={fullscreenStyles}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '12px', flexWrap: 'wrap', gap: '15px' }}>
         <div>
@@ -380,4 +381,6 @@ export default function AdminChat() {
       </div>
     </div>
   );
+
+  return isFullscreen ? createPortal(chatContent, document.body) : chatContent;
 }
