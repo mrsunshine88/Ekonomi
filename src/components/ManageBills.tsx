@@ -258,45 +258,63 @@ export default function ManageBills() {
           }
         }
       } else {
-        if (!row.selectedAccountId) continue;
-        
-        let account = state.accounts.find(a => a.id === row.selectedAccountId);
-        if (!account) continue;
+        if (newBillScope === 'private') {
+          const privateBillData: PrivateBill = {
+            id: crypto.randomUUID(),
+            userId: user!.id,
+            name: row.rawDescription.trim(),
+            defaultAmount: row.amount,
+            interval: 'all',
+            isLoan: false,
+            totalDebt: 0,
+            warnIfZero: true,
+            isArchived: false,
+            isShared: false,
+            startMonth: new Date().toISOString().substring(0, 7)
+          };
+          await onAddPrivateBill(privateBillData);
+          addedCount++;
+        } else {
+          if (!row.selectedAccountId) continue;
+          
+          let account = state.accounts.find(a => a.id === row.selectedAccountId);
+          if (!account) continue;
 
-        const billData: BillDefinition = {
-          id: crypto.randomUUID(),
-          name: row.rawDescription.trim(),
-          accountId: account.id,
-          splitType: 'equal',
-          defaultAmount: row.amount,
-          interval: 'all',
-          warnIfZero: true
-        };
-        await onAddBill(billData);
-        addedCount++;
-        
-        if (householdId && row.shouldLearnRule !== false) {
-          const existingRule = householdRules.find(r => r.search_string === row.normalizedDescription);
-          if (existingRule) {
-            await supabase.from('household_import_rules')
-              .update({ 
-                usage_count: existingRule.usage_count + 1, 
-                last_seen_at: new Date().toISOString() 
-              })
-              .eq('id', existingRule.id);
-            learnedCount++;
-          } else {
-            await supabase.from('household_import_rules').insert({
-              household_id: householdId,
-              search_string: row.normalizedDescription,
-              target_id: account.id,
-              rule_target_type: 'ACCOUNT',
-              is_bill: true,
-              rule_type: 'USER',
-              usage_count: 1,
-              matched_examples: [row.rawDescription]
-            });
-            learnedCount++;
+          const billData: BillDefinition = {
+            id: crypto.randomUUID(),
+            name: row.rawDescription.trim(),
+            accountId: account.id,
+            splitType: 'equal',
+            defaultAmount: row.amount,
+            interval: 'all',
+            warnIfZero: true
+          };
+          await onAddBill(billData);
+          addedCount++;
+          
+          if (householdId && row.shouldLearnRule !== false) {
+            const existingRule = householdRules.find(r => r.search_string === row.normalizedDescription);
+            if (existingRule) {
+              await supabase.from('household_import_rules')
+                .update({ 
+                  usage_count: existingRule.usage_count + 1, 
+                  last_seen_at: new Date().toISOString() 
+                })
+                .eq('id', existingRule.id);
+              learnedCount++;
+            } else {
+              await supabase.from('household_import_rules').insert({
+                household_id: householdId,
+                search_string: row.normalizedDescription,
+                target_id: account.id,
+                rule_target_type: 'ACCOUNT',
+                is_bill: true,
+                rule_type: 'USER',
+                usage_count: 1,
+                matched_examples: [row.rawDescription]
+              });
+              learnedCount++;
+            }
           }
         }
       }
@@ -362,9 +380,16 @@ export default function ManageBills() {
           // Detta är inte SmartEkonomi-mallen. Kör standard bank-import!
           const { data: rules } = await supabase.from('household_import_rules').select('*');
           const safeRules = rules || [];
-          const knownBills = state.bills.map(b => ({ accountId: b.accountId, defaultAmount: b.defaultAmount, name: b.name }));
+          
+          const knownBills = newBillScope === 'private'
+            ? (state.privateBills || []).filter(b => b.userId === user?.id && !b.isArchived).map(b => ({ accountId: '', defaultAmount: b.defaultAmount, name: b.name }))
+            : state.bills.map(b => ({ accountId: b.accountId, defaultAmount: b.defaultAmount, name: b.name }));
+            
           const knownIncomes = state.incomes ? state.incomes.map(i => ({ userId: i.userId, amount: i.amount, name: i.name })) : [];
-          const result = parseBankData(json, safeRules, state.accounts, householdProfiles, knownBills, knownIncomes);
+          
+          // Pass empty accounts if private so bankParser won't try to assign default account
+          const accountsToPass = newBillScope === 'private' ? [] : state.accounts;
+          const result = parseBankData(json, safeRules, accountsToPass, householdProfiles, knownBills, knownIncomes);
           
           setHouseholdRules(safeRules);
           setBankParseResult(result);
@@ -397,9 +422,15 @@ export default function ManageBills() {
           // Detta är inte SmartEkonomi-mallen. Kör standard bank-import!
           const { data: rules } = await supabase.from('household_import_rules').select('*');
           const safeRules = rules || [];
-          const knownBills = state.bills.map(b => ({ accountId: b.accountId, defaultAmount: b.defaultAmount, name: b.name }));
+          
+          const knownBills = newBillScope === 'private'
+            ? (state.privateBills || []).filter(b => b.userId === user?.id && !b.isArchived).map(b => ({ accountId: '', defaultAmount: b.defaultAmount, name: b.name }))
+            : state.bills.map(b => ({ accountId: b.accountId, defaultAmount: b.defaultAmount, name: b.name }));
+            
           const knownIncomes = state.incomes ? state.incomes.map(i => ({ userId: i.userId, amount: i.amount, name: i.name })) : [];
-          const result = parseBankData(json, safeRules, state.accounts, householdProfiles, knownBills, knownIncomes);
+          
+          const accountsToPass = newBillScope === 'private' ? [] : state.accounts;
+          const result = parseBankData(json, safeRules, accountsToPass, householdProfiles, knownBills, knownIncomes);
           
           setHouseholdRules(safeRules);
           setBankParseResult(result);

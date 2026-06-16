@@ -7,11 +7,14 @@ interface BankImportModalProps {
   parseResult: BankParseResult;
   accounts: Account[];
   profiles: Profile[];
+  accounts: { id: string, name: string }[];
+  profiles: { id: string, display_name?: string, email?: string }[];
   onConfirm: (selectedRows: ParsedBankRow[]) => void;
   onCancel: () => void;
+  isPrivateMode?: boolean;
 }
 
-export default function BankImportModal({ parseResult, accounts, profiles, onConfirm, onCancel }: BankImportModalProps) {
+export default function BankImportModal({ parseResult, accounts, profiles, onConfirm, onCancel, isPrivateMode }: BankImportModalProps) {
   const [rows, setRows] = useState<ParsedBankRow[]>([
     ...parseResult.suggestedIncomes,
     ...parseResult.suggestedBills,
@@ -49,7 +52,9 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
         next[index] = { 
           ...next[index], 
           selectedAsBill: willBeSelected,
-          selectedAccountId: willBeSelected && !next[index].selectedAccountId && accounts.length > 0 ? accounts[0].id : next[index].selectedAccountId
+          selectedAccountId: willBeSelected 
+            ? (next[index].selectedAccountId || (isPrivateMode ? 'private' : (accounts.length > 0 ? accounts[0].id : null)))
+            : next[index].selectedAccountId
         };
       }
       return next;
@@ -81,7 +86,7 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
        const originalIndex = rows.findIndex(x => x === r);
        return {
          ...r,
-         shouldLearnRule: learnRules[originalIndex] ?? true // default true
+         shouldLearnRule: isPrivateMode ? false : (learnRules[originalIndex] ?? true)
        };
     });
     onConfirm(selected);
@@ -374,21 +379,29 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
                           -{row.amount.toLocaleString('sv-SE')} kr
                         </div>
                         <div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Dras från konto:</div>
-                          <select 
-                            value={row.selectedAccountId || ''}
-                            onChange={(e) => handleAccountChange(originalIndex, e.target.value)}
-                            style={{ 
-                              width: '100%', padding: '0.4rem', borderRadius: '4px', 
-                              background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--border-color)',
-                              fontSize: '0.9rem'
-                            }}
-                          >
-                            <option value="" disabled>Välj konto...</option>
-                            {accounts.map(acc => (
-                              <option key={acc.id} value={acc.id}>{acc.name}</option>
-                            ))}
-                          </select>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                            {isPrivateMode ? 'Typ:' : 'Föreslaget konto:'}
+                          </div>
+                          {isPrivateMode ? (
+                            <div style={{ padding: '0.4rem', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', color: '#e2e8f0', fontSize: '0.9rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                              Privat utgift
+                            </div>
+                          ) : (
+                            <select 
+                              value={row.selectedAccountId || ''}
+                              onChange={(e) => handleAccountChange(originalIndex, e.target.value)}
+                              style={{ 
+                                width: '100%', padding: '0.4rem', borderRadius: '4px', 
+                                background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid var(--border-color)',
+                                fontSize: '0.9rem'
+                              }}
+                            >
+                              <option value="" disabled>Välj konto...</option>
+                              {accounts.map(acc => (
+                                <option key={acc.id} value={acc.id}>{acc.name}</option>
+                              ))}
+                            </select>
+                          )}
                         </div>
                       </div>
 
@@ -401,7 +414,7 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
                           {isExpanded ? '▲ Dölj varför' : '▼ Visa varför'}
                         </button>
                         
-                        {row.selectedAsBill && (
+                        {row.selectedAsBill && !isPrivateMode && (
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                             <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                               <input 
@@ -517,32 +530,40 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
                               ))}
                             </select>
                           ) : (
-                            <select 
-                              value={row.selectedAccountId || ''}
-                              onChange={(e) => handleAccountChange(originalIndex, e.target.value)}
-                              style={{ 
-                                width: '100%', padding: '0.3rem', borderRadius: '4px', 
-                                background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid var(--border-color)',
-                                fontSize: '0.8rem'
-                              }}
-                            >
-                              <option value="" disabled>Välj konto...</option>
-                              {accounts.map(acc => (
-                                <option key={acc.id} value={acc.id}>{acc.name}</option>
-                              ))}
-                            </select>
+                            isPrivateMode ? (
+                              <div style={{ padding: '0.3rem', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', color: '#e2e8f0', fontSize: '0.8rem', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
+                                Privat utgift
+                              </div>
+                            ) : (
+                              <select 
+                                value={row.selectedAccountId || ''}
+                                onChange={(e) => handleAccountChange(originalIndex, e.target.value)}
+                                style={{ 
+                                  width: '100%', padding: '0.3rem', borderRadius: '4px', 
+                                  background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid var(--border-color)',
+                                  fontSize: '0.8rem'
+                                }}
+                              >
+                                <option value="" disabled>Välj konto...</option>
+                                {accounts.map(acc => (
+                                  <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                ))}
+                              </select>
+                            )
                           )}
-                          <div style={{ marginTop: '0.5rem' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                              <input 
-                                type="checkbox" 
-                                checked={learnRules[originalIndex] ?? true}
-                                onChange={() => handleToggleLearn(originalIndex)}
-                                style={{ cursor: 'pointer' }}
-                              />
-                              Lär SmartEkonomi detta
-                            </label>
-                          </div>
+                          {!isPrivateMode && (
+                            <div style={{ marginTop: '0.5rem' }}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={learnRules[originalIndex] ?? true}
+                                  onChange={() => handleToggleLearn(originalIndex)}
+                                  style={{ cursor: 'pointer' }}
+                                />
+                                Lär SmartEkonomi detta
+                              </label>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
