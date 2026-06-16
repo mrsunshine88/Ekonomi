@@ -598,6 +598,7 @@ export default function AdminDashboard() {
         >
           Spara nycklar säkert i kassavalvet
         </button>
+      </div>
       
       {showMembersModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 100000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' }}>
