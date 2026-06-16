@@ -906,3 +906,37 @@ button.primary:hover {
     position: relative;
   }
 }
+
+/* Bank Import Modal – Mobile Responsive */
+.bank-import-modal {
+  padding: 2rem;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+}
+
+.bank-import-row {
+  display: grid;
+  grid-template-columns: auto 2fr 1fr 1fr;
+  gap: 1rem;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .bank-import-modal {
+    padding: 1rem;
+    max-height: 100vh;
+    border-radius: 12px;
+  }
+
+  .bank-import-row {
+    grid-template-columns: auto 1fr;
+    row-gap: 0.5rem;
+  }
+
+  /* Amount and dropdown each take full row on mobile */
+  .bank-import-row > div:nth-child(3),
+  .bank-import-row > div:nth-child(4) {
+    grid-column: 2 / 3;
+  }
+}

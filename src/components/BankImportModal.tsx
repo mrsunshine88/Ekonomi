@@ -114,16 +114,12 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       background: 'rgba(11, 15, 25, 0.95)', backdropFilter: 'blur(10px)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      zIndex: 100000, padding: '2rem'
+      zIndex: 100000, padding: '1rem'
     }}>
-      <div style={{ 
+      <div className="bank-import-modal" style={{ 
         background: 'rgba(30, 41, 59, 0.95)', 
         border: '1px solid rgba(16, 185, 129, 0.3)', 
         borderRadius: '16px', 
-        padding: '2rem', 
-        maxWidth: '800px', 
-        width: '100%', 
-        maxHeight: '90vh',
         display: 'flex',
         flexDirection: 'column',
         boxShadow: '0 20px 40px rgba(0,0,0,0.8)' 
@@ -218,7 +214,7 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
                       padding: '1rem', borderRadius: '8px',
                       transition: 'all 0.2s'
                     }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'auto 2fr 1fr 1fr', gap: '1rem', alignItems: 'center' }}>
+                      <div className="bank-import-row">
                         <input 
                           type="checkbox" 
                           checked={row.selectedAsIncome}
@@ -359,7 +355,7 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
                       padding: '1rem', borderRadius: '8px',
                       transition: 'all 0.2s'
                     }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'auto 2fr 1fr 1fr', gap: '1rem', alignItems: 'center' }}>
+                      <div className="bank-import-row">
                         <input 
                           type="checkbox" 
                           checked={row.selectedAsBill}
@@ -489,8 +485,7 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
                     : 'transparent';
 
                   return (
-                    <div key={idx} style={{ 
-                      display: 'grid', gridTemplateColumns: 'auto 2fr 1fr 1fr', gap: '1rem', alignItems: 'center',
+                    <div className="bank-import-row" style={{ 
                       background: bgClass, 
                       border: '1px solid', borderColor: borderClass,
                       padding: '0.5rem 1rem', borderRadius: '8px',
