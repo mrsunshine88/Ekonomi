@@ -80,7 +80,7 @@ export function parseBankData(
       const cell = String(row[j] || '').toLowerCase();
       if (cell.includes('datum')) dateIdx = j;
       if (cell.includes('beskrivning') || cell.includes('text') || cell.includes('mottagare') || cell.includes('transaktion')) descIdx = j;
-      if (cell.includes('belopp') || cell.includes('summa') || cell.includes('kredit')) amountIdx = j;
+      if (cell.includes('belopp') || cell.includes('summa') || cell.includes('kredit') || cell.includes('insättning') || cell.includes('uttag') || cell.includes('amount')) amountIdx = j;
     }
     
     if (dateIdx !== -1 && descIdx !== -1 && amountIdx !== -1) {
@@ -117,7 +117,7 @@ export function parseBankData(
       if (!isNaN(parsed)) rawAmountNum = parsed * sign;
     }
 
-    if (rawAmountNum === 0) continue;
+    if (rawAmountNum === 0 || isNaN(rawAmountNum)) continue;
     
     const isIncoming = rawAmountNum > 0;
     const amount = Math.abs(rawAmountNum);
