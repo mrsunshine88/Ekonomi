@@ -629,32 +629,32 @@ export default function AdminDashboard() {
                         Senast inloggad: {m.last_sign_in_at ? new Date(m.last_sign_in_at).toLocaleString('sv-SE') : 'Aldrig'}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-start' }}>
                       <button 
                         onClick={() => handleToggleVip(m.email, m.is_vip)}
                         disabled={loading}
-                        style={{ background: m.is_vip ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.1)', color: m.is_vip ? '#10b981' : '#fff', border: `1px solid ${m.is_vip ? '#10b981' : 'transparent'}`, padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                        style={{ flex: '1 1 45%', background: m.is_vip ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.1)', color: m.is_vip ? '#10b981' : '#fff', border: `1px solid ${m.is_vip ? '#10b981' : 'transparent'}`, padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}
                       >
                         {m.is_vip ? '💎 VIP' : 'Gör till VIP'}
                       </button>
                       <button 
                         onClick={() => handleToggleAdmin(m.email, m.is_admin)}
                         disabled={loading || m.email === 'apersson508@gmail.com'}
-                        style={{ background: m.is_admin ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.1)', color: m.is_admin ? '#a855f7' : '#fff', border: `1px solid ${m.is_admin ? '#a855f7' : 'transparent'}`, padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                        style={{ flex: '1 1 45%', background: m.is_admin ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.1)', color: m.is_admin ? '#a855f7' : '#fff', border: `1px solid ${m.is_admin ? '#a855f7' : 'transparent'}`, padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', display: m.email === 'apersson508@gmail.com' ? 'none' : 'block' }}
                       >
                         {m.is_admin ? '👑 Admin' : 'Gör till Admin'}
                       </button>
                       <button 
                         onClick={() => handleToggleBan(m.id, m.is_banned)}
                         disabled={loading || m.email === 'apersson508@gmail.com'}
-                        style={{ background: m.is_banned ? 'rgba(244, 63, 94, 0.2)' : 'rgba(255,255,255,0.1)', color: m.is_banned ? '#f43f5e' : '#fff', border: `1px solid ${m.is_banned ? '#f43f5e' : 'transparent'}`, padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                        style={{ flex: '1 1 45%', background: m.is_banned ? 'rgba(244, 63, 94, 0.2)' : 'rgba(255,255,255,0.1)', color: m.is_banned ? '#f43f5e' : '#fff', border: `1px solid ${m.is_banned ? '#f43f5e' : 'transparent'}`, padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', display: m.email === 'apersson508@gmail.com' ? 'none' : 'block' }}
                       >
                         {m.is_banned ? 'Lås upp' : 'Blockera'}
                       </button>
                       <button 
                         onClick={() => handleDeleteUser(m.id, m.email)}
                         disabled={loading || m.email === 'apersson508@gmail.com'}
-                        style={{ background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                        style={{ flex: '1 1 45%', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', display: m.email === 'apersson508@gmail.com' ? 'none' : 'block' }}
                       >
                         Radera
                       </button>
