@@ -1,16 +1,41 @@
 import type { Account } from '../types';
 import { useStore } from '../store';
 import OnboardingWizard from './OnboardingWizard';
+import PaywallModal from './PaywallModal';
+import { useState } from 'react';
 
 interface Props {
   currentMonth: string;
+  readOnly?: boolean;
 }
 
-export default function MonthView({ currentMonth }: Props) {
+export default function MonthView({ currentMonth, readOnly }: Props) {
+  const [showPaywall, setShowPaywall] = useState(false);
   const state = useStore(s => s.state);
   const updateBillAmount = useStore(s => s.updateBillAmount);
   const confirmAnomalyStore = useStore(s => s.confirmAnomaly);
   const togglePaymentStatus = useStore(s => s.togglePaymentStatus);
+
+  const handleUpdateAmount = (month: string, billId: string, amount: number, amort?: number) => {
+    if (readOnly) { setShowPaywall(true); return; }
+    updateBillAmount(month, billId, amount, amort);
+  };
+
+  const handleTogglePayment = (month: string, lockId: string) => {
+    if (readOnly) { setShowPaywall(true); return; }
+    togglePaymentStatus(month, lockId);
+  };
+
+  const handleConfirmAnomaly = (month: string, billId: string) => {
+    if (readOnly) { setShowPaywall(true); return; }
+    confirmAnomalyStore(month, billId);
+  };
+
+  const handleCopyPrev = (month: string) => {
+    if (readOnly) { setShowPaywall(true); return; }
+    useStore.getState().copyFromPreviousMonth(month);
+  };
+
   const monthData = state.months[currentMonth] || { monthId: currentMonth, billAmounts: {}, handledPayments: {} };
   
   // Calculate locked accounts
@@ -147,7 +172,7 @@ export default function MonthView({ currentMonth }: Props) {
                           onChange={(e) => {
                             const val = e.target.value;
                             const currentAmort = monthData.billAmortization?.[bill.id];
-                            updateBillAmount(currentMonth, bill.id, val === '' ? 0 : parseFloat(val), currentAmort);
+                            handleUpdateAmount(currentMonth, bill.id, val === '' ? 0 : parseFloat(val), currentAmort);
                           }}
                           min="0"
                           style={{ 
@@ -166,7 +191,7 @@ export default function MonthView({ currentMonth }: Props) {
                               value={monthData.billAmortization?.[bill.id] !== undefined ? monthData.billAmortization[bill.id] : (amount === 0 ? '' : amount)}
                               onChange={(e) => {
                                 const amortVal = e.target.value;
-                                updateBillAmount(currentMonth, bill.id, amount, amortVal === '' ? undefined : parseFloat(amortVal));
+                                handleUpdateAmount(currentMonth, bill.id, amount, amortVal === '' ? undefined : parseFloat(amortVal));
                               }}
                               min="0"
                               style={{ 
@@ -182,14 +207,14 @@ export default function MonthView({ currentMonth }: Props) {
                   {isAnomaly && (
                     <div style={{ display: 'flex', gap: '0.4rem' }}>
                       <button 
-                        onClick={() => updateBillAmount(currentMonth, bill.id, latestPaid)}
+                        onClick={() => handleUpdateAmount(currentMonth, bill.id, latestPaid)}
                         style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '6px', padding: '0.2rem 0.5rem', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                         title={`Återställ till ${latestPaid} kr`}
                       >
                         ↩️ Ångra
                       </button>
                       <button 
-                        onClick={() => confirmAnomalyStore(currentMonth, bill.id)}
+                        onClick={() => handleConfirmAnomaly(currentMonth, bill.id)}
                         style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '6px', padding: '0.2rem 0.5rem', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                         title="Godkänn beloppet"
                       >
@@ -208,6 +233,35 @@ export default function MonthView({ currentMonth }: Props) {
 
   return (
     <div>
+      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+      
+      {readOnly && (
+        <div style={{ 
+          background: 'rgba(99, 102, 241, 0.15)', 
+          border: '1px solid var(--accent-color)', 
+          color: '#fff', 
+          padding: '1rem', 
+          borderRadius: '12px', 
+          marginBottom: '2rem', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '1rem',
+          boxShadow: '0 4px 15px rgba(99, 102, 241, 0.2)' 
+        }}>
+          <div style={{ fontSize: '1.5rem' }}>👀</div>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', marginBottom: '0.25rem' }}>Förhandsvisning</h3>
+            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Du tittar just nu på din budget i läsläge.</p>
+          </div>
+          <button 
+            onClick={() => setShowPaywall(true)}
+            style={{ background: 'var(--accent-color)', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+          >
+            Aktivera
+          </button>
+        </div>
+      )}
+
       {state.bills.length === 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', width: '100%' }}>
           <OnboardingWizard />
@@ -245,7 +299,7 @@ export default function MonthView({ currentMonth }: Props) {
           </div>
           {state.settings?.enableManagementButtons !== false && (
             <button
-              onClick={() => togglePaymentStatus(currentMonth, 'top_total_lock')}
+              onClick={() => handleTogglePayment(currentMonth, 'top_total_lock')}
               style={{
                  marginTop: '1rem',
                  background: handled['top_total_lock'] ? 'var(--success-color)' : 'transparent',
@@ -276,7 +330,7 @@ export default function MonthView({ currentMonth }: Props) {
               </div>
             ) : (
               <button 
-                onClick={() => useStore.getState().copyFromPreviousMonth(currentMonth)}
+                onClick={() => handleCopyPrev(currentMonth)}
                 style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', background: 'var(--surface-color)' }}
               >
                 📄 Hämta siffror från förra månaden

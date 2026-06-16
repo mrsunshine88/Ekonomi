@@ -22,7 +22,7 @@ import ConfirmedModal from './components/Auth/ConfirmedModal';
 import StartPage from './components/StartPage';
 
 function App() {
-  const { user, householdId, loading, isRecoveringPassword, isAdmin, tosAccepted, isNewlyConfirmed, setIsNewlyConfirmed } = useAuth();
+  const { user, householdId, setupStatus, loading, isRecoveringPassword, isAdmin, tosAccepted, isNewlyConfirmed, setIsNewlyConfirmed } = useAuth();
   const initCloud = useStore(s => s.initCloud);
   const state = useStore(s => s.state);
   const isDemoMode = useStore(s => s.isDemoMode);
@@ -140,7 +140,7 @@ function App() {
   }
 
   // 2. HARD GATE: Onboarding (Create Household)
-  const needsOnboarding = !householdId;
+  const needsOnboarding = setupStatus === 'new_user' || setupStatus === 'setup_started';
   if (needsOnboarding && !isDemoMode) {
     return (
       <div className="container" style={{ minHeight: '100vh' }}>
@@ -149,6 +149,8 @@ function App() {
       </div>
     );
   }
+
+  const isReadOnlyMode = setupStatus === 'readonly_user';
 
   // 3. HARD GATE: Paywall
   const isPaywallBlocked = state.paywallActive && state.stripeStatus !== 'vip' && state.stripeStatus !== 'active' && !isAdmin;
@@ -294,7 +296,7 @@ function App() {
             </div>
           ) : currentView === 'manage' ? (
             <div>
-              <ManageBills />
+              <ManageBills readOnly={isReadOnlyMode && !isDemoMode} />
             </div>
           ) : currentView === 'stats' ? (
             <div>
@@ -334,7 +336,7 @@ function App() {
                 <Summary currentMonth={currentMonth} />
               )}
 
-              <MonthView currentMonth={currentMonth} />
+              <MonthView currentMonth={currentMonth} readOnly={isReadOnlyMode && !isDemoMode} />
             </>
           )}
 

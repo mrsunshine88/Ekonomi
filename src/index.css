@@ -940,3 +940,64 @@ button.primary:hover {
     grid-column: 2 / 3;
   }
 }
+
+/* SetupWizard Styles */
+.wizard-container {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(11, 15, 25, 0.95); backdrop-filter: blur(10px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 99999; padding: 2rem; text-align: center; overflow-y: auto;
+}
+
+.wizard-card {
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  max-width: 500px; width: 100%;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+}
+
+.wizard-input {
+  width: 100%; padding: 1rem; border-radius: 8px;
+  border: 1px solid var(--border-color); background: rgba(0,0,0,0.2);
+  color: #fff; font-size: 1.1rem;
+}
+
+.track-card {
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border-color);
+  padding: 1.5rem; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;
+  text-align: left;
+}
+.track-card:hover {
+  background: rgba(255,255,255,0.1); border-color: var(--accent-color);
+  transform: translateY(-2px);
+}
+.track-card h3 { margin-bottom: 0.5rem; font-size: 1.2rem; }
+.track-card p { color: var(--text-secondary); font-size: 0.9rem; }
+
+.manual-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: left;
+}
+.manual-card-title {
+  font-size: 1.1rem; margin-bottom: 0.5rem; font-weight: bold;
+}
+
+.wow-overlay {
+  animation: wowFadeIn 0.5s ease-out forwards;
+}
+
+@keyframes wowFadeIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.spinner {
+  width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1);
+  border-radius: 50%; border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}

@@ -8,6 +8,7 @@ interface AuthState {
   householdId: string | null;
   role: 'owner' | 'member' | null;
   tosAccepted: boolean;
+  setupStatus: 'new_user' | 'setup_started' | 'readonly_user' | 'subscriber';
   loading: boolean;
   refreshHousehold: () => Promise<void>;
   acceptTos: () => Promise<void>;
@@ -28,6 +29,7 @@ const AuthContext = createContext<AuthState>({
   householdId: null,
   role: null,
   tosAccepted: false,
+  setupStatus: 'new_user',
   loading: true,
   refreshHousehold: async () => {},
   acceptTos: async () => {},
@@ -47,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [role, setRole] = useState<'owner' | 'member' | null>(null);
   const [tosAccepted, setTosAccepted] = useState(false);
+  const [setupStatus, setSetupStatus] = useState<'new_user' | 'setup_started' | 'readonly_user' | 'subscriber'>('new_user');
   const [loading, setLoading] = useState(true);
   const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -68,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchHousehold = async (userId: string) => {
     try {
-      const { data, error } = await supabase.from('profiles').select('household_id, role, tos_accepted').eq('id', userId).single();
+      const { data, error } = await supabase.from('profiles').select('household_id, role, tos_accepted, setup_status').eq('id', userId).single();
       if (error) {
         throw error;
       }
@@ -81,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       if (data) {
         setTosAccepted(data.tos_accepted || false);
+        setSetupStatus(data.setup_status || 'new_user');
       }
     } catch (e) {
       console.error("Network or fetch error in fetchHousehold:", e);
@@ -142,6 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setHouseholdId(null);
               setRole(null);
               setTosAccepted(false);
+              setSetupStatus('new_user');
             }
           }
         }
@@ -206,6 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsAdmin(false);
           setRole(null);
           setTosAccepted(false);
+          setSetupStatus('new_user');
         }
       } catch (err) {
         console.error("Unexpected error in onAuthStateChange:", err);
@@ -225,7 +231,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, householdId, role, tosAccepted, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) }, acceptTos, isRecoveringPassword, setIsRecoveringPassword, isAdmin, isNewlyConfirmed, setIsNewlyConfirmed }}>
+    <AuthContext.Provider value={{ user, session, householdId, role, tosAccepted, setupStatus, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) }, acceptTos, isRecoveringPassword, setIsRecoveringPassword, isAdmin, isNewlyConfirmed, setIsNewlyConfirmed }}>
       {children}
     </AuthContext.Provider>
   );

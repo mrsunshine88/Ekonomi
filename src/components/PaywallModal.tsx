@@ -2,11 +2,16 @@ import { useState } from 'react';
 import { useStore } from '../store';
 import { supabase } from '../supabase';
 import SubscriptionFeaturesModal from './SubscriptionFeaturesModal';
+interface PaywallModalProps {
+  onClose?: () => void;
+}
 
-export default function PaywallModal() {
+export default function PaywallModal({ onClose }: PaywallModalProps) {
   const [loading, setLoading] = useState(false);
   const [showFeatures, setShowFeatures] = useState(false);
   const householdId = useStore(s => s.householdId);
+  const bills = useStore(s => s.state.bills);
+  const incomes = useStore(s => s.state.incomes);
 
   const handleCheckout = async () => {
     setLoading(true);
@@ -51,9 +56,24 @@ export default function PaywallModal() {
         boxShadow: '0 20px 40px rgba(0,0,0,0.8)' 
       }}>
         <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>💎</div>
-        <h2 style={{ color: '#fff', fontSize: '2rem', marginBottom: '1rem' }}>Börja prenumerera</h2>
+        <h2 style={{ color: '#fff', fontSize: '2rem', marginBottom: '1rem' }}>Din första budget är klar.</h2>
+        
+        {bills.length > 0 || incomes.length > 0 ? (
+          <div style={{ textAlign: 'left', background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px', marginBottom: '1.5rem' }}>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>SmartEkonomi hittade:</p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: '#fff' }}>
+              {bills.length > 0 && <li style={{ marginBottom: '0.25rem' }}>✓ {bills.length} återkommande betalningar</li>}
+              {incomes.length > 0 && <li>✓ {incomes.length} inkomster</li>}
+            </ul>
+          </div>
+        ) : (
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: '1.6' }}>
+            Aktivera abonnemang för att bygga din budget från grunden och hantera betalningar.
+          </p>
+        )}
+
         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: '1.6' }}>
-          Hoppas du gillar SmartEkonomi! För att få full tillgång och fortsätta låsa dina månader, uppgradera till Premium.
+          Nu kan du börja registrera betalningar, följa hushållets ekonomi och planera framtida månader.
           <br /><br />
           <strong style={{ color: '#10b981' }}>🎁 Prova gratis i 14 dagar</strong> innan du debiteras. Avsluta när du vill.
         </p>
@@ -86,8 +106,29 @@ export default function PaywallModal() {
             boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)' 
           }}
         >
-          {loading ? 'Laddar Stripe...' : 'Gå till betalning'}
+          {loading ? 'Laddar Stripe...' : 'Köp abonnemang'}
         </button>
+
+        {onClose && (
+          <button 
+            onClick={onClose}
+            style={{ 
+              background: 'transparent', 
+              color: 'var(--text-primary)', 
+              padding: '1rem 2rem', 
+              border: '1px solid var(--border-color)', 
+              borderRadius: '8px', 
+              cursor: 'pointer', 
+              fontWeight: 'bold', 
+              fontSize: '1.1rem', 
+              width: '100%',
+              marginBottom: '1.5rem',
+              transition: 'background 0.2s'
+            }}
+          >
+            Fortsätt titta
+          </button>
+        )}
 
         <button 
           onClick={() => setShowFeatures(true)}
