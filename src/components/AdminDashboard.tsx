@@ -8,6 +8,7 @@ export default function AdminDashboard() {
   const paywallActive = useStore(s => s.state.paywallActive);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState<{message: string, onConfirm: () => void} | null>(null);
   
   const [stripeSecret, setStripeSecret] = useState('');
   const [stripeWebhook, setStripeWebhook] = useState('');
@@ -211,34 +212,44 @@ export default function AdminDashboard() {
   };
 
   const handleToggleBan = async (id: string, isBanned: boolean) => {
-    if (!window.confirm(`Är du säker på att du vill ${isBanned ? 'låsa upp' : 'blockera'} denna användare?`)) return;
-    setLoading(true);
-    try {
-      const { error } = await supabase.rpc('admin_ban_user', { target_user_id: id, ban: !isBanned });
-      if (error) throw error;
-      setMsg(`🔒 Användaren har ${isBanned ? 'låsts upp' : 'blockerats'}.`);
-      await fetchMembersList();
-    } catch (e: unknown) {
-      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      setLoading(false);
-    }
+    setConfirmDialog({
+      message: `Är du säker på att du vill ${isBanned ? 'låsa upp' : 'blockera'} denna användare?`,
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setLoading(true);
+        try {
+          const { error } = await supabase.rpc('admin_ban_user', { target_user_id: id, ban: !isBanned });
+          if (error) throw error;
+          setMsg(`🔒 Användaren har ${isBanned ? 'låsts upp' : 'blockerats'}.`);
+          await fetchMembersList();
+        } catch (e: unknown) {
+          setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   const handleDeleteUser = async (id: string, email: string) => {
-    if (!window.confirm(`Varning! Är du HELT SÄKER på att du vill radera ${email} permanent från databasen?`)) return;
-    setLoading(true);
-    try {
-      const { error } = await supabase.rpc('admin_delete_user', { target_user_id: id });
-      if (error) throw error;
-      setMsg(`🗑️ Användaren ${email} är raderad.`);
-      await fetchMembersList();
-      await fetchStats();
-    } catch (e: unknown) {
-      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      setLoading(false);
-    }
+    setConfirmDialog({
+      message: `Varning! Är du HELT SÄKER på att du vill radera ${email} permanent från databasen?`,
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setLoading(true);
+        try {
+          const { error } = await supabase.rpc('admin_delete_user', { target_user_id: id });
+          if (error) throw error;
+          setMsg(`🗑️ Användaren ${email} är raderad.`);
+          await fetchMembersList();
+          await fetchStats();
+        } catch (e: unknown) {
+          setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   const handleSaveSecrets = async () => {
@@ -673,10 +684,34 @@ export default function AdminDashboard() {
               ))}
               {membersList.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Inga medlemmar hittades.</div>}
             </div>
+                  </div>,
+        document.body
+      )}
+
+      {confirmDialog && createPortal(
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 1000000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' }}>
+          <div style={{ background: '#1e293b', padding: '2rem', borderRadius: '12px', maxWidth: '400px', width: '100%', textAlign: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+            <h3 style={{ marginTop: 0, marginBottom: '1rem', color: '#fff' }}>Bekräfta</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>{confirmDialog.message}</p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button 
+                onClick={() => setConfirmDialog(null)}
+                style={{ padding: '0.75rem 1.5rem', background: 'transparent', color: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Avbryt
+              </button>
+              <button 
+                onClick={confirmDialog.onConfirm}
+                style={{ padding: '0.75rem 1.5rem', background: '#f43f5e', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Jag är säker
+              </button>
+            </div>
           </div>
         </div>,
         document.body
       )}
+
     </div>
   );
 }

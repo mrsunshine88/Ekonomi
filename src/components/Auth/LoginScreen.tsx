@@ -98,6 +98,7 @@ export default function LoginScreen() {
       let msg = (err instanceof Error ? err.message : String(err)) || 'Ett fel uppstod';
       if (msg === 'Invalid login credentials') msg = 'Fel e-postadress eller lösenord.';
       if (msg === 'User already registered') msg = 'E-postadressen används redan av ett annat konto.';
+      if (msg.includes('User is banned') || msg.toLowerCase().includes('banned')) msg = 'Ditt konto är blockerat av en administratör.';
       if (msg.includes('Password should be at least')) msg = 'Lösenordet måste vara minst 6 tecken långt.';
       if (msg.includes('Email not confirmed')) msg = 'Du måste bekräfta din e-postadress. Kolla inkorgen!';
       if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('for security purposes')) {
