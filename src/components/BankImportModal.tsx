@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { BankParseResult, ParsedBankRow } from '../utils/bankParser';
-import type { Account } from '../types';
+import type { Account, Profile } from '../types';
 
 interface BankImportModalProps {
   parseResult: BankParseResult;
   accounts: Account[];
+  profiles: Profile[];
   onConfirm: (selectedRows: ParsedBankRow[]) => void;
   onCancel: () => void;
 }
 
-export default function BankImportModal({ parseResult, accounts, onConfirm, onCancel }: BankImportModalProps) {
+export default function BankImportModal({ parseResult, accounts, profiles, onConfirm, onCancel }: BankImportModalProps) {
   const [rows, setRows] = useState<ParsedBankRow[]>([
+    ...parseResult.suggestedIncomes,
     ...parseResult.suggestedBills,
     ...parseResult.otherTransactions
   ]);
@@ -21,7 +23,11 @@ export default function BankImportModal({ parseResult, accounts, onConfirm, onCa
   const handleToggleRow = (index: number) => {
     setRows(current => {
       const next = [...current];
-      next[index] = { ...next[index], selectedAsBill: !next[index].selectedAsBill };
+      if (next[index].isIncoming) {
+        next[index] = { ...next[index], selectedAsIncome: !next[index].selectedAsIncome };
+      } else {
+        next[index] = { ...next[index], selectedAsBill: !next[index].selectedAsBill };
+      }
       return next;
     });
   };
@@ -34,14 +40,28 @@ export default function BankImportModal({ parseResult, accounts, onConfirm, onCa
     });
   };
 
+  const handleUserChange = (index: number, userId: string) => {
+    setRows(current => {
+      const next = [...current];
+      next[index] = { ...next[index], selectedUserId: userId };
+      return next;
+    });
+  };
+
   const handleConfirm = () => {
-    const selected = rows.filter(r => r.selectedAsBill && r.selectedAccountId);
+    // Only return rows that are selected AND have a valid target
+    const selected = rows.filter(r => 
+      (r.selectedAsBill && r.selectedAccountId) || 
+      (r.selectedAsIncome && r.selectedUserId)
+    );
     onConfirm(selected);
   };
 
-  const suggestedRows = rows.filter(r => r.isSuggestedBill);
-  const otherRows = rows.filter(r => !r.isSuggestedBill);
-  const selectedCount = rows.filter(r => r.selectedAsBill).length;
+  const suggestedIncomeRows = rows.filter(r => r.isSuggestedIncome);
+  const suggestedBillRows = rows.filter(r => r.isSuggestedBill);
+  const otherRows = rows.filter(r => !r.isSuggestedBill && !r.isSuggestedIncome);
+  
+  const selectedCount = rows.filter(r => r.selectedAsBill || r.selectedAsIncome).length;
 
   return createPortal(
     <div style={{
@@ -72,35 +92,101 @@ export default function BankImportModal({ parseResult, accounts, onConfirm, onCa
           <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '1.25rem', marginBottom: '2rem' }}>
             <h3 style={{ color: '#fff', marginTop: 0, marginBottom: '1rem', fontSize: '1.2rem' }}>Sammanfattning</h3>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', color: '#e2e8f0' }}>
+              {parseResult.summary.suggestedIncomesCount > 0 && (
+                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ color: '#10b981' }}>✓</span> 
+                  Vi hittade {parseResult.summary.suggestedIncomesCount} inkommande utbetalning(ar)
+                </li>
+              )}
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ color: '#10b981' }}>✓</span> 
                 Vi hittade {parseResult.summary.suggestedCount} föreslagna räkningar 
-                <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontSize: '0.9rem' }}>(varav {parseResult.summary.recognizedSuggestedCount} känns igen från tidigare importer)</span>
+                <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontSize: '0.9rem' }}>(varav {parseResult.summary.recognizedSuggestedCount} känns igen)</span>
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ color: '#10b981' }}>✓</span> 
                 {parseResult.summary.otherCount} övriga transaktioner
               </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#10b981' }}>✓</span> 
-                {parseResult.summary.unknownCount} okända mottagare
-              </li>
             </ul>
           </div>
 
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-            SmartEkonomi kommer ihåg dina val och blir smartare för varje import. Granska förslagen nedan.
+            SmartEkonomi kommer ihåg dina val och blir smartare för varje import.
           </p>
+
+          {/* Suggested Incomes */}
+          {suggestedIncomeRows.length > 0 && (
+            <>
+              <h3 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                Föreslagna inkomster (Lön / Utbetalningar)
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
+                {suggestedIncomeRows.map((row, idx) => {
+                  const originalIndex = rows.findIndex(r => r === row);
+                  const isVeryConfident = row.confidenceScore >= 80;
+                  
+                  return (
+                    <div key={idx} style={{ 
+                      display: 'grid', gridTemplateColumns: 'auto 2fr 1fr 1fr', gap: '1rem', alignItems: 'center',
+                      background: row.selectedAsIncome ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.03)', 
+                      border: '1px solid', borderColor: row.selectedAsIncome ? 'rgba(59, 130, 246, 0.3)' : 'transparent',
+                      padding: '0.75rem 1rem', borderRadius: '8px',
+                      transition: 'all 0.2s'
+                    }}>
+                      <input 
+                        type="checkbox" 
+                        checked={row.selectedAsIncome}
+                        onChange={() => handleToggleRow(originalIndex)}
+                        style={{ cursor: 'pointer', width: '1.2rem', height: '1.2rem', accentColor: '#3b82f6' }}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 'bold', color: '#fff' }}>{row.rawDescription}</div>
+                        {isVeryConfident ? (
+                          <div style={{ fontSize: '0.8rem', color: '#3b82f6', display: 'flex', gap: '4px', alignItems: 'center' }}>
+                            ✨ Sannolikt en inkomst ({row.confidenceScore}%)
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                            Säkerhet: {row.confidenceScore}%
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#3b82f6' }}>
+                        +{row.amount} kr
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '2px' }}>Tillhör person:</div>
+                        <select 
+                          value={row.selectedUserId || ''}
+                          onChange={(e) => handleUserChange(originalIndex, e.target.value)}
+                          style={{ 
+                            width: '100%', padding: '0.4rem', borderRadius: '4px', 
+                            background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid var(--border-color)',
+                            fontSize: '0.9rem'
+                          }}
+                        >
+                          <option value="" disabled>Välj person...</option>
+                          {profiles.map(p => (
+                            <option key={p.id} value={p.id}>{p.display_name || p.email}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
           {/* Suggested Bills */}
           <h3 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
             Föreslagna räkningar
           </h3>
-          {suggestedRows.length === 0 ? (
+          {suggestedBillRows.length === 0 ? (
             <p style={{ color: 'var(--text-secondary)' }}>Inga räkningar hittades automatiskt denna gång.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
-              {suggestedRows.map((row, idx) => {
+              {suggestedBillRows.map((row, idx) => {
                 const originalIndex = rows.findIndex(r => r === row);
                 const isVeryConfident = row.confidenceScore >= 80;
                 
@@ -131,10 +217,10 @@ export default function BankImportModal({ parseResult, accounts, onConfirm, onCa
                       )}
                     </div>
                     <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#fff' }}>
-                      {row.amount} kr
+                      -{row.amount} kr
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '2px' }}>Föreslaget konto:</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '2px' }}>Dras från konto:</div>
                       <select 
                         value={row.selectedAccountId || ''}
                         onChange={(e) => handleAccountChange(originalIndex, e.target.value)}
@@ -174,43 +260,69 @@ export default function BankImportModal({ parseResult, accounts, onConfirm, onCa
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
                 {otherRows.map((row, idx) => {
                   const originalIndex = rows.findIndex(r => r === row);
+                  const isSelected = row.isIncoming ? row.selectedAsIncome : row.selectedAsBill;
+                  const accentColor = row.isIncoming ? '#3b82f6' : '#10b981';
+                  const bgClass = isSelected 
+                    ? (row.isIncoming ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)') 
+                    : 'rgba(255,255,255,0.02)';
+                  const borderClass = isSelected 
+                    ? (row.isIncoming ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)') 
+                    : 'transparent';
+
                   return (
                     <div key={idx} style={{ 
                       display: 'grid', gridTemplateColumns: 'auto 2fr 1fr 1fr', gap: '1rem', alignItems: 'center',
-                      background: row.selectedAsBill ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.02)', 
-                      border: '1px solid', borderColor: row.selectedAsBill ? 'rgba(16, 185, 129, 0.3)' : 'transparent',
+                      background: bgClass, 
+                      border: '1px solid', borderColor: borderClass,
                       padding: '0.5rem 1rem', borderRadius: '8px',
-                      opacity: row.selectedAsBill ? 1 : 0.7
+                      opacity: isSelected ? 1 : 0.7
                     }}>
                       <input 
                         type="checkbox" 
-                        checked={row.selectedAsBill}
+                        checked={isSelected}
                         onChange={() => handleToggleRow(originalIndex)}
-                        style={{ cursor: 'pointer', width: '1rem', height: '1rem', accentColor: '#10b981' }}
+                        style={{ cursor: 'pointer', width: '1rem', height: '1rem', accentColor }}
                       />
                       <div>
                         <div style={{ color: '#e2e8f0' }}>{row.rawDescription}</div>
                         <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{row.date}</div>
                       </div>
-                      <div style={{ textAlign: 'right', color: '#e2e8f0' }}>
-                        {row.amount} kr
+                      <div style={{ textAlign: 'right', color: row.isIncoming ? '#3b82f6' : '#e2e8f0' }}>
+                        {row.isIncoming ? '+' : '-'}{row.amount} kr
                       </div>
-                      {row.selectedAsBill && (
+                      {isSelected && (
                         <div>
-                          <select 
-                            value={row.selectedAccountId || ''}
-                            onChange={(e) => handleAccountChange(originalIndex, e.target.value)}
-                            style={{ 
-                              width: '100%', padding: '0.3rem', borderRadius: '4px', 
-                              background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid var(--border-color)',
-                              fontSize: '0.8rem'
-                            }}
-                          >
-                            <option value="" disabled>Välj konto...</option>
-                            {accounts.map(acc => (
-                              <option key={acc.id} value={acc.id}>{acc.name}</option>
-                            ))}
-                          </select>
+                          {row.isIncoming ? (
+                            <select 
+                              value={row.selectedUserId || ''}
+                              onChange={(e) => handleUserChange(originalIndex, e.target.value)}
+                              style={{ 
+                                width: '100%', padding: '0.3rem', borderRadius: '4px', 
+                                background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid var(--border-color)',
+                                fontSize: '0.8rem'
+                              }}
+                            >
+                              <option value="" disabled>Välj person...</option>
+                              {profiles.map(p => (
+                                <option key={p.id} value={p.id}>{p.display_name || p.email}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <select 
+                              value={row.selectedAccountId || ''}
+                              onChange={(e) => handleAccountChange(originalIndex, e.target.value)}
+                              style={{ 
+                                width: '100%', padding: '0.3rem', borderRadius: '4px', 
+                                background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid var(--border-color)',
+                                fontSize: '0.8rem'
+                              }}
+                            >
+                              <option value="" disabled>Välj konto...</option>
+                              {accounts.map(acc => (
+                                <option key={acc.id} value={acc.id}>{acc.name}</option>
+                              ))}
+                            </select>
+                          )}
                         </div>
                       )}
                     </div>

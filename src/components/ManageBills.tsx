@@ -218,46 +218,85 @@ export default function ManageBills() {
     const householdId = profile?.household_id;
 
     for (const row of selectedRows) {
-      if (!row.selectedAccountId) continue;
-      
-      let account = state.accounts.find(a => a.id === row.selectedAccountId);
-      if (!account) continue;
+      if (row.isIncoming) {
+        if (!row.selectedUserId) continue;
+        
+        const incomeData = {
+          id: crypto.randomUUID(),
+          userId: row.selectedUserId,
+          name: row.rawDescription.trim(),
+          amount: row.amount,
+          type: 'variable' as const,
+          payDate: row.date // 'YYYY-MM-DD'
+        };
+        await saveIncome(incomeData);
+        addedCount++;
+        
+        if (householdId) {
+          const existingRule = householdRules.find(r => r.search_string === row.normalizedDescription);
+          if (existingRule) {
+            await supabase.from('household_import_rules')
+              .update({ 
+                usage_count: existingRule.usage_count + 1, 
+                last_seen_at: new Date().toISOString() 
+              })
+              .eq('id', existingRule.id);
+          } else {
+            await supabase.from('household_import_rules').insert({
+              household_id: householdId,
+              search_string: row.normalizedDescription,
+              target_id: row.selectedUserId,
+              rule_target_type: 'USER',
+              is_bill: false,
+              rule_type: 'USER',
+              usage_count: 1,
+              matched_examples: [row.rawDescription]
+            });
+          }
+        }
+      } else {
+        if (!row.selectedAccountId) continue;
+        
+        let account = state.accounts.find(a => a.id === row.selectedAccountId);
+        if (!account) continue;
 
-      const billData: BillDefinition = {
-        id: crypto.randomUUID(),
-        name: row.rawDescription.trim(),
-        accountId: account.id,
-        splitType: 'equal',
-        defaultAmount: row.amount,
-        interval: 'all',
-        warnIfZero: true
-      };
-      await onAddBill(billData);
-      addedCount++;
-      
-      if (householdId) {
-        const existingRule = householdRules.find(r => r.search_string === row.normalizedDescription);
-        if (existingRule) {
-          await supabase.from('household_import_rules')
-            .update({ 
-              usage_count: existingRule.usage_count + 1, 
-              last_seen_at: new Date().toISOString() 
-            })
-            .eq('id', existingRule.id);
-        } else {
-          await supabase.from('household_import_rules').insert({
-            household_id: householdId,
-            search_string: row.normalizedDescription,
-            target_account_id: account.id,
-            is_bill: true,
-            rule_type: 'USER',
-            usage_count: 1,
-            matched_examples: [row.rawDescription]
-          });
+        const billData: BillDefinition = {
+          id: crypto.randomUUID(),
+          name: row.rawDescription.trim(),
+          accountId: account.id,
+          splitType: 'equal',
+          defaultAmount: row.amount,
+          interval: 'all',
+          warnIfZero: true
+        };
+        await onAddBill(billData);
+        addedCount++;
+        
+        if (householdId) {
+          const existingRule = householdRules.find(r => r.search_string === row.normalizedDescription);
+          if (existingRule) {
+            await supabase.from('household_import_rules')
+              .update({ 
+                usage_count: existingRule.usage_count + 1, 
+                last_seen_at: new Date().toISOString() 
+              })
+              .eq('id', existingRule.id);
+          } else {
+            await supabase.from('household_import_rules').insert({
+              household_id: householdId,
+              search_string: row.normalizedDescription,
+              target_id: account.id,
+              rule_target_type: 'ACCOUNT',
+              is_bill: true,
+              rule_type: 'USER',
+              usage_count: 1,
+              matched_examples: [row.rawDescription]
+            });
+          }
         }
       }
     }
-    toast.success(`✅ Importerade ${addedCount} räkningar!`);
+    toast.success(`✅ Importerade ${addedCount} transaktioner!`);
     setShowBankModal(false);
   };
 
@@ -312,7 +351,7 @@ export default function ManageBills() {
           // Detta är inte SmartEkonomi-mallen. Kör standard bank-import!
           const { data: rules } = await supabase.from('household_import_rules').select('*');
           const safeRules = rules || [];
-          const result = parseBankData(json, safeRules, state.accounts);
+          const result = parseBankData(json, safeRules, state.accounts, householdProfiles);
           
           setHouseholdRules(safeRules);
           setBankParseResult(result);
@@ -1392,6 +1431,7 @@ export default function ManageBills() {
         <BankImportModal
           parseResult={bankParseResult}
           accounts={state.accounts}
+          profiles={householdProfiles}
           onConfirm={handleConfirmBankImport}
           onCancel={() => setShowBankModal(false)}
         />

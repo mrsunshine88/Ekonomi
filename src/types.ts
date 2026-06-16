@@ -115,7 +115,8 @@ export interface HouseholdImportRule {
   id: string;
   household_id: string;
   search_string: string;
-  target_account_id: string | null;
+  target_id: string | null;
+  rule_target_type: 'ACCOUNT' | 'USER';
   is_bill: boolean;
   rule_type: 'SYSTEM' | 'USER';
   usage_count: number;

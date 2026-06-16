@@ -6,18 +6,30 @@ export interface ParsedBankRow {
   rawDescription: string;
   normalizedDescription: string;
   amount: number;
+  isIncoming: boolean;
   confidenceScore: number;
+  
+  // Bill targets
   suggestedAccountId: string | null;
+  selectedAccountId: string | null;
   isSuggestedBill: boolean;
-  isRecognized: boolean; // True if it matches any rule (even if is_bill is false)
-  selectedAccountId: string | null; // For the UI dropdown
-  selectedAsBill: boolean; // For the UI checkbox
+  selectedAsBill: boolean;
+  
+  // Income targets
+  suggestedUserId: string | null;
+  selectedUserId: string | null;
+  isSuggestedIncome: boolean;
+  selectedAsIncome: boolean;
+
+  isRecognized: boolean; // True if it matches any rule
 }
 
 export interface BankParseResult {
+  suggestedIncomes: ParsedBankRow[];
   suggestedBills: ParsedBankRow[];
   otherTransactions: ParsedBankRow[];
   summary: {
+    suggestedIncomesCount: number;
     suggestedCount: number;
     recognizedSuggestedCount: number;
     otherCount: number;
@@ -40,7 +52,7 @@ export function normalizeBankString(str: string): string {
     s = s.replace(new RegExp(noise, 'g'), ' ');
   }
   
-  // Clean up extra spaces and non-alphanumeric chars (optional, but spaces for sure)
+  // Clean up extra spaces and non-alphanumeric chars
   s = s.replace(/[^A-Z0-9ÅÄÖ ]/g, ' ');
   s = s.replace(/\s+/g, ' ').trim();
   
@@ -50,7 +62,8 @@ export function normalizeBankString(str: string): string {
 export function parseBankData(
   jsonData: any[][], 
   rules: HouseholdImportRule[],
-  householdAccounts: { id: string, name: string }[]
+  householdAccounts: { id: string, name: string }[],
+  householdProfiles: { id: string, display_name?: string, email?: string }[] = []
 ): BankParseResult {
   
   // 1. Detect Columns
@@ -76,10 +89,7 @@ export function parseBankData(
     }
   }
 
-  // Fallback if headers not found explicitly: guess based on data types
   if (headerRowIdx === -1) {
-    // We could do heuristic guessing here, but for now we require headers.
-    // Assuming simple fallback: 0: Date, 1: Text, 2: Amount
     dateIdx = 0; descIdx = 1; amountIdx = 2; headerRowIdx = 0;
   }
 
@@ -97,17 +107,20 @@ export function parseBankData(
 
     if (!rawDesc || (!rawAmount && rawAmount !== 0)) continue;
     
-    // Clean amount
-    let amount = 0;
+    // Clean amount & determine direction
+    let rawAmountNum = 0;
     if (typeof rawAmount === 'number') {
-      amount = Math.abs(rawAmount); // We want positive numbers for bills
+      rawAmountNum = rawAmount;
     } else if (typeof rawAmount === 'string') {
-      const parsed = parseFloat(rawAmount.replace(/[^0-9,-]+/g, '').replace(',', '.'));
-      if (!isNaN(parsed)) amount = Math.abs(parsed);
+      const sign = rawAmount.includes('-') ? -1 : 1;
+      const parsed = parseFloat(rawAmount.replace(/[^0-9,]+/g, '').replace(',', '.'));
+      if (!isNaN(parsed)) rawAmountNum = parsed * sign;
     }
 
-    if (amount === 0) continue; // Skip zero transactions
-
+    if (rawAmountNum === 0) continue;
+    
+    const isIncoming = rawAmountNum > 0;
+    const amount = Math.abs(rawAmountNum);
     const normalized = normalizeBankString(String(rawDesc));
     
     // Find matching rule
@@ -116,15 +129,15 @@ export function parseBankData(
 
     for (const rule of rules) {
       if (normalized.includes(rule.search_string) || rule.search_string.includes(normalized)) {
-        // Calculate dynamic confidence
-        // Simple confidence: length ratio
+        // Fastighetsmäklare-regel: Kolla även riktningen. En inkomst kan inte trigga en "is_bill=true"-regel
+        if ((rule.is_bill && isIncoming) || (!rule.is_bill && !isIncoming)) {
+            continue; // Mismatch mellan inkomst/utgift och regeln
+        }
+
         const lenRatio = Math.min(normalized.length, rule.search_string.length) / Math.max(normalized.length, rule.search_string.length);
         let confidence = Math.round(lenRatio * 100);
         
-        // Boost confidence if it's been used a lot
         confidence = Math.min(99, confidence + (rule.usage_count * 2));
-        
-        // Exact match gets 100%
         if (normalized === rule.search_string) confidence = 100;
 
         if (confidence > highestConfidence) {
@@ -134,23 +147,46 @@ export function parseBankData(
       }
     }
 
-    // Determine target account
-    let suggestedAccount = matchedRule?.target_account_id || null;
-    if (!suggestedAccount) {
-      // Fallback: Check if description contains any account name (e.g. "Andreas")
-      for (const acc of householdAccounts) {
-        if (normalized.includes(acc.name.toUpperCase())) {
-          suggestedAccount = acc.id;
-          highestConfidence = Math.max(highestConfidence, 60); // Guessed from name
-          break;
+    let suggestedAccount = null;
+    let suggestedUser = null;
+    let isSuggestedBill = false;
+    let isSuggestedIncome = false;
+
+    if (matchedRule) {
+      if (matchedRule.is_bill && matchedRule.rule_target_type === 'ACCOUNT') {
+        isSuggestedBill = true;
+        suggestedAccount = matchedRule.target_id;
+      } else if (!matchedRule.is_bill && matchedRule.rule_target_type === 'USER') {
+        isSuggestedIncome = true;
+        suggestedUser = matchedRule.target_id;
+      }
+    } else {
+      // Fallbacks if no rule matched
+      if (isIncoming) {
+        if (normalized.includes('LÖN') || normalized.includes('SALARY') || normalized.includes('LON')) {
+          isSuggestedIncome = true;
+          highestConfidence = Math.max(highestConfidence, 70); // Basic heuristic guess
+        }
+      } else {
+        // It's outgoing. Check if description matches any account name
+        for (const acc of householdAccounts) {
+          if (normalized.includes(acc.name.toUpperCase())) {
+            suggestedAccount = acc.id;
+            highestConfidence = Math.max(highestConfidence, 60);
+            break;
+          }
         }
       }
     }
 
-    // If no account guessed, default to the first shared account
-    if (!suggestedAccount) {
-        const sharedAcc = householdAccounts.find(() => true); // In ManageBills we pass shared accounts first
-        suggestedAccount = sharedAcc ? sharedAcc.id : null;
+    // Default target logic if none found
+    if (!isIncoming && !suggestedAccount) {
+      const sharedAcc = householdAccounts.find(() => true);
+      suggestedAccount = sharedAcc ? sharedAcc.id : null;
+    }
+    if (isIncoming && !suggestedUser) {
+      const firstUser = householdProfiles.find(() => true);
+      suggestedUser = firstUser ? firstUser.id : null;
     }
 
     const isRecognized = !!matchedRule;
@@ -158,43 +194,52 @@ export function parseBankData(
       unknownCount++;
     }
 
-    // Should it be a bill?
-    // If it matches a rule that says is_bill = true, yes.
-    // If it matches no rule, we default to false (it goes to "Other")
-    const isSuggestedBill = matchedRule ? matchedRule.is_bill : false;
-
-    if (isSuggestedBill && isRecognized) {
+    if (isRecognized && (isSuggestedBill || isSuggestedIncome)) {
       recognizedSuggestedCount++;
     }
 
     parsedRows.push({
       originalIndex: i,
-      date: String(rawDate),
+      date: String(rawDate).trim(),
       rawDescription: String(rawDesc).trim(),
       normalizedDescription: normalized,
       amount,
+      isIncoming,
       confidenceScore: highestConfidence,
+      
       suggestedAccountId: suggestedAccount,
-      isSuggestedBill,
-      isRecognized,
       selectedAccountId: suggestedAccount,
-      selectedAsBill: isSuggestedBill
+      isSuggestedBill,
+      selectedAsBill: isSuggestedBill,
+      
+      suggestedUserId: suggestedUser,
+      selectedUserId: suggestedUser,
+      isSuggestedIncome,
+      selectedAsIncome: isSuggestedIncome,
+      
+      isRecognized
     });
   }
 
   // Sort and split
+  const suggestedIncomes = parsedRows
+    .filter(r => r.isSuggestedIncome)
+    .sort((a, b) => b.confidenceScore - a.confidenceScore);
+
   const suggestedBills = parsedRows
     .filter(r => r.isSuggestedBill)
     .sort((a, b) => b.confidenceScore - a.confidenceScore);
     
   const otherTransactions = parsedRows
-    .filter(r => !r.isSuggestedBill)
-    .sort((a, b) => b.amount - a.amount); // Sort by largest amount for others
+    .filter(r => !r.isSuggestedBill && !r.isSuggestedIncome)
+    .sort((a, b) => b.amount - a.amount);
 
   return {
+    suggestedIncomes,
     suggestedBills,
     otherTransactions,
     summary: {
+      suggestedIncomesCount: suggestedIncomes.length,
       suggestedCount: suggestedBills.length,
       recognizedSuggestedCount,
       otherCount: otherTransactions.length,
