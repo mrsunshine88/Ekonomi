@@ -335,8 +335,8 @@ export default function ManageBills() {
       {
         originalIndex: 0,
         date: '2026-05-25',
-        rawDescription: 'LÖN NL LABS AB',
-        normalizedDescription: 'LÖN NL LABS AB',
+        rawDescription: 'LÖN FÖRETAG AB',
+        normalizedDescription: 'LÖN FÖRETAG AB',
         amount: 23771,
         isIncoming: true,
         confidenceScore: 0.9,
