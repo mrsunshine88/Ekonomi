@@ -306,7 +306,7 @@ export default function LoginScreen() {
               {isForgotPassword 
                 ? 'Tillbaka till inloggning' 
                 : isLogin 
-                  ? <>Har du inget konto? <span>Skapa ett gratis här</span></> 
+                  ? <>Har du inget konto? <span>Skapa ett konto här</span></> 
                   : <>Har du redan ett konto? <span>Logga in</span></>}
             </button>
           </div>
