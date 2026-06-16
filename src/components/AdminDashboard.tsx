@@ -31,7 +31,8 @@ export default function AdminDashboard() {
     unique_visitors_this_month?: number,
     total_page_views_this_month?: number,
     demo_unique_this_month?: number,
-    demo_views_this_month?: number
+    demo_views_this_month?: number,
+    unconfirmed_users?: number
   } | null>(null);
   const [stripeConfigured, setStripeConfigured] = useState<boolean | null>(null);
   const [stripeReason, setStripeReason] = useState<string | null>(null);
@@ -84,7 +85,8 @@ export default function AdminDashboard() {
           unique_visitors_this_month: data[0].unique_visitors_this_month,
           total_page_views_this_month: data[0].total_page_views_this_month,
           demo_unique_this_month: data[0].demo_unique_this_month,
-          demo_views_this_month: data[0].demo_views_this_month
+          demo_views_this_month: data[0].demo_views_this_month,
+          unconfirmed_users: data[0].unconfirmed_users
         });
       }
     } catch (e: unknown) {
@@ -308,6 +310,11 @@ export default function AdminDashboard() {
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💎</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>{stats.active_households}</div>
               <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Betalande Hushåll</div>
+            </div>
+            <div style={{ background: 'rgba(244, 63, 94, 0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(244, 63, 94, 0.2)' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📧</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f43f5e' }}>{stats.unconfirmed_users || 0}</div>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Obekräftade E-post</div>
             </div>
           </div>
 
