@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useStore } from '../store';
 import { supabase } from '../supabase';
 import AdminChat from './AdminChat';
@@ -600,7 +601,7 @@ export default function AdminDashboard() {
         </button>
       </div>
       
-      {showMembersModal && (
+      {showMembersModal && createPortal(
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 100000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' }}>
           <div style={{ background: '#1e293b', width: '100%', maxWidth: '900px', maxHeight: '90vh', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -664,7 +665,8 @@ export default function AdminDashboard() {
               {membersList.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Inga medlemmar hittades.</div>}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
