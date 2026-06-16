@@ -122,10 +122,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               
               if (session.user.email !== 'apersson508@gmail.com') {
                 if (adminChannel) supabase.removeChannel(adminChannel);
-                adminChannel = supabase.channel(\`admin-changes-init-\${session.user.id}\`)
+                adminChannel = supabase.channel(`admin-changes-init-${session.user.id}`)
                   .on(
                     'postgres_changes',
-                    { event: '*', schema: 'public', table: 'system_admins', filter: \`email=eq.\${session.user.email}\` },
+                    { event: '*', schema: 'public', table: 'system_admins', filter: `email=eq.${session.user.email}` },
                     (payload) => {
                       if (payload.eventType === 'INSERT') { if (mounted) setIsAdmin(true); }
                       if (payload.eventType === 'DELETE') { if (mounted) setIsAdmin(false); }
@@ -187,10 +187,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             if (newSession.user.email !== 'apersson508@gmail.com') {
               if (adminChannel) supabase.removeChannel(adminChannel);
-              adminChannel = supabase.channel(\`admin-changes-\${newSession.user.id}\`)
+              adminChannel = supabase.channel(`admin-changes-${newSession.user.id}`)
                 .on(
                   'postgres_changes',
-                  { event: '*', schema: 'public', table: 'system_admins', filter: \`email=eq.\${newSession.user.email}\` },
+                  { event: '*', schema: 'public', table: 'system_admins', filter: `email=eq.${newSession.user.email}` },
                   (payload) => {
                     if (payload.eventType === 'INSERT') { if (mounted) setIsAdmin(true); }
                     if (payload.eventType === 'DELETE') { if (mounted) setIsAdmin(false); }
