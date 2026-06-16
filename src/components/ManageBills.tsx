@@ -206,7 +206,7 @@ export default function ManageBills() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const data = event.target?.result;
         const workbook = xlsx.read(data, { type: 'array' });
@@ -279,6 +279,7 @@ export default function ManageBills() {
 
         let addedCount = 0;
         let currentCategory = "";
+        const newAccountsCache: Record<string, any> = {};
 
         for (let i = headerRowIdx + 1; i < json.length; i++) {
           const row = json[i];
@@ -303,8 +304,10 @@ export default function ManageBills() {
              if (isNaN(amount)) amount = 0;
           }
 
-          // Kontrollera om kontot finns, annars skapa det
-          let account = state.accounts.find(a => a.name.toLowerCase() === currentCategory.toLowerCase());
+          // Kontrollera om kontot finns (både i state och nyss skapade under loopen)
+          let account = state.accounts.find(a => a.name.toLowerCase() === currentCategory.toLowerCase()) || 
+                        Object.values(newAccountsCache).find((a: any) => a.name.toLowerCase() === currentCategory.toLowerCase());
+                        
           if (!account) {
             // Avgör typ: Innehåller "konto" -> oftast person eller gemensamt. Vi kan defaulta till 'shared'.
             account = {
@@ -313,7 +316,8 @@ export default function ManageBills() {
               type: 'shared',
               transferMethod: 'transfer'
             };
-            onAddAccount(account);
+            newAccountsCache[account.id] = account;
+            await onAddAccount(account);
           }
 
           const billData: BillDefinition = {
@@ -325,7 +329,7 @@ export default function ManageBills() {
             interval: 'all',
             warnIfZero: true
           };
-          onAddBill(billData);
+          await onAddBill(billData);
           addedCount++;
         }
 
@@ -907,7 +911,7 @@ export default function ManageBills() {
             <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <label style={{ cursor: 'pointer', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid #10b981', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.9rem', fontWeight: 'bold' }}>
                     📥 Importera Excel
-                    <input type="file" accept=".xlsx, .xls" onChange={handleImportExcel} style={{ display: 'none' }} />
+                    <input type="file" accept=".xlsx, .xls, .xlsm" onChange={handleImportExcel} style={{ display: 'none' }} />
                 </label>
             </div>
           </div>
