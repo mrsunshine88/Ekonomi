@@ -28,12 +28,38 @@ function App() {
   const state = useStore(s => s.state);
   const isDemoMode = useStore(s => s.isDemoMode);
   const stopDemo = useStore(s => s.stopDemo);
-  const [currentView, setCurrentView] = useState<'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'admin_learning'>(() => {
-    return (localStorage.getItem('smartEkonomi_currentView') as any) || 'start';
+  type ViewType = 'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'admin_learning';
+  const URL_TO_VIEW: Record<string, ViewType> = {
+    '/': 'start',
+    '/month': 'month',
+    '/stats': 'stats',
+    '/manage': 'manage',
+    '/mypages': 'mypages',
+    '/privat': 'privat',
+    '/admin': 'admin',
+    '/admin/learning': 'admin_learning',
+  };
+  const VIEW_TO_URL: Record<ViewType, string> = {
+    'start': '/',
+    'month': '/month',
+    'stats': '/stats',
+    'manage': '/manage',
+    'mypages': '/mypages',
+    'privat': '/privat',
+    'admin': '/admin',
+    'admin_learning': '/admin/learning',
+  };
+  const [currentView, setCurrentView] = useState<ViewType>(() => {
+    const path = window.location.pathname;
+    return URL_TO_VIEW[path] || (localStorage.getItem('smartEkonomi_currentView') as ViewType) || 'start';
   });
 
   useEffect(() => {
     localStorage.setItem('smartEkonomi_currentView', currentView);
+    const newUrl = VIEW_TO_URL[currentView] || '/';
+    if (window.location.pathname !== newUrl) {
+      window.history.pushState(null, '', newUrl);
+    }
   }, [currentView]);
 
   // Återställ vy när man byter användare
@@ -66,7 +92,7 @@ function App() {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navigateTo = (view: 'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'admin_learning') => {
+  const navigateTo = (view: ViewType) => {
     setCurrentView(view);
     setMobileMenuOpen(false);
   };
@@ -198,7 +224,10 @@ function App() {
             <>
               <button onClick={() => navigateTo('mypages')} style={navButtonStyles('mypages')}>👤 Mina sidor</button>
               {isAdmin && (
-                <button onClick={() => navigateTo('admin')} style={navButtonStyles('admin')}>👑 Admin</button>
+                <>
+                  <button onClick={() => navigateTo('admin')} style={navButtonStyles('admin')}>👑 Admin</button>
+                  <button onClick={() => navigateTo('admin_learning')} style={navButtonStyles('admin_learning')}>🧠 Inlärning</button>
+                </>
               )}
             </>
           )}
