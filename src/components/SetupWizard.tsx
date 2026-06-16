@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { useAuth } from '../AuthContext';
-import MonthView from './MonthView';
 import BankImportModal from './BankImportModal';
-import { parseBankData, BankParseResult, ParsedBankRow } from '../utils/bankParser';
-import Papa from 'papaparse';
+import { parseBankData } from '../utils/bankParser';
+import type { BankParseResult, ParsedBankRow } from '../utils/bankParser';
+import * as xlsx from 'xlsx';
 
 // Categories for Manual Entry
 const MANUAL_CATEGORIES = [
@@ -51,7 +51,7 @@ export default function SetupWizard() {
     incomes: []
   });
 
-  const [hasRecovery, setHasRecovery] = useState(false);
+
   const [loadingMsg, setLoadingMsg] = useState('');
   const [importError, setImportError] = useState('');
   
@@ -66,9 +66,7 @@ export default function SetupWizard() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.householdName || parsed.members[0].name) {
-          setHasRecovery(true);
-        } else {
+        if (!parsed.householdName && !parsed.members[0].name) {
           setStep(1);
         }
       } catch (e) {
@@ -110,7 +108,7 @@ export default function SetupWizard() {
     setStep(5);
     try {
       // Create empty household
-      const { data, error } = await supabase.rpc('create_initial_household_setup', {
+      const { error } = await supabase.rpc('create_initial_household_setup', {
         p_household_name: 'Mitt hushåll',
         p_members: [{ name: 'Konto', is_child: false }],
         p_bills: [],
@@ -154,7 +152,7 @@ export default function SetupWizard() {
         is_child: m.isChild
       }));
       
-      const { data, error } = await supabase.rpc('create_initial_household_setup', {
+      const { error } = await supabase.rpc('create_initial_household_setup', {
         p_household_name: state.householdName.trim(),
         p_members: membersToCreate,
         p_bills: state.bills.map(b => ({ name: b.name, amount: b.amount, account: b.account, interval: b.interval })),
@@ -187,31 +185,44 @@ export default function SetupWizard() {
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
-        const csvData = event.target?.result as string;
-        Papa.parse(csvData, {
-          header: false,
-          skipEmptyLines: true,
-          complete: (results) => {
-            const dataRows = results.data as string[][];
-            // Provide fake household accounts and profiles for the parser
-            const mockAccounts = state.members.filter(m => m.name.trim()).map(m => ({ id: m.id, name: m.name, type: 'person' }));
-            const mockProfiles = mockAccounts.map(a => ({ id: a.id, display_name: a.name }));
-            
-            const result = parseBankData(dataRows, [], mockAccounts, mockProfiles, [], []);
-            setParseResult(result);
-            setLoadingMsg('');
-          },
-          error: (err: any) => {
-            setImportError('Kunde inte läsa filen: ' + err.message);
-            setLoadingMsg('');
+        const data = event.target?.result;
+        const workbook = xlsx.read(data, { type: 'array' });
+        
+        let json: any[][] = [];
+        for (const sheetName of workbook.SheetNames) {
+          const sheet = workbook.Sheets[sheetName];
+          const sheetJson = xlsx.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+          
+          let hasKategori = false;
+          for (let i = 0; i < Math.min(15, sheetJson.length); i++) {
+            if (sheetJson[i] && sheetJson[i].some((cell: any) => typeof cell === 'string' && cell.toLowerCase().includes('kategori'))) {
+              hasKategori = true;
+              break;
+            }
           }
-        });
+          if (hasKategori) {
+            json = sheetJson;
+            break;
+          }
+        }
+        if (json.length === 0) {
+           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+           json = xlsx.utils.sheet_to_json(firstSheet, { header: 1 }) as any[][];
+        }
+
+        // Provide fake household accounts and profiles for the parser
+        const mockAccounts = state.members.filter(m => m.name.trim()).map(m => ({ id: m.id, name: m.name, type: 'person' }));
+        const mockProfiles = mockAccounts.map(a => ({ id: a.id, display_name: a.name }));
+        
+        const result = parseBankData(json, [], mockAccounts as any, mockProfiles, [], []);
+        setParseResult(result);
+        setLoadingMsg('');
       } catch (err: any) {
         setImportError('Ett fel uppstod: ' + err.message);
         setLoadingMsg('');
       }
     };
-    reader.readAsText(file, 'ISO-8859-1'); // Vanligt för svenska banker
+    reader.readAsArrayBuffer(file);
   };
 
   const handleBankConfirm = (selectedRows: ParsedBankRow[]) => {

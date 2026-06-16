@@ -10,8 +10,8 @@ export default function PaywallModal({ onClose }: PaywallModalProps) {
   const [loading, setLoading] = useState(false);
   const [showFeatures, setShowFeatures] = useState(false);
   const householdId = useStore(s => s.householdId);
-  const bills = useStore(s => s.state.bills);
-  const incomes = useStore(s => s.state.incomes);
+  const bills = useStore(s => s.state.bills) || [];
+  const incomes = useStore(s => s.state.incomes) || [];
 
   const handleCheckout = async () => {
     setLoading(true);
