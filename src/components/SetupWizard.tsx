@@ -27,8 +27,8 @@ const INCOME_CATEGORIES = [
 interface WizardState {
   householdName: string;
   members: { id: string; name: string; isChild: boolean }[];
-  bills: { id: string; name: string; amount: number; account: string; interval: string }[];
-  incomes: { id: string; name: string; amount: number; account: string }[];
+  bills: { id: string; name: string; amount: number; account: string; interval: string; isCustom?: boolean }[];
+  incomes: { id: string; name: string; amount: number; account: string; isCustom?: boolean }[];
 }
 
 export default function SetupWizard() {
@@ -155,8 +155,8 @@ export default function SetupWizard() {
       const { error } = await supabase.rpc('create_initial_household_setup', {
         p_household_name: state.householdName.trim(),
         p_members: membersToCreate,
-        p_bills: state.bills.map(b => ({ name: b.name, amount: b.amount, account: b.account, interval: b.interval })),
-        p_incomes: state.incomes.map(i => ({ name: i.name, amount: i.amount, account: i.account }))
+        p_bills: state.bills.filter(b => b.amount > 0 && b.name.trim()).map(b => ({ name: b.name.trim(), amount: b.amount, account: b.account, interval: b.interval })),
+        p_incomes: state.incomes.filter(i => i.amount > 0 && i.name.trim()).map(i => ({ name: i.name.trim(), amount: i.amount, account: i.account }))
       });
       
       if (error) throw error;
@@ -457,6 +457,40 @@ export default function SetupWizard() {
                 </div>
               );
             })}
+            
+            {state.incomes.filter(i => i.isCustom).map(inc => (
+              <div key={inc.id} className="manual-card" style={{ border: '1px dashed var(--accent-color)' }}>
+                <input 
+                  type="text" 
+                  placeholder="Inkomstens namn..." 
+                  value={inc.name}
+                  onChange={e => {
+                    const newInc = state.incomes.map(i => i.id === inc.id ? { ...i, name: e.target.value } : i);
+                    saveState({ incomes: newInc });
+                  }}
+                  className="wizard-input"
+                  style={{ marginBottom: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem' }}
+                />
+                <input 
+                  type="number" 
+                  placeholder="0 kr" 
+                  value={inc.amount || ''} 
+                  onChange={e => {
+                    const val = parseInt(e.target.value) || 0;
+                    const newInc = state.incomes.map(i => i.id === inc.id ? { ...i, amount: val } : i);
+                    saveState({ incomes: newInc });
+                  }}
+                  className="wizard-input"
+                />
+              </div>
+            ))}
+            
+            <button 
+              onClick={() => saveState({ incomes: [...state.incomes, { id: crypto.randomUUID(), name: '', amount: 0, account: state.members[0].name, isCustom: true }] })}
+              style={{ background: 'transparent', border: '2px dashed var(--border-color)', borderRadius: '12px', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100px', fontSize: '1.1rem' }}
+            >
+              + Lägg till annan
+            </button>
           </div>
 
           <h3 style={{ color: 'var(--danger-color)' }}>Fasta kostnader</h3>
@@ -486,6 +520,40 @@ export default function SetupWizard() {
                 </div>
               );
             })}
+
+            {state.bills.filter(b => b.isCustom).map(bill => (
+              <div key={bill.id} className="manual-card" style={{ border: '1px dashed var(--accent-color)' }}>
+                <input 
+                  type="text" 
+                  placeholder="Räkningens namn..." 
+                  value={bill.name}
+                  onChange={e => {
+                    const newBills = state.bills.map(b => b.id === bill.id ? { ...b, name: e.target.value } : b);
+                    saveState({ bills: newBills });
+                  }}
+                  className="wizard-input"
+                  style={{ marginBottom: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem' }}
+                />
+                <input 
+                  type="number" 
+                  placeholder="0 kr" 
+                  value={bill.amount || ''} 
+                  onChange={e => {
+                    const val = parseInt(e.target.value) || 0;
+                    const newBills = state.bills.map(b => b.id === bill.id ? { ...b, amount: val } : b);
+                    saveState({ bills: newBills });
+                  }}
+                  className="wizard-input"
+                />
+              </div>
+            ))}
+
+            <button 
+              onClick={() => saveState({ bills: [...state.bills, { id: crypto.randomUUID(), name: '', amount: 0, account: state.members[0].name, interval: 'all', isCustom: true }] })}
+              style={{ background: 'transparent', border: '2px dashed var(--border-color)', borderRadius: '12px', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100px', fontSize: '1.1rem' }}
+            >
+              + Lägg till annan
+            </button>
           </div>
 
           <div style={{ display: 'flex', gap: '1rem' }}>
@@ -498,8 +566,10 @@ export default function SetupWizard() {
   }
 
   if (step === 4) {
-    const totalIncome = state.incomes.reduce((sum, i) => sum + i.amount, 0);
-    const totalBills = state.bills.reduce((sum, b) => sum + b.amount, 0);
+    const validIncomes = state.incomes.filter(i => i.amount > 0 && i.name.trim());
+    const validBills = state.bills.filter(b => b.amount > 0 && b.name.trim());
+    const totalIncome = validIncomes.reduce((sum, i) => sum + i.amount, 0);
+    const totalBills = validBills.reduce((sum, b) => sum + b.amount, 0);
 
     return (
       <div className="wizard-container">
@@ -513,11 +583,11 @@ export default function SetupWizard() {
               <strong>{state.members.filter(m => m.name.trim()).length}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--success-color)' }}>
-              <span>{state.incomes.length} inkomster:</span>
+              <span>{validIncomes.length} inkomster:</span>
               <strong>{totalIncome.toLocaleString('sv-SE')} kr</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--danger-color)' }}>
-              <span>{state.bills.length} återkommande kostnader:</span>
+              <span>{validBills.length} återkommande kostnader:</span>
               <strong>{totalBills.toLocaleString('sv-SE')} kr</strong>
             </div>
           </div>
@@ -544,8 +614,10 @@ export default function SetupWizard() {
   }
 
   if (step === 6) {
-    const totalIncome = state.incomes.reduce((sum, i) => sum + i.amount, 0);
-    const totalBills = state.bills.reduce((sum, b) => sum + b.amount, 0);
+    const validIncomes = state.incomes.filter(i => i.amount > 0 && i.name.trim());
+    const validBills = state.bills.filter(b => b.amount > 0 && b.name.trim());
+    const totalIncome = validIncomes.reduce((sum, i) => sum + i.amount, 0);
+    const totalBills = validBills.reduce((sum, b) => sum + b.amount, 0);
     const netto = totalIncome - totalBills;
 
     return (
@@ -574,8 +646,8 @@ export default function SetupWizard() {
             <div style={{ textAlign: 'left', background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
               <p style={{ marginBottom: '1rem', color: 'var(--text-muted)' }}>Baserat på:</p>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <li>✓ {state.bills.length} återkommande betalningar</li>
-                <li>✓ {state.incomes.length} inkomster</li>
+                <li>✓ {validBills.length} återkommande betalningar</li>
+                <li>✓ {validIncomes.length} inkomster</li>
                 <li>✓ {state.members.filter(m=>m.name.trim()).length} hushållsmedlemmar</li>
               </ul>
             </div>
