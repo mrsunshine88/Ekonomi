@@ -50,10 +50,7 @@ BEGIN
         FOR v_income IN SELECT * FROM jsonb_to_recordset(p_incomes) AS x(name text, amount numeric, account text)
         LOOP
             INSERT INTO user_incomes (id, household_id, name, amount, type, user_id)
-            SELECT gen_random_uuid(), v_household_id, v_income.name, v_income.amount, 'fixed', a.id
-            FROM accounts a
-            WHERE a.household_id = v_household_id AND a.name = v_income.account
-            LIMIT 1;
+            VALUES (gen_random_uuid(), v_household_id, v_income.name, v_income.amount, 'fixed', auth.uid());
         END LOOP;
     END IF;
     
