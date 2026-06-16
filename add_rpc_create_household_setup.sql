@@ -49,8 +49,8 @@ BEGIN
     IF p_incomes IS NOT NULL THEN
         FOR v_income IN SELECT * FROM jsonb_to_recordset(p_incomes) AS x(name text, amount numeric, account text)
         LOOP
-            INSERT INTO incomes (id, household_id, name, default_amount, account_id)
-            SELECT gen_random_uuid(), v_household_id, v_income.name, v_income.amount, a.id
+            INSERT INTO user_incomes (id, household_id, name, amount, type, user_id)
+            SELECT gen_random_uuid(), v_household_id, v_income.name, v_income.amount, 'fixed', a.id
             FROM accounts a
             WHERE a.household_id = v_household_id AND a.name = v_income.account
             LIMIT 1;
