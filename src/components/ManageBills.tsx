@@ -408,6 +408,7 @@ export default function ManageBills() {
         unknownCount: 15
       }
     });
+    setShowBankModal(true);
   };
 
   const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
