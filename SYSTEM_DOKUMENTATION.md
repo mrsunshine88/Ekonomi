@@ -1341,27 +1341,25 @@ Rullgardinsmenyn "Kopplat konto" har raderats helt från "Mina Sidor". Istället
 
 ## 32. Product-Led Growth (PLG) Onboarding & Betalvägg
 
-### 32.1 Setup Wizard (Onboarding)
-**Vad:** Ett helt nytt, interaktivt onboarding-flöde där nya användare sätter upp sin hushållsekonomi *innan* de debiteras eller låses in i appen.
+### 32.1 Setup Wizard (Onboarding & Premium-Sammanställning)
+**Vad:** Ett helt nytt, interaktivt onboarding-flöde där nya användare sätter upp sin hushållsekonomi och sedan möts av betalväggen *innan* de kommer in i appen.
 **Hur (`SetupWizard.tsx`):**
-- Systemet guidar användaren genom steg: Val av namn på hushållet, val av hushållskonstellation, inmatning/importering av räkningar och inkomster, samt en slutgiltig bekräftelse.
-- **Bank-import direkt i Setup:** Användaren kan ladda upp en Excel-fil från sin bank redan i installationsfasen. Genom att återanvända logiken från `bankParser.ts` identifieras inkomster och utgifter, som sedan kopplas temporärt mot de skapade "Personerna".
-- **Deduplicering (Minneshantering):** Filen sparas i flikens `sessionStorage`. Vid fel eller omstarts-klick sorteras dubbletter ut och en mekanism hindrar data från att dubbleras (genom att rensa element om man sätter beloppet till 0).
-- **Atomisk Databas-commit (`create_initial_household_setup`):** Istället för att React gör dussintals API-anrop till Supabase paketeras all insamlad data till ett stort JSON-objekt i frontend och skickas via *ett enda* anrop till en PostgreSQL RPC-funktion. Denna funktion körs inom en transaktion, vilket garanterar att allt sparas perfekt tillsammans. Utöver detta skapas ID:n automatiskt med `gen_random_uuid()` och Foreign Keys respekteras strikt (t.ex. kopplas initiala `user_incomes` direkt till `auth.uid()`).
+- Systemet guidar användaren genom steg: Val av namn på hushållet, val av hushållskonstellation, inmatning/importering av räkningar och inkomster.
+- **Premium Sammanställning (Steg 4):** Istället för en enkel lista visas en lyxig dashboard med tre färgkodade "Cards" (Inkomst, Utgift, Sparutrymme) och siffror som animerat räknar upp från noll. Detta förstärker "Wow"-känslan och psykologin kring hur mycket pengar de faktiskt har kvar.
+- **Atomisk Databas-commit (`create_initial_household_setup`):** Insamlad data paketeras och skickas via *ett enda* anrop till en PostgreSQL RPC-funktion. Funktionen stämplar nu användaren direkt med `setup_status = 'completed'` istället för readonly.
 
-### 32.2 Read-Only Mode (Soft Gate)
-**Vad:** Ett "granskningsläge" som låter användaren utforska och uppleva appen innan de bestämmer sig för att köpa.
-**Hur:** 
-- Efter Setup Wizarden markeras användarens `profiles.setup_status` som `'readonly_user'`.
-- I `App.tsx` översätts detta till en prop: `readOnly={true}`, som skickas ner till underkomponenter. Användaren kan titta fritt, men alla knappar för att ändra värden övervakas.
-- **Varför:** "Smaka på kakan"-psykologi. Genom att se appens gränssnitt fyllt med deras egna nyskapade budget ökar betalningsviljan radikalt jämfört med en stel betalvägg direkt vid inloggning.
+### 32.2 Den Magiska Betalväggen (Inbakad i Wizarden)
+**Vad:** Vi har skrotat det gamla "titta-men-inte-röra" (Read-Only) läget. Nu är betalningen det logiska avslutande steget direkt efter att de sett sitt sparutrymme.
+**Hur:**
+- Efter premium-sammanställningen klickar de på "GÅ VIDARE FÖR ATT SPARA DIN BUDGET". Detta leder dem till Steg 5: Betalväggen.
+- Betalväggen säljer appens värde (endast 59kr/mån, dela med hushållet etc.).
+- När användaren klickar på "Betala" sparas deras budget till databasen, och direkt därefter slussas de till Stripe. När Stripe är klart, studsar de in i appen till deras färdiga budget.
 
-### 32.3 Dynamisk Betalvägg & Master Switch
-**Vad:** En kontext-medveten betalvägg som blockerar interaktioner, samt en global strömbrytare för att göra hela applikationen gratis.
+### 32.3 Hard Gate Fallback & Master Switch
+**Vad:** Säkerhetsnät ifall de smiter undan, samt en global strömbrytare för att göra applikationen gratis.
 **Hur (`PaywallModal.tsx` & `App.tsx`):**
-- **Trigger:** Vid "read-only"-tillstånd avbryts användarens modifierande klick (bocka av faktura, byta summor etc.), vilket triggar `setShowPaywall(true)` lokalt i komponenterna. En "Lås upp Premium"-banner ligger också ständigt synlig.
-- **Dynamisk Copy:** Modalen utnyttjar det lokala minnet (`AppState`) för att sälja in premium. Texten ändras dynamiskt till t.ex. *"Vi hittade 14 inkomster och 49 återkommande kostnader för Hemma. Prenumerera för att börja hantera dem."*
-- **Master Switch:** I `AdminDashboard.tsx` finns "Aktivera/Avaktivera Betalvägg". Den uppdaterar `stripe_enabled` i `system_settings`. Om denna sätts till AV blir utvärderingen `setupStatus === 'readonly_user' && state.paywallActive` falsk i `App.tsx`, varpå appen tillåter alla interaktioner som en 100% gratis plattform (utan krav på omskrivning av kod).
+- **Hard Gate i Appen:** Om en användare sparar budgeten, men sedan klickar *bakåt* i Stripe-utcheckningen och försöker logga in i appen igen, blockeras de omedelbart av den generiska globala `PaywallModal` som renderas direkt i roten på `App.tsx` (kollar `stripe_status`). Det går alltså inte att komma runt betalningen.
+- **Master Switch:** Om `paywall_active` sätts till AV i databasen, känner `SetupWizard.tsx` av detta. Vid klick på "Gå vidare" hoppas betalsteget (Steg 5) över fullständigt. Budgeten sparas och användaren slussas omedelbart in i en gratis-version av appen, varpå appen tillåter alla interaktioner utan några spärrar.
 
 ---
 

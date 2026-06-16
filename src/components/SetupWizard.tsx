@@ -31,18 +31,33 @@ interface WizardState {
   incomes: { id: string; name: string; amount: number; account: string; isCustom?: boolean }[];
 }
 
+const AnimatedNumber = ({ value }: { value: number }) => {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const duration = 1500;
+    const startTime = performance.now();
+    const animate = (time: number) => {
+      const elapsed = time - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setDisplay(Math.floor(value * ease));
+      if (progress < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }, [value]);
+  return <>{display.toLocaleString('sv-SE')}</>;
+};
+
 export default function SetupWizard() {
   const { user, refreshHousehold } = useAuth();
   
-  // Steps: 
-  // 0: Check recovery
-  // 1: Household & Members
-  // 2: Tracks
-  // 3: Bank Import OR Manual Entry
-  // 4: Confirmation
-  // 5: Committing Animation
-  // 6: Wow Overlay (with MonthView behind)
   const [step, setStep] = useState(0);
+  const [paywallActive, setPaywallActive] = useState(true);
+  
+  useEffect(() => {
+    supabase.from('global_settings').select('value').eq('key', 'paywall_active').maybeSingle()
+      .then(({ data }) => setPaywallActive(data?.value === 'true'));
+  }, []);
   
   const [state, setState] = useState<WizardState>({
     householdName: '',
@@ -51,14 +66,12 @@ export default function SetupWizard() {
     incomes: []
   });
 
-
   const [loadingMsg, setLoadingMsg] = useState('');
   const [importError, setImportError] = useState('');
   
   const [inviteCode, setInviteCode] = useState('');
   const [joinError, setJoinError] = useState('');
   
-  // Bank Import State
   const [parseResult, setParseResult] = useState<BankParseResult | null>(null);
 
   useEffect(() => {
@@ -105,20 +118,31 @@ export default function SetupWizard() {
   const handleSkipToPaywall = async () => {
     if (!user) return;
     setLoadingMsg('Förbereder...');
-    setStep(5);
+    setStep(10);
     try {
-      // Create empty household
-      const { error } = await supabase.rpc('create_initial_household_setup', {
+      const { data, error } = await supabase.rpc('create_initial_household_setup', {
         p_household_name: 'Mitt hushåll',
         p_members: [{ name: 'Konto', is_child: false }],
         p_bills: [],
         p_incomes: []
       });
       if (error) throw error;
-      
       sessionStorage.removeItem('setupWizardState');
-      await refreshHousehold();
-      // App.tsx routes to MonthView read-only automatically
+      
+      if (paywallActive) {
+        setLoadingMsg('Startar betalning...');
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch('/api/create-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ householdId: data.household_id, customerEmail: session?.user?.email })
+        });
+        const checkoutData = await res.json();
+        if (checkoutData.error) throw new Error(checkoutData.error);
+        window.location.href = checkoutData.url;
+      } else {
+        await refreshHousehold();
+      }
     } catch (e: any) {
       console.error(e);
       alert('Kunde inte hoppa över: ' + e.message);
@@ -126,33 +150,26 @@ export default function SetupWizard() {
     }
   };
 
-  const commitSetup = async () => {
+  const commitSetup = async (proceedToPaywall: boolean) => {
     if (!user) return;
-    
-    // Safety check
     const hasValidMembers = state.members.filter(m => m.name.trim()).length > 0;
     if (!state.householdName.trim() || !hasValidMembers) {
       alert("Hushållsnamn och minst en medlem krävs.");
       setStep(1);
       return;
     }
-    if (state.bills.length === 0 && state.incomes.length === 0) {
-      alert("Du behöver lägga till minst en inkomst eller en fast kostnad.");
-      return;
-    }
 
-    setLoadingMsg('Validerar...');
-    setStep(5);
+    setLoadingMsg('Sparar din budget...');
+    const originalStep = step;
+    setStep(10);
     
     try {
-      setTimeout(() => setLoadingMsg('Sparar...'), 1000);
-      
       const membersToCreate = state.members.filter(m => m.name.trim()).map(m => ({
         name: m.name.trim(),
         is_child: m.isChild
       }));
       
-      const { error } = await supabase.rpc('create_initial_household_setup', {
+      const { data, error } = await supabase.rpc('create_initial_household_setup', {
         p_household_name: state.householdName.trim(),
         p_members: membersToCreate,
         p_bills: state.bills.filter(b => b.amount > 0 && b.name.trim()).map(b => ({ name: b.name.trim(), amount: b.amount, account: b.account, interval: b.interval })),
@@ -160,20 +177,27 @@ export default function SetupWizard() {
       });
       
       if (error) throw error;
-      
       sessionStorage.removeItem('setupWizardState');
       
-      // Vi sätter steget till 6 (Wow-overlay). När de klickar Klar kör vi refreshHousehold.
-      setTimeout(() => setStep(6), 1000);
+      if (proceedToPaywall) {
+        setLoadingMsg('Startar betalning...');
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch('/api/create-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ householdId: data.household_id, customerEmail: session?.user?.email })
+        });
+        const checkoutData = await res.json();
+        if (checkoutData.error) throw new Error(checkoutData.error);
+        window.location.href = checkoutData.url;
+      } else {
+        await refreshHousehold();
+      }
     } catch (e: any) {
       console.error(e);
       alert('Ett fel uppstod: ' + e.message);
-      setStep(4);
+      setStep(originalStep);
     }
-  };
-
-  const finishWow = async () => {
-    await refreshHousehold(); // Reloads state, sets setup_status = readonly_user, App routes to MonthView
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -580,31 +604,101 @@ export default function SetupWizard() {
     const validBills = state.bills.filter(b => b.amount > 0 && b.name.trim());
     const totalIncome = validIncomes.reduce((sum, i) => sum + i.amount, 0);
     const totalBills = validBills.reduce((sum, b) => sum + b.amount, 0);
+    const netto = totalIncome - totalBills;
 
     return (
       <div className="wizard-container">
-        <div className="wizard-card">
-          <h2>Bekräfta Startbudget</h2>
-          <p>Vi hittade följande data för {state.householdName}:</p>
+        <div className="wizard-card" style={{ maxWidth: '650px' }}>
+          <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Din Månadsöversikt 📊</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Här är en sammanställning av hushållets ekonomi.</p>
           
-          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', margin: '2rem 0', textAlign: 'left' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-              <span>Vuxna i hushållet:</span>
-              <strong>{state.members.filter(m => m.name.trim()).length}</strong>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2.5rem' }}>
+            {/* Inkomster */}
+            <div style={{ 
+              background: 'rgba(16, 185, 129, 0.1)', 
+              border: '1px solid rgba(16, 185, 129, 0.2)', 
+              borderRadius: '16px', 
+              padding: '1.5rem', 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+            }}>
+              <div>
+                <h3 style={{ color: 'var(--success-color)', fontSize: '1.1rem', margin: 0, textAlign: 'left' }}>Mina Inkomster</h3>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>(Lön, bidrag m.m.)</div>
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--success-color)' }}>
+                <AnimatedNumber value={totalIncome} /> kr 💰
+              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--success-color)' }}>
-              <span>{validIncomes.length} inkomster:</span>
-              <strong>{totalIncome.toLocaleString('sv-SE')} kr</strong>
+
+            {/* Utgifter */}
+            <div style={{ 
+              background: 'rgba(244, 63, 94, 0.1)', 
+              border: '1px solid rgba(244, 63, 94, 0.2)', 
+              borderRadius: '16px', 
+              padding: '1.5rem', 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+            }}>
+              <div>
+                <h3 style={{ color: 'var(--danger-color)', fontSize: '1.1rem', margin: 0, textAlign: 'left' }}>Mina Utgifter</h3>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>(Räkningar, boende m.m.)</div>
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--danger-color)' }}>
+                -<AnimatedNumber value={totalBills} /> kr 💸
+              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--danger-color)' }}>
-              <span>{validBills.length} återkommande kostnader:</span>
-              <strong>{totalBills.toLocaleString('sv-SE')} kr</strong>
+
+            {/* Sparutrymme */}
+            <div style={{ 
+              background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%)', 
+              border: '1px solid rgba(234, 179, 8, 0.3)', 
+              borderRadius: '16px', 
+              padding: '2rem 1.5rem', 
+              textAlign: 'center',
+              boxShadow: '0 8px 30px rgba(234, 179, 8, 0.15)'
+            }}>
+              <h3 style={{ color: '#eab308', fontSize: '1.1rem', margin: '0 0 0.5rem 0', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                ⭐ Det här sparar du denna månad:
+              </h3>
+              <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#fde047', textShadow: '0 2px 10px rgba(234, 179, 8, 0.4)' }}>
+                <AnimatedNumber value={Math.max(0, netto)} /> kr
+              </div>
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <button onClick={() => setStep(2)} className="secondary-btn" style={{ flex: 1 }}>Ändra</button>
-            <button onClick={commitSetup} className="primary-btn" style={{ flex: 2 }}>Skapa min budget</button>
+            <button onClick={() => setStep(2)} className="secondary-btn" style={{ flex: 1, padding: '1.2rem', borderRadius: '12px' }}>Ändra</button>
+            <button 
+              onClick={() => {
+                if (paywallActive) {
+                  setStep(5);
+                } else {
+                  commitSetup(false);
+                }
+              }} 
+              style={{ 
+                flex: 3,
+                background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)', 
+                color: 'white', 
+                padding: '1.2rem', 
+                border: 'none', 
+                borderRadius: '12px', 
+                cursor: 'pointer', 
+                fontWeight: 'bold', 
+                fontSize: '1.2rem',
+                boxShadow: '0 4px 15px rgba(217, 119, 6, 0.4)',
+                transition: 'transform 0.2s, box-shadow 0.2s'
+              }}
+              onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              GÅ VIDARE FÖR ATT SPARA DIN BUDGET ➔
+            </button>
           </div>
         </div>
       </div>
@@ -614,60 +708,70 @@ export default function SetupWizard() {
   if (step === 5) {
     return (
       <div className="wizard-container">
-        <div className="wizard-card">
-          <div className="spinner" style={{ margin: '0 auto 2rem auto', borderTopColor: 'var(--accent-color)' }}></div>
-          <h2>{loadingMsg}</h2>
-          <p>Bygger upp din Ekonomi...</p>
+        <div className="wizard-card" style={{ maxWidth: '500px', padding: '3rem 2rem' }}>
+          <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', color: '#fff' }}>
+            Spara din budget och få full koll! 📑🚀
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '2rem' }}>
+            För mindre än 2 kronor om dagen hjälper vi dig och ditt hushåll att hålla koll på pengarna, varje månad.
+          </p>
+          
+          <div style={{ 
+            background: 'rgba(16, 185, 129, 0.1)', 
+            border: '1px solid rgba(16, 185, 129, 0.3)', 
+            borderRadius: '12px', 
+            padding: '1.5rem',
+            marginBottom: '2rem'
+          }}>
+            <h3 style={{ color: 'var(--success-color)', fontSize: '1.2rem', margin: '0 0 1rem 0' }}>
+              💳 Pris: Endast 59 kr i månaden per hushåll.
+            </h3>
+            <div style={{ color: '#fff', textAlign: 'left' }}>
+              <p style={{ marginBottom: '0.75rem', fontWeight: 'bold' }}>Detta ingår:</p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, lineHeight: '1.8' }}>
+                <li>✓ Spara och ändra din budget precis när du vill.</li>
+                <li>✓ Smart översikt över inkomster och utgifter.</li>
+                <li>✓ Full koll på vad ni har över varje månad.</li>
+                <li>✓ Ingen bindningstid – avsluta när du vill.</li>
+              </ul>
+            </div>
+          </div>
+
+          <button 
+            onClick={() => commitSetup(true)} 
+            disabled={loadingMsg !== ''}
+            style={{ 
+              width: '100%',
+              background: 'var(--success-color)', 
+              color: 'white', 
+              padding: '1.2rem', 
+              border: 'none', 
+              borderRadius: '12px', 
+              cursor: 'pointer', 
+              fontWeight: 'bold', 
+              fontSize: '1.3rem',
+              boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)'
+            }}
+          >
+            {loadingMsg !== '' ? loadingMsg : 'BETALA 59 KR / MÅNAD'}
+          </button>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '1rem' }}>
+            När betalningen är klar skickas du direkt in på sidan till din sparade budget!
+          </p>
         </div>
       </div>
     );
   }
 
-  if (step === 6) {
-    const validIncomes = state.incomes.filter(i => i.amount > 0 && i.name.trim());
-    const validBills = state.bills.filter(b => b.amount > 0 && b.name.trim());
-    const totalIncome = validIncomes.reduce((sum, i) => sum + i.amount, 0);
-    const totalBills = validBills.reduce((sum, b) => sum + b.amount, 0);
-    const netto = totalIncome - totalBills;
-
+  if (step === 10) {
     return (
-      <>
-        {/* We render MonthView in the background in ReadOnly mode (it doesn't have data yet locally, but it looks like app) */}
-        <div style={{ opacity: 0.3, pointerEvents: 'none', height: '100vh', overflow: 'hidden' }}>
-          {/* We fake a MonthView here since we don't have real app data fetched yet, or we just render an empty view */}
+      <div className="wizard-container">
+        <div className="wizard-card">
+          <div className="spinner" style={{ margin: '0 auto 2rem auto', borderTopColor: 'var(--accent-color)' }}></div>
+          <h2>{loadingMsg}</h2>
+          <p>Ett ögonblick...</p>
         </div>
-        
-        <div className="wizard-container" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100000 }}>
-          <div className="wizard-card wow-overlay">
-            <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>🎉 SmartEkonomi är redo</h1>
-            
-            <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Du har cirka</p>
-            <div style={{ fontSize: '3.5rem', fontWeight: 'bold', color: 'var(--success-color)', marginBottom: '0.5rem' }}>
-              {netto.toLocaleString('sv-SE')} kr
-            </div>
-            <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-              kvar varje månad efter dina fasta kostnader.
-            </p>
-            
-            <p style={{ marginBottom: '2rem', lineHeight: '1.5' }}>
-              <em>Det är pengar som nu kan planeras, sparas eller användas till annat.</em>
-            </p>
-
-            <div style={{ textAlign: 'left', background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
-              <p style={{ marginBottom: '1rem', color: 'var(--text-muted)' }}>Baserat på:</p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <li>✓ {validBills.length} återkommande betalningar</li>
-                <li>✓ {validIncomes.length} inkomster</li>
-                <li>✓ {state.members.filter(m=>m.name.trim()).length} hushållsmedlemmar</li>
-              </ul>
-            </div>
-            
-            <button onClick={finishWow} className="primary-btn" style={{ width: '100%', fontSize: '1.2rem', padding: '1rem' }}>
-              Öppna min budget
-            </button>
-          </div>
-        </div>
-      </>
+      </div>
     );
   }
 

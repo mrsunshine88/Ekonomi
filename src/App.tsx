@@ -150,7 +150,6 @@ function App() {
     );
   }
 
-  const isReadOnlyMode = setupStatus === 'readonly_user' && state.paywallActive;
 
   // 3. HARD GATE: Paywall
   const isPaywallBlocked = state.paywallActive && state.stripeStatus !== 'vip' && state.stripeStatus !== 'active' && !isAdmin;
@@ -296,7 +295,7 @@ function App() {
             </div>
           ) : currentView === 'manage' ? (
             <div>
-              <ManageBills readOnly={isReadOnlyMode && !isDemoMode} />
+              <ManageBills />
             </div>
           ) : currentView === 'stats' ? (
             <div>
@@ -336,7 +335,7 @@ function App() {
                 <Summary currentMonth={currentMonth} />
               )}
 
-              <MonthView currentMonth={currentMonth} readOnly={isReadOnlyMode && !isDemoMode} />
+              <MonthView currentMonth={currentMonth} />
             </>
           )}
 

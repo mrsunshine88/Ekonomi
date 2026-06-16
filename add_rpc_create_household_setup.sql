@@ -18,7 +18,7 @@ BEGIN
     
     -- 2. Link creator (the user calling this) to the household
     UPDATE profiles 
-    SET household_id = v_household_id, role = 'owner', setup_status = 'readonly_user'
+    SET household_id = v_household_id, role = 'owner', setup_status = 'completed'
     WHERE id = auth.uid();
     
     -- 3. Create members (Accounts)
