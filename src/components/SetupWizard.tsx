@@ -298,7 +298,14 @@ export default function SetupWizard() {
               [memberId]: {
                 suggestedBills: [...existing.suggestedBills, ...result.suggestedBills],
                 suggestedIncomes: [...existing.suggestedIncomes, ...result.suggestedIncomes],
-                otherTransactions: [...existing.otherTransactions, ...result.otherTransactions]
+                otherTransactions: [...existing.otherTransactions, ...result.otherTransactions],
+                summary: {
+                  suggestedIncomesCount: existing.summary.suggestedIncomesCount + result.summary.suggestedIncomesCount,
+                  suggestedCount: existing.summary.suggestedCount + result.summary.suggestedCount,
+                  recognizedSuggestedCount: existing.summary.recognizedSuggestedCount + result.summary.recognizedSuggestedCount,
+                  otherCount: existing.summary.otherCount + result.summary.otherCount,
+                  unknownCount: existing.summary.unknownCount + result.summary.unknownCount,
+                }
               }
             };
           }
