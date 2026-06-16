@@ -140,6 +140,15 @@ export default function AdminDashboard() {
     fetchStripeStatus();
   }, []);
 
+  useEffect(() => {
+    if (showMembersModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [showMembersModal]);
+
   const handleTogglePaywall = async () => {
     setLoading(true);
     try {
