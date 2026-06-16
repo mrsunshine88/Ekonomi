@@ -432,7 +432,11 @@ export default function AdminDashboard() {
         </>
       )}
 
-      {msg && <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(0,0,0,0.5)', borderRadius: '8px', borderLeft: '4px solid #f43f5e', color: '#fff' }}>{msg}</div>}
+      {msg && (
+        <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000000, padding: '1rem 2rem', background: 'rgba(0,0,0,0.9)', borderRadius: '8px', borderBottom: '4px solid #f43f5e', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.8)', fontWeight: 'bold', textAlign: 'center', minWidth: '300px' }}>
+          {msg}
+        </div>
+      )}
 
       <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
         <AdminChat />
