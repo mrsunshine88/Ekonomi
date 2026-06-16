@@ -362,8 +362,8 @@ export default function ManageBills() {
           // Detta är inte SmartEkonomi-mallen. Kör standard bank-import!
           const { data: rules } = await supabase.from('household_import_rules').select('*');
           const safeRules = rules || [];
-          const knownBills = state.bills.map(b => ({ accountId: b.accountId, defaultAmount: b.defaultAmount }));
-          const knownIncomes = state.incomes ? state.incomes.map(i => ({ userId: i.userId, amount: i.amount })) : [];
+          const knownBills = state.bills.map(b => ({ accountId: b.accountId, defaultAmount: b.defaultAmount, name: b.name }));
+          const knownIncomes = state.incomes ? state.incomes.map(i => ({ userId: i.userId, amount: i.amount, name: i.name })) : [];
           const result = parseBankData(json, safeRules, state.accounts, householdProfiles, knownBills, knownIncomes);
           
           setHouseholdRules(safeRules);
@@ -397,8 +397,8 @@ export default function ManageBills() {
           // Detta är inte SmartEkonomi-mallen. Kör standard bank-import!
           const { data: rules } = await supabase.from('household_import_rules').select('*');
           const safeRules = rules || [];
-          const knownBills = state.bills.map(b => ({ accountId: b.accountId, defaultAmount: b.defaultAmount }));
-          const knownIncomes = state.incomes ? state.incomes.map(i => ({ userId: i.userId, amount: i.amount })) : [];
+          const knownBills = state.bills.map(b => ({ accountId: b.accountId, defaultAmount: b.defaultAmount, name: b.name }));
+          const knownIncomes = state.incomes ? state.incomes.map(i => ({ userId: i.userId, amount: i.amount, name: i.name })) : [];
           const result = parseBankData(json, safeRules, state.accounts, householdProfiles, knownBills, knownIncomes);
           
           setHouseholdRules(safeRules);

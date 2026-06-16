@@ -38,9 +38,19 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
     setRows(current => {
       const next = [...current];
       if (next[index].isIncoming) {
-        next[index] = { ...next[index], selectedAsIncome: !next[index].selectedAsIncome };
+        const willBeSelected = !next[index].selectedAsIncome;
+        next[index] = { 
+          ...next[index], 
+          selectedAsIncome: willBeSelected,
+          selectedUserId: willBeSelected && !next[index].selectedUserId && profiles.length > 0 ? profiles[0].id : next[index].selectedUserId
+        };
       } else {
-        next[index] = { ...next[index], selectedAsBill: !next[index].selectedAsBill };
+        const willBeSelected = !next[index].selectedAsBill;
+        next[index] = { 
+          ...next[index], 
+          selectedAsBill: willBeSelected,
+          selectedAccountId: willBeSelected && !next[index].selectedAccountId && accounts.length > 0 ? accounts[0].id : next[index].selectedAccountId
+        };
       }
       return next;
     });
@@ -181,6 +191,11 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
                     borderColor = row.selectedAsIncome ? 'rgba(16, 185, 129, 0.3)' : 'transparent';
                     iconColor = '#10b981';
                     statusText = '🟢 Bekräftad';
+                  } else if (row.matchLevel === 'already_imported') {
+                    bgColor = 'rgba(255,255,255,0.02)';
+                    borderColor = 'rgba(255,255,255,0.05)';
+                    iconColor = '#9ca3af';
+                    statusText = '✅ Redan inlagd';
                   } else if (row.matchLevel === 'new_discovery') {
                     bgColor = row.selectedAsIncome ? 'rgba(167, 139, 250, 0.15)' : 'rgba(255,255,255,0.03)';
                     borderColor = row.selectedAsIncome ? 'rgba(167, 139, 250, 0.4)' : 'transparent';
@@ -317,6 +332,11 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
                     borderColor = row.selectedAsBill ? 'rgba(16, 185, 129, 0.3)' : 'transparent';
                     iconColor = '#10b981';
                     statusText = '🟢 Bekräftad';
+                  } else if (row.matchLevel === 'already_imported') {
+                    bgColor = 'rgba(255,255,255,0.02)';
+                    borderColor = 'rgba(255,255,255,0.05)';
+                    iconColor = '#9ca3af';
+                    statusText = '✅ Redan inlagd';
                   } else if (row.matchLevel === 'new_discovery') {
                     bgColor = row.selectedAsBill ? 'rgba(167, 139, 250, 0.15)' : 'rgba(255,255,255,0.03)';
                     borderColor = row.selectedAsBill ? 'rgba(167, 139, 250, 0.4)' : 'transparent';
@@ -512,6 +532,17 @@ export default function BankImportModal({ parseResult, accounts, profiles, onCon
                               ))}
                             </select>
                           )}
+                          <div style={{ marginTop: '0.5rem' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={learnRules[originalIndex] ?? true}
+                                onChange={() => handleToggleLearn(originalIndex)}
+                                style={{ cursor: 'pointer' }}
+                              />
+                              Lär SmartEkonomi detta
+                            </label>
+                          </div>
                         </div>
                       )}
                     </div>

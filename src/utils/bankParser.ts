@@ -10,7 +10,7 @@ export interface ParsedBankRow {
   confidenceScore: number;
   
   // New UI mapping
-  matchLevel: 'confirmed' | 'new_discovery' | 'needs_review' | 'no_match';
+  matchLevel: 'confirmed' | 'new_discovery' | 'needs_review' | 'no_match' | 'already_imported';
   matchedVia: string;
   aliasMatched?: string;
   historicalMin?: number;
@@ -96,8 +96,8 @@ export function parseBankData(
   rules: HouseholdImportRule[],
   householdAccounts: { id: string, name: string }[],
   householdProfiles: { id: string, display_name?: string, email?: string }[] = [],
-  knownBills: { accountId: string, defaultAmount: number }[] = [],
-  knownIncomes: { userId: string, amount: number }[] = []
+  knownBills: { accountId: string, defaultAmount: number, name: string }[] = [],
+  knownIncomes: { userId: string, amount: number, name: string }[] = []
 ): BankParseResult {
   // 1. Detect Columns
   let dateIdx = -1;
@@ -155,11 +155,17 @@ export function parseBankData(
     const isIncoming = rawAmountNum > 0;
     const amount = Math.abs(rawAmountNum);
     const normalized = normalizeBankString(String(rawDesc));
+    const trimmedDesc = String(rawDesc).trim();
     
-    let matchLevel: ParsedBankRow['matchLevel'] = 'no_match';
-    let matchedVia = 'Ingen regel hittades';
+    // Check if already imported
+    const alreadyBill = !isIncoming && knownBills.some(b => b.name === trimmedDesc);
+    const alreadyIncome = isIncoming && knownIncomes.some(i => i.name === trimmedDesc);
+    const isAlreadyImported = alreadyBill || alreadyIncome;
+    
+    let matchLevel: ParsedBankRow['matchLevel'] = isAlreadyImported ? 'already_imported' : 'no_match';
+    let matchedVia = isAlreadyImported ? 'Finns redan i appen' : 'Ingen regel hittades';
     let aliasMatched: string | undefined;
-    let isRecognized = false;
+    let isRecognized = isAlreadyImported;
     let suggestedAccount = null;
     let suggestedUser = null;
     let isSuggestedBill = false;
@@ -179,17 +185,19 @@ export function parseBankData(
 
     // 1. Hushållets minne
     let matchedRule: HouseholdImportRule | null = null;
-    for (const rule of rules) {
-      if (searchString.includes(rule.search_string) || rule.search_string.includes(searchString)) {
-        if ((rule.is_bill && isIncoming) || (!rule.is_bill && !isIncoming)) {
-            continue; // Direction mismatch
-        }
-        
-        // Find best match if multiple
-        const confidence = rule.usage_count; // Simplified heuristic
-        if (confidence >= highestConfidence) {
-            highestConfidence = confidence;
-            matchedRule = rule;
+    if (!isAlreadyImported) {
+      for (const rule of rules) {
+        if (searchString.includes(rule.search_string) || rule.search_string.includes(searchString)) {
+          if ((rule.is_bill && isIncoming) || (!rule.is_bill && !isIncoming)) {
+              continue; // Direction mismatch
+          }
+          
+          // Find best match if multiple
+          const confidence = rule.usage_count; // Simplified heuristic
+          if (confidence >= highestConfidence) {
+              highestConfidence = confidence;
+              matchedRule = rule;
+          }
         }
       }
     }
@@ -207,38 +215,40 @@ export function parseBankData(
       }
     } else {
       // 2. SYSTEM_BILLS
-      if (!isIncoming) {
-        const sysMatch = SYSTEM_BILLS_ALL.find(sb => searchString === sb || tokens.includes(sb));
-        if (sysMatch) {
-          matchLevel = 'new_discovery';
-          matchedVia = `SYSTEM-regel ${sysMatch}`;
-          isSuggestedBill = true;
-          isRecognized = true;
+      if (!isAlreadyImported) {
+        if (!isIncoming) {
+          const sysMatch = SYSTEM_BILLS_ALL.find(sb => searchString === sb || tokens.includes(sb));
+          if (sysMatch) {
+            matchLevel = 'new_discovery';
+            matchedVia = `SYSTEM-regel ${sysMatch}`;
+            isSuggestedBill = true;
+            isRecognized = true;
+          }
         }
-      }
 
-      // 3. Textmönster
-      if (matchLevel === 'no_match') {
-        if (isIncoming) {
-          if (searchString.includes('LÖN') || searchString.includes('SALARY') || searchString.includes('LON') || searchString.includes('UTBETALNING')) {
-            isSuggestedIncome = true;
-            matchLevel = 'needs_review';
-            matchedVia = 'Textanalys (Lön/Utbetalning)';
-          }
-        } else {
-          for (const acc of householdAccounts) {
-            if (searchString.includes(acc.name.toUpperCase())) {
-              suggestedAccount = acc.id;
-              isSuggestedBill = true;
+        // 3. Textmönster
+        if (matchLevel === 'no_match') {
+          if (isIncoming) {
+            if (searchString.includes('LÖN') || searchString.includes('SALARY') || searchString.includes('LON') || searchString.includes('UTBETALNING')) {
+              isSuggestedIncome = true;
               matchLevel = 'needs_review';
-              matchedVia = `Textanalys (Kontonamn: ${acc.name})`;
-              break;
+              matchedVia = 'Textanalys (Lön/Utbetalning)';
             }
-          }
-          if (searchString.includes('AUTOGIRO')) {
-             isSuggestedBill = true;
-             matchLevel = 'needs_review';
-             matchedVia = 'Textanalys (Autogiro)';
+          } else {
+            for (const acc of householdAccounts) {
+              if (searchString.includes(acc.name.toUpperCase())) {
+                suggestedAccount = acc.id;
+                isSuggestedBill = true;
+                matchLevel = 'needs_review';
+                matchedVia = `Textanalys (Kontonamn: ${acc.name})`;
+                break;
+              }
+            }
+            if (searchString.includes('AUTOGIRO')) {
+               isSuggestedBill = true;
+               matchLevel = 'needs_review';
+               matchedVia = 'Textanalys (Autogiro)';
+            }
           }
         }
       }
@@ -314,12 +324,12 @@ export function parseBankData(
       
       suggestedAccountId: suggestedAccount,
       selectedAccountId: suggestedAccount,
-      isSuggestedBill,
+      isSuggestedBill: isSuggestedBill || alreadyBill,
       selectedAsBill: isSuggestedBill && (matchLevel === 'confirmed' || matchLevel === 'new_discovery'),
       
       suggestedUserId: suggestedUser,
       selectedUserId: suggestedUser,
-      isSuggestedIncome,
+      isSuggestedIncome: isSuggestedIncome || alreadyIncome,
       selectedAsIncome: isSuggestedIncome && (matchLevel === 'confirmed' || matchLevel === 'new_discovery'),
       
       isRecognized
@@ -330,14 +340,14 @@ export function parseBankData(
   const suggestedIncomes = parsedRows
     .filter(r => r.isSuggestedIncome)
     .sort((a, b) => {
-       const order = { 'confirmed': 0, 'new_discovery': 1, 'needs_review': 2, 'no_match': 3 };
+       const order = { 'confirmed': 0, 'new_discovery': 1, 'needs_review': 2, 'no_match': 3, 'already_imported': 4 };
        return order[a.matchLevel] - order[b.matchLevel];
     });
 
   const suggestedBills = parsedRows
     .filter(r => r.isSuggestedBill)
     .sort((a, b) => {
-       const order = { 'confirmed': 0, 'new_discovery': 1, 'needs_review': 2, 'no_match': 3 };
+       const order = { 'confirmed': 0, 'new_discovery': 1, 'needs_review': 2, 'no_match': 3, 'already_imported': 4 };
        return order[a.matchLevel] - order[b.matchLevel];
     });
     
