@@ -309,7 +309,16 @@ export default function ManageBills() {
         }
 
         if (headerRowIdx === -1) {
-          toast.error("Hittade inte rubriken 'Kategori' i filen.");
+          // Detta är inte SmartEkonomi-mallen. Kör standard bank-import!
+          const { data: rules } = await supabase.from('household_import_rules').select('*');
+          const safeRules = rules || [];
+          const result = parseBankData(json, safeRules, state.accounts);
+          
+          setHouseholdRules(safeRules);
+          setBankParseResult(result);
+          setShowBankModal(true);
+          
+          if (e.target) e.target.value = ''; // Nollställ
           return;
         }
 
