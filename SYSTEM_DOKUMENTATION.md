@@ -1289,9 +1289,11 @@ Rullgardinsmenyn "Kopplat konto" har raderats helt från "Mina Sidor". Istället
 ## 30. Nya Funktioner: Besökarchatt, Excel-import & UI-Förbättringar (Juni 2026)
 
 ### 30.1 Chatt för oinloggade besökare
-**Vad:** Kundtjänstchatten (`ChatBubble.tsx`) finns nu tillgänglig direkt på inloggningsskärmen. Besökare kan starta en chatt utan att skapa ett konto.
-**Hur:** En `visitor_id` kolumn lades till i `chat_sessions`-tabellen och `user_id` gjordes valfri (`DROP NOT NULL`). Klienten genererar ett unikt sessions-ID som lagras i `localStorage` (`visitor_session_id`). Detta ID används för att återansluta besökaren till sin konversation även om sidan laddas om. I administratörsvyn (`AdminChat.tsx`) visas dessa användare tydligt som "Oinloggad Besökare".
-**Varför:** Sänker tröskeln för att kontakta support. Nya användare som har frågor kring prissättning eller funktioner innan de registrerar sig kan nu få direkt hjälp, vilket ökar konverteringen.
+**Vad:** Kundtjänstchatten (`ChatBubble.tsx`) finns nu tillgänglig direkt på inloggningsskärmen. Besökare kan starta en chatt utan att skapa ett konto. Dessutom dyker chattbubblan upp "magiskt" utan sidomladdning när en admin aktiverar den.
+**Hur:** En `visitor_id` kolumn lades till i `chat_sessions`-tabellen och `user_id` gjordes valfri (`DROP NOT NULL`). Klienten genererar ett unikt sessions-ID som lagras i `localStorage` (`visitor_session_id`). 
+- **Auto-popup-fix:** En `useEffect` med `setInterval` lades till i `ChatBubble.tsx` för att binda `visitor_session_id` till Reacts state. Detta gör att bubblan renderas i realtid så fort App.tsx skapar ID:t, utan att besökaren behöver ladda om sidan.
+- **Säkerhet & Permission-fix:** Supabase utvärderar alla RLS-policies när en rad infogas. Eftersom anonyma (oinloggade) användare inte hade rättighet (`EXECUTE`) att köra `is_user_admin()`, nekades de av databasen när de försökte skicka meddelanden. SQL-skriptet byggdes om med `GRANT EXECUTE ON FUNCTION is_user_admin TO anon` och funktionen uppdaterades att returnera `false` ifall `auth.uid() IS NULL`.
+**Varför:** Sänker tröskeln för att kontakta support. Nya användare som har frågor kring prissättning eller funktioner innan de registrerar sig kan nu få direkt hjälp, vilket ökar konverteringen. Att lösa RLS-rättigheterna säkerställer stabilitet i databasens behörighetssystem utan att blotta administratörsfunktioner.
 
 ### 30.2 Excel-import av räkningar
 **Vad:** En "Importera Excel"-knapp har lagts till i Hantera Räkningar (`ManageBills.tsx`).
@@ -1302,13 +1304,12 @@ Rullgardinsmenyn "Kopplat konto" har raderats helt från "Mina Sidor". Istället
 
 ### 30.3 "Mina Sidor" - Tab-uppdelning
 **Vad:** Den tidigare mycket långa och oöverskådliga vyn "Mina Sidor" har delats upp i tre separata flikar.
-**Hur:** Introducerade ett lokalt `activeTab`-state (profil, household, settings) i `MyPages.tsx` som sparas i `localStorage` för att minnas var användaren var. 
-- **Min Profil & Säkerhet:** Inloggning, lösenord, Radera konto.
-- **Hushåll & Medlemmar:** Inbjudningskoder, delning av privat ekonomi, utsparkning av medlemmar.
-- **Inställningar & Premium:** Notis-datum och Stripe-prenumeration.
-**Varför:** Minskad kognitiv belastning (UX). Användaren möts inte längre av en vägg av text och "Farlig zon"-varningar, utan kan navigera smidigt baserat på vad de vill utföra.
+**Hur:** Introducerade ett lokalt `activeTab`-state i `MyPages.tsx`. 
+- **Flöde:** Istället för all info på samma sida har vi nu "👤 Profil", "🏠 Hushåll" och "⚙️ Premium" som val. Namnen kortades ner för att få plats snyggt på mobila enheter. CSS-klassen för desktop exkluderades så menyn fungerar på både dator och mobil.
+- **Funktioner bibehållna:** Inga funktioner (såsom Byt e-post/Lösenord, Prenumerationshantering, Bjuda in medlemmar) har raderats. All funktionalitet existerar intakt, sorterat under rätt logiska rubrik.
+**Varför:** Minskad kognitiv belastning (UX). Användaren möts inte längre av en vägg av text och "Farlig zon"-varningar, utan kan navigera smidigt baserat på vad de vill utföra. Att flikarna gjordes mobilanpassade säkerställer appens core design value (mobile-first).
 
 ### 30.4 Helskärmsläge i Kundservice (Admin)
 **Vad:** En "Helskärm"-knapp i `AdminChat.tsx`.
-**Hur:** Vid klick togglas ett state (`isFullscreen`) som applicerar en `fixed`-position över hela webläsarfönstret med `z-index: 99999`. 
-**Varför:** Kundtjänst kan ibland vara intensivt. Att kunna expandera chattverktyget över hela skärmen tar bort störande meny-element och ger maximal arbetsyta, särskilt uppskattat när admin sitter på en mobil enhet.
+**Hur:** Vid klick togglas ett state (`isFullscreen`). Eftersom en vanlig `position: fixed` blev kapad i kanterna på grund av föräldraelementens CSS (t.ex. `transform` i dashboard-layouten), implementerades en `React Portal` (`createPortal`). Chattvyn teleporteras då ut direkt till `document.body` och undviker därmed alla layout-restriktioner.
+**Varför:** Kundtjänst kan ibland vara intensivt. Att kunna expandera chattverktyget över hela skärmen tar bort störande meny-element och ger maximal arbetsyta, särskilt uppskattat när admin sitter på en mobil enhet. Portals var ett robust tekniskt val för att undvika komplex och skör CSS-nästling.
