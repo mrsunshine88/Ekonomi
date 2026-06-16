@@ -24,8 +24,8 @@ BEGIN
     -- 3. Create members (Accounts)
     FOR v_member IN SELECT * FROM jsonb_to_recordset(p_members) AS x(name text, is_child boolean)
     LOOP
-        INSERT INTO accounts (household_id, name, type) 
-        VALUES (v_household_id, v_member.name, 'person')
+        INSERT INTO accounts (id, household_id, name, type) 
+        VALUES (gen_random_uuid(), v_household_id, v_member.name, 'person')
         RETURNING id INTO v_member_id;
         
         -- Default: If it's the first member, try to link it to the user's profile if we had a mapping (skipped for simplicity here)
@@ -37,8 +37,8 @@ BEGIN
         LOOP
             -- Get account_id based on name matching (simplification, real logic might pass account_id directly if possible, or we resolve it here)
             -- For atomic setup, if the UI passes account names, we resolve them to IDs
-            INSERT INTO bills (household_id, name, default_amount, account_id, interval)
-            SELECT v_household_id, v_bill.name, v_bill.amount, a.id, COALESCE(v_bill.interval, 'all')
+            INSERT INTO bills (id, household_id, name, default_amount, account_id, interval)
+            SELECT gen_random_uuid(), v_household_id, v_bill.name, v_bill.amount, a.id, COALESCE(v_bill.interval, 'all')
             FROM accounts a
             WHERE a.household_id = v_household_id AND a.name = v_bill.account
             LIMIT 1;
@@ -49,8 +49,8 @@ BEGIN
     IF p_incomes IS NOT NULL THEN
         FOR v_income IN SELECT * FROM jsonb_to_recordset(p_incomes) AS x(name text, amount numeric, account text)
         LOOP
-            INSERT INTO incomes (household_id, name, default_amount, account_id)
-            SELECT v_household_id, v_income.name, v_income.amount, a.id
+            INSERT INTO incomes (id, household_id, name, default_amount, account_id)
+            SELECT gen_random_uuid(), v_household_id, v_income.name, v_income.amount, a.id
             FROM accounts a
             WHERE a.household_id = v_household_id AND a.name = v_income.account
             LIMIT 1;
