@@ -289,8 +289,23 @@ export default function SetupWizard() {
         setOwner(result.suggestedBills);
         setOwner(result.otherTransactions);
 
-        setUploadedFiles(prev => ({ ...prev, [memberId]: result }));
+        // Merge if a file was already uploaded for this member
+        setUploadedFiles(prev => {
+          const existing = prev[memberId];
+          if (existing) {
+            return {
+              ...prev,
+              [memberId]: {
+                suggestedBills: [...existing.suggestedBills, ...result.suggestedBills],
+                suggestedIncomes: [...existing.suggestedIncomes, ...result.suggestedIncomes],
+                otherTransactions: [...existing.otherTransactions, ...result.otherTransactions]
+              }
+            };
+          }
+          return { ...prev, [memberId]: result };
+        });
         setLoadingMsg('');
+        e.target.value = ''; // Nollställ filväljaren så samma fil (eller ny) kan väljas igen
       } catch (err: any) {
         setImportError('Ett fel uppstod: ' + err.message);
         setLoadingMsg('');
@@ -569,21 +584,19 @@ export default function SetupWizard() {
                       )}
                     </div>
                   </div>
-                  {!res && (
-                    <div style={{ position: 'relative' }}>
-                      <input 
-                        type="file" 
-                        accept=".csv, .xlsx, .xls" 
-                        onChange={(e) => handleFileUploadForMember(e, m.id)} 
-                        style={{ 
-                          position: 'absolute', top: 0, left: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' 
-                        }} 
-                      />
-                      <button className="secondary-btn" style={{ width: '100%', pointerEvents: 'none' }}>
-                        Ladda upp bankfil{isSingle ? '' : ` för ${m.name}`}
-                      </button>
-                    </div>
-                  )}
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type="file" 
+                      accept=".csv, .xlsx, .xls" 
+                      onChange={(e) => handleFileUploadForMember(e, m.id)} 
+                      style={{ 
+                        position: 'absolute', top: 0, left: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer' 
+                      }} 
+                    />
+                    <button className={res ? "secondary-btn" : "primary-btn"} style={{ width: '100%', pointerEvents: 'none' }}>
+                      {res ? '➕ Lägg till ytterligare bankfil' : `Ladda upp bankfil${isSingle ? '' : ` för ${m.name}`}`}
+                    </button>
+                  </div>
                 </div>
               );
             })}
