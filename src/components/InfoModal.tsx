@@ -34,7 +34,7 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
       category: "💡 Betalning & pris",
       questions: [
         { q: "Är appen gratis?", a: "59 kr/månad (mindre än 2 kr per dag för hela hushållet).\n14 dagars gratis prov." },
-        { q: "Hur avslutar jag prenumerationen?", a: "Under Mina sidor klickar du på \"Hantera prenumeration\" och följer länken till Stripe där du avslutar prenumerationen." }
+        { q: "Hur avslutar jag prenumerationen?", a: "Under Inställningar i sidomenyn klickar du på \"Hantera prenumeration\" och följer länken till Stripe där du avslutar prenumerationen." }
       ]
     },
     {
