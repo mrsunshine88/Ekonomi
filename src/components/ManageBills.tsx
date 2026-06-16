@@ -10,6 +10,7 @@ import { parseBankData } from '../utils/bankParser';
 import type { BankParseResult, ParsedBankRow } from '../utils/bankParser';
 import { supabase } from '../supabase';
 import PaywallModal from './PaywallModal';
+import { normalizeLearningString } from '../utils/normalization';
 
 interface Props {
   readOnly?: boolean;
@@ -265,6 +266,23 @@ export default function ManageBills({ readOnly }: Props) {
               matched_examples: [row.rawDescription]
             });
             learnedCount++;
+            
+            // Log to global learning (Phase 1)
+            const globalName = normalizeLearningString(row.rawDescription);
+            if (globalName) {
+              await supabase.from('global_learning_votes').upsert({
+                household_id: householdId,
+                normalized_name: globalName,
+                transaction_direction: 'IN',
+                category: 'VARIABLE_INCOME',
+                source: 'BANK_IMPORT',
+                normalization_version: 1,
+                is_active: true,
+                updated_at: new Date().toISOString()
+              }, {
+                onConflict: 'household_id, normalized_name, transaction_direction, category'
+              });
+            }
           }
         }
       } else {
@@ -324,6 +342,23 @@ export default function ManageBills({ readOnly }: Props) {
                 matched_examples: [row.rawDescription]
               });
               learnedCount++;
+              
+              // Log to global learning (Phase 1)
+              const globalName = normalizeLearningString(row.rawDescription);
+              if (globalName) {
+                await supabase.from('global_learning_votes').upsert({
+                  household_id: householdId,
+                  normalized_name: globalName,
+                  transaction_direction: 'OUT',
+                  category: 'BILL',
+                  source: 'BANK_IMPORT',
+                  normalization_version: 1,
+                  is_active: true,
+                  updated_at: new Date().toISOString()
+                }, {
+                  onConflict: 'household_id, normalized_name, transaction_direction, category'
+                });
+              }
             }
           }
         }

@@ -1,5 +1,6 @@
 import type { HouseholdImportRule } from '../types';
 
+import { normalizeLearningString } from './normalization';
 export interface ParsedBankRow {
   originalIndex: number;
   date: string;
@@ -45,26 +46,17 @@ export interface BankParseResult {
   };
 }
 
+
+
 // Helper: Normalize strings for better matching
 export function normalizeBankString(str: string): string {
   if (!str) return '';
-  let s = str.toUpperCase().trim();
-  
-  // Remove common bank/company noise words
-  const noiseWords = [
-    ' AB', ' AKTIEBOLAG', ' SVERIGE', ' AUTOGIRO', ' BG', ' PG', ' KORTKÖP', 
-    ' KORTTRANSAKTION', ' ÖVERFÖRING', ' SWISH', ' BETALNING', ' KONTO', ' INC', ' LLC', '.COM'
-  ];
-  
-  for (const noise of noiseWords) {
-    s = s.replace(new RegExp(noise, 'g'), ' ');
+  const normalized = normalizeLearningString(str);
+  // Om normaliseringen returnerar null (t.ex. under 3 tecken) faller vi tillbaka på en rensad version av originalet för intern parsning
+  if (!normalized) {
+      return str.toUpperCase().trim().replace(/\s+/g, ' ');
   }
-  
-  // Clean up extra spaces and non-alphanumeric chars
-  s = s.replace(/[^A-Z0-9ÅÄÖ ]/g, ' ');
-  s = s.replace(/\s+/g, ' ').trim();
-  
-  return s;
+  return normalized;
 }
 
 const SYSTEM_CATEGORIES: Record<string, string[]> = {

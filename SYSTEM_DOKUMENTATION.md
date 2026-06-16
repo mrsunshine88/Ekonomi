@@ -1434,3 +1434,167 @@ Ett fullt fungerande demoläge (aktiveras via en inbjudande knapp på inloggning
 Interaktion säljer. Istället för statiska bilder eller videoguider får användaren "känna och klämma" på hur systemet drar magiska slutsatser ur rå bankdata. Att se Månadsvyns utjämningskassa räkna om sig sekunden efter att man importerar 23 räkningar bygger direkt förtroende för appens kraft. Den lokala interceptorn säkerställer samtidigt att plattformen är säker och att inget sparas.
 
 ---
+
+## 35. Crowdsourcad Inlärning & Global Regelmotor
+
+### Vad:
+Ett system som gör att SmartEkonomis bankimport blir smartare för **varje ny användare som ansluter sig**. Systemet skapar en nätverkseffekt (vallgrav) där appen lär sig kollektivt av alla hushålls anonyma val, utan att röra personlig data.
+
+Konkret: Om 50 hushåll i Sverige alla klassar "KLARNA" som en räkning, kan administratören med ett knapptryck omvandla det till en global systemregel – och sekunden efter kategoriseras Klarna automatiskt korrekt för **alla** som laddar upp en bankfil.
+
+### Varför:
+- **Nätverkseffekt:** Appen blir märkbart bättre för varje ny användare som registrerar sig. Ingen konkurrent som startar om ett år kan kopiera den historiska data som redan samlats in.
+- **Vallgrav:** Data som inte samlas in idag kan aldrig återskapas. Genom att starta insamlingen nu (från dag 1) byggs ett data-försprång som är omöjligt att köpa.
+- **Användarvärde:** Inom 6–12 månader börjar bankimporten kännas "magisk" – systemet vet redan vad Spotify, Telenor och Hemköp är, utan att användaren behöver lära upp appen manuellt.
+
+---
+
+### 35.1 Databasmodell (`global_learning_votes`)
+
+En strikt, GDPR-säker tabell som sparar anonyma "röster" från hushållen:
+
+| Kolumn | Typ | Beskrivning |
+|---|---|---|
+| `id` | UUID | Primärnyckel |
+| `household_id` | UUID | Röstande hushåll (anonymiserat, visas ej för admin) |
+| `normalized_name` | TEXT | Det hårt rengjorda företagsnamnet. **Enda** strängen vi sparar. T.ex. `"KLARNA"` |
+| `transaction_direction` | ENUM (`IN`/`OUT`) | Om det var en inkommande eller utgående transaktion |
+| `category` | ENUM | `BILL`, `FIXED_INCOME`, `VARIABLE_INCOME` |
+| `source` | ENUM | `ONBOARDING`, `BANK_IMPORT`, `MANUAL_ENTRY` |
+| `normalization_version` | INTEGER | Version av normaliseringsalgoritmen. Framtidssäkrar datamigreringar |
+| `is_active` | BOOLEAN | `false` om hushållet tagit bort regeln (soft delete – bevarar historik) |
+| `first_seen_at` | TIMESTAMPTZ | När rösten skapades |
+| `updated_at` | TIMESTAMPTZ | När rösten senast uppdaterades |
+
+**Unique Constraint:** `(household_id, normalized_name, transaction_direction, category)`
+
+> **Varför category i constrainten?** Samma företag (t.ex. `SKATTEVERKET`) kan vara en `BILL` (kvarskatt, OUT) OCH `VARIABLE_INCOME` (skatteåterbäring, IN) för samma hushåll. Utan category i constrainten skulle systemet krocka. Med category kan ett hushåll ha båda rösterna oberoende av varandra.
+
+**Index:**
+- `idx_glv_name` på `normalized_name` – för snabb GROUP BY i Fas 2.
+- `idx_glv_active` på `is_active` – för att filtrera bort inaktiva röster.
+
+**Upsert-logik:** Om ett hushåll ångrar sig och ändrar "LÖN VOLVO" från `FIXED_INCOME` till `VARIABLE_INCOME` skrivs deras gamla röst över via `ON CONFLICT DO UPDATE`. Historik bevaras aldrig på bekostnad av korrekthet.
+
+---
+
+### 35.2 Postgres ENUMs
+
+Istället för fritext-fält använder tabellen Postgres-inbyggda ENUMs:
+- `learning_category_enum`: `'BILL'`, `'FIXED_INCOME'`, `'VARIABLE_INCOME'`
+- `learning_source_enum`: `'ONBOARDING'`, `'BANK_IMPORT'`, `'MANUAL_ENTRY'`
+- `transaction_direction_enum`: `'IN'`, `'OUT'`
+
+**Varför?** Detta gör det omöjligt att råka spara `"bill"` eller `"BILLS"` istället för `"BILL"`. All data är garanterat konsekvent från dag ett, oavsett om rösten kom från SetupWizard, ManageBills eller en framtida mobilapp.
+
+---
+
+### 35.3 Centraliserad Normalisering (`src/utils/normalization.ts`)
+
+All normalisering sker via en enda central funktion `normalizeLearningString(name: string)`:
+
+1. **Tvätta bort brus:** Tar bort ord som `AB`, `Sverige`, `AUTOGIRO`, `INC`, `.COM`, etc.
+2. **Rensa specialtecken:** Tar bort siffror och icke-alfanumeriska tecken.
+3. **Kvalitetsspärr:** Om resultatet är under 3 tecken returneras `null` och rösten ignoreras tyst. Detta förhindrar att meningslösa strängar som `"A"`, `"AB"`, eller `"SE"` sipprar in i databasen.
+
+**Varför centraliserat?** Om `SetupWizard.tsx` och `ManageBills.tsx` vardera har sin egen normalisering kan de producera olika resultat för samma sträng, vilket splittrar datan i databasen. Med en enda gemensam funktion garanteras att `"TELENOR AB"` och `"AUTOGIRO TELENOR"` alltid normaliseras till exakt `"TELENOR"`, oavsett var i appen rösten skapas.
+
+Funktionen återanvänds dessutom av `bankParser.ts` (via `normalizeBankString`) för att säkerställa att normaliseringen är 100% identisk i hela systemet.
+
+---
+
+### 35.4 Datainsamling – Var och Hur
+
+Röster samlas in på tre ställen i appen:
+
+**A) SetupWizard (`ONBOARDING`)**
+När en ny användare slutför onboardingen och sparar sina räkningar/inkomster via RPC-funktionen `create_initial_household_setup`, skickas automatiskt rösterna in till `global_learning_votes`. Varje räkning får `transaction_direction = 'OUT'` och `category = 'BILL'`. Inkomster får `direction = 'IN'` och `category` baserat på om det är fast eller rörlig lön.
+
+**B) ManageBills – Bankimport (`BANK_IMPORT`)**
+Varje gång en användare laddar upp en bankfil och bekräftar importen via `BankImportModal`, skickas en röst till `global_learning_votes` för varje ny räkning/inkomst som sparas. Befintliga regler som redan är lärda skapar inga nya röster (för att undvika att ett hushåll "röstar" upprepade gånger på samma sak).
+
+**C) Upsert-skyddet**
+Om ett hushåll laddar upp Telia 12 månader i rad och det finns en befintlig röst, triggas `ON CONFLICT DO UPDATE` i databasen – rösträknet för hushållet uppdateras *inte* utan deras röst skrivs bara om med ny `updated_at`. Systemet är helt skyddat mot att ett hushåll "boostar" sin röst genom upprepning.
+
+---
+
+### 35.5 Konsensusmotor (`global_learning_candidates_view`)
+
+En PostgreSQL-View som i realtid räknar ut hur stark konsensus det finns kring varje kandidat:
+
+```sql
+SELECT normalized_name, transaction_direction, category,
+  COUNT(DISTINCT household_id) as household_count,
+  MIN(first_seen_at) as first_discovered_at
+FROM global_learning_votes
+WHERE is_active = true
+GROUP BY normalized_name, transaction_direction, category
+HAVING COUNT(DISTINCT household_id) >= 1;
+```
+
+I Fas 2 justeras `HAVING`-tröskeln till `>= 5` och läggs till ett konsensusfilter på `>= 85%` enighet. Under Fas 1 står den på `>= 1` för att administratören ska kunna se systemet växa i realtid.
+
+---
+
+### 35.6 Admin-gränssnitt (`/admin/learning`)
+
+En dold, skyddad sida (`src/pages/AdminLearning.tsx`) som bara visas för system-administratörer (de som finns i tabellen `system_admins`).
+
+**Flödet:**
+1. Admin loggar in och navigerar till "🧠 Inlärning" i menyn.
+2. Sidan läser live-data från `global_learning_candidates_view`.
+3. En tabell visar alla kandidater: Namn | Riktning | Kategori | Antal hushåll.
+4. Admin klickar `[Godkänn]` på t.ex. "KLARNA | OUT | BILL | 42 hushåll".
+5. Frontend anropar RPC-funktionen `admin_approve_system_rule(...)`.
+6. Databasen skapar en ny rad i `household_import_rules` med `rule_type = 'SYSTEM'` och `household_id = NULL`.
+7. `bankParser.ts` hämtar redan alla regler oavsett `household_id` – den nya SYSTEM-regeln är omedelbart live för **alla** användare i hela systemet.
+8. Rösterna i `global_learning_votes` sätts till `is_active = false` och kandidaten försvinner från listan.
+
+**Säkerhet:** Godkännande sker via RPC-funktionen `admin_approve_system_rule` som är skyddad med `SECURITY DEFINER` och dubbelkollar `is_user_admin()` inuti databasen. Ingen vanlig användare kan kringgå detta.
+
+---
+
+### 35.7 Sparad-till-Fas-2-lista (Medvetet uteslutna funktioner)
+
+Följande funktioner diskuterades men uteslöts medvetet ur Fas 1 för att undvika teknisk skuld och overengineering:
+
+| Funktion | Varför väntar vi? |
+|---|---|
+| `bank_name` (SEB, Swedbank...) | Risk för overfitting. Inga hårda regler baserade på bank i Fas 2 förrän vi har tillräcklig data. |
+| `normalized_name_hash` (SHA-256) | "Arkitekturporr". Ingen faktisk nytta så länge klartexten ändå finns i samma tabell. Kan läggas till senare om GDPR-krav förändras. |
+| Adminpanel för konsensusmotor | Byggs nu (Fas 1) men aktiveras när data växt till > 5 hushåll per kandidat. |
+| Auto-genererade SYSTEM-regler | Aldrig automatiskt. Admin godkänner alltid manuellt för att garantera datakvalitet. |
+| `confidence_score` | Reserverat i tabellen (NULL default) men används inte förrän konsensusmotorn är aktiv. |
+
+---
+
+### 35.8 GDPR-design
+
+- **Ingen `original_name` sparas.** Råa banksträngarna (som `"AUTOGIRO KLARNA BANK AB 55610..."`) kan innehålla personnummer eller organisationsnummer. Systemet sparar aldrig originaltexten – enbart det normaliserade resultatet (`"KLARNA"`).
+- **Röster är anonyma.** `household_id` kopplar rösten till ett hushåll, men administratören ser bara det normaliserade namnet och hur många hushåll som röstat. Ingenting kan spåras tillbaka till en enskild person.
+- **`is_active = false` istället för DELETE.** Data raderas aldrig – den inaktiveras. Detta möjliggör historisk analys och eventuell dataåterställning utan att tappa spårbarhet.
+
+---
+
+### 35.9 Framtida Fas 2-plan (Konsensusmotorn)
+
+När plattformen har 500–1000 hushåll aktiveras nästa fas:
+1. **Dashboard med konsensuspoäng:** Visar `household_count` och `%` eniga.
+2. **Tröskeljustering:** Höj `HAVING`-gränsen till `>= 5` och lägg till ett `>= 85% enighet`-filter direkt i SQL-vyn.
+3. **`confidence_score`-kolumnen aktiveras:** Systemet kan börja lagra och visa konfidenspoäng per kandidat.
+4. **Automatiska kategoriförslag:** Parsern kan visa användaren `"97% av hushåll klassar detta som en räkning"` som ett informationsmeddelande (utan att tvinga kategorin).
+
+### 35.10 Filer som berörs
+
+| Fil | Förändring |
+|---|---|
+| `add_global_learning_votes.sql` | **[NY]** Skapar ENUMs, `global_learning_votes`, index, RLS-policies, konsensus-vyn och `admin_approve_system_rule`-RPC |
+| `add_rpc_create_household_setup.sql` | **[UPPDATERAD]** RPC-funktionen tar nu emot `normalized_name`, `transaction_direction`, `source` per räkning/inkomst och sparar röster |
+| `src/utils/normalization.ts` | **[NY]** Central normaliseringsfunktion `normalizeLearningString()` |
+| `src/utils/bankParser.ts` | **[UPPDATERAD]** `normalizeBankString()` återanvänder nu `normalizeLearningString()` istället för duplicerad kod |
+| `src/components/SetupWizard.tsx` | **[UPPDATERAD]** Skickar `normalized_name`, `transaction_direction` och `source` med i RPC-anropet |
+| `src/components/ManageBills.tsx` | **[UPPDATERAD]** UPSERT till `global_learning_votes` vid bekräftad bankimport |
+| `src/pages/AdminLearning.tsx` | **[NY]** Admin-sida för att granska och godkänna kandidater |
+| `src/App.tsx` | **[UPPDATERAD]** Routing för `/admin/learning`-vyn och ny menypost "🧠 Inlärning" för admins |
+
+---

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabase';
+import { RefreshCw, CheckCircle, ArrowRight, Play, Upload, Plus, Trash2, Home, User, Check, Users, Sparkles, Building2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import { useAuth } from '../AuthContext';
 import BankImportModal from './BankImportModal';
+import { normalizeLearningString } from '../utils/normalization';
 import { parseBankData } from '../utils/bankParser';
 import type { BankParseResult, ParsedBankRow } from '../utils/bankParser';
 import * as xlsx from 'xlsx';
@@ -173,13 +175,24 @@ export default function SetupWizard() {
       const { data, error } = await supabase.rpc('create_initial_household_setup', {
         p_household_name: state.householdName.trim(),
         p_members: membersToCreate,
-        p_bills: state.bills.filter(b => b.amount > 0 && b.name.trim()).map(b => ({ name: b.name.trim(), amount: b.amount, account: b.account, interval: b.interval })),
+        p_bills: state.bills.filter(b => b.amount > 0 && b.name.trim()).map(b => ({ 
+          name: b.name.trim(), 
+          amount: b.amount, 
+          account: b.account, 
+          interval: b.interval,
+          normalized_name: normalizeLearningString(b.name.trim()),
+          transaction_direction: 'OUT',
+          source: 'ONBOARDING'
+        })),
         p_incomes: state.incomes.filter(i => i.amount > 0 && i.name.trim()).map(i => ({ 
           name: i.name.trim(), 
           amount: i.amount, 
           account: i.account,
           type: i.type || 'fixed',
-          pay_date: i.pay_date || null
+          pay_date: i.pay_date || null,
+          normalized_name: normalizeLearningString(i.name.trim()),
+          transaction_direction: 'IN',
+          source: 'ONBOARDING'
         }))
       });
       

@@ -11,6 +11,7 @@ import LoginScreen from './components/Auth/LoginScreen';
 import MyPages from './components/MyPages';
 import AdminDashboard from './components/AdminDashboard';
 import PrivateView from './components/PrivateView';
+import AdminLearning from './pages/AdminLearning';
 
 import Onboarding from './components/Onboarding';
 import PaywallModal from './components/PaywallModal';
@@ -27,7 +28,7 @@ function App() {
   const state = useStore(s => s.state);
   const isDemoMode = useStore(s => s.isDemoMode);
   const stopDemo = useStore(s => s.stopDemo);
-  const [currentView, setCurrentView] = useState<'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin'>(() => {
+  const [currentView, setCurrentView] = useState<'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'admin_learning'>(() => {
     return (localStorage.getItem('smartEkonomi_currentView') as any) || 'start';
   });
 
@@ -253,7 +254,10 @@ function App() {
                   <>
                     <button onClick={() => navigateTo('mypages')} className={`mobile-menu-item ${currentView === 'mypages' ? 'active' : ''}`}>👤 Mina sidor</button>
                     {isAdmin && (
-                      <button onClick={() => navigateTo('admin')} className={`mobile-menu-item ${currentView === 'admin' ? 'active' : ''}`}>👑 Admin</button>
+                      <>
+                        <button onClick={() => navigateTo('admin')} className={`mobile-menu-item ${currentView === 'admin' ? 'active' : ''}`}>👑 Admin</button>
+                        <button onClick={() => navigateTo('admin_learning')} className={`mobile-menu-item ${currentView === 'admin_learning' ? 'active' : ''}`}>🧠 Inlärning</button>
+                      </>
                     )}
                   </>
                 )}
@@ -287,6 +291,11 @@ function App() {
             <div>
               <button className="back-button" onClick={() => setCurrentView('start')}>← Tillbaka till Startsida</button>
               <AdminDashboard />
+            </div>
+          ) : currentView === 'admin_learning' && isAdmin ? (
+            <div>
+              <button className="back-button" onClick={() => setCurrentView('start')}>← Tillbaka till Startsida</button>
+              <AdminLearning />
             </div>
           ) : currentView === 'mypages' ? (
             <div>
