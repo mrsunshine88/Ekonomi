@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import type { BillDefinition, PaymentInterval, PrivateBill } from '../types';
+import type { BillDefinition, PaymentInterval, PrivateBill, HouseholdImportRule } from '../types';
 import { useStore } from '../store';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../AuthContext';
 import toast from 'react-hot-toast';
 import * as xlsx from 'xlsx';
+import BankImportModal from './BankImportModal';
+import { parseBankData } from '../utils/bankParser';
 
 export default function ManageBills() {
   const { user: realUser, role } = useAuth();
@@ -201,6 +203,62 @@ export default function ManageBills() {
     setNewAccName('');
   };
 
+  // Bank Import State
+  const [bankParseResult, setBankParseResult] = useState<BankParseResult | null>(null);
+  const [showBankModal, setShowBankModal] = useState(false);
+  const [householdRules, setHouseholdRules] = useState<HouseholdImportRule[]>([]);
+
+  const handleConfirmBankImport = async (selectedRows: ParsedBankRow[]) => {
+    let addedCount = 0;
+    
+    // Fetch household_id
+    const { data: profile } = await supabase.from('profiles').select('household_id').eq('id', user?.id).single();
+    const householdId = profile?.household_id;
+
+    for (const row of selectedRows) {
+      if (!row.selectedAccountId) continue;
+      
+      let account = state.accounts.find(a => a.id === row.selectedAccountId);
+      if (!account) continue;
+
+      const billData: BillDefinition = {
+        id: crypto.randomUUID(),
+        name: row.rawDescription.trim(),
+        accountId: account.id,
+        splitType: 'equal',
+        defaultAmount: row.amount,
+        interval: 'all',
+        warnIfZero: true
+      };
+      await onAddBill(billData);
+      addedCount++;
+      
+      if (householdId) {
+        const existingRule = householdRules.find(r => r.search_string === row.normalizedDescription);
+        if (existingRule) {
+          await supabase.from('household_import_rules')
+            .update({ 
+              usage_count: existingRule.usage_count + 1, 
+              last_seen_at: new Date().toISOString() 
+            })
+            .eq('id', existingRule.id);
+        } else {
+          await supabase.from('household_import_rules').insert({
+            household_id: householdId,
+            search_string: row.normalizedDescription,
+            target_account_id: account.id,
+            is_bill: true,
+            rule_type: 'USER',
+            usage_count: 1,
+            matched_examples: [row.rawDescription]
+          });
+        }
+      }
+    }
+    toast.success(`✅ Importerade ${addedCount} räkningar!`);
+    setShowBankModal(false);
+  };
+
   const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -273,7 +331,16 @@ export default function ManageBills() {
         }
 
         if (kategoriIdx === -1 || rakningIdx === -1) {
-          toast.error("Saknar kolumner för 'Kategori' eller 'Räkning'.");
+          // Detta är inte SmartEkonomi-mallen. Kör standard bank-import!
+          const { data: rules } = await supabase.from('household_import_rules').select('*');
+          const safeRules = rules || [];
+          const result = parseBankData(json, safeRules, state.accounts);
+          
+          setHouseholdRules(safeRules);
+          setBankParseResult(result);
+          setShowBankModal(true);
+          
+          if (e.target) e.target.value = ''; // Nollställ
           return;
         }
 
@@ -1310,6 +1377,14 @@ export default function ManageBills() {
         document.body
       )}
 
+      {showBankModal && bankParseResult && (
+        <BankImportModal
+          parseResult={bankParseResult}
+          accounts={state.accounts}
+          onConfirm={handleConfirmBankImport}
+          onCancel={() => setShowBankModal(false)}
+        />
+      )}
     </div>
   );
 }

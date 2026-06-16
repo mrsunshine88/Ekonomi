@@ -110,3 +110,15 @@ export interface CalculationResult {
   transfersToShared: Record<string, Record<string, number>>; // personId -> sharedAccountId -> amount
   swishes: SwishTransfer[]; // who swishes whom
 }
+
+export interface HouseholdImportRule {
+  id: string;
+  household_id: string;
+  search_string: string;
+  target_account_id: string | null;
+  is_bill: boolean;
+  rule_type: 'SYSTEM' | 'USER';
+  usage_count: number;
+  matched_examples: string[];
+  last_seen_at: string;
+}
