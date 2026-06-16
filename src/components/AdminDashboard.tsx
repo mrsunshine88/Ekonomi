@@ -461,22 +461,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* VIP & Admin UI replaced by MembersModal */}
-
-        {systemAdmins.length > 0 && (
-          <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '1rem' }}>
-            <h4 style={{ marginBottom: '1rem', color: '#fff' }}>🛡️ Aktiva Administratörer</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {systemAdmins.map(email => (
-                <div key={email} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '0.75rem', borderRadius: '8px' }}>
-                  <span style={{ color: '#fff' }}>{email}</span>
-                  <button onClick={() => handleRemoveAdmin(email)} disabled={loading} style={{ background: 'transparent', border: '1px solid #f43f5e', color: '#f43f5e', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Ta bort</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
+      
       <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
         <h3 style={{ marginBottom: '0.5rem' }}>Kontaktuppgifter (Sidfot)</h3>
         <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Dessa uppgifter visas när användare klickar på "Kontakt" längst ner på sidan.</p>

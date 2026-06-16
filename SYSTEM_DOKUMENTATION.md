@@ -1313,3 +1313,26 @@ Rullgardinsmenyn "Kopplat konto" har raderats helt från "Mina Sidor". Istället
 **Vad:** En "Helskärm"-knapp i `AdminChat.tsx`.
 **Hur:** Vid klick togglas ett state (`isFullscreen`). Eftersom en vanlig `position: fixed` blev kapad i kanterna på grund av föräldraelementens CSS (t.ex. `transform` i dashboard-layouten), implementerades en `React Portal` (`createPortal`). Chattvyn teleporteras då ut direkt till `document.body` och undviker därmed alla layout-restriktioner.
 **Varför:** Kundtjänst kan ibland vara intensivt. Att kunna expandera chattverktyget över hela skärmen tar bort störande meny-element och ger maximal arbetsyta, särskilt uppskattat när admin sitter på en mobil enhet. Portals var ett robust tekniskt val för att undvika komplex och skör CSS-nästling.
+
+---
+
+## 31. Admin Användarhantering (Admin User Management)
+
+### 31.1 Räknare för obekräftade konton
+**Vad:** En ny statistikruta ("📧 Obekräftade E-post") har lagts till högst upp i Admin Dashboarden.
+**Hur:** Den befintliga PostgreSQL-funktionen `get_admin_stats()` uppdaterades till att även returnera `unconfirmed_users BIGINT`. Eftersom funktionen körs med `SECURITY DEFINER` har den tillgång till den dolda `auth.users`-tabellen. SQL-frågan hämtar alla rader där `email_confirmed_at IS NULL`. I frontend (React) lades rutan till bredvid "Totala Medlemmar".
+**Varför:** För att ge administratören en direkt inblick i konverteringsgraden och hur många potentiella användare som fastnar i registreringssteget (t.ex. hamnar bekräftelsemailet i skräpposten?).
+
+### 31.2 Medlemslista & Säkerhet (Modal)
+**Vad:** Den gamla röriga Admin Dashboarden har städats upp. De lösa inmatningsfälten för VIP och Admins är borttagna. Klickar man nu på "Totala Medlemmar" öppnas en smidig och fullständig Modal-vy.
+**Hur:** Ett nytt SQL-skript (`admin_user_management.sql`) introducerades.
+1. **`admin_get_all_users()`**: Returnerar hela databasens lista över användare (e-post, inloggningsdatum, blockerad-status). Den mappar dessutom in om användaren tillhör ett VIP-hushåll eller är en registrerad systemadministratör, med hjälp av `EXISTS()` via underliggande tabeller (`profiles` och `households`).
+2. **Frontend:** React-komponenten `AdminDashboard.tsx` byggdes om kraftigt. En ny `MembersModal` skapades och renderas som en fullscreen overlay med z-index. Listan renderas med `.filter()` baserat på textinmatning i en ny sökruta för omedelbar filtrering.
+**Varför:** Dashboarden blev för vertikalt lång och rörig. Genom att samla all användarhantering i en sökbar lista skapades ett modernt CRM-gränssnitt där administratören direkt kan identifiera en användare och hantera deras rättigheter med ett enda klick, utan att skriva in mailadresser manuellt.
+
+### 31.3 Blockering och Borttagning av Konton
+**Vad:** Nya knappar för att "Blockera" (Lås upp) och "Radera" användare lades till per individ i Medlemslistan.
+**Hur:** 
+- **Blockera:** Genom SQL-funktionen `admin_ban_user()` uppdateras kolumnen `banned_until` i `auth.users`. Vid en blockering sätts datumet till år 3000, vilket nekar personen all framtida tillgång (och via Supabase auth bryts aktiva sessioner).
+- **Radera:** SQL-funktionen `admin_delete_user()` utför en `DELETE FROM auth.users WHERE id = target_user_id`. (Som ett extra skyddsnät körs även en delete i `profiles`). Supabase hanterar sedan kaskad-borttagning internt.
+**Varför:** Vid missbruk av appen, bedrägerier, testkonton eller spam-registreringar behövs ett enkelt grafiskt sätt att agera omedelbart, utan att behöva logga in i backend-databasen (Supabase Dashboard). Egenutvecklade RPC-funktioner via `SECURITY DEFINER` garanterar att enbart administratörer kan manipulera dessa kritiska data.
