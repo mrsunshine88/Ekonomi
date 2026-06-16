@@ -341,7 +341,16 @@ export default function ManageBills() {
         isIncoming: true,
         confidenceScore: 0.9,
         matchLevel: 'needs_review' as const,
-        matchedVia: 'Textanalys (Lön/Utbetalning/Bidrag)'
+        matchedVia: 'Textanalys (Lön/Utbetalning/Bidrag)',
+        suggestedAccountId: null,
+        selectedAccountId: null,
+        isSuggestedBill: false,
+        selectedAsBill: false,
+        suggestedUserId: null,
+        selectedUserId: null,
+        isSuggestedIncome: true,
+        selectedAsIncome: true,
+        isRecognized: true
       }
     ];
 
@@ -354,7 +363,16 @@ export default function ManageBills() {
       isIncoming: false,
       confidenceScore: 0.8,
       matchLevel: 'needs_review' as const,
-      matchedVia: 'SYSTEM-regel'
+      matchedVia: 'SYSTEM-regel',
+      suggestedAccountId: null,
+      selectedAccountId: null,
+      isSuggestedBill: true,
+      selectedAsBill: true,
+      suggestedUserId: null,
+      selectedUserId: null,
+      isSuggestedIncome: false,
+      selectedAsIncome: false,
+      isRecognized: true
     }));
 
     const demoOthers = Array.from({ length: 15 }).map((_, i) => ({
@@ -366,7 +384,16 @@ export default function ManageBills() {
       isIncoming: false,
       confidenceScore: 0,
       matchLevel: 'no_match' as const,
-      matchedVia: 'Ingen regel hittades'
+      matchedVia: 'Ingen regel hittades',
+      suggestedAccountId: null,
+      selectedAccountId: null,
+      isSuggestedBill: false,
+      selectedAsBill: false,
+      suggestedUserId: null,
+      selectedUserId: null,
+      isSuggestedIncome: false,
+      selectedAsIncome: false,
+      isRecognized: false
     }));
 
     setBankParseResult({
