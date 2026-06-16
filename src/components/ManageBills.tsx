@@ -209,10 +209,30 @@ export default function ManageBills() {
     reader.onload = (event) => {
       try {
         const data = event.target?.result;
-        const workbook = xlsx.read(data, { type: 'binary' });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const json: any[][] = xlsx.utils.sheet_to_json(sheet, { header: 1 });
+        const workbook = xlsx.read(data, { type: 'array' });
+        
+        let json: any[][] = [];
+        for (const sheetName of workbook.SheetNames) {
+          const sheet = workbook.Sheets[sheetName];
+          const sheetJson = xlsx.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
+          
+          let hasKategori = false;
+          for (let i = 0; i < Math.min(15, sheetJson.length); i++) {
+            if (sheetJson[i] && sheetJson[i].some(cell => typeof cell === 'string' && cell.toLowerCase().includes('kategori'))) {
+              hasKategori = true;
+              break;
+            }
+          }
+          if (hasKategori) {
+            json = sheetJson;
+            break;
+          }
+        }
+
+        // Om ingen flik hade 'Kategori', ta första fliken som fallback
+        if (json.length === 0 && workbook.SheetNames.length > 0) {
+          json = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 }) as any[][];
+        }
         
         if (json.length < 2) {
           toast.error("Excel-filen är för kort eller tom.");
@@ -316,7 +336,7 @@ export default function ManageBills() {
         toast.error("Kunde inte läsa in Excel-filen.");
       }
     };
-    reader.readAsBinaryString(file);
+    reader.readAsArrayBuffer(file);
   };
 
   return (
