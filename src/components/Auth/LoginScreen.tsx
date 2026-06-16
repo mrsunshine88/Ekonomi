@@ -270,24 +270,22 @@ export default function LoginScreen() {
                 type="button"
                 style={{ 
                   width: '100%', 
-                  padding: '1.2rem', 
-                  background: 'linear-gradient(135deg, #f59e0b, #f43f5e)', 
+                  padding: '1rem', 
+                  background: 'var(--accent-gradient)', 
                   border: 'none', 
                   color: '#fff', 
-                  borderRadius: '12px', 
+                  borderRadius: '8px', 
                   cursor: 'pointer', 
-                  fontWeight: '900',
-                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  boxShadow: '0 4px 15px rgba(244, 63, 94, 0.4)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
+                  boxShadow: '0 4px 15px rgba(168, 85, 247, 0.4)'
                 }}
               >
-                🛠️ Gå in och lek i Demoläget!
+                🛠️ Testa appen i Demoläge
               </button>
             </div>
           )}
