@@ -329,6 +329,53 @@ export default function ManageBills() {
     setShowBankModal(false);
   };
 
+  const handleDemoImport = () => {
+    // 1 lön, 7 föreslagna, 15 övriga
+    const demoIncomes = [
+      {
+        originalIndex: 0,
+        date: '2026-05-25',
+        rawDescription: 'LÖN NL LABS AB',
+        normalizedDescription: 'LÖN NL LABS AB',
+        amount: 23771,
+        isIncoming: true,
+        confidenceScore: 0.9,
+        matchLevel: 'needs_review' as const,
+        matchedVia: 'Textanalys (Lön/Utbetalning/Bidrag)'
+      }
+    ];
+
+    const demoBills = Array.from({ length: 7 }).map((_, i) => ({
+      originalIndex: i + 1,
+      date: `2026-05-${String(10 + i).padStart(2, '0')}`,
+      rawDescription: `RÄKNING FÖRETAG ${i + 1} AB`,
+      normalizedDescription: `RAKNING FORETAG ${i + 1}`,
+      amount: 150 + i * 50,
+      isIncoming: false,
+      confidenceScore: 0.8,
+      matchLevel: 'needs_review' as const,
+      matchedVia: 'SYSTEM-regel'
+    }));
+
+    const demoOthers = Array.from({ length: 15 }).map((_, i) => ({
+      originalIndex: i + 8,
+      date: `2026-05-${String((15 + i) % 30 + 1).padStart(2, '0')}`,
+      rawDescription: `KORTKÖP ICA ${i + 1}`,
+      normalizedDescription: `KORTKOP ICA ${i + 1}`,
+      amount: 200 + i * 20,
+      isIncoming: false,
+      confidenceScore: 0,
+      matchLevel: 'no_match' as const,
+      matchedVia: 'Ingen regel hittades'
+    }));
+
+    setBankParseResult({
+      suggestedIncomes: demoIncomes,
+      suggestedBills: demoBills,
+      otherTransactions: demoOthers
+    });
+  };
+
   const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1072,6 +1119,14 @@ export default function ManageBills() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 className="card-title" style={{ margin: 0 }}>{editingBillId ? 'Ändra Räkning' : 'Lägg till ny räkning'}</h3>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {isDemoMode && (
+                  <button 
+                    onClick={handleDemoImport}
+                    style={{ background: 'var(--accent-color)', color: '#fff', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.9rem', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    🧪 Testa Bank-import
+                  </button>
+                )}
                 <label style={{ cursor: 'pointer', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid #10b981', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.9rem', fontWeight: 'bold' }}>
                     📥 Importera Excel
                     <input type="file" accept=".xlsx, .xls, .xlsm" onChange={handleImportExcel} style={{ display: 'none' }} />
