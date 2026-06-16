@@ -1388,7 +1388,17 @@ Import-logiken (`bankParser.ts`) bygger på en deterministisk hierarki med tillh
 ### Varför:
 Filosofin bygger på tillit och absolut kontroll. Om systemet utger sig för att "Vara säkert till 86%" bygger det omedvetet upp osäkerhet hos användaren. Genom transparenta färger, skydd mot dubbletter, vattentäta skott mellan Privat och Gemensamt, samt manuell handpåläggning känns produkten pålitlig. Systemet får hellre "missa" än att automatiskt chansa och skapa ett rörigt konto för användaren.
 
-### VarfÃ¶r:
-Filosofin bygger pÃ¥ tillit och kontroll. Om systemet utger sig fÃ¶r att "Vara sÃ¤kert till 86%" bygger det omedvetet upp osÃ¤kerhet ("hur vet ni de sista 14%?"). Med konkreta begrepp som "Ny upptÃ¤ckt", transparanta fÃ¤rger och explicit beloppsvalidering kÃ¤nns produkten vuxen, professionell och pÃ¥litlig. FÃ¶rtroendet Ã¤r centralt nÃ¤r appen skÃ¶ter hushÃ¥llets mest kÃ¤nsliga information.
+## 16. Sandbox & Demoläge ("Lekplatsen")
+
+### Vad:
+Ett fullt fungerande demoläge (aktiveras via en inbjudande knapp på inloggningsskärmen) där besökare kan testa plattformen och dess premium-funktioner (som Bank-import) med påhittad dummy-data. Allt sparas endast lokalt i webbläsarens session, så besökare kan "leka hejvilt" och testa gränserna utan att en enda siffra rör molndatabasen.
+
+### Hur – Arkitektur & Routing:
+- **Zustand Interceptor:** Frontendens logik (`store.ts`) sköter alla matematiska beräkningar exakt som i skarp drift. Det enda demoläget gör är att tyst köra `if (get().isDemoMode) return;` millisekunden innan appen försöker synkronisera ändringarna mot Supabase. Resultatet är ett fullt reaktivt UI där Splitwise-sammanställningar, Swish-beräkningar och grafer uppdateras i exakt realtid - men ingen data sparas permanent.
+- **Falsk Bank-import (`handleDemoImport`):** Istället för att kräva en fysisk Excel-fil från användaren genereras 23 stycken färdiga mockup-transaktioner (1 lön, 7 räkningar och 15 övriga kortköp). Den riktiga importknappen döljs till förmån för en iögonfallande demo-knapp. All känslig/verklig namndata är borttvättad (ex. `LÖN FÖRETAG AB`).
+- **Upplåst UI:** Den annars dolda "Inställningar"-vyn låses upp medvetet så besökaren kan undersöka hur man bygger upp sin konto-struktur, vilket normalt kräver inloggning.
+
+### Varför:
+Interaktion säljer. Istället för statiska bilder eller videoguider får användaren "känna och klämma" på hur systemet drar magiska slutsatser ur rå bankdata. Att se Månadsvyns utjämningskassa räkna om sig sekunden efter att man importerar 23 räkningar bygger direkt förtroende för appens kraft. Den lokala interceptorn säkerställer samtidigt att plattformen är säker och att inget sparas.
 
 ---
