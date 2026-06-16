@@ -399,7 +399,14 @@ export default function ManageBills() {
     setBankParseResult({
       suggestedIncomes: demoIncomes,
       suggestedBills: demoBills,
-      otherTransactions: demoOthers
+      otherTransactions: demoOthers,
+      summary: {
+        suggestedIncomesCount: 1,
+        suggestedCount: 7,
+        recognizedSuggestedCount: 7,
+        otherCount: 15,
+        unknownCount: 15
+      }
     });
   };
 
