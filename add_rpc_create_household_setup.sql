@@ -24,8 +24,8 @@ BEGIN
     -- 3. Create members (Accounts)
     FOR v_member IN SELECT * FROM jsonb_to_recordset(p_members) AS x(name text, is_child boolean)
     LOOP
-        INSERT INTO accounts (household_id, name, is_child) 
-        VALUES (v_household_id, v_member.name, v_member.is_child)
+        INSERT INTO accounts (household_id, name, type) 
+        VALUES (v_household_id, v_member.name, 'person')
         RETURNING id INTO v_member_id;
         
         -- Default: If it's the first member, try to link it to the user's profile if we had a mapping (skipped for simplicity here)
