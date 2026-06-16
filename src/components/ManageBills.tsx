@@ -302,7 +302,8 @@ export default function ManageBills() {
             accountId: account.id,
             splitType: 'equal', // Default
             defaultAmount: amount,
-            interval: 'all'
+            interval: 'all',
+            warnIfZero: true
           };
           onAddBill(billData);
           addedCount++;
