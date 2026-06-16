@@ -385,7 +385,7 @@ export default function ManageBills() {
             ? (state.privateBills || []).filter(b => b.userId === user?.id && !b.isArchived).map(b => ({ accountId: '', defaultAmount: b.defaultAmount, name: b.name }))
             : state.bills.map(b => ({ accountId: b.accountId, defaultAmount: b.defaultAmount, name: b.name }));
             
-          const knownIncomes = state.incomes ? state.incomes.map(i => ({ userId: i.userId, amount: i.amount, name: i.name })) : [];
+          const knownIncomes = state.incomes ? state.incomes.map(i => ({ userId: i.userId, amount: i.amount, name: i.name, payDate: i.payDate })) : [];
           
           // Pass empty accounts if private so bankParser won't try to assign default account
           const accountsToPass = newBillScope === 'private' ? [] : state.accounts;
@@ -427,7 +427,7 @@ export default function ManageBills() {
             ? (state.privateBills || []).filter(b => b.userId === user?.id && !b.isArchived).map(b => ({ accountId: '', defaultAmount: b.defaultAmount, name: b.name }))
             : state.bills.map(b => ({ accountId: b.accountId, defaultAmount: b.defaultAmount, name: b.name }));
             
-          const knownIncomes = state.incomes ? state.incomes.map(i => ({ userId: i.userId, amount: i.amount, name: i.name })) : [];
+          const knownIncomes = state.incomes ? state.incomes.map(i => ({ userId: i.userId, amount: i.amount, name: i.name, payDate: i.payDate })) : [];
           
           const accountsToPass = newBillScope === 'private' ? [] : state.accounts;
           const result = parseBankData(json, safeRules, accountsToPass, householdProfiles, knownBills, knownIncomes);

@@ -97,7 +97,7 @@ export function parseBankData(
   householdAccounts: { id: string, name: string }[],
   householdProfiles: { id: string, display_name?: string, email?: string }[] = [],
   knownBills: { accountId: string, defaultAmount: number, name: string }[] = [],
-  knownIncomes: { userId: string, amount: number, name: string }[] = []
+  knownIncomes: { userId: string, amount: number, name: string, payDate?: string }[] = []
 ): BankParseResult {
   // 1. Detect Columns
   let dateIdx = -1;
@@ -159,7 +159,7 @@ export function parseBankData(
     
     // Check if already imported
     const alreadyBill = !isIncoming && knownBills.some(b => b.name === trimmedDesc);
-    const alreadyIncome = isIncoming && knownIncomes.some(i => i.name === trimmedDesc);
+    const alreadyIncome = isIncoming && knownIncomes.some(i => i.name === trimmedDesc && i.payDate === dateStr && i.amount === amount);
     const isAlreadyImported = alreadyBill || alreadyIncome;
     
     let matchLevel: ParsedBankRow['matchLevel'] = isAlreadyImported ? 'already_imported' : 'no_match';
@@ -229,10 +229,10 @@ export function parseBankData(
         // 3. Textmönster
         if (matchLevel === 'no_match') {
           if (isIncoming) {
-            if (searchString.includes('LÖN') || searchString.includes('SALARY') || searchString.includes('LON') || searchString.includes('UTBETALNING')) {
+            if (searchString.includes('LÖN') || searchString.includes('SALARY') || searchString.includes('LON') || searchString.includes('UTBETALNING') || searchString.includes('BARNBDR')) {
               isSuggestedIncome = true;
               matchLevel = 'needs_review';
-              matchedVia = 'Textanalys (Lön/Utbetalning)';
+              matchedVia = 'Textanalys (Lön/Utbetalning/Bidrag)';
             }
           } else {
             for (const acc of householdAccounts) {
