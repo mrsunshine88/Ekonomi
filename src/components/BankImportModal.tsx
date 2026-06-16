@@ -5,8 +5,6 @@ import type { Account, Profile } from '../types';
 
 interface BankImportModalProps {
   parseResult: BankParseResult;
-  accounts: Account[];
-  profiles: Profile[];
   accounts: { id: string, name: string }[];
   profiles: { id: string, display_name?: string, email?: string }[];
   onConfirm: (selectedRows: ParsedBankRow[]) => void;

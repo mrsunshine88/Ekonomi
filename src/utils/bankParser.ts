@@ -156,6 +156,7 @@ export function parseBankData(
     const amount = Math.abs(rawAmountNum);
     const normalized = normalizeBankString(String(rawDesc));
     const trimmedDesc = String(rawDesc).trim();
+    const dateStr = String(rawDate).trim();
     
     // Check if already imported
     const alreadyBill = !isIncoming && knownBills.some(b => b.name === trimmedDesc);

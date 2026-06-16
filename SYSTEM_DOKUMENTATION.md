@@ -1353,27 +1353,40 @@ Rullgardinsmenyn "Kopplat konto" har raderats helt från "Mina Sidor". Istället
 ## 15. Bank-import & Minnesfunktion ("Botemedlet mot Tomt Konto-syndromet")
 
 ### Vad:
-En premium-funktion som lÃ¥ter anvÃ¤ndaren ladda upp en bankfil (t.ex. SEB, Swedbank, LÃ¤nsfÃ¶rsÃ¤kringar). Appen lÃ¤ser filen och mappar automatiskt bÃ¥de **Utgifter (RÃ¤kningar)** och **Inkomster (LÃ¶n/Utbetalningar)** till rÃ¤tt konton och personer. Den skapar lÃ¤rdomar fÃ¶r att bygga ett sÃ¶mlÃ¶st hushÃ¥llsminne Ã¶ver tid.
+En premium-funktion som låter användaren ladda upp en bankfil (t.ex. SEB, Swedbank, Länsförsäkringar). Appen läser filen och mappar automatiskt både **Utgifter (Räkningar)** och **Inkomster (Lön/Utbetalningar)** till rätt konton och personer. Den skapar lärdomar för att bygga ett sömlöst hushållsminne över tid, men håller stenhårt isär gemensamma och privata flöden.
 
-### Hur:
-Import-logiken (`bankParser.ts`) har gÃ¥tt igenom en radikal ombyggnation och bygger nu pÃ¥ en deterministisk **4-stegs hierarki** med tillhÃ¶rande UX-fÃ¤rgkodning, istÃ¤llet fÃ¶r otydliga procentuella "AI-scores".
+### Hur – 4-stegs Matchningshierarki:
+Import-logiken (`bankParser.ts`) bygger på en deterministisk hierarki med tillhörande UX-färgkodning:
 
-1. **HushÃ¥llets Minne (🟢 BekrÃ¤ftad)**
-   - Appen kollar fÃ¶rst om transaktionen matchar ett mÃ¶nster som hushÃ¥llet sjÃ¤lva (via `household_import_rules`) tidigare importerat.
-   - **Beloppskontroll:** FÃ¶r inkomster och utgifter kontrolleras ocksÃ¥ om summan ligger inom ett *Historiskt intervall* (±15% frÃ¥n standardbeloppet). Visar omedelbart varningsflagga om Netflix kostar 899 kr istÃ¤llet fÃ¶r 159 kr.
-2. **SYSTEM-kategorier & Alias (🟣 Ny upptÃ¤ckt)**
-   - Om inget hushÃ¥llsminne finns, mappar parsern transaktionen mot ett inlÃ¤rt bibliotek (`SYSTEM_CATEGORIES` och `SYSTEM_ALIASES`).
-   - SÃ¤kra alias normaliserar bankskrÃ¤p (t.ex. "NETFLIX.COM" -> "NETFLIX") fÃ¶r att hitta rÃ¤tt i kategorier som *Prenumerationer*, *FÃ¶rsÃ¤kringar* och *LÃ¥n*. Korta osÃ¤kra alias ("LF" eller "MAX") undviks fÃ¶r att eliminera falska trÃ¤ffar.
-3. **Textanalys (🟡 BehÃ¶ver granskas)**
-   - Transaktioner som innehÃ¥ller nyckelord som "LÃ–N", "SALARY", "AUTOGIRO", eller matchar exakt pÃ¥ ett gemensamt kontonamn ("Huskontot"). Dessa auto-markeras inte utan hjÃ¤lper bara anvÃ¤ndaren att lÃ¤ttare placera posten.
-4. **Ingen Match (⚪ GrÃ¥)**
-   - OkÃ¤nda transaktioner. Ignoreras fÃ¶r import.
+1. **Hushållets Minne (🟢 Bekräftad)**
+   - Appen kollar först om transaktionen matchar ett mönster som hushållet själva tidigare importerat.
+   - **Beloppskontroll:** För inkomster och utgifter kontrolleras också om summan ligger inom ett *Historiskt intervall* (±15% från standardbeloppet). Visar omedelbart varningsflagga om Netflix kostar 899 kr istället för 159 kr.
+2. **SYSTEM-kategorier & Alias (🟣 Ny upptäckt)**
+   - Om inget hushållsminne finns, mappar parsern transaktionen mot ett inlärt bibliotek (`SYSTEM_CATEGORIES`).
+   - Säkra alias normaliserar bankskräp för att hitta rätt. Korta osäkra alias undviks för att eliminera falska träffar.
+3. **Textanalys (🟡 Behöver granskas)**
+   - Transaktioner som innehåller nyckelord som "LÖN", "BARNBDR", "AUTOGIRO", eller matchar exakt på ett kontonamn. Auto-markeras inte utan hjälper bara användaren att placera posten.
+4. **Ingen Match (⚪ Grå)**
+   - Okända transaktioner. Ignoreras för import om de inte checkas i manuellt under "Övriga transaktioner".
 
-**AnvÃ¤ndargrÃ¤nssnitt & FÃ¶rtroende (`BankImportModal.tsx`):**
-- **Filtrering & FÃ¤rgkodning:** AnvÃ¤ndaren kan enkelt fÃ¶ljtrera rader pÃ¥ `[Alla]`, `[Nya upptÃ¤ckter]` eller `[BehÃ¶ver granskas]`. Detta minskar larmtrÃ¶tthet och lÃ¥ter dem vÃ¤lja bort "bruset" (grÃ¥ rader).
-- **Extrem Transparens ("Visa varfÃ¶r"):** Ingen magi ska fÃ¶rsigrÃ¥ i dolda algoritmer. Genom att klicka pÃ¥ `▼ Visa varfÃ¶r` under en rad kan anvÃ¤ndaren exakt se hur appen fattat sitt beslut: Ursprunglig text, Alias-omvandling och MatchningskÃ¤lla.
-- **Explicit InlÃ¤rning:** "LÃ¤r SmartEkonomi att detta Ã¤r rÃ¤tt konto"-checkboxen finns vid varje val och Ã¤r Ã¤kta. Avbockas den sÃ¥ vÃ¤grar systemet skriva en regel till databasen. Inga bakgÃ¥rds-AI-regler skapas utan explicit consent.
-- **Aldrig Automatiskt:** Trots all trÃ¤ffsÃ¤kerhet sker ingen direktimport in i databasen fÃ¶rrÃ¤n anvÃ¤ndaren klickar `Importera valda` lÃ¤ngst ner. MÃ¤nsklig handpÃ¥lÃ¤ggning Ã¤r en ofrÃ¥nkomlig sÃ¤kerhetsventil.
+### Hur – Dubblett-skydd (Deduplicering):
+- **Utgifter:** Parsern verifierar omedelbart ifall en räkning med exakt samma namn redan är inlagd i appen.
+- **Inkomster:** Eftersom inkomster varierar över tid, matchar parsern på *Namn + Datum + Belopp* för att inte råka flagga nästa månads lön som en dubblett.
+- Träffar resulterar i statusen **✅ Redan inlagd**, de får en neutral grå färg, och rutorna *kryssas ur automatiskt* för att förhindra dubbel-import ifall användaren laddar upp flera överlappande excel-filer i rad.
+
+### Hur – Privat vs Gemensam Routing (Scope-Aware):
+- Bank-importen är kontext-medveten baserat på i vilken vy användaren befinner sig (`newBillScope`).
+- **Gemensam Vy:** Importerar posterna som `BillDefinition` med kopplingar till gemensamma bankkonton. System-regler (minnet) aktiveras och sparas för hela hushållet.
+- **Privat Vy:** Importerar posterna direkt som `PrivateBill` kopplat till enbart den aktuella användaren. Konto-väljaren i UI:t stängs av (visar "Privat utgift") och "Lär SmartEkonomi"-checkboxarna är inaktiverade för att inte störa hushållets gemensamma minne med privata transaktioner.
+
+**Användargränssnitt & Förtroende (`BankImportModal.tsx`):**
+- **Filtrering & Färgkodning:** Minskar larmtrötthet och låter användaren välja bort bruset.
+- **Extrem Transparens ("Visa varför"):** Genom att klicka på `▼ Visa varför` kan användaren exakt se hur appen fattat sitt beslut: Ursprunglig text, Alias-omvandling och Matchningskälla.
+- **Explicit Inlärning:** Inga bakgårds-AI-regler skapas utan att "Lär SmartEkonomi"-checkboxen är ibockad.
+- **Auto-Konto:** Om användaren kryssar i en "Övrig transaktion" väljs automatiskt första tillgängliga konto/person för att undvika att raden ljudlöst sorteras bort pga ogiltig data.
+
+### Varför:
+Filosofin bygger på tillit och absolut kontroll. Om systemet utger sig för att "Vara säkert till 86%" bygger det omedvetet upp osäkerhet hos användaren. Genom transparenta färger, skydd mot dubbletter, vattentäta skott mellan Privat och Gemensamt, samt manuell handpåläggning känns produkten pålitlig. Systemet får hellre "missa" än att automatiskt chansa och skapa ett rörigt konto för användaren.
 
 ### VarfÃ¶r:
 Filosofin bygger pÃ¥ tillit och kontroll. Om systemet utger sig fÃ¶r att "Vara sÃ¤kert till 86%" bygger det omedvetet upp osÃ¤kerhet ("hur vet ni de sista 14%?"). Med konkreta begrepp som "Ny upptÃ¤ckt", transparanta fÃ¤rger och explicit beloppsvalidering kÃ¤nns produkten vuxen, professionell och pÃ¥litlig. FÃ¶rtroendet Ã¤r centralt nÃ¤r appen skÃ¶ter hushÃ¥llets mest kÃ¤nsliga information.
