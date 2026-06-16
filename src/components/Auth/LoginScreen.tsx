@@ -80,6 +80,10 @@ export default function LoginScreen() {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         
+        if (data?.user?.identities?.length === 0) {
+          throw new Error('User already registered');
+        }
+        
         if (data?.user) {
           // Skapa profil - VIKTIGT: invänta att detta blir klart innan vi visar success-meddelande
           const { error: profileError } = await supabase.from('profiles').insert([{ id: data.user.id, email: data.user.email }]);
