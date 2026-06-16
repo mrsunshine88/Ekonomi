@@ -6,6 +6,7 @@ export default function ChatBubble() {
   const { user } = useAuth();
   const [chatGlobalOpen, setChatGlobalOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [visitorId, setVisitorId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionStatus, setSessionStatus] = useState<'waiting' | 'active' | 'closed' | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -21,6 +22,20 @@ export default function ChatBubble() {
     isOpenRef.current = isOpen;
     if (isOpen) setUnreadCount(0);
   }, [isOpen]);
+
+  // Sync visitorId from localStorage
+  useEffect(() => {
+    const id = localStorage.getItem('visitor_session_id');
+    setVisitorId(id);
+    
+    const interval = setInterval(() => {
+      const currentId = localStorage.getItem('visitor_session_id');
+      if (currentId && !visitorId) {
+        setVisitorId(currentId);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [visitorId]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -53,7 +68,6 @@ export default function ChatBubble() {
 
   // Fetch existing session and messages if user is logged in or visitor
   useEffect(() => {
-    const visitorId = localStorage.getItem('visitor_session_id');
     if (!chatGlobalOpen || (!user && !visitorId)) return;
 
     const initChat = async () => {
@@ -90,7 +104,7 @@ export default function ChatBubble() {
     };
 
     initChat();
-  }, [user, chatGlobalOpen]);
+  }, [user, visitorId, chatGlobalOpen]);
 
   // Listen to new messages and session status changes if we have a session
   useEffect(() => {
@@ -145,7 +159,6 @@ export default function ChatBubble() {
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    const visitorId = localStorage.getItem('visitor_session_id');
     if (!inputText.trim() || (!user && !visitorId) || isSending) return;
     
     setIsSending(true);
@@ -208,7 +221,6 @@ export default function ChatBubble() {
     }
   };
 
-  const visitorId = localStorage.getItem('visitor_session_id');
   if (!chatGlobalOpen || (!user && !visitorId)) return null;
 
   return (

@@ -351,24 +351,24 @@ export default function MyPages() {
 
       {msg && <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', borderLeft: '4px solid var(--accent-color)' }}>{msg}</div>}
 
-      <div className="settings-tabs-desktop" style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1.5rem', paddingBottom: '0.5rem', overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1.5rem', paddingBottom: '0.5rem', overflowX: 'auto' }}>
         <button 
           onClick={() => setActiveTab('profile')}
           style={{ background: activeTab === 'profile' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'profile' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'profile' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'profile' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
         >
-          👤 Min Profil & Säkerhet
+          👤 Profil
         </button>
         <button 
           onClick={() => setActiveTab('household')}
           style={{ background: activeTab === 'household' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'household' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'household' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'household' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
         >
-          🏠 Hushåll & Medlemmar
+          🏠 Hushåll
         </button>
         <button 
           onClick={() => setActiveTab('settings')}
           style={{ background: activeTab === 'settings' ? 'rgba(99,102,241,0.15)' : 'transparent', border: activeTab === 'settings' ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent', borderRadius: '8px', color: activeTab === 'settings' ? 'var(--accent-color)' : 'var(--text-secondary)', fontWeight: activeTab === 'settings' ? 'bold' : 'normal', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap', padding: '0.4rem 0.8rem', flexShrink: 0 }}
         >
-          ⚙️ Inställningar & Premium
+          ⚙️ Premium
         </button>
       </div>
 
