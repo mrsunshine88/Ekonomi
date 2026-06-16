@@ -37,8 +37,8 @@ BEGIN
         LOOP
             -- Get account_id based on name matching (simplification, real logic might pass account_id directly if possible, or we resolve it here)
             -- For atomic setup, if the UI passes account names, we resolve them to IDs
-            INSERT INTO bills (id, household_id, name, default_amount, account_id, interval)
-            SELECT gen_random_uuid(), v_household_id, v_bill.name, v_bill.amount, a.id, COALESCE(v_bill.interval, 'all')
+            INSERT INTO bills (id, household_id, name, default_amount, account_id, interval, split_type)
+            SELECT gen_random_uuid(), v_household_id, v_bill.name, v_bill.amount, a.id, COALESCE(v_bill.interval, 'all'), 'proportional'
             FROM accounts a
             WHERE a.household_id = v_household_id AND a.name = v_bill.account
             LIMIT 1;
