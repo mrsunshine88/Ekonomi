@@ -1890,3 +1890,38 @@ Tre SQL-rader i konsensus-vyn:
 Admin godkänner alltid manuellt – ingen auto-godkännande planeras.
 
 ---
+
+## 45. Kundservice & Supportchatt (Live)
+
+### Vad
+Ett inbyggt, liveuppdaterat chattsystem för kundtjänst/support. Administratörer eller utvalda agenter kan chatta i realtid med inloggade medlemmar eller anonyma besökare. 
+
+### Hur
+Systemet är helt byggt på Supabase Realtime (`postgres_changes`) för blixtsnabba uppdateringar utan page reloads och manuella hämtningar.
+
+#### Databasarkitektur
+| Tabell | Beskrivning |
+|---|---|
+| `chat_sessions` | Representerar ett ärende. Har en status (`waiting`, `active`, `closed`). Kopplas till `user_id` (inloggad kund) eller `visitor_id` (anonym), samt `assigned_to` (vilken agent som tagit ärendet). |
+| `chat_messages` | Innehåller själva chattmeddelandena. `sender_type` är antingen `user` eller `admin`. Kopplas till ett `session_id`. |
+| `agent_sessions` | Representerar agenternas inloggningsstatus (`offline`, `available`, `busy`). Om ingen agent är available/busy, stängs chatten automatiskt ned. |
+
+#### Agenthantering (Gud-användare & chat_agent flaggan)
+- Agenträttigheter hanteras via kolumnen `chat_agent` (boolean) på `profiles`-tabellen. Endast systemadministratörer kan aktivera eller stänga av agenter. Detta görs via "Kundservice-knappen" i Admin Dashboard.
+- **Gud-användare (apersson508@gmail.com):** Har alltid tillgång till Kundservice i huvudmenyn oavsett om `chat_agent`-flaggan är true eller false. Funktionen döljs dock för gud-användaren i *Admin-vyns* toggles för att undvika oavsiktlig avaktivering.
+- **Live-uppdatering av åtkomst:** Om en admin aktiverar kundtjänsträttigheten för en kollega uppdateras `isChatAgent`-state live i frontend tack vare en dedikerad `supabase.channel` som lyssnar på uppdateringar av `profiles`-tabellen i `AuthContext`. 
+
+#### Ärendehantering (Kö och Tilldelning)
+1. **Kund skriver ("Hej"):** Skapar en ny `chat_session` med status `waiting` (om de inte redan har en). Meddelandet lagras i `chat_messages`.
+2. **Kön (SupportView):** Agenter ser live-uppdaterad lista över väntande ärenden och äldsta väntetid via `<SupportQueueWidget>` och Supabase Realtime.
+3. **Atomisk Tilldelning:** När en agent klickar "Ta ärende" körs RPC:n `claim_chat_session`. Eftersom detta sker direkt i PostgreSQL (atomisk `UPDATE ... WHERE assigned_to IS NULL`) elimineras risken för race conditions där två agenter tar samma ärende. Om en kollega hann före, avbryts försöket och agenten får en "Redan tagen"-notis. Agenten blir då `busy`.
+4. **Chatt:** Agent och kund kommunicerar. Meddelanden pushas i realtid via Supabase Realtime.
+5. **Avslut:** Agent klickar "Stäng ärende", vilket via RPC `release_chat_session` sätter ärendet till `closed` och agenten blir `available` igen för nästa ärende i kön.
+
+#### Auto-open & Close
+En SQL-Trigger (`sync_chat_open_from_agents`) ligger på `agent_sessions`-tabellen. 
+- När antal online-agenter (available + busy) är > 0 sätts globala inställningen `chat_open` till `true`.
+- När alla agenter går offline, sätts den till `false`. Frontend-klienten anpassar sedan om supportknappen/chattrutan ska gå att öppna för slutanvändarna.
+
+#### Felsökning vid SQL-missar
+Om tabellerna eller RPC:erna (som `agent_connect`) inte har exekverats via SQL Editor i Supabase (t.ex. efter databasåterställning), kommer agenten att se en tydlig röd banner med felmeddelande ("Kunde inte koppla upp. Har SQL-skriptet support_setup.sql körts?") istället för att funktionen tyst misslyckas.
