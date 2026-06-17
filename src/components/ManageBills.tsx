@@ -267,21 +267,23 @@ export default function ManageBills({ readOnly }: Props) {
             });
             learnedCount++;
             
-            // Log to global learning (Phase 1)
-            const globalName = normalizeLearningString(row.rawDescription);
-            if (globalName) {
-              await supabase.from('global_learning_votes').upsert({
-                household_id: householdId,
-                normalized_name: globalName,
-                transaction_direction: 'IN',
-                category: 'VARIABLE_INCOME',
-                source: 'BANK_IMPORT',
-                normalization_version: 1,
-                is_active: true,
-                updated_at: new Date().toISOString()
-              }, {
-                onConflict: 'household_id, normalized_name, transaction_direction, category'
-              });
+            // Log to global learning (Phase 1) - EJ i demo-läge
+            if (!isDemoMode) {
+              const globalName = normalizeLearningString(row.rawDescription);
+              if (globalName) {
+                await supabase.from('global_learning_votes').upsert({
+                  household_id: householdId,
+                  normalized_name: globalName,
+                  transaction_direction: 'IN',
+                  category: 'VARIABLE_INCOME',
+                  source: 'BANK_IMPORT',
+                  normalization_version: 1,
+                  is_active: true,
+                  updated_at: new Date().toISOString()
+                }, {
+                  onConflict: 'household_id, normalized_name, transaction_direction, category'
+                });
+              }
             }
           }
         }
@@ -343,21 +345,23 @@ export default function ManageBills({ readOnly }: Props) {
               });
               learnedCount++;
               
-              // Log to global learning (Phase 1)
-              const globalName = normalizeLearningString(row.rawDescription);
-              if (globalName) {
-                await supabase.from('global_learning_votes').upsert({
-                  household_id: householdId,
-                  normalized_name: globalName,
-                  transaction_direction: 'OUT',
-                  category: 'BILL',
-                  source: 'BANK_IMPORT',
-                  normalization_version: 1,
-                  is_active: true,
-                  updated_at: new Date().toISOString()
-                }, {
-                  onConflict: 'household_id, normalized_name, transaction_direction, category'
-                });
+              // Log to global learning (Phase 1) - EJ i demo-läge
+              if (!isDemoMode) {
+                const globalName = normalizeLearningString(row.rawDescription);
+                if (globalName) {
+                  await supabase.from('global_learning_votes').upsert({
+                    household_id: householdId,
+                    normalized_name: globalName,
+                    transaction_direction: 'OUT',
+                    category: 'BILL',
+                    source: 'BANK_IMPORT',
+                    normalization_version: 1,
+                    is_active: true,
+                    updated_at: new Date().toISOString()
+                  }, {
+                    onConflict: 'household_id, normalized_name, transaction_direction, category'
+                  });
+                }
               }
             }
           }
