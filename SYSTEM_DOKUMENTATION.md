@@ -1503,9 +1503,106 @@ Funktionen återanvänds dessutom av `bankParser.ts` (via `normalizeBankString`)
 
 ---
 
-### 35.4 Datainsamling – Var och Hur
+## 36. Sessionshantering & Inloggningspersistens
 
-Röster samlas in på tre ställen i appen:
+### 36.1 Problemet
+
+Användare loggades ut "plötsligt" på både dator och mobil simultant, trots att de var hemma på WiFi. Orsaken var en kombination av två saker:
+
+**Problem 1 – För kort token-livstid:**
+`JWT Access Token expiry` stod på standardvärdet **3600 sekunder (1 timme)**. Det innebar att appen behövde hämta en ny "biljett" varje timme.
+
+**Problem 2 – Supabase "Token Reuse Detection" aktiverad:**
+Supabase hade inställningen **"Detect and revoke potentially compromised refresh tokens"** påslagen. Denna funktion är designad för att skydda mot hackare som stjäl tokens.
+
+**Varför den slog fel mot mobilanvändare:** När mobilens OS (iOS/Android) låser skärmen för att spara batteri, fryser det appen mitt i ett `refresh_token`-anrop. Appen hinner skicka begäran men aldrig ta emot svaret. När användaren sedan tar upp mobilen, skickar appen **samma token igen**. Supabase tolkar detta som ett replay-attack från en hackare och kastar genast ut användaren från **alla enheter** (dator inkluderat).
+
+### 36.2 Lösning
+
+**Steg 1 – Öka token-livstiden (i Supabase Dashboard):**
+Settings → JWT Keys → **Access token expiry time**
+Ändrat från `3600` till `604800` (7 dagar = max på gratisplanen).
+
+**Steg 2 – Stäng av överkänslig säkerhetsfunktion (i Supabase Dashboard):**
+Authentication → Sessions → **"Detect and revoke potentially compromised refresh tokens"**
+Stängt **av** (grå knapp istället för grön).
+
+### 36.3 Effekt
+
+Användaren behöver nu bara logga in igen om hen inte öppnat appen på mer än **7 dagar**. Normal användning på mobil och dator håller sessionen aktiv utan avbrott.
+
+---
+
+## 37. Global Inlärning – Buggfixar och Förbättringar
+
+### 37.1 Bugg: Kolumnerna `target_id` och `rule_target_type` saknas
+
+**Problemet:** Flera SQL-funktioner försökte skriva kolumner (`target_id`, `rule_target_type`) till `household_import_rules`-tabellen som aldrig existerade i produktionsdatabasen. Dessa kolumner togs bort i ett tidigare arkitekturbeslut (systemet mappar inte regler mot specifika konton längre), men INSERT-satserna i RPC-funktionerna var inte uppdaterade.
+
+**Felmeddelandena:**
+- *"column target_id of relation household_import_rules does not exist"* – visades vid onboarding av nytt konto
+- *"column rule_target_type of relation household_import_rules does not exist"* – visades när admin tryckte OK i Inlärningsvyn
+
+**Fix 1 – `add_rpc_create_household_setup.sql`:**
+Tog bort alla `INSERT INTO household_import_rules`-block ur onboarding-RPC:n. Motivering: `global_learning_votes` hanterar nu crowdsourcad inlärning. Lokala regler skapas automatiskt vid faktisk bankimport, inte vid registrering.
+
+**Fix 2 – `add_global_learning_votes.sql`:**
+Tog bort `target_id` och `rule_target_type` ur `admin_approve_system_rule`-funktionens INSERT-sats.
+
+### 37.2 Admin Inlärningsgränssnitt – Förbättringar
+
+Fil: `src/pages/AdminLearning.tsx`
+
+| Förut | Nu |
+|---|---|
+| Webbläsarens `window.confirm()` (vit OS-ruta) | Anpassad mörk modal som matchar appens design |
+| Webbläsarens `window.alert()` vid fel | Anpassad felmeddelanderuta med rödorange accent |
+| Ingen Neka-knapp | Röd "Neka"-knapp bredvid OK på varje kandidat |
+| Kategori kan ej ändras | Dropdown i godkänn-modalen för att korrigera kategori innan sparning |
+
+**Neka-flöde:**
+Admin trycker "Neka" → bekräftelsedialog → `admin_reject_system_rule` RPC anropas → kandidatens röster sätts till `is_active = false` → kandidaten försvinner från listan direkt.
+
+**Redigera kategori vid godkännande:**
+Godkänn-modalen visar en `<select>` med tre alternativ: `🧾 Räkning`, `💰 Fast inkomst`, `📈 Rörlig inkomst`. Admin kan korrigera en felklassad post (t.ex. "LÖN" klassad som Fast inkomst → ändra till Rörlig inkomst) direkt i modalen innan sparning.
+
+### 37.3 Uppdaterade SQL-funktioner (`admin_learning_update.sql`)
+
+`admin_approve_system_rule` fick två nya parametrar:
+- `p_original_category` – den kategori rösterna ursprungligen hade (används för att avaktivera rätt röster)
+- `p_new_category` – den kategori admin valt (kan skilja sig, styr `is_bill`-fältet i den sparade regeln)
+
+Ny funktion `admin_reject_system_rule` lades till – avaktiverar alla röster för ett givet `normalized_name` + `transaction_direction` + `category`.
+
+**OBS: Dessa funktioner måste köras manuellt i Supabase SQL Editor från filen `admin_learning_update.sql`.**
+
+### 37.4 Demo-läge läcker inte längre till Global Inlärning
+
+**Problemet:** Sidan `/demo` låter besökare testa bankfilsimport. Koden i `ManageBills.tsx` skickade UPSERT till `global_learning_votes` oavsett om man var i demo-läge. Alla fejk-transaktioner (BARNBDR, BOENDE, EON KUNDSUPPORT, GOOGLE GOOGLE ONE DUBLIN etc.) hamnade i admin-inlärningslistan.
+
+**Fix (`src/components/ManageBills.tsx`):**
+`isDemoMode` var redan importerat från store men skyddade inte inlärningsskrivningarna. Lade till `if (!isDemoMode)` runt **båda** UPSERT-blocken (ett för inkomster/IN, ett för räkningar/OUT):
+
+```typescript
+// EJ i demo-läge
+if (!isDemoMode) {
+  await supabase.from('global_learning_votes').upsert({ ... });
+}
+```
+
+**Effekt:** Demo-besökare kan testa hur som helst utan att förorena inlärningssystemet. Befintliga fake-kandidater kan adminen rensa med den nya Neka-knappen.
+
+### 37.5 Filer som berörs
+
+| Fil | Förändring |
+|---|---|
+| `add_global_learning_votes.sql` | **[UPPDATERAD]** `admin_approve_system_rule` – tog bort `target_id` och `rule_target_type` |
+| `add_rpc_create_household_setup.sql` | **[UPPDATERAD]** Tog bort alla `INSERT INTO household_import_rules`-block |
+| `admin_learning_update.sql` | **[NY]** Uppdaterade RPC:er med stöd för neka och kategoriändring |
+| `src/pages/AdminLearning.tsx` | **[UPPDATERAD]** Custom modaler, Neka-knapp, kategori-dropdown |
+| `src/components/ManageBills.tsx` | **[UPPDATERAD]** Demo-skydd runt `global_learning_votes` UPSERT |
+
+---
 
 **A) SetupWizard (`ONBOARDING`)**
 När en ny användare slutför onboardingen och sparar sina räkningar/inkomster via RPC-funktionen `create_initial_household_setup`, skickas automatiskt rösterna in till `global_learning_votes`. Varje räkning får `transaction_direction = 'OUT'` och `category = 'BILL'`. Inkomster får `direction = 'IN'` och `category` baserat på om det är fast eller rörlig lön.
@@ -1514,7 +1611,6 @@ När en ny användare slutför onboardingen och sparar sina räkningar/inkomster
 Varje gång en användare laddar upp en bankfil och bekräftar importen via `BankImportModal`, skickas en röst till `global_learning_votes` för varje ny räkning/inkomst som sparas. Befintliga regler som redan är lärda skapar inga nya röster (för att undvika att ett hushåll "röstar" upprepade gånger på samma sak).
 
 **C) Upsert-skyddet**
-Om ett hushåll laddar upp Telia 12 månader i rad och det finns en befintlig röst, triggas `ON CONFLICT DO UPDATE` i databasen – rösträknet för hushållet uppdateras *inte* utan deras röst skrivs bara om med ny `updated_at`. Systemet är helt skyddat mot att ett hushåll "boostar" sin röst genom upprepning.
 
 ---
 
