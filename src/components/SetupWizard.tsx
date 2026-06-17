@@ -6,6 +6,7 @@ import { normalizeLearningString } from '../utils/normalization';
 import { parseBankData } from '../utils/bankParser';
 import type { BankParseResult, ParsedBankRow } from '../utils/bankParser';
 import * as xlsx from 'xlsx';
+import { trackFunnelEvent } from '../hooks/useFunnelTracker';
 
 // Categories for Manual Entry
 const MANUAL_CATEGORIES = [
@@ -197,6 +198,12 @@ export default function SetupWizard() {
       
       if (error) throw error;
       sessionStorage.removeItem('setupWizardState');
+      // Funnel: onboarding slutförd
+      trackFunnelEvent('onboarding_complete', {
+        bills_count: state.bills.filter((b: any) => b.amount > 0).length,
+        incomes_count: state.incomes.filter((i: any) => i.amount > 0).length,
+        members_count: state.members.filter((m: any) => m.name.trim()).length
+      });
       
       if (proceedToPaywall) {
         setLoadingMsg('Startar betalning...');

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabase';
 import { useStore } from '../../store';
 import Footer from '../Footer';
+import { trackFunnelEvent } from '../../hooks/useFunnelTracker';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -270,7 +271,10 @@ export default function LoginScreen() {
           {demoEnabled && !isForgotPassword && (
             <div style={{ marginTop: '1rem' }}>
               <button 
-                onClick={startDemo}
+                onClick={() => {
+                  trackFunnelEvent('demo_start', { source: 'login_button' });
+                  startDemo();
+                }}
                 type="button"
                 style={{ 
                   width: '100%', 
@@ -300,7 +304,8 @@ export default function LoginScreen() {
                 if (isForgotPassword) {
                   setIsForgotPassword(false);
                 } else {
-                  setIsLogin(!isLogin); 
+                  setIsLogin(!isLogin);
+                  if (isLogin) trackFunnelEvent('register_start', { source: 'toggle_button' });
                 }
                 setError(''); 
                 setSuccessMsg(''); 

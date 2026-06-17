@@ -21,6 +21,7 @@ import UpdatePassword from './components/Auth/UpdatePassword';
 import ChatBubble from './components/ChatBubble';
 import ConfirmedModal from './components/Auth/ConfirmedModal';
 import StartPage from './components/StartPage';
+import { trackFunnelEvent } from './hooks/useFunnelTracker';
 
 function App() {
   const { user, householdId, setupStatus, loading, isRecoveringPassword, isAdmin, tosAccepted, isNewlyConfirmed, setIsNewlyConfirmed } = useAuth();
@@ -59,6 +60,10 @@ function App() {
     const newUrl = VIEW_TO_URL[currentView] || '/';
     if (window.location.pathname !== newUrl) {
       window.history.pushState(null, '', newUrl);
+    }
+    // Funnel: spåra varje sidvy (ej demo-läge)
+    if (!isDemoMode) {
+      trackFunnelEvent('page_view', { view: currentView, path: newUrl });
     }
   }, [currentView]);
 

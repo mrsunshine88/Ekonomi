@@ -11,6 +11,7 @@ import type { BankParseResult, ParsedBankRow } from '../utils/bankParser';
 import { supabase } from '../supabase';
 import PaywallModal from './PaywallModal';
 import { normalizeLearningString } from '../utils/normalization';
+import { trackFunnelEvent } from '../hooks/useFunnelTracker';
 
 interface Props {
   readOnly?: boolean;
@@ -374,7 +375,10 @@ export default function ManageBills({ readOnly }: Props) {
     } else {
       toast.success(`✅ Importerade ${addedCount} transaktioner!`);
     }
-    
+    // Funnel: bankimport slutförd
+    if (!isDemoMode) {
+      trackFunnelEvent('bank_upload_complete', { added: addedCount, learned: learnedCount });
+    }
     setShowBankModal(false);
   };
 
