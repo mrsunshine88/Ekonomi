@@ -1904,12 +1904,20 @@ Systemet är helt byggt på Supabase Realtime (`postgres_changes`) för blixtsna
 |---|---|
 | `chat_sessions` | Representerar ett ärende. Har en status (`waiting`, `active`, `closed`). Kopplas till `user_id` (inloggad kund) eller `visitor_id` (anonym), samt `assigned_to` (vilken agent som tagit ärendet). |
 | `chat_messages` | Innehåller själva chattmeddelandena. `sender_type` är antingen `user` eller `admin`. Kopplas till ett `session_id`. |
-| `agent_sessions` | Representerar agenternas inloggningsstatus (`offline`, `available`, `busy`). Om ingen agent är available/busy, stängs chatten automatiskt ned. |
+| `agent_sessions` | Representerar agenternas inloggningsstatus (`offline`, `available`, `busy`, `post_work`, `break`, `lunch`). Om ingen agent är available, busy eller post_work stängs chatten automatiskt ned. |
 
 #### Agenthantering (Gud-användare & chat_agent flaggan)
 - Agenträttigheter hanteras via kolumnen `chat_agent` (boolean) på `profiles`-tabellen. Endast systemadministratörer kan aktivera eller stänga av agenter. Detta görs via "Kundservice-knappen" i Admin Dashboard.
 - **Gud-användare (apersson508@gmail.com):** Har alltid tillgång till Kundservice i huvudmenyn oavsett om `chat_agent`-flaggan är true eller false. Funktionen döljs dock för gud-användaren i *Admin-vyns* toggles för att undvika oavsiktlig avaktivering.
 - **Live-uppdatering av åtkomst:** Om en admin aktiverar kundtjänsträttigheten för en kollega uppdateras `isChatAgent`-state live i frontend tack vare en dedikerad `supabase.channel` som lyssnar på uppdateringar av `profiles`-tabellen i `AuthContext`. 
+
+#### Agent Statusar & Efterarbete
+Agenter har detaljerad kontroll över sin tillgänglighet i systemet utan att behöva logga ut:
+- **Ledig (`available`):** Redo att ta nya ärenden.
+- **I ärende (`busy`):** Hanterar aktivt en chatt.
+- **Efterarbete (`post_work`):** Administrativt arbete direkt efter ett samtal (ex. dokumentation). Chatten hålls öppen för nya besökare på sajten, men agenten förväntas inte svara omedelbart.
+- **Rast (`break`) & Lunch (`lunch`):** Agenten är på paus. Om inga andra agenter är tillgängliga kommer kundtjänsten automatiskt stängas ner för nya besökare på sajten.
+- **Hur:** Hanteras via status-rullgardin i SupportView, samt delade knappar vid stängning av chatt (Stäng & bli Ledig vs Stäng & gå till Efterarbete). Status ändras via RPC `agent_set_status`.
 
 #### Helskärmsläge för agenter (Fullscreen Chat)
 I `SupportView.tsx` kan en agent toggla "helskärmsläge" genom en dedikerad knapp (🖵).
@@ -1921,18 +1929,17 @@ I `SupportView.tsx` kan en agent toggla "helskärmsläge" genom en dedikerad kna
 2. **Kön (SupportView):** Agenter ser live-uppdaterad lista över väntande ärenden och äldsta väntetid via `<SupportQueueWidget>` och Supabase Realtime.
 3. **Atomisk Tilldelning:** När en agent klickar "Ta ärende" körs RPC:n `claim_chat_session`. Eftersom detta sker direkt i PostgreSQL (atomisk `UPDATE ... WHERE assigned_to IS NULL`) elimineras risken för race conditions där två agenter tar samma ärende. Om en kollega hann före, avbryts försöket och agenten får en "Redan tagen"-notis. Agenten blir då `busy`.
 4. **Chatt:** Agent och kund kommunicerar. Meddelanden pushas i realtid via Supabase Realtime.
-5. **Avslut:** Agent klickar "Stäng ärende", vilket via RPC `release_chat_session` sätter ärendet till `closed` och agenten blir `available` igen för nästa ärende i kön.
+5. **Avslut:** Agent klickar "✅ Ledig" eller "📝 Efterarbete" vilket via RPC `release_chat_session` sätter ärendet till `closed` och sätter agenten till önskad nästa status.
 
-#### Agentstatistik och Prestationsuppföljning i Admin Dashboard
-Systemadministratörer kan följa upp hur effektiv supporten är. Detta görs i den nya `<SupportAgentStatsWidget>`-komponenten under Admin Dashboard.
-- **Vad:** En tabell som visar antal lösta ärenden och genomsnittlig hanteringstid per agent. Kan filtreras på idag, igår, senaste veckan och senaste månaden.
-- **Hur:** Istället för tunga databas-views hämtar React-komponenten alla `chat_sessions` där `status = 'closed'` inom det valda tidsintervallet. Snitt-tiden beräknas live direkt i webbläsaren baserat på skillnaden mellan `created_at` (när ärendet skapades) och `updated_at` (när agenten klickade "Stäng ärende").
-- **Varför:** Undviker behov av nya tunga RPC/Views och möjliggör snabb, flexibel datavisning. Säkerställer att admin kan hålla koll på genomsnittliga svarstider över tid utan att öka serverkostnaden.
+#### Agent Live-Monitor & Prestationer (Admin Dashboard)
+Systemadministratörer kan följa upp hur effektiv supporten är och se vad agenterna gör i realtid under "Kundservice"-fliken.
+- **Live Monitor (`AgentLiveMonitor`):** En widget som visar en lista på alla online-agenter, vilken specifik status de har just nu (Ledig, I ärende, Rast etc) samt en tickande klocka (tidtagarur) som visar exakt hur länge de haft denna status. Synkas helt utan dröjsmål via Supabase Realtime (`postgres_changes` på `agent_sessions`).
+- **Historisk Prestation (`SupportAgentStatsWidget`):** En tabell som visar antal lösta ärenden och genomsnittlig hanteringstid per agent. Kan filtreras på idag, igår, senaste veckan och senaste månaden. Istället för tunga databas-views hämtar React-komponenten alla `chat_sessions` där `status = 'closed'` inom det valda tidsintervallet och räknar snitt-tiden live i webbläsaren baserat på skillnaden mellan `created_at` och `updated_at`.
 
 #### Auto-open & Close
 En SQL-Trigger (`sync_chat_open_from_agents`) ligger på `agent_sessions`-tabellen. 
-- När antal online-agenter (available + busy) är > 0 sätts globala inställningen `chat_open` till `true`.
-- När alla agenter går offline, sätts den till `false`. Frontend-klienten anpassar sedan om supportknappen/chattrutan ska gå att öppna för slutanvändarna.
+- När antal agenter med status `available`, `busy` eller `post_work` är > 0 sätts globala inställningen `chat_open` till `true`.
+- När alla agenter går till `offline`, `break` eller `lunch` sätts den till `false`. Frontend-klienten anpassar sedan om supportknappen/chattrutan ska gå att öppna för slutanvändarna.
 
 #### Säkerhet för Anonyma och RLS-låsningar
 Besökare har via ett fix-skript (`support_user_rls.sql`) givits tillgång till att sätta in `chat_sessions` utan ett aktivt `user_id` inloggnings-objekt (med hjälp av en webbläsargenererad cookie). RLS-reglerna är kalibrerade för att tillåta läsning av den egna sessionen med en `OR (visitor_id IS NOT NULL AND user_id IS NULL)` check.

@@ -19,6 +19,7 @@ interface ChatSession {
   assigned_to: string | null;
   assigned_name: string | null;
   created_at: string;
+  updated_at?: string;
   profiles?: { email: string } | null;
 }
 
@@ -47,6 +48,17 @@ export default function SupportView() {
   const [isSending, setIsSending] = useState(false);
   const [claimError, setClaimError] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const [, setSessionTick] = useState(0);
+
+  // Timers för andrum och aktiv chatt
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCooldown(c => (c > 0 ? c - 1 : 0));
+      setSessionTick(t => t + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -265,11 +277,12 @@ export default function SupportView() {
   };
 
   // Stäng ärende
-  const handleClose = async (nextStatus: 'available' | 'post_work' = 'available') => {
+  const handleClose = async () => {
     if (!activeSession) return;
-    await supabase.rpc('release_chat_session', { target_session_id: activeSession.id, next_status: nextStatus });
+    await supabase.rpc('release_chat_session', { target_session_id: activeSession.id, next_status: 'available' });
     setActiveSession(null);
-    setAgentStatus(nextStatus);
+    setAgentStatus('available');
+    setCooldown(20);
     await fetchQueue();
   };
 
@@ -281,6 +294,11 @@ export default function SupportView() {
     }
     await supabase.rpc('agent_set_status', { new_status: newStatus });
     setAgentStatus(newStatus);
+    if (newStatus === 'available') {
+      setCooldown(20);
+    } else {
+      setCooldown(0);
+    }
   };
 
   // Formatera tid i kö
@@ -440,29 +458,23 @@ export default function SupportView() {
             display: 'flex', justifyContent: 'space-between', alignItems: 'center'
           }}>
             <div>
-              <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '0.2rem' }}>
                 💬 Aktiv chatt: {activeSession.profiles?.email || 'Anonym besökare'}
               </div>
-              <div style={{ fontSize: '0.8rem', opacity: 0.85 }}>Ärende-ID: {activeSession.id.slice(0, 8)}...</div>
+              <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', opacity: 0.85 }}>
+                <span>Ärende-ID: {activeSession.id.slice(0, 8)}...</span>
+                <span style={{ fontWeight: 'bold' }}>⏱ Öppet i {formatWait(activeSession.updated_at || activeSession.created_at)}</span>
+              </div>
             </div>
             <div style={{ display: 'flex', gap: '0.4rem' }}>
               <button
-                onClick={() => handleClose('available')}
+                onClick={handleClose}
                 style={{
-                  background: 'rgba(16,185,129,0.25)', color: '#10b981', border: '1px solid rgba(16,185,129,0.4)',
-                  padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.75rem'
+                  background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)',
+                  padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem'
                 }}
               >
-                ✅ Ledig
-              </button>
-              <button
-                onClick={() => handleClose('post_work')}
-                style={{
-                  background: 'rgba(249,115,22,0.25)', color: '#f97316', border: '1px solid rgba(249,115,22,0.4)',
-                  padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.75rem'
-                }}
-              >
-                📝 Efterarbete
+                ✅ Avsluta ärende
               </button>
             </div>
           </div>
@@ -541,92 +553,105 @@ export default function SupportView() {
             </div>
           )}
 
-          {pendingQueue.length === 0 && takenByOthers.length === 0 && !activeSession && (
-            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-              Inga väntande ärenden just nu.
+          {cooldown > 0 && agentStatus === 'available' ? (
+            <div style={{ padding: '2rem', textAlign: 'center' }}>
+              <div style={{ marginBottom: '1rem', color: '#10b981', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                ⏳ Andrum... {cooldown} sekunder
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                Kön visas snart igen. Du hinner byta status i rullgardinen ovan.
+              </div>
             </div>
+          ) : (
+            <>
+              {pendingQueue.length === 0 && takenByOthers.length === 0 && !activeSession && (
+                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  Inga väntande ärenden just nu.
+                </div>
+              )}
+
+              {/* Väntande – kan tas */}
+              {pendingQueue.map(s => (
+                <div key={s.id} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  gap: '1rem', flexWrap: 'wrap'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{
+                      width: 10, height: 10, borderRadius: '50%',
+                      background: '#f59e0b', boxShadow: '0 0 8px #f59e0b',
+                      animation: 'pulse 1.5s infinite'
+                    }} />
+                    <div>
+                      <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
+                        {s.profiles?.email || 'Anonym besökare'}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        ⏱ Väntat {formatWait(s.created_at)}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleClaim(s)}
+                    disabled={agentStatus === 'busy'}
+                    style={{
+                      background: agentStatus === 'busy'
+                        ? 'rgba(255,255,255,0.05)'
+                        : 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
+                      color: '#fff', border: 'none', padding: '0.5rem 1.1rem',
+                      borderRadius: '8px', cursor: agentStatus === 'busy' ? 'not-allowed' : 'pointer',
+                      fontWeight: 'bold', fontSize: '0.85rem', opacity: agentStatus === 'busy' ? 0.5 : 1
+                    }}
+                  >
+                    🔔 Ta ärende
+                  </button>
+                </div>
+              ))}
+
+              {/* Aktiva av kollega */}
+              {takenByOthers.map(s => (
+                <div key={s.id} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  opacity: 0.55, gap: '1rem', flexWrap: 'wrap'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#6b7280' }} />
+                    <div>
+                      <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
+                        {s.profiles?.email || 'Anonym besökare'}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        🔒 Hanteras av {s.assigned_name || 'kollega'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Mitt eget aktiva ärende i listan */}
+              {takenByMe.map(s => (
+                <div key={s.id} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  background: 'rgba(99,102,241,0.08)', gap: '1rem', flexWrap: 'wrap'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#6366f1' }} />
+                    <div>
+                      <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
+                        {s.profiles?.email || 'Anonym besökare'}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#6366f1' }}>
+                        ✍️ Du hanterar detta ärende
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </>
           )}
-
-          {/* Väntande – kan tas */}
-          {pendingQueue.map(s => (
-            <div key={s.id} style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
-              gap: '1rem', flexWrap: 'wrap'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{
-                  width: 10, height: 10, borderRadius: '50%',
-                  background: '#f59e0b', boxShadow: '0 0 8px #f59e0b',
-                  animation: 'pulse 1.5s infinite'
-                }} />
-                <div>
-                  <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
-                    {s.profiles?.email || 'Anonym besökare'}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    ⏱ Väntat {formatWait(s.created_at)}
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => handleClaim(s)}
-                disabled={agentStatus === 'busy'}
-                style={{
-                  background: agentStatus === 'busy'
-                    ? 'rgba(255,255,255,0.05)'
-                    : 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
-                  color: '#fff', border: 'none', padding: '0.5rem 1.1rem',
-                  borderRadius: '8px', cursor: agentStatus === 'busy' ? 'not-allowed' : 'pointer',
-                  fontWeight: 'bold', fontSize: '0.85rem', opacity: agentStatus === 'busy' ? 0.5 : 1
-                }}
-              >
-                🔔 Ta ärende
-              </button>
-            </div>
-          ))}
-
-          {/* Aktiva av kollega */}
-          {takenByOthers.map(s => (
-            <div key={s.id} style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
-              opacity: 0.55, gap: '1rem', flexWrap: 'wrap'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#6b7280' }} />
-                <div>
-                  <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
-                    {s.profiles?.email || 'Anonym besökare'}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    🔒 Hanteras av {s.assigned_name || 'kollega'}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {/* Mitt eget aktiva ärende i listan */}
-          {takenByMe.map(s => (
-            <div key={s.id} style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
-              background: 'rgba(99,102,241,0.08)', gap: '1rem', flexWrap: 'wrap'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#6366f1' }} />
-                <div>
-                  <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
-                    {s.profiles?.email || 'Anonym besökare'}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: '#6366f1' }}>
-                    ✍️ Du hanterar detta ärende
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       )}
     </div>
