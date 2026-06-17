@@ -603,38 +603,52 @@ export default function AdminDashboard() {
       <h2 style={{ color: '#f43f5e', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>👑 System Admin</h2>
 
       {/* ─── FLIKMENY ─── */}
-      <div style={{
-        display: 'flex', gap: '0.5rem', marginBottom: '2rem',
-        borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0',
-        overflowX: 'auto', whiteSpace: 'nowrap'
-      }}>
-        {([
-          { id: 'overview',  icon: '📊', label: 'Översikt' },
-          { id: 'users',     icon: '👤', label: 'Användare' },
-          { id: 'support',   icon: '💬', label: 'Kundservice' },
-          { id: 'traffic',   icon: '📈', label: 'Trafik' },
-          { id: 'settings',  icon: '⚙️', label: 'Inställningar' },
-        ] as const).map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setAdminTab(tab.id)}
-            style={{
-              padding: '0.6rem 1.2rem',
-              fontWeight: 700,
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              border: 'none',
-              borderRadius: '8px 8px 0 0',
-              background: adminTab === tab.id ? 'rgba(99,102,241,0.2)' : 'transparent',
-              color: adminTab === tab.id ? '#a5b4fc' : 'var(--text-secondary)',
-              borderBottom: adminTab === tab.id ? '2px solid #6366f1' : '2px solid transparent',
-              transition: 'all 0.2s',
-              display: 'flex', alignItems: 'center', gap: '0.4rem'
-            }}
+      <div style={{ marginBottom: '2rem' }}>
+        <div className="settings-tabs-desktop" style={{
+          display: 'flex', gap: '0.5rem',
+          borderBottom: '1px solid rgba(255,255,255,0.1)'
+        }}>
+          {([
+            { id: 'overview',  icon: '📊', label: 'Översikt' },
+            { id: 'users',     icon: '👤', label: 'Användare' },
+            { id: 'support',   icon: '💬', label: 'Kundservice' },
+            { id: 'traffic',   icon: '📈', label: 'Trafik' },
+            { id: 'settings',  icon: '⚙️', label: 'Inställningar' },
+          ] as const).map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setAdminTab(tab.id)}
+              style={{
+                padding: '0.6rem 1.2rem',
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                border: 'none',
+                borderRadius: '8px 8px 0 0',
+                background: adminTab === tab.id ? 'rgba(99,102,241,0.2)' : 'transparent',
+                color: adminTab === tab.id ? '#a5b4fc' : 'var(--text-secondary)',
+                borderBottom: adminTab === tab.id ? '2px solid #6366f1' : '2px solid transparent',
+                transition: 'all 0.2s',
+                display: 'flex', alignItems: 'center', gap: '0.4rem'
+              }}
+            >
+              <span>{tab.icon}</span> {tab.label}
+            </button>
+          ))}
+        </div>
+        <div className="settings-tabs-mobile">
+          <select 
+            value={adminTab} 
+            onChange={(e) => setAdminTab(e.target.value as 'overview' | 'users' | 'support' | 'traffic' | 'settings')}
+            style={{ width: '100%', padding: '0.8rem', fontSize: '1.05rem', background: 'rgba(0,0,0,0.4)', color: 'var(--text-primary)', border: '1px solid #6366f1', borderRadius: '8px', cursor: 'pointer', appearance: 'auto' }}
           >
-            <span>{tab.icon}</span> {tab.label}
-          </button>
-        ))}
+            <option value="overview">📊 Översikt</option>
+            <option value="users">👤 Hantera Användare</option>
+            <option value="support">💬 Kundservice (Live)</option>
+            <option value="traffic">📈 Trafik & Konvertering</option>
+            <option value="settings">⚙️ Systeminställningar</option>
+          </select>
+        </div>
       </div>
 
       {/* ─── ÖVERSIKT ─── */}
