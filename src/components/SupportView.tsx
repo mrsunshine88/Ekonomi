@@ -53,14 +53,36 @@ export default function SupportView() {
     }
   }, [messages]);
 
+  const [connectError, setConnectError] = useState('');
+
   // Hämta agent-sessioner och kö
   const fetchQueue = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('chat_sessions')
-      .select('*, profiles(email)')
+      .select('id, user_id, visitor_id, status, assigned_to, assigned_name, created_at, updated_at')
       .in('status', ['waiting', 'active'])
       .order('created_at', { ascending: true });
-    if (data) setQueue(data);
+
+    if (error) { console.error('fetchQueue error:', error); return; }
+
+    if (data) {
+      const userIds = [...new Set(data.filter((s: any) => s.user_id).map((s: any) => s.user_id as string))];
+      let emailMap: Record<string, string> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, email')
+          .in('id', userIds);
+        if (profiles) {
+          (profiles as Array<{id: string; email: string}>).forEach(p => { emailMap[p.id] = p.email; });
+        }
+      }
+      const enriched = data.map((s: any) => ({
+        ...s,
+        profiles: s.user_id ? { email: emailMap[s.user_id] || 'Okänd användare' } : null
+      }));
+      setQueue(enriched);
+    }
   };
 
   const fetchAgents = async () => {
@@ -147,7 +169,12 @@ export default function SupportView() {
 
   // Koppla upp
   const handleConnect = async () => {
-    await supabase.rpc('agent_connect');
+    setConnectError('');
+    const { error } = await supabase.rpc('agent_connect');
+    if (error) {
+      setConnectError('⚠️ Kunde inte koppla upp. Har SQL-skriptet support_setup.sql körts i Supabase? Fel: ' + error.message);
+      return;
+    }
     setAgentStatus('available');
   };
 
@@ -294,6 +321,13 @@ export default function SupportView() {
           </button>
         )}
       </div>
+
+      {/* ─── Felmeddelande vid uppkoppling ─── */}
+      {connectError && (
+        <div style={{ background: 'rgba(244,63,94,0.12)', border: '1px solid rgba(244,63,94,0.4)', borderRadius: '8px', padding: '0.75rem 1.25rem', marginBottom: '1rem', fontSize: '0.9rem', color: '#f43f5e' }}>
+          {connectError}
+        </div>
+      )}
 
       {/* ─── Offline-meddelande ─── */}
       {agentStatus === 'offline' && (

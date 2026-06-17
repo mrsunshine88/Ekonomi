@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { useStore } from '../store';
 import type { PresenceEntry } from '../store';
 import { supabase } from '../supabase';
-import AdminChat from './AdminChat';
 
 // ─── Funnel config ──────────────────────────────────────────────────────────
 const FUNNEL_STEPS = [
@@ -16,7 +15,93 @@ const FUNNEL_STEPS = [
   { event: 'premium_complete',    label: 'Blev betalande',     icon: '💎', color: '#f43f5e' },
 ] as const;
 
+
+// ─── Support Queue Widget ────────────────────────────────────────────────────
+function SupportQueueWidget() {
+  const [waitingCount, setWaitingCount] = useState(0);
+  const [longestWait, setLongestWait] = useState<string | null>(null);
+  const [agentCount, setAgentCount] = useState(0);
+
+  const fetchQueueStats = async () => {
+    const { data } = await supabase
+      .from('chat_sessions')
+      .select('created_at')
+      .eq('status', 'waiting');
+    
+    if (data) {
+      setWaitingCount(data.length);
+      if (data.length > 0) {
+        const oldest = data.reduce((prev, curr) =>
+          new Date(prev.created_at) < new Date(curr.created_at) ? prev : curr
+        );
+        const secs = Math.floor((Date.now() - new Date(oldest.created_at).getTime()) / 1000);
+        const m = Math.floor(secs / 60);
+        const s = secs % 60;
+        setLongestWait(`${m}:${String(s).padStart(2, '0')}`);
+      } else {
+        setLongestWait(null);
+      }
+    }
+
+    // Hämta aktiva agenter
+    try {
+      const { data: agents } = await supabase
+        .from('agent_sessions')
+        .select('status')
+        .neq('status', 'offline');
+      setAgentCount(agents?.length ?? 0);
+    } catch {
+      // agent_sessions kanske inte finns än (SQL ej kört)
+    }
+  };
+
+  useEffect(() => {
+    fetchQueueStats();
+    const interval = setInterval(fetchQueueStats, 15000);
+
+    const channel = supabase.channel('admin_queue_stats')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_sessions' }, fetchQueueStats)
+      .subscribe();
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  return (
+    <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(99,102,241,0.05)', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.2)' }}>
+      <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <span>💬</span> Kundservice – Live
+      </h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
+        <div style={{ background: waitingCount > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.08)', padding: '1rem', borderRadius: '8px', border: `1px solid ${waitingCount > 0 ? 'rgba(245,158,11,0.4)' : 'rgba(16,185,129,0.2)'}`, textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: waitingCount > 0 ? '#f59e0b' : '#10b981' }}>{waitingCount}</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>I kö just nu</div>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: longestWait ? '#f43f5e' : '#10b981' }}>
+            {longestWait ?? '—'}
+          </div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Längsta väntan</div>
+        </div>
+        <div style={{ background: agentCount > 0 ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px', border: `1px solid ${agentCount > 0 ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.08)'}`, textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: agentCount > 0 ? '#10b981' : '#6b7280' }}>{agentCount}</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Agenter online</div>
+        </div>
+      </div>
+      {waitingCount > 0 && longestWait && (
+        <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          ⚠️ {waitingCount} kund{waitingCount > 1 ? 'er' : ''} väntar – längst {longestWait} min
+        </div>
+      )}
+    </div>
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function AdminDashboard() {
+
   const paywallActive = useStore(s => s.state.paywallActive);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
@@ -722,9 +807,10 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
-        <AdminChat />
-      </div>
+
+      {/* ─── KUNDSERVICE-KÖ STATISTIK ───────────────────────────── */}
+      <SupportQueueWidget />
+      {/* ────────────────────────────────────────────────────────── */}
 
       <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
         <h3 style={{ marginBottom: '1rem' }}>Global Master Switch</h3>

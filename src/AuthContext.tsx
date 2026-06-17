@@ -100,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
     let adminChannel: ReturnType<typeof supabase.channel> | null = null;
+    let chatAgentChannel: ReturnType<typeof supabase.channel> | null = null;
 
     // Failsafe: Tvinga bort "Laddar..."-skärmen efter 4 sekunder oavsett vad som händer
     const failsafeTimer = setTimeout(() => {
@@ -141,6 +142,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   )
                   .subscribe();
               }
+
+              // Lyssna på profiles.chat_agent-ändringar i realtid
+              if (chatAgentChannel) supabase.removeChannel(chatAgentChannel);
+              chatAgentChannel = supabase.channel(`chat-agent-changes-init-${session.user.id}`)
+                .on(
+                  'postgres_changes',
+                  { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${session.user.id}` },
+                  (payload: { new: { chat_agent?: boolean } }) => {
+                    if (typeof payload.new.chat_agent === 'boolean') {
+                      if (mounted) setIsChatAgent(payload.new.chat_agent);
+                    }
+                  }
+                )
+                .subscribe();
             } catch (err) {
               console.error("Failed to fetch admin status", err);
             }
@@ -208,6 +223,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 )
                 .subscribe();
             }
+
+            // Lyssna på profiles.chat_agent-ändringar i realtid
+            if (chatAgentChannel) supabase.removeChannel(chatAgentChannel);
+            chatAgentChannel = supabase.channel(`chat-agent-changes-${newSession.user.id}`)
+              .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${newSession.user.id}` },
+                (payload: { new: { chat_agent?: boolean } }) => {
+                  if (typeof payload.new.chat_agent === 'boolean') {
+                    if (mounted) setIsChatAgent(payload.new.chat_agent);
+                  }
+                }
+              )
+              .subscribe();
           } catch (err) {
             console.error("Failed to fetch admin status", err);
           }
@@ -234,6 +263,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(failsafeTimer);
       subscription.unsubscribe();
       if (adminChannel) supabase.removeChannel(adminChannel);
+      if (chatAgentChannel) supabase.removeChannel(chatAgentChannel);
     };
   }, []);
 
