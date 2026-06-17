@@ -71,6 +71,18 @@ export default function AdminDashboard() {
   const [funnelData, setFunnelData] = useState<Record<string, number>>({});
   const [funnelLoading, setFunnelLoading] = useState(false);
 
+  // Presence state
+  type PresenceEntry = {
+    session_id: string;
+    user_id: string;
+    role: string;
+    page: string;
+    page_label: string;
+    page_entered_at: string;
+  };
+  const [presenceSessions, setPresenceSessions] = useState<PresenceEntry[]>([]);
+  const [now, setNow] = useState(Date.now());
+
   // Dölj meddelanden automatiskt efter 5 sekunder
   useEffect(() => {
     if (msg) {
@@ -122,6 +134,43 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => { fetchFunnel(funnelPeriod); }, [funnelPeriod]);
+
+  // Presence subscription
+  useEffect(() => {
+    const channel = supabase.channel('live-presence');
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState<PresenceEntry>();
+        const entries = Object.values(state).flat();
+        setPresenceSessions(entries);
+      })
+      .subscribe();
+
+    // Uppdatera klockan var 10:e sekund för stuck-beräkning (ingen nätverkstrafik)
+    const tick = setInterval(() => setNow(Date.now()), 10_000);
+
+    return () => {
+      channel.unsubscribe();
+      clearInterval(tick);
+    };
+  }, []);
+
+  const STUCK_THRESHOLDS: Record<string, number> = {
+    '/': 5, '/demo': 8, '/register': 3, '/login': 2,
+  };
+  const STUCK_DEFAULT = 10; // minuter för okända sidor
+
+  const stuckSessions = presenceSessions.filter(s => {
+    const threshold = (STUCK_THRESHOLDS[s.page] ?? STUCK_DEFAULT) * 60_000;
+    return Date.now() - new Date(s.page_entered_at).getTime() > threshold;
+  });
+
+  const uniqueUsers = new Set(presenceSessions.map(s => s.user_id)).size;
+
+  const pageGroups = presenceSessions.reduce<Record<string, number>>((acc, s) => {
+    acc[s.page_label] = (acc[s.page_label] || 0) + 1;
+    return acc;
+  }, {});
 
   const fetchStats = async () => {
     try {
@@ -597,6 +646,77 @@ export default function AdminDashboard() {
         })()}
       </div>
       {/* ───────────────────────────────────────────────────────────── */}
+
+      {/* ─── LIVE PRESENCE PANEL ────────────────────────────────────── */}
+      <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(16,185,129,0.04)', borderRadius: '12px', border: '1px solid rgba(16,185,129,0.2)' }}>
+        <h3 style={{ margin: '0 0 1.25rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981', animation: 'pulse 2s infinite' }} />
+          Live just nu
+        </h3>
+
+        {/* Sammanfattning */}
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 120, background: 'rgba(16,185,129,0.1)', borderRadius: '0.75rem', padding: '0.875rem 1rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#10b981' }}>{presenceSessions.length}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>aktiva sessioner</div>
+          </div>
+          <div style={{ flex: 1, minWidth: 120, background: 'rgba(99,102,241,0.1)', borderRadius: '0.75rem', padding: '0.875rem 1rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#6366f1' }}>{uniqueUsers}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>unika användare</div>
+          </div>
+        </div>
+
+        {/* Per sida */}
+        {Object.keys(pageGroups).length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
+            {Object.entries(pageGroups)
+              .sort((a, b) => b[1] - a[1])
+              .map(([label, count]) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', flex: 1 }}>{label}</span>
+                  <div style={{ flex: 2, height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${(count / presenceSessions.length) * 100}%`,
+                      background: '#10b981',
+                      borderRadius: 3,
+                      transition: 'width 0.4s ease'
+                    }} />
+                  </div>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#fff', minWidth: 20, textAlign: 'right' }}>{count}</span>
+                </div>
+              ))}
+          </div>
+        ) : (
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem', fontStyle: 'italic' }}>
+            Inga aktiva sessioner just nu.
+          </div>
+        )}
+
+        {/* Stuck-lista */}
+        {stuckSessions.length > 0 && (
+          <div>
+            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#f59e0b', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              🔥 Fastnade besökare
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {stuckSessions.map(s => {
+                const mins = Math.floor((now - new Date(s.page_entered_at).getTime()) / 60_000);
+                return (
+                  <div key={s.session_id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.625rem 0.875rem', background: 'rgba(245,158,11,0.08)', borderRadius: '0.625rem', border: '1px solid rgba(245,158,11,0.2)' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#f59e0b', flex: 1 }}>{s.page_label}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{mins} min</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', padding: '0.25rem 0.5rem', background: 'rgba(255,255,255,0.06)', borderRadius: 4 }}>
+                      {s.role}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+      {/* ────────────────────────────────────────────────────────── */}
 
       {msg && (
         <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000000, padding: '1rem 2rem', background: 'rgba(0,0,0,0.9)', borderRadius: '8px', borderBottom: '4px solid #f43f5e', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.8)', fontWeight: 'bold', textAlign: 'center', minWidth: '300px' }}>

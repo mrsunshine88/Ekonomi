@@ -95,6 +95,70 @@ function App() {
     }
   }, []);
 
+  // ─── Supabase Realtime Presence ─────────────────────────────────────────
+  useEffect(() => {
+    if (isDemoMode) return; // Spåra ej demo-sessioner
+
+    // Unikt session-ID per webbfläk (ej per användare)
+    let presenceSessionId = sessionStorage.getItem('presence_session_id');
+    if (!presenceSessionId) {
+      presenceSessionId = crypto.randomUUID();
+      sessionStorage.setItem('presence_session_id', presenceSessionId);
+    }
+
+    const VIEW_LABELS: Record<string, string> = {
+      start: 'Startsidan', month: 'Månadsvy', stats: 'Statistik',
+      manage: 'Hantera Räkningar', mypages: 'Mina Sidor',
+      privat: 'Privat', admin: 'Admin', admin_learning: 'Admin Inlärning',
+    };
+
+    const channel = supabase.channel('live-presence');
+
+    const trackPresence = (view: string) => {
+      channel.track({
+        session_id: presenceSessionId,
+        user_id: user?.id || 'anonymous',
+        role: isAdmin ? 'admin' : user ? 'user' : 'anonymous',
+        page: VIEW_TO_URL[view as keyof typeof VIEW_TO_URL] || '/',
+        page_label: VIEW_LABELS[view] || view,
+        page_entered_at: new Date().toISOString(),
+      });
+    };
+
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        trackPresence(currentView);
+      }
+    });
+
+    return () => {
+      channel.unsubscribe();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDemoMode, user?.id, isAdmin]);
+
+  // Uppdatera presence-sida när vyn ändras
+  useEffect(() => {
+    if (isDemoMode) return;
+    const channel = supabase.getChannels().find(c => c.topic === 'realtime:live-presence');
+    if (channel && channel.state === 'joined') {
+      const VIEW_LABELS: Record<string, string> = {
+        start: 'Startsidan', month: 'Månadsvy', stats: 'Statistik',
+        manage: 'Hantera Räkningar', mypages: 'Mina Sidor',
+        privat: 'Privat', admin: 'Admin', admin_learning: 'Admin Inlärning',
+      };
+      channel.track({
+        session_id: sessionStorage.getItem('presence_session_id'),
+        user_id: user?.id || 'anonymous',
+        role: isAdmin ? 'admin' : user ? 'user' : 'anonymous',
+        page: VIEW_TO_URL[currentView as keyof typeof VIEW_TO_URL] || '/',
+        page_label: VIEW_LABELS[currentView] || currentView,
+        page_entered_at: new Date().toISOString(),
+      });
+    }
+  }, [currentView]);
+  // ────────────────────────────────────────────────────────────────────────
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigateTo = (view: ViewType) => {
