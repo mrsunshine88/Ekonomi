@@ -4,6 +4,17 @@ import { useStore } from '../store';
 import { supabase } from '../supabase';
 import AdminChat from './AdminChat';
 
+// ─── Funnel config ──────────────────────────────────────────────────────────
+const FUNNEL_STEPS = [
+  { event: 'page_view',           label: 'Besök',              icon: '🌐', color: '#6366f1' },
+  { event: 'demo_start',          label: 'Startade Demo',      icon: '🛠️', color: '#8b5cf6' },
+  { event: 'register_start',      label: 'Öppnade Registrering', icon: '📝', color: '#a855f7' },
+  { event: 'register_complete',   label: 'Konto skapat',       icon: '✅', color: '#10b981' },
+  { event: 'bank_upload_complete',label: 'Laddade upp bankfil', icon: '🏦', color: '#3b82f6' },
+  { event: 'onboarding_complete', label: 'Slutförde Onboarding',icon: '🎉', color: '#f59e0b' },
+  { event: 'premium_complete',    label: 'Blev betalande',     icon: '💎', color: '#f43f5e' },
+] as const;
+
 export default function AdminDashboard() {
   const paywallActive = useStore(s => s.state.paywallActive);
   const [loading, setLoading] = useState(false);
@@ -53,6 +64,12 @@ export default function AdminDashboard() {
   const [showAddress, setShowAddress] = useState(true);
   
   const [loginDemoEnabled, setLoginDemoEnabled] = useState(false);
+  
+  // Funnel state
+  type FunnelPeriod = '7d' | '30d' | 'all';
+  const [funnelPeriod, setFunnelPeriod] = useState<FunnelPeriod>('30d');
+  const [funnelData, setFunnelData] = useState<Record<string, number>>({});
+  const [funnelLoading, setFunnelLoading] = useState(false);
 
   // Dölj meddelanden automatiskt efter 5 sekunder
   useEffect(() => {
@@ -71,6 +88,40 @@ export default function AdminDashboard() {
       console.error("Kunde inte hämta medlemmar", e);
     }
   };
+
+  const fetchFunnel = async (period: '7d' | '30d' | 'all') => {
+    setFunnelLoading(true);
+    try {
+      let query = supabase
+        .from('funnel_events')
+        .select('event, session_id');
+      
+      if (period !== 'all') {
+        const days = period === '7d' ? 7 : 30;
+        const from = new Date(Date.now() - days * 86400000).toISOString();
+        query = query.gte('created_at', from);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      // Räkna unika sessioner per event
+      const counts: Record<string, Set<string>> = {};
+      (data || []).forEach((row: { event: string; session_id: string }) => {
+        if (!counts[row.event]) counts[row.event] = new Set();
+        counts[row.event].add(row.session_id);
+      });
+      const result: Record<string, number> = {};
+      Object.entries(counts).forEach(([k, v]) => { result[k] = v.size; });
+      setFunnelData(result);
+    } catch (e) {
+      console.error('Kunde inte hämta funnel-data', e);
+    } finally {
+      setFunnelLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchFunnel(funnelPeriod); }, [funnelPeriod]);
 
   const fetchStats = async () => {
     try {
@@ -439,6 +490,113 @@ export default function AdminDashboard() {
           </div>
         </>
       )}
+
+      {/* ─── FUNNEL DASHBOARD ──────────────────────────────────────── */}
+      <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(99,102,241,0.05)', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.2)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <h3 style={{ margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span>📈</span> Konverteringsfunnel
+          </h3>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {(['7d', '30d', 'all'] as const).map(p => (
+              <button
+                key={p}
+                onClick={() => setFunnelPeriod(p)}
+                style={{
+                  padding: '0.35rem 0.75rem', fontSize: '0.8rem', fontWeight: 600,
+                  borderRadius: '0.5rem', cursor: 'pointer', border: 'none',
+                  background: funnelPeriod === p ? '#6366f1' : 'rgba(255,255,255,0.08)',
+                  color: funnelPeriod === p ? '#fff' : 'var(--text-secondary)',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {p === '7d' ? '7 dagar' : p === '30d' ? '30 dagar' : 'Totalt'}
+              </button>
+            ))}
+            <button
+              onClick={() => fetchFunnel(funnelPeriod)}
+              style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', borderRadius: '0.5rem', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'var(--text-secondary)' }}
+            >
+              🔄
+            </button>
+          </div>
+        </div>
+
+        {funnelLoading ? (
+          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Laddar funnel-data...</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {FUNNEL_STEPS.map((step, i) => {
+              const count = funnelData[step.event] || 0;
+              const topCount = funnelData[FUNNEL_STEPS[0].event] || 1;
+              const prevCount = i > 0 ? (funnelData[FUNNEL_STEPS[i - 1].event] || 0) : count;
+              const pctOfTop = topCount > 0 ? Math.round((count / topCount) * 100) : 0;
+              const pctOfPrev = prevCount > 0 && i > 0 ? Math.round((count / prevCount) * 100) : null;
+              const barWidth = topCount > 0 ? (count / topCount) * 100 : 0;
+              const isWorstDropoff = i > 0 && pctOfPrev !== null && pctOfPrev < 40;
+
+              return (
+                <div key={step.event}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.3rem' }}>
+                    <span style={{ fontSize: '1rem', width: '1.5rem', textAlign: 'center' }}>{step.icon}</span>
+                    <span style={{ flex: 1, fontSize: '0.88rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {step.label}
+                    </span>
+                    <span style={{ fontWeight: 700, color: '#fff', fontSize: '1rem', minWidth: '2.5rem', textAlign: 'right' }}>{count}</span>
+                    <span style={{ fontSize: '0.78rem', minWidth: '3.5rem', textAlign: 'right', color: count === 0 ? 'rgba(255,255,255,0.2)' : 'var(--text-secondary)' }}>
+                      ({pctOfTop}%)
+                    </span>
+                    {pctOfPrev !== null && (
+                      <span style={{
+                        fontSize: '0.75rem', fontWeight: 700, minWidth: '4rem', textAlign: 'right',
+                        color: isWorstDropoff ? '#f43f5e' : pctOfPrev >= 70 ? '#10b981' : '#f59e0b'
+                      }}>
+                        {isWorstDropoff ? '⚠️ ' : ''}{pctOfPrev}% av föreg.
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ height: '8px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden', marginLeft: '2.25rem' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${barWidth}%`,
+                      background: step.color,
+                      borderRadius: '4px',
+                      transition: 'width 0.6s ease',
+                      boxShadow: `0 0 8px ${step.color}66`
+                    }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Störst drop-off */}
+        {!funnelLoading && (() => {
+          let worst = { label: '', drop: 100, prev: 0, curr: 0 };
+          FUNNEL_STEPS.forEach((step, i) => {
+            if (i === 0) return;
+            const curr = funnelData[step.event] || 0;
+            const prev = funnelData[FUNNEL_STEPS[i - 1].event] || 0;
+            if (prev === 0) return;
+            const pct = Math.round((curr / prev) * 100);
+            if (pct < worst.drop) worst = { label: `${FUNNEL_STEPS[i-1].label} → ${step.label}`, drop: pct, prev, curr };
+          });
+          if (worst.drop === 100 || worst.prev === 0) return null;
+          return (
+            <div style={{ marginTop: '1.25rem', padding: '0.875rem 1rem', background: 'rgba(244,63,94,0.08)', borderRadius: '0.75rem', border: '1px solid rgba(244,63,94,0.25)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ fontSize: '1.25rem' }}>⚠️</span>
+              <div>
+                <div style={{ fontWeight: 700, color: '#f43f5e', fontSize: '0.9rem' }}>Störst drop-off</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
+                  {worst.label} — {worst.prev} → {worst.curr} ({worst.drop}% fortsatte)
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+      {/* ───────────────────────────────────────────────────────────── */}
 
       {msg && (
         <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000000, padding: '1rem 2rem', background: 'rgba(0,0,0,0.9)', borderRadius: '8px', borderBottom: '4px solid #f43f5e', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.8)', fontWeight: 'bold', textAlign: 'center', minWidth: '300px' }}>
