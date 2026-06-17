@@ -55,6 +55,15 @@ export const safeDb = async (promise: PromiseLike<{ error: { message?: string, d
   }
 };
 
+export type PresenceEntry = {
+  session_id: string;
+  user_id: string;
+  role: string;
+  page: string;
+  page_label: string;
+  page_entered_at: string;
+};
+
 interface StoreState {
   state: AppState;
   isCloudLoaded: boolean;
@@ -63,6 +72,7 @@ interface StoreState {
   channel: RealtimeChannel | null;
   isDemoMode: boolean;
   realState: AppState | null;
+  presenceSessions: PresenceEntry[];
 
   startDemo: () => void;
   stopDemo: () => void;
@@ -107,6 +117,7 @@ export const useStore = create<StoreState>((set, get) => ({
   channel: null,
   isDemoMode: false,
   realState: null,
+  presenceSessions: [],
 
   cleanup: () => {
     const { channel } = get();

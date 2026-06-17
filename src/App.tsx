@@ -97,9 +97,8 @@ function App() {
 
   // ─── Supabase Realtime Presence ─────────────────────────────────────────
   useEffect(() => {
-    if (isDemoMode) return; // Spåra ej demo-sessioner
+    if (isDemoMode) return;
 
-    // Unikt session-ID per webbfläk (ej per användare)
     let presenceSessionId = sessionStorage.getItem('presence_session_id');
     if (!presenceSessionId) {
       presenceSessionId = crypto.randomUUID();
@@ -112,27 +111,30 @@ function App() {
       privat: 'Privat', admin: 'Admin', admin_learning: 'Admin Inlärning',
     };
 
-    const channel = supabase.channel('live-presence');
-
-    const trackPresence = (view: string) => {
-      channel.track({
-        session_id: presenceSessionId,
-        user_id: user?.id || 'anonymous',
-        role: isAdmin ? 'admin' : user ? 'user' : 'anonymous',
-        page: VIEW_TO_URL[view as keyof typeof VIEW_TO_URL] || '/',
-        page_label: VIEW_LABELS[view] || view,
-        page_entered_at: new Date().toISOString(),
+    const channel = supabase
+      .channel('live-presence')
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState<import('./store').PresenceEntry>();
+        const entries = Object.values(state).flat();
+        useStore.setState({ presenceSessions: entries });
       });
-    };
 
     channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
-        trackPresence(currentView);
+        channel.track({
+          session_id: presenceSessionId,
+          user_id: user?.id || 'anonymous',
+          role: isAdmin ? 'admin' : user ? 'user' : 'anonymous',
+          page: VIEW_TO_URL[currentView as keyof typeof VIEW_TO_URL] || '/',
+          page_label: VIEW_LABELS[currentView] || currentView,
+          page_entered_at: new Date().toISOString(),
+        });
       }
     });
 
     return () => {
       channel.unsubscribe();
+      useStore.setState({ presenceSessions: [] });
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDemoMode, user?.id, isAdmin]);

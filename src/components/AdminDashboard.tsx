@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useStore } from '../store';
+import type { PresenceEntry } from '../store';
 import { supabase } from '../supabase';
 import AdminChat from './AdminChat';
 
@@ -71,17 +72,30 @@ export default function AdminDashboard() {
   const [funnelData, setFunnelData] = useState<Record<string, number>>({});
   const [funnelLoading, setFunnelLoading] = useState(false);
 
-  // Presence state
-  type PresenceEntry = {
-    session_id: string;
-    user_id: string;
-    role: string;
-    page: string;
-    page_label: string;
-    page_entered_at: string;
-  };
-  const [presenceSessions, setPresenceSessions] = useState<PresenceEntry[]>([]);
+  // Presence – läses från Zustand (hanteras centralt i App.tsx)
+  const presenceSessions = useStore(s => s.presenceSessions) as PresenceEntry[];
   const [now, setNow] = useState(Date.now());
+
+  const STUCK_THRESHOLDS: Record<string, number> = {
+    '/': 5, '/demo': 8, '/register': 3, '/login': 2,
+  };
+
+  const stuckSessions = useMemo(() => presenceSessions.filter(s => {
+    const threshold = (STUCK_THRESHOLDS[s.page] ?? 10) * 60_000;
+    return Date.now() - new Date(s.page_entered_at).getTime() > threshold;
+  }), [presenceSessions, now]);
+
+  const uniqueUsers = useMemo(() =>
+    new Set(presenceSessions.map(s => s.user_id)).size
+  , [presenceSessions]);
+
+  const pageGroups = useMemo(() =>
+    presenceSessions.reduce<Record<string, number>>((acc, s) => {
+      acc[s.page_label] = (acc[s.page_label] || 0) + 1;
+      return acc;
+    }, {})
+  , [presenceSessions]);
+
 
   // Dölj meddelanden automatiskt efter 5 sekunder
   useEffect(() => {
@@ -135,42 +149,11 @@ export default function AdminDashboard() {
 
   useEffect(() => { fetchFunnel(funnelPeriod); }, [funnelPeriod]);
 
-  // Presence subscription
+  // Tick var 10:e sekund för stuck-beräkning (ingen nätverkstrafik)
   useEffect(() => {
-    const channel = supabase.channel('live-presence');
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState<PresenceEntry>();
-        const entries = Object.values(state).flat();
-        setPresenceSessions(entries);
-      })
-      .subscribe();
-
-    // Uppdatera klockan var 10:e sekund för stuck-beräkning (ingen nätverkstrafik)
     const tick = setInterval(() => setNow(Date.now()), 10_000);
-
-    return () => {
-      channel.unsubscribe();
-      clearInterval(tick);
-    };
+    return () => clearInterval(tick);
   }, []);
-
-  const STUCK_THRESHOLDS: Record<string, number> = {
-    '/': 5, '/demo': 8, '/register': 3, '/login': 2,
-  };
-  const STUCK_DEFAULT = 10; // minuter för okända sidor
-
-  const stuckSessions = presenceSessions.filter(s => {
-    const threshold = (STUCK_THRESHOLDS[s.page] ?? STUCK_DEFAULT) * 60_000;
-    return Date.now() - new Date(s.page_entered_at).getTime() > threshold;
-  });
-
-  const uniqueUsers = new Set(presenceSessions.map(s => s.user_id)).size;
-
-  const pageGroups = presenceSessions.reduce<Record<string, number>>((acc, s) => {
-    acc[s.page_label] = (acc[s.page_label] || 0) + 1;
-    return acc;
-  }, {});
 
   const fetchStats = async () => {
     try {
