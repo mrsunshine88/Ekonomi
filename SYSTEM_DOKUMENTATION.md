@@ -1694,3 +1694,199 @@ När plattformen har 500–1000 hushåll aktiveras nästa fas:
 | `src/App.tsx` | **[UPPDATERAD]** Routing för `/admin/learning`-vyn och ny menypost "🧠 Inlärning" för admins |
 
 ---
+
+## 38. Produkttelemetri-roadmap – Bakgrund och Strategi
+
+### Vad
+Ett komplett system för att mäta, förstå och förbättra konverteringsflödet i SmartEkonomi. Byggt i fem sprintar 2026-06-17.
+
+### Varför
+Med 85 unika besökare, 12 demo-användare och 1 betalande kund är den kritiska frågan inte *hur man bygger fler funktioner* – utan *varför 84 av 85 besökare inte skapade ett konto*. Svaret finns i tre lager:
+
+1. **Funnel Analytics** – var i flödet folk lämnar (aggregerad data)
+2. **Session Replay** – exakt vad de gjorde och var de fastnade (inspelning)
+3. **Live Presence** – vem som är inne på sajten just nu (realtid)
+
+Prioriteringen är medveten: varje procents förbättring i konvertering ger mer intäkt än att skaffa fler besökare.
+
+### Prioritetsordning (affärsvärde per timme)
+| Sprint | Feature | Motivering |
+|---|---|---|
+| 1 | funnel_events + hooks | Datainsamling startar direkt |
+| 2 | Microsoft Clarity | 15 min setup, spelar in från första besökaren |
+| 3 | Funnel-dashboard i Admin | Visualiserar Sprint 1-data |
+| 4 | Live Presence-panel | Support och realtidsinsikt |
+| 5 | Crowdsourcing Fas 2 | Aktiveras vid 500+ hushåll |
+
+---
+
+## 39. Funnel Analytics – funnel_events (Sprint 1)
+
+### Vad
+Händelsebaserad spårning av konverteringssteg. Varje steg i flödet loggas anonymt i tabellen `funnel_events`.
+
+### Varför händelsebaserat?
+Att spara sidvisningar (`visitor_stats`) och räkna ut vad användarna *gjorde* blir alltid oprecist. Event-baserad tracking ger exakta svar: "hur många startade bankimport" vs "hur många fullföljde den".
+
+### Databas
+```sql
+CREATE TABLE public.funnel_events (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id  TEXT NOT NULL,       -- anonymt UUID per flik (sessionStorage)
+    user_id     UUID,                -- null om ologgad
+    event       TEXT NOT NULL CHECK (event IN (...)),
+    metadata    JSONB DEFAULT '{}',
+    created_at  TIMESTAMPTZ DEFAULT now()
+);
+```
+
+**RLS:** Alla (inkl. anonyma) får INSERT via anon-nyckeln. Enbart admin får SELECT.
+
+### Events
+| Event | Triggas i |
+|---|---|
+| `page_view` | `App.tsx` – varje vybyte (ej demo) |
+| `demo_start` | `LoginScreen.tsx` – demo-knapp klickad |
+| `register_start` | `LoginScreen.tsx` – formulär byts till "Skapa konto" |
+| `bank_upload_complete` | `ManageBills.tsx` – lyckad bankimport |
+| `onboarding_complete` | `SetupWizard.tsx` – lyckad `create_initial_household_setup` |
+| `premium_complete` | *(planerat – Stripe webhook)* |
+
+### Hook: useFunnelTracker.ts
+Fire-and-forget – misslyckas tyst, påverkar aldrig UX. Hämtar `session_id` från `sessionStorage` och `user_id` asynkront från Supabase auth.
+
+### SQL-fil
+`add_funnel_events.sql` – kör i Supabase SQL Editor en gång.
+
+---
+
+## 40. Session Replay – Microsoft Clarity (Sprint 2)
+
+### Vad
+Gratis verktyg utan sessionsgränser som spelar in besökarsessioner och genererar heatmaps.
+
+### Varför Clarity?
+- Gratis, obegränsade sessioner
+- Ingen backend behövs – ett JS-snippet räcker
+- GDPR-kompatibelt
+
+### Implementation
+Snippet i `<head>` i `index.html`:
+```html
+<script type="text/javascript">
+  (function(c,l,a,r,i,t,y){...})(window, document, "clarity", "script", "x8gc3z5r1r");
+</script>
+```
+
+**Projekt-ID:** `x8gc3z5r1r`  
+**Åtkomst:** [clarity.microsoft.com](https://clarity.microsoft.com)
+
+---
+
+## 41. Funnel-dashboard i AdminDashboard (Sprint 3)
+
+### Vad
+Visuell konverteringsfunnel i adminpanelen under "Besöksstatistik".
+
+### Funktioner
+- **Tidsfilter:** 7 dagar / 30 dagar / Totalt
+- **Staplar per steg** med animering
+- **Färgkodning:** Grön (≥70%), Orange (40–69%), Röd+⚠️ (<40% av föregående)
+- **Störst drop-off:** Automatisk röd ruta som pekar ut värsta flaskhalsen
+
+### Data
+Hämtas direkt från `funnel_events`. Unika sessioner räknas med `Set<string>` på klientsidan.
+
+---
+
+## 42. Live Presence-panel (Sprint 4)
+
+### Vad
+Realtidspanel i adminpanelen – visar aktiva sessioner, fördelade per sida, med stuck-lista.
+
+### Teknik: Supabase Realtime Presence
+WebSocket-baserat. Klienter anmäler sin närvaro. Kopplar en klient ner (stänger fliken) försvinner de omedelbart – ingen polling, ingen databas, ingen kostnad.
+
+### Arkitekturprincip – En kanal, centralt hanterad
+Supabase tillåter INTE att lägga till `presence`-callbacks på en kanal som redan är subscribed. Regeln:
+
+> **Lägg alltid till alla `.on()`-callbacks INNAN `.subscribe()` kallas.**
+
+Lösning:
+- **`App.tsx`** – Skapar kanalen, lägger till `sync`-listener OCH kallar `.track()` i samma `useEffect`. Sparar sessioner i Zustand.
+- **`AdminDashboard.tsx`** – Läser bara från Zustand. Ingen egen channel, ingen subscription.
+
+### Payload per session
+```typescript
+{
+  session_id: string,       // UUID per flik (sessionStorage)
+  user_id: string,          // auth UID eller 'anonymous'
+  role: 'admin'|'user'|'anonymous',
+  page: '/dashboard',
+  page_label: 'Dashboard',
+  page_entered_at: string,  // ISO-timestamp
+}
+```
+
+### Stuck-tröskelvärdena (minuter)
+| Sida | Flaggas efter |
+|---|---|
+| `/login` | 2 min |
+| `/register` | 3 min |
+| `/` | 5 min |
+| `/demo` | 8 min |
+| Alla andra | 10 min |
+
+Stuck-listan är **inte automatisk** – admin väljer aktivt att kontakta. Avsiktligt för att undvika känsla av övervakning.
+
+### Demo-läge
+Presence-tracking aktiveras inte i demo-läge. Demo-sessioner syns aldrig i adminpanelen.
+
+### Zustand-integration
+`PresenceEntry` exporteras från `store.ts`. `presenceSessions: PresenceEntry[]` läggs till i StoreState.
+
+### Filer
+| Fil | Ändring |
+|---|---|
+| `src/store.ts` | **[UPPDATERAD]** `PresenceEntry`-typ exporteras, `presenceSessions` i state |
+| `src/App.tsx` | **[UPPDATERAD]** En kanal – tracking + lyssning + Zustand-uppdatering |
+| `src/components/AdminDashboard.tsx` | **[UPPDATERAD]** Läser från Zustand, `useMemo` för stuck/grupper |
+
+---
+
+## 43. Admin Learning Engine – Fas 1 (RPC-funktioner)
+
+### Vad
+Två SQL-funktioner som ger admin kontroll över crowdsourcing-kandidater.
+
+### Funktioner
+| RPC | Vad den gör |
+|---|---|
+| `admin_approve_system_rule(...)` | Skapar en SYSTEM-regel baserat på *ny* kategori (om admin ändrat) och inaktiverar ursprungliga röster |
+| `admin_reject_system_rule(...)` | Inaktiverar röster (`is_active = false`) utan att skapa regel |
+
+### Säkerhet
+Båda funktionerna kontrollerar `is_user_admin()` i SECURITY DEFINER-kontexten. Anrop utan admin-rättigheter kastar `EXCEPTION 'Access denied'`.
+
+### SQL-fil
+`admin_learning_update.sql` – kör i Supabase SQL Editor en gång.
+
+---
+
+## 44. Sprint 5 – Crowdsourcing Fas 2 (planerat, ej byggt)
+
+### Aktiveras vid
+500–1000 aktiva hushåll. Meningslös med färre – datan för gles.
+
+### Vad som ändras
+Tre SQL-rader i konsensus-vyn:
+
+| Ändring | Från | Till |
+|---|---|---|
+| Minsta antal hushåll | `>= 1` | `>= 5` |
+| Enighetsfilter | saknas | `>= 85%` |
+| Confidence score | saknas | beräknas och visas |
+
+Admin godkänner alltid manuellt – ingen auto-godkännande planeras.
+
+---
