@@ -106,6 +106,33 @@ export default function SupportView() {
       if (data) setAgentStatus(data.status as any);
       await fetchQueue();
       await fetchAgents();
+
+      // Auto-återta ärende om agenten navigerade bort och kom tillbaka
+      const { data: myActive } = await supabase
+        .from('chat_sessions')
+        .select('id, user_id, visitor_id, status, assigned_to, assigned_name, created_at, updated_at')
+        .eq('assigned_to', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+        
+      if (myActive) {
+        // Hämta e-post för att berika activeSession (samma som fetchQueue)
+        let email = 'Okänd användare';
+        if (myActive.user_id) {
+          const { data: profile } = await supabase.from('profiles').select('email').eq('id', myActive.user_id).maybeSingle();
+          if (profile) email = profile.email;
+        }
+        const enrichedSession = { ...myActive, profiles: myActive.user_id ? { email } : null };
+        
+        setActiveSession(enrichedSession as ChatSession);
+        
+        // Se till att agenten är 'busy'
+        if (!data || data.status !== 'busy') {
+           await supabase.rpc('agent_connect');
+           await supabase.from('agent_sessions').update({ status: 'busy' }).eq('agent_id', user.id);
+           setAgentStatus('busy');
+        }
+      }
     };
     init();
 
@@ -181,9 +208,14 @@ export default function SupportView() {
 
   // Koppla från
   const handleDisconnect = async () => {
+    if (activeSession) {
+      // Släpp tillbaka ärendet till kön via RPC för att kringgå RLS
+      await supabase.rpc('unclaim_chat_session', { target_session_id: activeSession.id });
+    }
     await supabase.rpc('agent_disconnect');
     setAgentStatus('offline');
     setActiveSession(null);
+    await fetchQueue();
   };
 
   // Ta ärende
@@ -317,18 +349,17 @@ export default function SupportView() {
             </button>
           ) : (
             <button
-              onClick={handleDisconnect}
-              disabled={agentStatus === 'busy'}
-              title={agentStatus === 'busy' ? 'Stäng aktivt ärende först' : ''}
-              style={{
-                background: 'transparent', color: '#f43f5e',
-                border: '1px solid #f43f5e', padding: '0.6rem 1.4rem',
-                borderRadius: '8px', cursor: agentStatus === 'busy' ? 'not-allowed' : 'pointer',
-                fontWeight: 'bold', fontSize: '0.95rem', opacity: agentStatus === 'busy' ? 0.5 : 1
-              }}
-            >
-              🔴 Koppla från
-            </button>
+            onClick={handleDisconnect}
+            title={agentStatus === 'busy' ? 'Släpp ärendet och koppla från' : ''}
+            style={{
+              background: 'transparent', color: '#f43f5e',
+              border: '1px solid #f43f5e', padding: '0.6rem 1.4rem',
+              borderRadius: '8px', cursor: 'pointer',
+              fontWeight: 'bold', fontSize: '0.95rem'
+            }}
+          >
+            🔴 Koppla från
+          </button>
           )}
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
