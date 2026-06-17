@@ -390,7 +390,7 @@ function App() {
                   boxShadow: '0 2px 12px rgba(124,58,237,0.45)',
                   whiteSpace: 'nowrap'
                 }}>
-                  👉 Gillar du vad du ser? Skapa ett gratis konto på 30 sekunder!
+                  👉 Gillar du vad du ser? Prova gratis i 14 dagar.
                 </span>
                 <button
                   onClick={() => {
