@@ -21,15 +21,16 @@ import UpdatePassword from './components/Auth/UpdatePassword';
 import ChatBubble from './components/ChatBubble';
 import ConfirmedModal from './components/Auth/ConfirmedModal';
 import StartPage from './components/StartPage';
+import SupportView from './components/SupportView';
 import { trackFunnelEvent } from './hooks/useFunnelTracker';
 
 function App() {
-  const { user, householdId, setupStatus, loading, isRecoveringPassword, isAdmin, tosAccepted, isNewlyConfirmed, setIsNewlyConfirmed } = useAuth();
+  const { user, householdId, setupStatus, loading, isRecoveringPassword, isAdmin, isChatAgent, tosAccepted, isNewlyConfirmed, setIsNewlyConfirmed } = useAuth();
   const initCloud = useStore(s => s.initCloud);
   const state = useStore(s => s.state);
   const isDemoMode = useStore(s => s.isDemoMode);
   const stopDemo = useStore(s => s.stopDemo);
-  type ViewType = 'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'admin_learning';
+  type ViewType = 'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'admin_learning' | 'support';
   const URL_TO_VIEW: Record<string, ViewType> = {
     '/': 'start',
     '/month': 'month',
@@ -39,6 +40,7 @@ function App() {
     '/privat': 'privat',
     '/admin': 'admin',
     '/admin/learning': 'admin_learning',
+    '/support': 'support',
   };
   const VIEW_TO_URL: Record<ViewType, string> = {
     'start': '/',
@@ -49,6 +51,7 @@ function App() {
     'privat': '/privat',
     'admin': '/admin',
     'admin_learning': '/admin/learning',
+    'support': '/support',
   };
   const [currentView, setCurrentView] = useState<ViewType>(() => {
     const path = window.location.pathname;
@@ -294,6 +297,9 @@ function App() {
           {(!isDemoMode || user) && (
             <>
               <button onClick={() => navigateTo('mypages')} style={navButtonStyles('mypages')}>👤 Mina sidor</button>
+              {isChatAgent && (
+                <button onClick={() => navigateTo('support')} style={navButtonStyles('support')}>💬 Kundservice</button>
+              )}
               {isAdmin && (
                 <>
                   <button onClick={() => navigateTo('admin')} style={navButtonStyles('admin')}>👑 Admin</button>
@@ -353,6 +359,9 @@ function App() {
                 {(!isDemoMode || user) && (
                   <>
                     <button onClick={() => navigateTo('mypages')} className={`mobile-menu-item ${currentView === 'mypages' ? 'active' : ''}`}>👤 Mina sidor</button>
+                    {isChatAgent && (
+                      <button onClick={() => navigateTo('support')} className={`mobile-menu-item ${currentView === 'support' ? 'active' : ''}`}>💬 Kundservice</button>
+                    )}
                     {isAdmin && (
                       <>
                         <button onClick={() => navigateTo('admin')} className={`mobile-menu-item ${currentView === 'admin' ? 'active' : ''}`}>👑 Admin</button>
@@ -415,6 +424,11 @@ function App() {
 
           {currentView === 'start' ? (
             <StartPage navigateTo={navigateTo} />
+          ) : currentView === 'support' && isChatAgent ? (
+            <div>
+              <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>💬 Kundservice</h2>
+              <SupportView />
+            </div>
           ) : currentView === 'admin' && isAdmin ? (
             <div>
               <button className="back-button" onClick={() => setCurrentView('start')}>← Tillbaka till Startsida</button>
@@ -480,7 +494,7 @@ function App() {
         </div>
       </main>
 
-      <ChatBubble />
+      {!isChatAgent && <ChatBubble />}
     </div>
   );
 }

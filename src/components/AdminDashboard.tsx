@@ -322,7 +322,22 @@ export default function AdminDashboard() {
     });
   };
 
+  const handleToggleChatAgent = async (email: string, isChatAgent: boolean) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.rpc('toggle_chat_agent', { target_email: email, enable: !isChatAgent });
+      if (error) throw error;
+      setMsg(isChatAgent ? `💬 Kundservice avaktiverad för ${email}.` : `💬 ${email} kan nu jobba i kundservice!`);
+      await fetchMembersList();
+    } catch (e: unknown) {
+      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeleteUser = async (id: string, email: string) => {
+
     setConfirmDialog({
       message: `Varning! Är du HELT SÄKER på att du vill radera ${email} permanent från databasen?`,
       onConfirm: async () => {
@@ -936,6 +951,13 @@ export default function AdminDashboard() {
                         style={{ flex: '1 1 45%', background: m.is_admin ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.1)', color: m.is_admin ? '#a855f7' : '#fff', border: `1px solid ${m.is_admin ? '#a855f7' : 'transparent'}`, padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', display: m.email === 'apersson508@gmail.com' ? 'none' : 'block' }}
                       >
                         {m.is_admin ? '👑 Admin' : 'Gör till Admin'}
+                      </button>
+                      <button
+                        onClick={() => handleToggleChatAgent(m.email, m.chat_agent)}
+                        disabled={loading || m.email === 'apersson508@gmail.com'}
+                        style={{ flex: '1 1 45%', background: m.chat_agent ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.1)', color: m.chat_agent ? '#10b981' : '#fff', border: `1px solid ${m.chat_agent ? '#10b981' : 'transparent'}`, padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', display: m.email === 'apersson508@gmail.com' ? 'none' : 'block' }}
+                      >
+                        {m.chat_agent ? '💬 KS PÅ' : '💬 KS AV'}
                       </button>
                       <button 
                         onClick={() => handleToggleBan(m.id, m.is_banned)}

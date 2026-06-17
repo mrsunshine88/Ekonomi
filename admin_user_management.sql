@@ -1,4 +1,5 @@
 -- Funktion för att hämta alla medlemmar till admin-vyn
+-- Uppdatera admin_get_all_users att returnera chat_agent
 DROP FUNCTION IF EXISTS public.admin_get_all_users();
 CREATE OR REPLACE FUNCTION public.admin_get_all_users()
 RETURNS TABLE (
@@ -7,7 +8,8 @@ RETURNS TABLE (
     last_sign_in_at TIMESTAMPTZ,
     is_banned BOOLEAN,
     is_vip BOOLEAN,
-    is_admin BOOLEAN
+    is_admin BOOLEAN,
+    chat_agent BOOLEAN
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -31,7 +33,8 @@ BEGIN
         EXISTS (
             SELECT 1 FROM public.system_admins sa
             WHERE sa.user_id = u.id
-        ) as is_admin
+        ) as is_admin,
+        COALESCE((SELECT pr.chat_agent FROM public.profiles pr WHERE pr.id = u.id), false) as chat_agent
     FROM auth.users u
     ORDER BY u.created_at DESC;
 END;

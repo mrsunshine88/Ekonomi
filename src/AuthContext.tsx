@@ -15,6 +15,7 @@ interface AuthState {
   isRecoveringPassword: boolean;
   setIsRecoveringPassword: (val: boolean) => void;
   isAdmin: boolean;
+  isChatAgent: boolean;
   isNewlyConfirmed: boolean;
   setIsNewlyConfirmed: (val: boolean) => void;
 }
@@ -36,6 +37,7 @@ const AuthContext = createContext<AuthState>({
   isRecoveringPassword: false,
   setIsRecoveringPassword: () => {},
   isAdmin: false,
+  isChatAgent: false,
   isNewlyConfirmed: false,
   setIsNewlyConfirmed: () => {}
 });
@@ -53,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isChatAgent, setIsChatAgent] = useState(false);
   const [isNewlyConfirmed, setIsNewlyConfirmed] = useState(initiallyConfirmed);
 
   const acceptTos = async () => {
@@ -71,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchHousehold = async (userId: string) => {
     try {
-      const { data, error } = await supabase.from('profiles').select('household_id, role, tos_accepted, setup_status').eq('id', userId).single();
+      const { data, error } = await supabase.from('profiles').select('household_id, role, tos_accepted, setup_status, chat_agent').eq('id', userId).single();
       if (error) {
         throw error;
       }
@@ -85,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data) {
         setTosAccepted(data.tos_accepted || false);
         setSetupStatus(data.setup_status || 'new_user');
+        setIsChatAgent(data.chat_agent || false);
       }
     } catch (e) {
       console.error("Network or fetch error in fetchHousehold:", e);
@@ -210,6 +214,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setHouseholdId(null);
           setIsAdmin(false);
+          setIsChatAgent(false);
           setRole(null);
           setTosAccepted(false);
           setSetupStatus('new_user');
@@ -233,7 +238,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, householdId, role, tosAccepted, setupStatus, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) }, acceptTos, isRecoveringPassword, setIsRecoveringPassword, isAdmin, isNewlyConfirmed, setIsNewlyConfirmed }}>
+    <AuthContext.Provider value={{ user, session, householdId, role, tosAccepted, setupStatus, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) }, acceptTos, isRecoveringPassword, setIsRecoveringPassword, isAdmin, isChatAgent, isNewlyConfirmed, setIsNewlyConfirmed }}>
       {children}
     </AuthContext.Provider>
   );
