@@ -43,6 +43,7 @@ export default function SupportView() {
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [claimError, setClaimError] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -252,8 +253,16 @@ export default function SupportView() {
   const takenByMe = queue.filter(s => s.assigned_to === user?.id && s.status === 'active');
   const takenByOthers = queue.filter(s => s.assigned_to && s.assigned_to !== user?.id && s.status === 'active');
 
+  const fullscreenStyles: React.CSSProperties = isFullscreen ? {
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    zIndex: 9999, backgroundColor: '#0f172a',
+    padding: '2rem', overflowY: 'auto'
+  } : {
+    maxWidth: '900px', margin: '0 auto', padding: '1rem'
+  };
+
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '1rem' }}>
+    <div style={fullscreenStyles}>
 
       {/* ─── Statusruta ─── */}
       <div style={{
@@ -320,6 +329,20 @@ export default function SupportView() {
             🔴 Koppla från
           </button>
         )}
+          <button
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            style={{
+              background: 'rgba(255,255,255,0.1)', color: '#fff',
+              border: 'none', padding: '0.6rem 1rem',
+              borderRadius: '8px', cursor: 'pointer',
+              fontWeight: 'bold', fontSize: '1rem',
+              marginLeft: '0.5rem'
+            }}
+            title={isFullscreen ? "Minimera" : "Helskärm"}
+          >
+            {isFullscreen ? "🗗" : "🖵"}
+          </button>
+        </div>
       </div>
 
       {/* ─── Felmeddelande vid uppkoppling ─── */}

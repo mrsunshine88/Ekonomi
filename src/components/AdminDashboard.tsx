@@ -99,6 +99,121 @@ function SupportQueueWidget() {
   );
 }
 // ─────────────────────────────────────────────────────────────────────────────
+// ✨ Support Agent Stats Widget ✨
+function SupportAgentStatsWidget() {
+  const [timeRange, setTimeRange] = useState<'today' | 'yesterday' | 'week' | 'month'>('today');
+  const [stats, setStats] = useState<{ email: string, count: number, avgTime: number }[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchStats();
+  }, [timeRange]);
+
+  const fetchStats = async () => {
+    setLoading(true);
+    let startDate = new Date();
+    startDate.setHours(0,0,0,0);
+    let endDate = new Date();
+    endDate.setHours(23,59,59,999);
+
+    if (timeRange === 'yesterday') {
+      startDate.setDate(startDate.getDate() - 1);
+      endDate.setDate(endDate.getDate() - 1);
+    } else if (timeRange === 'week') {
+      startDate.setDate(startDate.getDate() - 7);
+    } else if (timeRange === 'month') {
+      startDate.setMonth(startDate.getMonth() - 1);
+    }
+
+    const { data: users } = await supabase.rpc('admin_get_all_users');
+    const userMap = new Map();
+    if (users) {
+      users.forEach((u: any) => userMap.set(u.id, u.email));
+    }
+
+    const { data } = await supabase
+      .from('chat_sessions')
+      .select('assigned_to, created_at, updated_at')
+      .eq('status', 'closed')
+      .not('assigned_to', 'is', null)
+      .gte('updated_at', startDate.toISOString())
+      .lte('updated_at', endDate.toISOString());
+
+    if (data) {
+      const agentMap = new Map<string, { count: number, totalTime: number }>();
+      data.forEach(s => {
+        const agentId = s.assigned_to;
+        const email = userMap.get(agentId) || 'Okänd Agent';
+        const start = new Date(s.created_at).getTime();
+        const end = new Date(s.updated_at).getTime();
+        const durationMin = Math.max(0, (end - start) / 60000);
+        
+        if (!agentMap.has(email)) {
+          agentMap.set(email, { count: 0, totalTime: 0 });
+        }
+        const st = agentMap.get(email)!;
+        st.count++;
+        st.totalTime += durationMin;
+      });
+
+      const result = Array.from(agentMap.entries()).map(([email, st]) => ({
+        email,
+        count: st.count,
+        avgTime: Math.round(st.totalTime / st.count)
+      })).sort((a, b) => b.count - a.count);
+
+      setStats(result);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span>📈</span> Agentprestationer
+        </h3>
+        <select 
+          value={timeRange} 
+          onChange={(e) => setTimeRange(e.target.value as any)}
+          style={{ background: '#1e293b', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '0.5rem', borderRadius: '6px' }}
+        >
+          <option value="today">Idag</option>
+          <option value="yesterday">Igår</option>
+          <option value="week">Senaste veckan</option>
+          <option value="month">Senaste månaden</option>
+        </select>
+      </div>
+
+      {loading ? (
+        <div style={{ color: 'var(--text-secondary)' }}>Laddar statistik...</div>
+      ) : stats.length === 0 ? (
+        <div style={{ color: 'var(--text-secondary)' }}>Inga stängda ärenden denna period.</div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                <th style={{ padding: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>Agent</th>
+                <th style={{ padding: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal', textAlign: 'center' }}>Lösta ärenden</th>
+                <th style={{ padding: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal', textAlign: 'right' }}>Snittid per ärende</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.map(s => (
+                <tr key={s.email} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <td style={{ padding: '0.75rem', fontWeight: 'bold' }}>{s.email}</td>
+                  <td style={{ padding: '0.75rem', textAlign: 'center', color: '#10b981', fontWeight: 'bold' }}>{s.count}</td>
+                  <td style={{ padding: '0.75rem', textAlign: 'right', color: '#f59e0b' }}>{s.avgTime} min</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
 
@@ -808,9 +923,10 @@ export default function AdminDashboard() {
       )}
 
 
-      {/* ─── KUNDSERVICE-KÖ STATISTIK ───────────────────────────── */}
+      {/* 💬 KUNDSERVICE-KÖ & STATISTIK 💬 */}
       <SupportQueueWidget />
-      {/* ────────────────────────────────────────────────────────── */}
+      <SupportAgentStatsWidget />
+      {/* ─────────────────────────── */}
 
       <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
         <h3 style={{ marginBottom: '1rem' }}>Global Master Switch</h3>
