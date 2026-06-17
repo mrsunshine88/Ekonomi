@@ -374,14 +374,28 @@ function App() {
 
         <div className="container">
           {isDemoMode && (
-            <div style={{ background: '#f59e0b', color: '#000', padding: '1rem', textAlign: 'center', borderRadius: '8px', marginBottom: '2rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <span>🛠️ Du utforskar just nu appen i Demo-läge. Inget du gör här sparas.</span>
-              <button 
-                onClick={stopDemo}
-                style={{ background: '#000', color: '#fff', border: 'none', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-              >
-                Avsluta Demo
-              </button>
+            <div style={{ background: '#f59e0b', color: '#000', padding: '0.85rem 1.25rem', borderRadius: '8px', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>🛠️ Du utforskar just nu appen i Demo-läge. Inget du gör här sparas.</span>
+                <span style={{ fontSize: '0.9rem', opacity: 0.85 }}>Gillar du vad du ser? Skapa ett gratis konto och kom igång på 30 sekunder!</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0 }}>
+                <button
+                  onClick={() => {
+                    localStorage.setItem('smartEkonomi_openRegister', 'true');
+                    stopDemo();
+                  }}
+                  style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)', color: '#fff', border: 'none', padding: '0.5rem 1.1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem', whiteSpace: 'nowrap', boxShadow: '0 2px 10px rgba(124,58,237,0.4)' }}
+                >
+                  ✨ Skapa gratis konto
+                </button>
+                <button
+                  onClick={stopDemo}
+                  style={{ background: 'transparent', color: '#000', border: '2px solid rgba(0,0,0,0.4)', padding: '0.45rem 0.9rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
+                >
+                  Avsluta Demo
+                </button>
+              </div>
             </div>
           )}
 

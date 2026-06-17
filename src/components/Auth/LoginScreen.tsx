@@ -16,6 +16,15 @@ export default function LoginScreen() {
   const [demoEnabled, setDemoEnabled] = useState(false);
   const startDemo = useStore(s => s.startDemo);
 
+  // Öppna register-fliken direkt om vi kom från demo-bannern
+  useEffect(() => {
+    if (localStorage.getItem('smartEkonomi_openRegister') === 'true') {
+      localStorage.removeItem('smartEkonomi_openRegister');
+      setIsLogin(false);
+      trackFunnelEvent('register_start', { source: 'demo_banner' });
+    }
+  }, []);
+
   // Sätt body background endast på login screen om vi behöver override
   useEffect(() => {
     document.body.style.background = '#060913';
