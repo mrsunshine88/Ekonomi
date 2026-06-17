@@ -606,7 +606,7 @@ export default function AdminDashboard() {
       <div style={{
         display: 'flex', gap: '0.5rem', marginBottom: '2rem',
         borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0',
-        flexWrap: 'wrap'
+        overflowX: 'auto', whiteSpace: 'nowrap'
       }}>
         {([
           { id: 'overview',  icon: '📊', label: 'Översikt' },
@@ -1195,7 +1195,7 @@ export default function AdminDashboard() {
                   )}
                 </div>
                 {m.email !== 'apersson508@gmail.com' && (
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.5rem', marginTop: '0.5rem' }}>
                     <button onClick={() => handleToggleVip(m.email, m.is_vip)} disabled={loading} style={{ flex: '1 1 auto', background: m.is_vip ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.08)', color: m.is_vip ? '#10b981' : '#fff', border: `1px solid ${m.is_vip ? '#10b981' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
                       {m.is_vip ? '💎 VIP' : 'Gör VIP'}
                     </button>
