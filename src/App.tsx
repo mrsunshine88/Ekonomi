@@ -374,28 +374,42 @@ function App() {
 
         <div className="container">
           {isDemoMode && (
-            <div style={{ background: '#f59e0b', color: '#000', padding: '0.85rem 1.25rem', borderRadius: '8px', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>🛠️ Du utforskar just nu appen i Demo-läge. Inget du gör här sparas.</span>
-                <span style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>👉 Gillar du vad du ser? Skapa ett gratis konto och kom igång på 30 sekunder!</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0 }}>
+            <div style={{ background: '#f59e0b', color: '#000', padding: '0.75rem 1.25rem', borderRadius: '8px', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              {/* Info-text: liten och dämpad */}
+              <span style={{ fontSize: '0.8rem', opacity: 0.65, fontWeight: 500 }}>🛠️ Du utforskar appen i Demo-läge. Inget sparas.</span>
+
+              {/* CTA-sektion: lila pill + knapp */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <span style={{
+                  background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
+                  color: '#fff',
+                  fontWeight: 'bold',
+                  fontSize: '0.9rem',
+                  padding: '0.45rem 1rem',
+                  borderRadius: '20px',
+                  boxShadow: '0 2px 12px rgba(124,58,237,0.45)',
+                  whiteSpace: 'nowrap'
+                }}>
+                  👉 Gillar du vad du ser? Skapa ett gratis konto på 30 sekunder!
+                </span>
                 <button
                   onClick={() => {
                     localStorage.setItem('smartEkonomi_openRegister', 'true');
                     stopDemo();
                   }}
-                  style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)', color: '#fff', border: 'none', padding: '0.5rem 1.1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem', whiteSpace: 'nowrap', boxShadow: '0 2px 10px rgba(124,58,237,0.4)' }}
+                  style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)', color: '#fff', border: 'none', padding: '0.5rem 1.2rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem', whiteSpace: 'nowrap', boxShadow: '0 2px 10px rgba(124,58,237,0.4)' }}
                 >
                   ✨ Skapa gratis konto
                 </button>
-                <button
-                  onClick={stopDemo}
-                  style={{ background: 'transparent', color: '#000', border: '2px solid rgba(0,0,0,0.4)', padding: '0.45rem 0.9rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
-                >
-                  Avsluta Demo
-                </button>
               </div>
+
+              {/* Avsluta Demo: nedtonad */}
+              <button
+                onClick={stopDemo}
+                style={{ background: 'transparent', color: 'rgba(0,0,0,0.45)', border: '1px solid rgba(0,0,0,0.25)', padding: '0.35rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.78rem', whiteSpace: 'nowrap' }}
+              >
+                Avsluta Demo
+              </button>
             </div>
           )}
 
