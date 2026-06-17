@@ -302,7 +302,7 @@ export default function SupportView() {
         border: '1px solid rgba(255,255,255,0.1)',
         borderRadius: '12px',
         padding: '1rem 1.5rem',
-        marginBottom: '1.5rem',
+        marginBottom: '1rem',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -398,7 +398,7 @@ export default function SupportView() {
       {activeSession && (
         <div style={{
           background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.3)',
-          borderRadius: '12px', marginBottom: '1.5rem', overflow: 'hidden'
+          borderRadius: '12px', marginBottom: '1rem', overflow: 'hidden'
         }}>
           <div style={{
             background: 'var(--accent-gradient)', padding: '1rem 1.5rem',
@@ -423,7 +423,8 @@ export default function SupportView() {
 
           {/* Meddelanden */}
           <div ref={scrollRef} style={{
-            height: '320px', overflowY: 'auto', padding: '1rem',
+            height: '35vh', maxHeight: '320px', minHeight: '180px',
+            overflowY: 'auto', padding: '1rem',
             display: 'flex', flexDirection: 'column', gap: '0.6rem'
           }}>
             {messages.length === 0 && (
