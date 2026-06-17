@@ -21,7 +21,9 @@ export default function AdminLearning() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
   const [confirmCandidate, setConfirmCandidate] = useState<Candidate | null>(null);
+  const [rejectCandidate, setRejectCandidate] = useState<Candidate | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [editCategory, setEditCategory] = useState<string>('');
 
   useEffect(() => {
     checkAdminAndLoadData();
@@ -50,6 +52,11 @@ export default function AdminLearning() {
 
   const triggerApprove = (candidate: Candidate) => {
     setConfirmCandidate(candidate);
+    setEditCategory(candidate.category);
+  };
+
+  const triggerReject = (candidate: Candidate) => {
+    setRejectCandidate(candidate);
   };
 
   const handleApproveConfirm = async () => {
@@ -63,7 +70,8 @@ export default function AdminLearning() {
       const { error } = await supabase.rpc('admin_approve_system_rule', {
         p_normalized_name: candidate.normalized_name,
         p_transaction_direction: candidate.transaction_direction,
-        p_category: candidate.category,
+        p_original_category: candidate.category,
+        p_new_category: editCategory,
         p_household_count: candidate.household_count
       });
       if (error) throw error;
@@ -74,6 +82,32 @@ export default function AdminLearning() {
       ));
     } catch (e: any) {
       setErrorMsg('Kunde inte godkänna: ' + e.message);
+    } finally {
+      setApproving(null);
+    }
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!rejectCandidate) return;
+    const candidate = rejectCandidate;
+    setRejectCandidate(null);
+    
+    const key = `${candidate.normalized_name}-${candidate.transaction_direction}-${candidate.category}`;
+    setApproving(key);
+    try {
+      const { error } = await supabase.rpc('admin_reject_system_rule', {
+        p_normalized_name: candidate.normalized_name,
+        p_transaction_direction: candidate.transaction_direction,
+        p_category: candidate.category
+      });
+      if (error) throw error;
+      setCandidates(prev => prev.filter(c =>
+        !(c.normalized_name === candidate.normalized_name &&
+          c.transaction_direction === candidate.transaction_direction &&
+          c.category === candidate.category)
+      ));
+    } catch (e: any) {
+      setErrorMsg('Kunde inte neka: ' + e.message);
     } finally {
       setApproving(null);
     }
@@ -195,25 +229,46 @@ export default function AdminLearning() {
                   </div>
                 </div>
 
-                {/* Godkänn-knapp */}
-                <button
-                  onClick={() => triggerApprove(c)}
-                  disabled={isApproving}
-                  style={{
-                    flexShrink: 0,
-                    padding: '0.5rem 0.9rem',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    background: isApproving ? 'var(--border-color)' : '#6366f1',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '0.6rem',
-                    cursor: isApproving ? 'not-allowed' : 'pointer',
-                    transition: 'background 0.2s',
-                  }}
-                >
-                  {isApproving ? '⏳' : '✅ OK'}
-                </button>
+                {/* Godkänn / Neka-knappar */}
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    onClick={() => triggerReject(c)}
+                    disabled={isApproving}
+                    style={{
+                      flexShrink: 0,
+                      padding: '0.5rem 0.9rem',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      background: 'transparent',
+                      color: 'var(--danger-color)',
+                      border: '1px solid var(--danger-color)',
+                      borderRadius: '0.6rem',
+                      cursor: isApproving ? 'not-allowed' : 'pointer',
+                      opacity: isApproving ? 0.5 : 1,
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    Neka
+                  </button>
+                  <button
+                    onClick={() => triggerApprove(c)}
+                    disabled={isApproving}
+                    style={{
+                      flexShrink: 0,
+                      padding: '0.5rem 0.9rem',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      background: isApproving ? 'var(--border-color)' : '#6366f1',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '0.6rem',
+                      cursor: isApproving ? 'not-allowed' : 'pointer',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    {isApproving ? '⏳' : '✅ OK'}
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -229,9 +284,32 @@ export default function AdminLearning() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem', backdropFilter: 'blur(3px)' }}>
           <div style={{ background: 'var(--surface-color)', padding: '1.5rem', borderRadius: '1rem', maxWidth: '400px', width: '100%', border: '1px solid var(--border-color)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
             <h3 style={{ margin: '0 0 1rem 0', color: 'var(--text-primary)' }}>Godkänn regel</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
-              Vill du godkänna "<strong>{confirmCandidate.normalized_name}</strong>" som en global SYSTEM-regel för alla användare?
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.5 }}>
+              Du håller på att godkänna "<strong>{confirmCandidate.normalized_name}</strong>". 
+              Om källan föreslog fel kategori kan du ändra den här innan du sparar.
             </p>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: 600 }}>Kategori</label>
+              <select 
+                value={editCategory}
+                onChange={(e) => setEditCategory(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  borderRadius: '0.5rem',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-color)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.95rem'
+                }}
+              >
+                <option value="BILL">🧾 Räkning</option>
+                <option value="FIXED_INCOME">💰 Fast inkomst</option>
+                <option value="VARIABLE_INCOME">📈 Rörlig inkomst</option>
+              </select>
+            </div>
+
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
               <button 
                 onClick={() => setConfirmCandidate(null)}
@@ -244,6 +322,34 @@ export default function AdminLearning() {
                 style={{ padding: '0.5rem 1rem', background: '#6366f1', border: 'none', color: '#fff', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 }}
               >
                 ✅ Godkänn
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Neka-ruta (Custom Modal) */}
+      {rejectCandidate && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem', backdropFilter: 'blur(3px)' }}>
+          <div style={{ background: 'var(--surface-color)', padding: '1.5rem', borderRadius: '1rem', maxWidth: '400px', width: '100%', border: '1px solid var(--danger-color)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+            <h3 style={{ margin: '0 0 1rem 0', color: 'var(--text-primary)' }}>Neka regel</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+              Är du säker på att du vill ta bort "<strong>{rejectCandidate.normalized_name}</strong>" från listan?
+              <br /><br />
+              <span style={{ fontSize: '0.85rem', opacity: 0.8 }}>Regeln kommer inte längre visas, om inte nya hushåll börjar lägga till den igen i framtiden.</span>
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setRejectCandidate(null)}
+                style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Avbryt
+              </button>
+              <button 
+                onClick={handleRejectConfirm}
+                style={{ padding: '0.5rem 1rem', background: 'var(--danger-color)', border: 'none', color: '#fff', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 }}
+              >
+                🗑️ Neka
               </button>
             </div>
           </div>
