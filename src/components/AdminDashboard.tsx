@@ -217,6 +217,8 @@ function SupportAgentStatsWidget() {
 
 export default function AdminDashboard() {
 
+  const [adminTab, setAdminTab] = useState<'overview' | 'support' | 'traffic' | 'settings'>('overview');
+
   const paywallActive = useStore(s => s.state.paywallActive);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
@@ -605,11 +607,47 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
+    <div className="card" style={{ maxWidth: '900px', margin: '0 auto' }}>
       <h2 style={{ color: '#f43f5e', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>👑 System Admin</h2>
-      
-      {stats && (
+
+      {/* ─── FLIKMENY ─── */}
+      <div style={{
+        display: 'flex', gap: '0.5rem', marginBottom: '2rem',
+        borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0',
+        flexWrap: 'wrap'
+      }}>
+        {([
+          { id: 'overview',  icon: '📊', label: 'Översikt' },
+          { id: 'support',   icon: '💬', label: 'Kundservice' },
+          { id: 'traffic',   icon: '📈', label: 'Trafik' },
+          { id: 'settings',  icon: '⚙️', label: 'Inställningar' },
+        ] as const).map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setAdminTab(tab.id)}
+            style={{
+              padding: '0.6rem 1.2rem',
+              fontWeight: 700,
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              border: 'none',
+              borderRadius: '8px 8px 0 0',
+              background: adminTab === tab.id ? 'rgba(99,102,241,0.2)' : 'transparent',
+              color: adminTab === tab.id ? '#a5b4fc' : 'var(--text-secondary)',
+              borderBottom: adminTab === tab.id ? '2px solid #6366f1' : '2px solid transparent',
+              transition: 'all 0.2s',
+              display: 'flex', alignItems: 'center', gap: '0.4rem'
+            }}
+          >
+            <span>{tab.icon}</span> {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ─── ÖVERSIKT ─── */}
+      {adminTab === 'overview' && (
         <>
+      {stats && (<>
           {/* General Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
             <div 
@@ -738,7 +776,13 @@ export default function AdminDashboard() {
         </>
       )}
 
-      {/* ─── FUNNEL DASHBOARD ──────────────────────────────────────── */}
+      </> /* end adminTab overview */
+      )}
+
+      {/* ─── TRAFIK ─── */}
+      {adminTab === 'traffic' && (
+        <>
+      {/* ─── FUNNEL DASHBOARD ─── */}
       <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(99,102,241,0.05)', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.2)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
           <h3 style={{ margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -914,7 +958,8 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
-      {/* ────────────────────────────────────────────────────────── */}
+      </> /* end traffic */
+      )}
 
       {msg && (
         <div style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000000, padding: '1rem 2rem', background: 'rgba(0,0,0,0.9)', borderRadius: '8px', borderBottom: '4px solid #f43f5e', color: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.8)', fontWeight: 'bold', textAlign: 'center', minWidth: '300px' }}>
@@ -922,11 +967,18 @@ export default function AdminDashboard() {
         </div>
       )}
 
-
+      {/* ─── KUNDSERVICE ─── */}
+      {adminTab === 'support' && (
+        <>
       {/* 💬 KUNDSERVICE-KÖ & STATISTIK 💬 */}
       <SupportQueueWidget />
       <SupportAgentStatsWidget />
-      {/* ─────────────────────────── */}
+      </> /* end support */
+      )}
+
+      {/* ─── INSTÄLLNINGAR ─── */}
+      {adminTab === 'settings' && (
+        <>
 
       <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
         <h3 style={{ marginBottom: '1rem' }}>Global Master Switch</h3>
@@ -1208,6 +1260,9 @@ export default function AdminDashboard() {
           </div>
         </div>,
         document.body
+      )}
+
+      </> /* end settings tab */
       )}
 
     </div>
