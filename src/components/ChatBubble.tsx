@@ -213,9 +213,9 @@ export default function ChatBubble() {
       }).catch(err => console.error("Push API trigger failed:", err));
 
       setInputText('');
-    } catch (err) {
+    } catch (err: any) {
       console.error("Kunde inte skicka meddelande", err);
-      alert("Något gick fel när meddelandet skulle skickas.");
+      alert("Något gick fel: " + (err.message || err.details || JSON.stringify(err)));
     } finally {
       setIsSending(false);
     }

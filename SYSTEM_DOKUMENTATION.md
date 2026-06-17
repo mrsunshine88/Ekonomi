@@ -1911,6 +1911,11 @@ Systemet är helt byggt på Supabase Realtime (`postgres_changes`) för blixtsna
 - **Gud-användare (apersson508@gmail.com):** Har alltid tillgång till Kundservice i huvudmenyn oavsett om `chat_agent`-flaggan är true eller false. Funktionen döljs dock för gud-användaren i *Admin-vyns* toggles för att undvika oavsiktlig avaktivering.
 - **Live-uppdatering av åtkomst:** Om en admin aktiverar kundtjänsträttigheten för en kollega uppdateras `isChatAgent`-state live i frontend tack vare en dedikerad `supabase.channel` som lyssnar på uppdateringar av `profiles`-tabellen i `AuthContext`. 
 
+#### Helskärmsläge för agenter (Fullscreen Chat)
+I `SupportView.tsx` kan en agent toggla "helskärmsläge" genom en dedikerad knapp (🖵).
+- **Varför:** För att ge agenten en ostörd miljö utan sidomenyer när kön är stor.
+- **Hur:** Använder ett React-state (`isFullscreen`) som dynamiskt sätter CSS-regler (`position: fixed`, z-index, etc.) på huvudcontainern så att den täcker hela fönstret.
+
 #### Ärendehantering (Kö och Tilldelning)
 1. **Kund skriver ("Hej"):** Skapar en ny `chat_session` med status `waiting` (om de inte redan har en). Meddelandet lagras i `chat_messages`.
 2. **Kön (SupportView):** Agenter ser live-uppdaterad lista över väntande ärenden och äldsta väntetid via `<SupportQueueWidget>` och Supabase Realtime.
@@ -1918,10 +1923,20 @@ Systemet är helt byggt på Supabase Realtime (`postgres_changes`) för blixtsna
 4. **Chatt:** Agent och kund kommunicerar. Meddelanden pushas i realtid via Supabase Realtime.
 5. **Avslut:** Agent klickar "Stäng ärende", vilket via RPC `release_chat_session` sätter ärendet till `closed` och agenten blir `available` igen för nästa ärende i kön.
 
+#### Agentstatistik och Prestationsuppföljning i Admin Dashboard
+Systemadministratörer kan följa upp hur effektiv supporten är. Detta görs i den nya `<SupportAgentStatsWidget>`-komponenten under Admin Dashboard.
+- **Vad:** En tabell som visar antal lösta ärenden och genomsnittlig hanteringstid per agent. Kan filtreras på idag, igår, senaste veckan och senaste månaden.
+- **Hur:** Istället för tunga databas-views hämtar React-komponenten alla `chat_sessions` där `status = 'closed'` inom det valda tidsintervallet. Snitt-tiden beräknas live direkt i webbläsaren baserat på skillnaden mellan `created_at` (när ärendet skapades) och `updated_at` (när agenten klickade "Stäng ärende").
+- **Varför:** Undviker behov av nya tunga RPC/Views och möjliggör snabb, flexibel datavisning. Säkerställer att admin kan hålla koll på genomsnittliga svarstider över tid utan att öka serverkostnaden.
+
 #### Auto-open & Close
 En SQL-Trigger (`sync_chat_open_from_agents`) ligger på `agent_sessions`-tabellen. 
 - När antal online-agenter (available + busy) är > 0 sätts globala inställningen `chat_open` till `true`.
 - När alla agenter går offline, sätts den till `false`. Frontend-klienten anpassar sedan om supportknappen/chattrutan ska gå att öppna för slutanvändarna.
 
+#### Säkerhet för Anonyma och RLS-låsningar
+Besökare har via ett fix-skript (`support_user_rls.sql`) givits tillgång till att sätta in `chat_sessions` utan ett aktivt `user_id` inloggnings-objekt (med hjälp av en webbläsargenererad cookie). RLS-reglerna är kalibrerade för att tillåta läsning av den egna sessionen med en `OR (visitor_id IS NOT NULL AND user_id IS NULL)` check.
+För att undvika att databasen kastar "permission denied" i RLS-kedjan har de inbyggda ofarliga helper-funktionerna `user_in_household` och `is_user_admin` aktiverats för public access.
+
 #### Felsökning vid SQL-missar
-Om tabellerna eller RPC:erna (som `agent_connect`) inte har exekverats via SQL Editor i Supabase (t.ex. efter databasåterställning), kommer agenten att se en tydlig röd banner med felmeddelande ("Kunde inte koppla upp. Har SQL-skriptet support_setup.sql körts?") istället för att funktionen tyst misslyckas.
+Om tabellerna eller RPC:erna (som `agent_connect`) inte har exekverats via SQL Editor i Supabase (t.ex. efter databasåterställning), kommer agenten att se en tydlig röd banner med felmeddelande istället för att funktionen tyst misslyckas.

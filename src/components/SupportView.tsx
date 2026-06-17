@@ -302,41 +302,41 @@ export default function SupportView() {
         </div>
 
         {/* Koppla knapp */}
-        {agentStatus === 'offline' ? (
-          <button
-            onClick={handleConnect}
-            style={{
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              color: '#fff', border: 'none', padding: '0.6rem 1.4rem',
-              borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem',
-              boxShadow: '0 2px 10px rgba(16,185,129,0.35)'
-            }}
-          >
-            🟢 Koppla upp
-          </button>
-        ) : (
-          <button
-            onClick={handleDisconnect}
-            disabled={agentStatus === 'busy'}
-            title={agentStatus === 'busy' ? 'Stäng aktivt ärende först' : ''}
-            style={{
-              background: 'transparent', color: '#f43f5e',
-              border: '1px solid #f43f5e', padding: '0.6rem 1.4rem',
-              borderRadius: '8px', cursor: agentStatus === 'busy' ? 'not-allowed' : 'pointer',
-              fontWeight: 'bold', fontSize: '0.95rem', opacity: agentStatus === 'busy' ? 0.5 : 1
-            }}
-          >
-            🔴 Koppla från
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          {agentStatus === 'offline' ? (
+            <button
+              onClick={handleConnect}
+              style={{
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: '#fff', border: 'none', padding: '0.6rem 1.4rem',
+                borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem',
+                boxShadow: '0 2px 10px rgba(16,185,129,0.35)'
+              }}
+            >
+              🟢 Koppla på
+            </button>
+          ) : (
+            <button
+              onClick={handleDisconnect}
+              disabled={agentStatus === 'busy'}
+              title={agentStatus === 'busy' ? 'Stäng aktivt ärende först' : ''}
+              style={{
+                background: 'transparent', color: '#f43f5e',
+                border: '1px solid #f43f5e', padding: '0.6rem 1.4rem',
+                borderRadius: '8px', cursor: agentStatus === 'busy' ? 'not-allowed' : 'pointer',
+                fontWeight: 'bold', fontSize: '0.95rem', opacity: agentStatus === 'busy' ? 0.5 : 1
+              }}
+            >
+              🔴 Koppla från
+            </button>
+          )}
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
             style={{
               background: 'rgba(255,255,255,0.1)', color: '#fff',
               border: 'none', padding: '0.6rem 1rem',
               borderRadius: '8px', cursor: 'pointer',
-              fontWeight: 'bold', fontSize: '1rem',
-              marginLeft: '0.5rem'
+              fontWeight: 'bold', fontSize: '1rem'
             }}
             title={isFullscreen ? "Minimera" : "Helskärm"}
           >
