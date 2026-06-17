@@ -377,7 +377,7 @@ function App() {
             <div style={{ background: '#f59e0b', color: '#000', padding: '0.85rem 1.25rem', borderRadius: '8px', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                 <span style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>🛠️ Du utforskar just nu appen i Demo-läge. Inget du gör här sparas.</span>
-                <span style={{ fontSize: '0.9rem', opacity: 0.85 }}>Gillar du vad du ser? Skapa ett gratis konto och kom igång på 30 sekunder!</span>
+                <span style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>👉 Gillar du vad du ser? Skapa ett gratis konto och kom igång på 30 sekunder!</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0 }}>
                 <button
