@@ -2,10 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
 import { useAuth } from '../AuthContext';
 
+type AgentStatusType = 'offline' | 'available' | 'busy' | 'post_work' | 'break' | 'lunch';
+
 interface AgentSession {
   agent_id: string;
-  status: 'offline' | 'available' | 'busy';
+  status: AgentStatusType;
   agent_email?: string;
+  updated_at?: string;
 }
 
 interface ChatSession {
@@ -31,7 +34,7 @@ export default function SupportView() {
   const { user } = useAuth();
 
   // Agent-status
-  const [agentStatus, setAgentStatus] = useState<'offline' | 'available' | 'busy'>('offline');
+  const [agentStatus, setAgentStatus] = useState<AgentStatusType>('offline');
   const [allAgents, setAllAgents] = useState<AgentSession[]>([]);
 
   // Kö
@@ -89,7 +92,7 @@ export default function SupportView() {
   const fetchAgents = async () => {
     const { data } = await supabase
       .from('agent_sessions')
-      .select('agent_id, status');
+      .select('agent_id, status, updated_at');
     if (data) setAllAgents(data);
   };
 
@@ -262,12 +265,22 @@ export default function SupportView() {
   };
 
   // Stäng ärende
-  const handleClose = async () => {
+  const handleClose = async (nextStatus: 'available' | 'post_work' = 'available') => {
     if (!activeSession) return;
-    await supabase.rpc('release_chat_session', { target_session_id: activeSession.id });
+    await supabase.rpc('release_chat_session', { target_session_id: activeSession.id, next_status: nextStatus });
     setActiveSession(null);
-    setAgentStatus('available');
+    setAgentStatus(nextStatus);
     await fetchQueue();
+  };
+
+  // Byt status (Efterarbete / Rast / Lunch)
+  const handleSetStatus = async (newStatus: AgentStatusType) => {
+    if (newStatus === 'offline') {
+      await handleDisconnect();
+      return;
+    }
+    await supabase.rpc('agent_set_status', { new_status: newStatus });
+    setAgentStatus(newStatus);
   };
 
   // Formatera tid i kö
@@ -278,8 +291,9 @@ export default function SupportView() {
     return `${m}:${String(s).padStart(2, '0')}`;
   };
 
-  const statusColor = { offline: '#6b7280', available: '#10b981', busy: '#f59e0b' };
-  const statusLabel = { offline: 'Frånkopplad', available: 'Ledig', busy: 'Aktiv' };
+  const statusColor: Record<AgentStatusType, string> = { offline: '#6b7280', available: '#10b981', busy: '#f59e0b', post_work: '#f97316', break: '#8b5cf6', lunch: '#ec4899' };
+  const statusLabel: Record<AgentStatusType, string> = { offline: 'Frånkopplad', available: 'Ledig', busy: 'I ärende', post_work: 'Efterarbete', break: 'Rast', lunch: 'Lunch' };
+  const statusIcon: Record<AgentStatusType, string> = { offline: '⚫', available: '🟢', busy: '🟡', post_work: '📝', break: '☕', lunch: '🍔' };
 
   const pendingQueue = queue.filter(s => s.status === 'waiting' && !s.assigned_to);
   const takenByMe = queue.filter(s => s.assigned_to === user?.id && s.status === 'active');
@@ -309,7 +323,7 @@ export default function SupportView() {
         flexWrap: 'wrap',
         gap: '1rem'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', flex: 1 }}>
           {/* Min status */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <div style={{
@@ -318,7 +332,7 @@ export default function SupportView() {
               boxShadow: `0 0 6px ${statusColor[agentStatus]}`
             }} />
             <span style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>
-              Du: {statusLabel[agentStatus]}
+              {statusIcon[agentStatus]} Du: {statusLabel[agentStatus]}
             </span>
           </div>
           {/* Andra agenter */}
@@ -328,13 +342,13 @@ export default function SupportView() {
                 width: 8, height: 8, borderRadius: '50%',
                 background: statusColor[a.status]
               }} />
-              <span style={{ fontSize: '0.85rem' }}>{statusLabel[a.status]}</span>
+              <span style={{ fontSize: '0.85rem' }}>{statusIcon[a.status]} {statusLabel[a.status]}</span>
             </div>
           ))}
         </div>
 
-        {/* Koppla knapp */}
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        {/* Status-väljare & Koppla-knappar */}
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
           {agentStatus === 'offline' ? (
             <button
               onClick={handleConnect}
@@ -348,18 +362,39 @@ export default function SupportView() {
               🟢 Koppla på
             </button>
           ) : (
-            <button
-            onClick={handleDisconnect}
-            title={agentStatus === 'busy' ? 'Släpp ärendet och koppla från' : ''}
-            style={{
-              background: 'transparent', color: '#f43f5e',
-              border: '1px solid #f43f5e', padding: '0.6rem 1.4rem',
-              borderRadius: '8px', cursor: 'pointer',
-              fontWeight: 'bold', fontSize: '0.95rem'
-            }}
-          >
-            🔴 Koppla från
-          </button>
+            <>
+              {/* Status dropdown – bara om inte i aktivt ärende */}
+              {agentStatus !== 'busy' && (
+                <select
+                  value={agentStatus}
+                  onChange={(e) => handleSetStatus(e.target.value as AgentStatusType)}
+                  style={{
+                    padding: '0.5rem 0.7rem', fontSize: '0.9rem',
+                    background: 'rgba(0,0,0,0.3)', color: statusColor[agentStatus],
+                    border: `1px solid ${statusColor[agentStatus]}`,
+                    borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
+                    appearance: 'auto'
+                  }}
+                >
+                  <option value="available">🟢 Ledig</option>
+                  <option value="post_work">📝 Efterarbete</option>
+                  <option value="break">☕ Rast</option>
+                  <option value="lunch">🍔 Lunch</option>
+                </select>
+              )}
+              <button
+                onClick={handleDisconnect}
+                title={agentStatus === 'busy' ? 'Släpp ärendet och koppla från' : ''}
+                style={{
+                  background: 'transparent', color: '#f43f5e',
+                  border: '1px solid #f43f5e', padding: '0.5rem 1rem',
+                  borderRadius: '8px', cursor: 'pointer',
+                  fontWeight: 'bold', fontSize: '0.85rem'
+                }}
+              >
+                🔴 Koppla från
+              </button>
+            </>
           )}
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
@@ -410,15 +445,26 @@ export default function SupportView() {
               </div>
               <div style={{ fontSize: '0.8rem', opacity: 0.85 }}>Ärende-ID: {activeSession.id.slice(0, 8)}...</div>
             </div>
-            <button
-              onClick={handleClose}
-              style={{
-                background: 'rgba(0,0,0,0.3)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)',
-                padding: '0.5rem 1.1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem'
-              }}
-            >
-              ✅ Stäng ärende
-            </button>
+            <div style={{ display: 'flex', gap: '0.4rem' }}>
+              <button
+                onClick={() => handleClose('available')}
+                style={{
+                  background: 'rgba(16,185,129,0.25)', color: '#10b981', border: '1px solid rgba(16,185,129,0.4)',
+                  padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.75rem'
+                }}
+              >
+                ✅ Ledig
+              </button>
+              <button
+                onClick={() => handleClose('post_work')}
+                style={{
+                  background: 'rgba(249,115,22,0.25)', color: '#f97316', border: '1px solid rgba(249,115,22,0.4)',
+                  padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.75rem'
+                }}
+              >
+                📝 Efterarbete
+              </button>
+            </div>
           </div>
 
           {/* Meddelanden */}

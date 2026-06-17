@@ -98,7 +98,115 @@ function SupportQueueWidget() {
     </div>
   );
 }
-// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── Agent Live Monitor Widget ───────────────────────────────────────────────
+function AgentLiveMonitor() {
+  type AgentStatusType = 'offline' | 'available' | 'busy' | 'post_work' | 'break' | 'lunch';
+  interface AgentInfo { agent_id: string; status: AgentStatusType; updated_at: string; agent_email?: string; }
+
+  const [agents, setAgents] = useState<AgentInfo[]>([]);
+  const [, setTick] = useState(0); // force re-render for timer
+
+  const statusColor: Record<AgentStatusType, string> = { offline: '#6b7280', available: '#10b981', busy: '#f59e0b', post_work: '#f97316', break: '#8b5cf6', lunch: '#ec4899' };
+  const statusLabel: Record<AgentStatusType, string> = { offline: 'Frånkopplad', available: 'Ledig', busy: 'I ärende', post_work: 'Efterarbete', break: 'Rast', lunch: 'Lunch' };
+  const statusIcon: Record<AgentStatusType, string> = { offline: '⚫', available: '🟢', busy: '🟡', post_work: '📝', break: '☕', lunch: '🍔' };
+
+  const fetchAgents = async () => {
+    // Hämta alla agenter som inte är offline
+    const { data } = await supabase
+      .from('agent_sessions')
+      .select('agent_id, status, updated_at')
+      .neq('status', 'offline');
+    
+    if (data && data.length > 0) {
+      // Hämta e-post för varje agent
+      const ids = data.map((a: any) => a.agent_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .in('id', ids);
+      
+      const emailMap: Record<string, string> = {};
+      if (profiles) profiles.forEach((p: any) => { emailMap[p.id] = p.email; });
+      
+      setAgents(data.map((a: any) => ({ ...a, agent_email: emailMap[a.agent_id] || 'Okänd' })));
+    } else {
+      setAgents([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchAgents();
+    // Realtime updates
+    const channel = supabase.channel('admin_agent_monitor')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_sessions' }, fetchAgents)
+      .subscribe();
+    // Tick varje sekund för tidtagare
+    const timer = setInterval(() => setTick(t => t + 1), 1000);
+    return () => { supabase.removeChannel(channel); clearInterval(timer); };
+  }, []);
+
+  const formatDuration = (iso: string) => {
+    const secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
+
+  return (
+    <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+      <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <span>👥</span> Agenter Live
+      </h3>
+      {agents.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          Inga agenter online just nu.
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: '0.75rem' }}>
+          {agents.map(a => (
+            <div key={a.agent_id} style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '0.85rem 1.25rem', background: 'rgba(0,0,0,0.2)',
+              borderRadius: '10px', border: `1px solid ${statusColor[a.status]}30`,
+              flexWrap: 'wrap', gap: '0.5rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{
+                  width: 10, height: 10, borderRadius: '50%',
+                  background: statusColor[a.status],
+                  boxShadow: `0 0 8px ${statusColor[a.status]}`
+                }} />
+                <div>
+                  <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#fff' }}>
+                    {a.agent_email}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: statusColor[a.status], fontWeight: 600 }}>
+                    {statusIcon[a.status]} {statusLabel[a.status]}
+                  </div>
+                </div>
+              </div>
+              <div style={{
+                fontSize: '1.1rem', fontWeight: 'bold',
+                fontVariantNumeric: 'tabular-nums',
+                color: 'var(--text-secondary)',
+                background: 'rgba(0,0,0,0.3)',
+                padding: '0.3rem 0.7rem',
+                borderRadius: '6px',
+                minWidth: '4rem',
+                textAlign: 'center'
+              }}>
+                {formatDuration(a.updated_at)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 // ✨ Support Agent Stats Widget ✨
 function SupportAgentStatsWidget() {
   const [timeRange, setTimeRange] = useState<'today' | 'yesterday' | 'week' | 'month'>('today');
@@ -979,6 +1087,7 @@ export default function AdminDashboard() {
         <>
       {/* 💬 KUNDSERVICE-KÖ & STATISTIK 💬 */}
       <SupportQueueWidget />
+      <AgentLiveMonitor />
       <SupportAgentStatsWidget />
       </> /* end support */
       )}
