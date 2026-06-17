@@ -297,7 +297,7 @@ function App() {
           {(!isDemoMode || user) && (
             <>
               <button onClick={() => navigateTo('mypages')} style={navButtonStyles('mypages')}>👤 Mina sidor</button>
-              {isChatAgent && (
+              {(isChatAgent || user?.email === 'apersson508@gmail.com') && (
                 <button onClick={() => navigateTo('support')} style={navButtonStyles('support')}>💬 Kundservice</button>
               )}
               {isAdmin && (
@@ -359,7 +359,7 @@ function App() {
                 {(!isDemoMode || user) && (
                   <>
                     <button onClick={() => navigateTo('mypages')} className={`mobile-menu-item ${currentView === 'mypages' ? 'active' : ''}`}>👤 Mina sidor</button>
-                    {isChatAgent && (
+                    {(isChatAgent || user?.email === 'apersson508@gmail.com') && (
                       <button onClick={() => navigateTo('support')} className={`mobile-menu-item ${currentView === 'support' ? 'active' : ''}`}>💬 Kundservice</button>
                     )}
                     {isAdmin && (
@@ -424,7 +424,7 @@ function App() {
 
           {currentView === 'start' ? (
             <StartPage navigateTo={navigateTo} />
-          ) : currentView === 'support' && isChatAgent ? (
+          ) : currentView === 'support' && (isChatAgent || user?.email === 'apersson508@gmail.com') ? (
             <div>
               <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>💬 Kundservice</h2>
               <SupportView />
