@@ -96,7 +96,6 @@ BEGIN
     INSERT INTO public.household_import_rules (
         household_id, 
         search_string, 
-        target_id, 
         rule_target_type, 
         is_bill, 
         rule_type, 
@@ -106,7 +105,6 @@ BEGIN
     VALUES (
         null, 
         p_normalized_name, 
-        null, 
         'SYSTEM', 
         (p_category = 'BILL'), 
         'SYSTEM', 

@@ -20,6 +20,8 @@ export default function AdminLearning() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [approving, setApproving] = useState<string | null>(null);
+  const [confirmCandidate, setConfirmCandidate] = useState<Candidate | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     checkAdminAndLoadData();
@@ -46,8 +48,15 @@ export default function AdminLearning() {
     }
   };
 
-  const approveCandidate = async (candidate: Candidate) => {
-    if (!confirm(`Godkänn "${candidate.normalized_name}" som global SYSTEM-regel?`)) return;
+  const triggerApprove = (candidate: Candidate) => {
+    setConfirmCandidate(candidate);
+  };
+
+  const handleApproveConfirm = async () => {
+    if (!confirmCandidate) return;
+    const candidate = confirmCandidate;
+    setConfirmCandidate(null);
+    
     const key = `${candidate.normalized_name}-${candidate.transaction_direction}-${candidate.category}`;
     setApproving(key);
     try {
@@ -64,7 +73,7 @@ export default function AdminLearning() {
           c.category === candidate.category)
       ));
     } catch (e: any) {
-      alert('Kunde inte godkänna: ' + e.message);
+      setErrorMsg('Kunde inte godkänna: ' + e.message);
     } finally {
       setApproving(null);
     }
@@ -188,7 +197,7 @@ export default function AdminLearning() {
 
                 {/* Godkänn-knapp */}
                 <button
-                  onClick={() => approveCandidate(c)}
+                  onClick={() => triggerApprove(c)}
                   disabled={isApproving}
                   style={{
                     flexShrink: 0,
@@ -214,6 +223,55 @@ export default function AdminLearning() {
       <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', textAlign: 'center', marginTop: '1.5rem' }}>
         Godkända regler aktiveras omedelbart för alla användare i systemet.
       </p>
+
+      {/* Bekräftelse-ruta (Custom Modal) */}
+      {confirmCandidate && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem', backdropFilter: 'blur(3px)' }}>
+          <div style={{ background: 'var(--surface-color)', padding: '1.5rem', borderRadius: '1rem', maxWidth: '400px', width: '100%', border: '1px solid var(--border-color)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+            <h3 style={{ margin: '0 0 1rem 0', color: 'var(--text-primary)' }}>Godkänn regel</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+              Vill du godkänna "<strong>{confirmCandidate.normalized_name}</strong>" som en global SYSTEM-regel för alla användare?
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setConfirmCandidate(null)}
+                style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Avbryt
+              </button>
+              <button 
+                onClick={handleApproveConfirm}
+                style={{ padding: '0.5rem 1rem', background: '#6366f1', border: 'none', color: '#fff', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 }}
+              >
+                ✅ Godkänn
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Felmeddelande-ruta (Custom Modal) */}
+      {errorMsg && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem', backdropFilter: 'blur(3px)' }}>
+          <div style={{ background: 'var(--surface-color)', padding: '1.5rem', borderRadius: '1rem', maxWidth: '400px', width: '100%', border: '1px solid rgba(239, 68, 68, 0.4)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+              <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+              <h3 style={{ margin: 0, color: '#ef4444' }}>Ett fel uppstod</h3>
+            </div>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', wordBreak: 'break-word', lineHeight: 1.5 }}>
+              {errorMsg}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setErrorMsg(null)}
+                style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Stäng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
