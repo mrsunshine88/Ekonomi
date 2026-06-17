@@ -217,7 +217,7 @@ function SupportAgentStatsWidget() {
 
 export default function AdminDashboard() {
 
-  const [adminTab, setAdminTab] = useState<'overview' | 'support' | 'traffic' | 'settings'>('overview');
+  const [adminTab, setAdminTab] = useState<'overview' | 'support' | 'traffic' | 'settings' | 'users'>('overview');
 
   const paywallActive = useStore(s => s.state.paywallActive);
   const [loading, setLoading] = useState(false);
@@ -227,7 +227,6 @@ export default function AdminDashboard() {
   const [stripeSecret, setStripeSecret] = useState('');
   const [stripeWebhook, setStripeWebhook] = useState('');
   const [stripePriceId, setStripePriceId] = useState('');
-  const [showMembersModal, setShowMembersModal] = useState(false);
   const [membersList, setMembersList] = useState<any[]>([]);
   const [memberSearch, setMemberSearch] = useState('');
   const [stats, setStats] = useState<{ 
@@ -434,14 +433,7 @@ export default function AdminDashboard() {
     fetchStripeStatus();
   }, []);
 
-  useEffect(() => {
-    if (showMembersModal) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => { document.body.style.overflow = 'unset'; };
-  }, [showMembersModal]);
+
 
   const handleTogglePaywall = async () => {
     setLoading(true);
@@ -618,6 +610,7 @@ export default function AdminDashboard() {
       }}>
         {([
           { id: 'overview',  icon: '📊', label: 'Översikt' },
+          { id: 'users',     icon: '👤', label: 'Användare' },
           { id: 'support',   icon: '💬', label: 'Kundservice' },
           { id: 'traffic',   icon: '📈', label: 'Trafik' },
           { id: 'settings',  icon: '⚙️', label: 'Inställningar' },
@@ -651,14 +644,14 @@ export default function AdminDashboard() {
           {/* General Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
             <div 
-              onClick={() => setShowMembersModal(true)}
+              onClick={() => setAdminTab('users')}
               style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', transition: 'background 0.2s' }}
               onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
               onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
             >
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👥</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#fff' }}>{stats.total_members}</div>
-              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Totala Medlemmar (Klicka)</div>
+              <div style={{ fontSize: '0.9rem', color: '#a5b4fc' }}>Totala Medlemmar →</div>
             </div>
             <div style={{ background: 'rgba(16, 185, 129, 0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💎</div>
@@ -1159,83 +1152,72 @@ export default function AdminDashboard() {
           disabled={loading || (!stripeSecret && !stripeWebhook && !stripePriceId)}
           style={{ width: '100%', padding: '1rem', background: '#f43f5e', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
         >
-          Spara nycklar säkert i kassavalvet
         </button>
       </div>
+
+      </> /* end settings */
+      )}
       
-      {showMembersModal && createPortal(
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', zIndex: 100000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' }}>
-          <div style={{ background: '#1e293b', width: '100%', maxWidth: '900px', maxHeight: '90vh', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ margin: 0 }}>👥 Medlemslista</h2>
-              <button onClick={() => setShowMembersModal(false)} style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
-            </div>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
-              <input 
-                type="text" 
-                placeholder="🔍 Filtrera på e-post..." 
-                value={memberSearch}
-                onChange={e => setMemberSearch(e.target.value)}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
-              />
-            </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
-              {membersList.filter(m => m.email.toLowerCase().includes(memberSearch.toLowerCase())).map(m => (
-                <div key={m.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', borderLeft: m.is_banned ? '4px solid #f43f5e' : '4px solid transparent' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div>
-                      <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: m.is_banned ? '#f43f5e' : '#fff' }}>
-                        {m.email} {m.is_banned && '(BLOCKERAD)'}
-                      </div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        Senast inloggad: {m.last_sign_in_at ? new Date(m.last_sign_in_at).toLocaleString('sv-SE') : 'Aldrig'}
-                      </div>
+      {/* ─── ANVÄNDARE ─── */}
+      {adminTab === 'users' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>👤</span> Användarhantering
+            </h3>
+            <button onClick={fetchMembersList} style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>🔄 Uppdatera</button>
+          </div>
+          <input 
+            type="text" 
+            placeholder="🔍 Filtrera på e-post..." 
+            value={memberSearch}
+            onChange={e => setMemberSearch(e.target.value)}
+            style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff', marginBottom: '1rem', boxSizing: 'border-box' }}
+          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {membersList.filter(m => m.email.toLowerCase().includes(memberSearch.toLowerCase())).map(m => (
+              <div key={m.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', borderLeft: m.is_banned ? '4px solid #f43f5e' : '4px solid rgba(99,102,241,0.4)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div>
+                    <div style={{ fontWeight: 'bold', fontSize: '1rem', color: m.is_banned ? '#f43f5e' : '#fff' }}>
+                      {m.email} {m.is_banned && '(BLOCKERAD)'}
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-start' }}>
-                      <button 
-                        onClick={() => handleToggleVip(m.email, m.is_vip)}
-                        disabled={loading}
-                        style={{ flex: '1 1 45%', background: m.is_vip ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.1)', color: m.is_vip ? '#10b981' : '#fff', border: `1px solid ${m.is_vip ? '#10b981' : 'transparent'}`, padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', display: m.email === 'apersson508@gmail.com' ? 'none' : 'block' }}
-                      >
-                        {m.is_vip ? '💎 VIP' : 'Gör till VIP'}
-                      </button>
-                      <button 
-                        onClick={() => handleToggleAdmin(m.email, m.is_admin)}
-                        disabled={loading || m.email === 'apersson508@gmail.com'}
-                        style={{ flex: '1 1 45%', background: m.is_admin ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.1)', color: m.is_admin ? '#a855f7' : '#fff', border: `1px solid ${m.is_admin ? '#a855f7' : 'transparent'}`, padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', display: m.email === 'apersson508@gmail.com' ? 'none' : 'block' }}
-                      >
-                        {m.is_admin ? '👑 Admin' : 'Gör till Admin'}
-                      </button>
-                      <button
-                        onClick={() => handleToggleChatAgent(m.email, m.chat_agent)}
-                        disabled={loading || m.email === 'apersson508@gmail.com'}
-                        style={{ flex: '1 1 45%', background: m.chat_agent ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.1)', color: m.chat_agent ? '#10b981' : '#fff', border: `1px solid ${m.chat_agent ? '#10b981' : 'transparent'}`, padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', display: m.email === 'apersson508@gmail.com' ? 'none' : 'block' }}
-                      >
-                        {m.chat_agent ? '💬 KS PÅ' : '💬 KS AV'}
-                      </button>
-                      <button 
-                        onClick={() => handleToggleBan(m.id, m.is_banned)}
-                        disabled={loading || m.email === 'apersson508@gmail.com'}
-                        style={{ flex: '1 1 45%', background: m.is_banned ? 'rgba(244, 63, 94, 0.2)' : 'rgba(255,255,255,0.1)', color: m.is_banned ? '#f43f5e' : '#fff', border: `1px solid ${m.is_banned ? '#f43f5e' : 'transparent'}`, padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', display: m.email === 'apersson508@gmail.com' ? 'none' : 'block' }}
-                      >
-                        {m.is_banned ? 'Lås upp' : 'Blockera'}
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteUser(m.id, m.email)}
-                        disabled={loading || m.email === 'apersson508@gmail.com'}
-                        style={{ flex: '1 1 45%', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', display: m.email === 'apersson508@gmail.com' ? 'none' : 'block' }}
-                      >
-                        Radera
-                      </button>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                      Senast inloggad: {m.last_sign_in_at ? new Date(m.last_sign_in_at).toLocaleString('sv-SE') : 'Aldrig'}
                     </div>
                   </div>
+                  {(m.is_vip || m.is_admin || m.chat_agent) && (
+                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                      {m.is_vip && <span style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', border: '1px solid #10b981', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>💎 VIP</span>}
+                      {m.is_admin && <span style={{ background: 'rgba(168,85,247,0.2)', color: '#a855f7', border: '1px solid #a855f7', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>👑 Admin</span>}
+                      {m.chat_agent && <span style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.4)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>💬 KS</span>}
+                    </div>
+                  )}
                 </div>
-              ))}
-              {membersList.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Inga medlemmar hittades.</div>}
-            </div>
+                {m.email !== 'apersson508@gmail.com' && (
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                    <button onClick={() => handleToggleVip(m.email, m.is_vip)} disabled={loading} style={{ flex: '1 1 auto', background: m.is_vip ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.08)', color: m.is_vip ? '#10b981' : '#fff', border: `1px solid ${m.is_vip ? '#10b981' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+                      {m.is_vip ? '💎 VIP' : 'Gör VIP'}
+                    </button>
+                    <button onClick={() => handleToggleAdmin(m.email, m.is_admin)} disabled={loading} style={{ flex: '1 1 auto', background: m.is_admin ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.08)', color: m.is_admin ? '#a855f7' : '#fff', border: `1px solid ${m.is_admin ? '#a855f7' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+                      {m.is_admin ? '👑 Admin' : 'Gör Admin'}
+                    </button>
+                    <button onClick={() => handleToggleChatAgent(m.email, m.chat_agent)} disabled={loading} style={{ flex: '1 1 auto', background: m.chat_agent ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.08)', color: m.chat_agent ? '#10b981' : '#fff', border: `1px solid ${m.chat_agent ? 'rgba(16,185,129,0.5)' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+                      {m.chat_agent ? '💬 KS PÅ' : '💬 KS AV'}
+                    </button>
+                    <button onClick={() => handleToggleBan(m.id, m.is_banned)} disabled={loading} style={{ flex: '1 1 auto', background: m.is_banned ? 'rgba(244,63,94,0.2)' : 'rgba(255,255,255,0.08)', color: m.is_banned ? '#f43f5e' : '#fff', border: `1px solid ${m.is_banned ? '#f43f5e' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+                      {m.is_banned ? '🔓 Lås upp' : '🚫 Blockera'}
+                    </button>
+                    <button onClick={() => handleDeleteUser(m.id, m.email)} disabled={loading} style={{ flex: '1 1 auto', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+                      🗑️ Radera
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+            {membersList.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Inga medlemmar hittades.</div>}
           </div>
-        </div>,
-        document.body
+        </div>
       )}
 
       {confirmDialog && createPortal(
@@ -1260,9 +1242,6 @@ export default function AdminDashboard() {
           </div>
         </div>,
         document.body
-      )}
-
-      </> /* end settings tab */
       )}
 
     </div>
