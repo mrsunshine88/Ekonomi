@@ -158,12 +158,12 @@ export default function LoginScreen() {
       <div className="login-info-section">
         <div className="login-info-content">
           <div className="brand-badge">🏠 SmartEkonomi</div>
-          <h1 className="login-hero-title">
-            Släng miniräknaren. <br/>
-            <span className="text-gradient">Spara tid och pengar varje månad.</span>
+          <h1 className="login-hero-title" style={{ fontSize: '2.5rem', lineHeight: '1.2' }}>
+            SmartEkonomi – En smart ekonomi-app för hushållet
           </h1>
-          <p className="login-hero-subtitle">
-            SmartEkonomi hjälper hushåll att automatiskt räkna ut hur kostnader ska delas och ger full kontroll över både gemensam och privat ekonomi.
+          <p className="login-hero-subtitle" style={{ lineHeight: '1.6' }}>
+            Slipp miniräknaren. Spara tid och få full kontroll över hushållets ekonomi.<br/><br/>
+            SmartEkonomi är en ny ekonomi-app som automatiskt räknar ut vem som ska betala vad, håller er privata ekonomi separat och visar hur era kostnader utvecklas över tid. Perfekt för sambor och familjer som vill ha en smidig budget-app för en rättvis delad ekonomi.
           </p>
 
           <div className="features-grid">
@@ -188,6 +188,28 @@ export default function LoginScreen() {
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Statistik som visar hur ekonomin utvecklas över tid</li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Fungerar för hela hushållet i en gemensam app</li>
             </ul>
+          </div>
+
+          <div style={{ marginTop: '3rem', padding: '2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', fontWeight: 600 }}>Vanliga frågor (FAQ)</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>Varför behöver vi en ekonomi-app för hushållet?</h3>
+                <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5' }}>Att ha en delad ekonomi kan leda till onödiga diskussioner och stress om vem som betalat vad. Med en dedikerad ekonomi-app för hushållet automatiseras alla uträkningar. Ni får stenkoll på er gemensamma budget, sparar tid och kan fokusera på roligare saker.</p>
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>Fungerar er budget-app för både sambor och familjer?</h3>
+                <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5' }}>Ja, absolut! SmartEkonomi är designad för att vara flexibel. Oavsett om ni är ett nytt sambopar som precis flyttat ihop eller en stor familj med komplexa utgifter, anpassar sig vår budget-app efter era specifika behov för en rättvis delad ekonomi.</p>
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>Kan vi hantera både gemensam och privat ekonomi?</h3>
+                <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5' }}>Ja, i vår ekonomi-app kan du enkelt separera dina privata utgifter från de gemensamma. Detta betyder att ni kan ha 100% transparens kring hushållets gemensamma räkningar, samtidigt som var och en behåller full kontroll över sin egen privata ekonomi och budget.</p>
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>Är det svårt att komma igång med budget-appen?</h3>
+                <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5' }}>Nej, det tar bara några minuter! Du skapar ett konto och kan sedan enkelt importera utgifter direkt från din bank, eller lägga in dem manuellt. Inga fler krångliga excel-ark – vi gör det smidigt för er.</p>
+              </div>
+            </div>
           </div>
 
           <div style={{ marginTop: '2rem' }}>

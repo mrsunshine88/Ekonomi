@@ -1949,3 +1949,8 @@ För att undvika att databasen kastar "permission denied" i RLS-kedjan har de in
 
 #### Felsökning vid SQL-missar
 Om tabellerna eller RPC:erna (som `agent_connect`) inte har exekverats via SQL Editor i Supabase (t.ex. efter databasåterställning), kommer agenten att se en tydlig röd banner med felmeddelande istället för att funktionen tyst misslyckas.
+
+#### Automatiskt Dold Chatbubbla i Kundservice-vyn
+- **Vad:** När en agent eller behörig användare navigerar till kundservice-vyn (`/support`) döljs den flytande kundservice-chatbubblan (`ChatBubble`) automatiskt. På alla andra sidor visas den som vanligt.
+- **Hur:** I `App.tsx` renderas `<ChatBubble />` villkorligt med `{!isChatAgent && currentView !== 'support' && <ChatBubble />}`. Villkoret `currentView !== 'support'` säkerställer att bubblan försvinner så snart vyn byter till `'support'` och återkommer omedelbart när agenten navigerar till en annan vy.
+- **Varför:** Chatbubblan är avsedd för slutanvändare som behöver kontakta support. När en agent redan befinner sig inne i kundservice-panelen och aktivt hanterar ärenden är bubblan onödig — den tar upp skärmyta, kan överlappa med chattfönstret och skapar en förvirrande upplevelse. Att dölja den ger agenten en renare arbetsyta.
