@@ -1924,13 +1924,14 @@ I `SupportView.tsx` kan en agent toggla "helskärmsläge" genom en dedikerad kna
 - **Varför:** För att ge agenten en ostörd miljö utan sidomenyer när kön är stor.
 - **Hur:** Använder ett React-state (`isFullscreen`) som dynamiskt sätter CSS-regler (`position: fixed`, z-index, etc.) på huvudcontainern så att den täcker hela fönstret.
 
-#### Ärendehantering (Kö, Andrum och Tilldelning)
-1. **Kund skriver ("Hej"):** Skapar en ny `chat_session` med status `waiting` (om de inte redan har en). Meddelandet lagras i `chat_messages`.
-2. **Kön (SupportView):** Agenter ser live-uppdaterad lista över väntande ärenden och äldsta väntetid via `<SupportQueueWidget>` och Supabase Realtime.
-3. **20-sekunders Andrum (Cooldown):** För att ge agenten tid att pusta ut och byta status mellan samtal, infaller en 20-sekunders fördröjning ("Cooldown") varje gång agenten blir `Ledig` (exempelvis efter att ha stängt ett ärende eller kommit tillbaka från lunch). Under denna period döljs kön helt för den specifika agenten, och en nedräkning visas istället i gränssnittet. Om agenten byter status (ex. Rast) under nedräkningen stannar den.
-4. **Atomisk Tilldelning:** När kön är öppen klickar agenten "Ta ärende", och RPC:n `claim_chat_session` körs. Eftersom detta sker direkt i PostgreSQL (atomisk `UPDATE ... WHERE assigned_to IS NULL`) elimineras risken för race conditions där två agenter tar samma ärende. Om en kollega hann före, avbryts försöket.
-5. **Chatt & Live Timer:** Agent och kund kommunicerar. I UI:t visas en realtidsuppdaterande klocka (`⏱ Öppet i 0:15`) bredvid ärende-ID:t för att agenten ska kunna se hur länge samtalet har pågått. Klockan räknas ut i frontend baserat på sessionens `updated_at`.
-6. **Avslut:** Agenten klickar på den enda avslutningsknappen "✅ Avsluta ärende". Via RPC `release_chat_session` sätts ärendet till `closed` och agenten blir automatiskt `available` (`Ledig`), varpå det 20 sekunder långa andrummet (cooldown) startar på nytt inför nästa kund.
+#### Ärendehantering (Auto-Routing, Andrum och Tilldelning)
+1. **Kund skriver ("Hej"):** Skapar en ny `chat_session` med status `waiting`. Kunden ser informationen "Du ställs i kö. Din köplats är X."
+2. **Kön är dold (SupportView):** Agenter ser inte längre en lista på väntande kunder som de aktivt måste välja ifrån. Istället visas enbart övergripande statistik på väntande kunder och längsta kötid. Detta eliminerar stress och tvekan.
+3. **20-sekunders Andrum (Cooldown):** För att ge agenten tid att pusta ut och byta status mellan samtal, infaller en 20-sekunders fördröjning ("Cooldown") varje gång agenten blir `Ledig`.
+4. **Automatisk Tilldelning (Ring-logik):** Ett "Smart-Routing"-system kontrollerar löpande via frontend-klienterna vem som är den "äldsta" tillgängliga (Lediga) agenten. När andrummet (20s) har passerat ropar klienten på RPC:n `auto_assign_oldest_chat`.
+5. **Assigned & Kundnotis:** Databasen tilldelar det äldsta ärendet och ändrar statusen från `waiting` till `assigned`. I detta ögonblick uppdateras kundens chattbubbla från "Köplats" till att visa: *"Agent kopplas in..."*. Hos agenten plingar det (push-notis) och en stor knapp *"🔔 Ta ärende"* visas.
+6. **Chatt & Live Timer:** När agenten klickar "Ta ärende" körs RPC:n `accept_assigned_chat_session` som sätter status till `active`. Databasen skjuter automatiskt ut ett välkomstmeddelande ("Agenten är här, vad kan jag hjälpa dig med?"). I UI:t visas en realtidsuppdaterande klocka (`⏱ Öppet i 0:15`) bredvid ärende-ID:t.
+7. **Avslut:** Agenten klickar på den enda avslutningsknappen "✅ Avsluta ärende". Via RPC `release_chat_session` sätts ärendet till `closed` och agenten blir automatiskt `available` (`Ledig`), varpå det 20 sekunder långa andrummet (cooldown) startar på nytt.
 
 #### Agent Live-Monitor & Prestationer (Admin Dashboard)
 Systemadministratörer kan följa upp hur effektiv supporten är och se vad agenterna gör i realtid under "Kundservice"-fliken.
