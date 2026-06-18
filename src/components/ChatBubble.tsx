@@ -8,7 +8,7 @@ export default function ChatBubble() {
   const [isOpen, setIsOpen] = useState(false);
   const [visitorId, setVisitorId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [sessionStatus, setSessionStatus] = useState<'waiting' | 'active' | 'closed' | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<'waiting' | 'assigned' | 'active' | 'closed' | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -71,11 +71,11 @@ export default function ChatBubble() {
     if (!chatGlobalOpen || (!user && !visitorId)) return;
 
     const initChat = async () => {
-      // Find active or waiting session
+      // Find active, assigned or waiting session
       let query = supabase
         .from('chat_sessions')
         .select('id, status')
-        .in('status', ['waiting', 'active'])
+        .in('status', ['waiting', 'assigned', 'active'])
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -244,6 +244,9 @@ export default function ChatBubble() {
               <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Kundservice</h3>
               {sessionStatus === 'waiting' && queuePosition !== null && (
                 <div style={{ fontSize: '0.8rem', opacity: 0.9, marginTop: '2px' }}>Din köplats: {queuePosition}</div>
+              )}
+              {sessionStatus === 'assigned' && (
+                <div style={{ fontSize: '0.8rem', opacity: 0.9, color: '#10b981', marginTop: '2px', fontWeight: 'bold', animation: 'pulse 1.5s infinite' }}>Agent kopplas in...</div>
               )}
             </div>
             <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>

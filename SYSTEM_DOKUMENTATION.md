@@ -1917,19 +1917,20 @@ Agenter har detaljerad kontroll över sin tillgänglighet i systemet utan att be
 - **I ärende (`busy`):** Hanterar aktivt en chatt.
 - **Efterarbete (`post_work`):** Administrativt arbete direkt efter ett samtal (ex. dokumentation). Chatten hålls öppen för nya besökare på sajten, men agenten förväntas inte svara omedelbart.
 - **Rast (`break`) & Lunch (`lunch`):** Agenten är på paus. Om inga andra agenter är tillgängliga kommer kundtjänsten automatiskt stängas ner för nya besökare på sajten.
-- **Hur:** Hanteras via status-rullgardin i SupportView, samt delade knappar vid stängning av chatt (Stäng & bli Ledig vs Stäng & gå till Efterarbete). Status ändras via RPC `agent_set_status`.
+- **Hur:** Hanteras via status-rullgardin i SupportView. Status ändras via RPC `agent_set_status`.
 
 #### Helskärmsläge för agenter (Fullscreen Chat)
 I `SupportView.tsx` kan en agent toggla "helskärmsläge" genom en dedikerad knapp (🖵).
 - **Varför:** För att ge agenten en ostörd miljö utan sidomenyer när kön är stor.
 - **Hur:** Använder ett React-state (`isFullscreen`) som dynamiskt sätter CSS-regler (`position: fixed`, z-index, etc.) på huvudcontainern så att den täcker hela fönstret.
 
-#### Ärendehantering (Kö och Tilldelning)
+#### Ärendehantering (Kö, Andrum och Tilldelning)
 1. **Kund skriver ("Hej"):** Skapar en ny `chat_session` med status `waiting` (om de inte redan har en). Meddelandet lagras i `chat_messages`.
 2. **Kön (SupportView):** Agenter ser live-uppdaterad lista över väntande ärenden och äldsta väntetid via `<SupportQueueWidget>` och Supabase Realtime.
-3. **Atomisk Tilldelning:** När en agent klickar "Ta ärende" körs RPC:n `claim_chat_session`. Eftersom detta sker direkt i PostgreSQL (atomisk `UPDATE ... WHERE assigned_to IS NULL`) elimineras risken för race conditions där två agenter tar samma ärende. Om en kollega hann före, avbryts försöket och agenten får en "Redan tagen"-notis. Agenten blir då `busy`.
-4. **Chatt:** Agent och kund kommunicerar. Meddelanden pushas i realtid via Supabase Realtime.
-5. **Avslut:** Agent klickar "✅ Ledig" eller "📝 Efterarbete" vilket via RPC `release_chat_session` sätter ärendet till `closed` och sätter agenten till önskad nästa status.
+3. **20-sekunders Andrum (Cooldown):** För att ge agenten tid att pusta ut och byta status mellan samtal, infaller en 20-sekunders fördröjning ("Cooldown") varje gång agenten blir `Ledig` (exempelvis efter att ha stängt ett ärende eller kommit tillbaka från lunch). Under denna period döljs kön helt för den specifika agenten, och en nedräkning visas istället i gränssnittet. Om agenten byter status (ex. Rast) under nedräkningen stannar den.
+4. **Atomisk Tilldelning:** När kön är öppen klickar agenten "Ta ärende", och RPC:n `claim_chat_session` körs. Eftersom detta sker direkt i PostgreSQL (atomisk `UPDATE ... WHERE assigned_to IS NULL`) elimineras risken för race conditions där två agenter tar samma ärende. Om en kollega hann före, avbryts försöket.
+5. **Chatt & Live Timer:** Agent och kund kommunicerar. I UI:t visas en realtidsuppdaterande klocka (`⏱ Öppet i 0:15`) bredvid ärende-ID:t för att agenten ska kunna se hur länge samtalet har pågått. Klockan räknas ut i frontend baserat på sessionens `updated_at`.
+6. **Avslut:** Agenten klickar på den enda avslutningsknappen "✅ Avsluta ärende". Via RPC `release_chat_session` sätts ärendet till `closed` och agenten blir automatiskt `available` (`Ledig`), varpå det 20 sekunder långa andrummet (cooldown) startar på nytt inför nästa kund.
 
 #### Agent Live-Monitor & Prestationer (Admin Dashboard)
 Systemadministratörer kan följa upp hur effektiv supporten är och se vad agenterna gör i realtid under "Kundservice"-fliken.

@@ -46,10 +46,15 @@ export default function SupportView() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [claimError, setClaimError] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [, setSessionTick] = useState(0);
+  
+  // Notiser
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  useEffect(() => {
+    setNotificationsEnabled(localStorage.getItem('chat_notifications') === 'true');
+  }, []);
 
   // Timers för andrum och aktiv chatt
   useEffect(() => {
@@ -76,7 +81,7 @@ export default function SupportView() {
     const { data, error } = await supabase
       .from('chat_sessions')
       .select('id, user_id, visitor_id, status, assigned_to, assigned_name, created_at, updated_at')
-      .in('status', ['waiting', 'active'])
+      .in('status', ['waiting', 'assigned', 'active'])
       .order('created_at', { ascending: true });
 
     if (error) { console.error('fetchQueue error:', error); return; }
@@ -127,7 +132,7 @@ export default function SupportView() {
         .from('chat_sessions')
         .select('id, user_id, visitor_id, status, assigned_to, assigned_name, created_at, updated_at')
         .eq('assigned_to', user.id)
-        .eq('status', 'active')
+        .in('status', ['active', 'assigned'])
         .maybeSingle();
         
       if (myActive) {
@@ -210,6 +215,39 @@ export default function SupportView() {
     return () => { supabase.removeChannel(channel); };
   }, [activeSession]);
 
+  // Auto-Routing: Tilldela äldsta ärendet om jag är ledig och har väntat längst
+  useEffect(() => {
+    let active = true;
+    const tryAutoAssign = async () => {
+      const pendingQueue = queue.filter(s => s.status === 'waiting');
+      if (agentStatus === 'available' && cooldown === 0 && !activeSession && pendingQueue.length > 0) {
+        // Räkna ut om jag är den lediga agenten som väntat längst
+        const now = new Date().getTime();
+        const availableAgents = allAgents.filter(a => 
+          a.status === 'available' && a.updated_at &&
+          (now - new Date(a.updated_at).getTime()) >= 20000 // 20s andrum passerat
+        ).sort((a, b) => new Date(a.updated_at!).getTime() - new Date(b.updated_at!).getTime());
+        
+        if (availableAgents.length > 0 && availableAgents[0].agent_id === user?.id) {
+           const { data } = await supabase.rpc('auto_assign_oldest_chat');
+           if (data && active) {
+             setAgentStatus('busy');
+             // fetchQueue kommer snart via Realtime och sätter activeSession (via useEffect),
+             // men vi kan sätta det direkt för snabbare UI.
+             const enrichedSession = pendingQueue.find(q => q.id === data.id) || data;
+             setActiveSession({...enrichedSession, status: 'assigned'});
+             if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+               new Notification('Kundtjänst', { body: 'Ett ärende har tilldelats dig!' });
+             }
+           }
+        }
+      }
+    };
+
+    const timer = setInterval(tryAutoAssign, 2000);
+    return () => clearInterval(timer);
+  }, [agentStatus, cooldown, activeSession, queue, allAgents, user, notificationsEnabled]);
+
   // Koppla upp
   const handleConnect = async () => {
     setConnectError('');
@@ -233,19 +271,42 @@ export default function SupportView() {
     await fetchQueue();
   };
 
-  // Ta ärende
-  const handleClaim = async (session: ChatSession) => {
-    setClaimError('');
-    const { data } = await supabase.rpc('claim_chat_session', {
-      target_session_id: session.id
+  // Ta ärende (när det har blivit "assigned" till mig)
+  const handleAcceptAssigned = async () => {
+    if (!activeSession) return;
+    const { data, error } = await supabase.rpc('accept_assigned_chat_session', {
+      target_session_id: activeSession.id
     });
-    if (data === 'already_taken') {
-      setClaimError('Ärendet togs av en kollega precis.');
-      await fetchQueue();
+    if (error || !data) {
+       console.error("Fel vid accept:", error);
+       alert("Ärendet kunde inte öppnas, eller togs av en annan agent.");
+       setActiveSession(null);
+       setAgentStatus('available');
+       setCooldown(20);
+       return;
+    }
+    setActiveSession({...activeSession, status: 'active'});
+  };
+
+  // (Gamla knappen för att ta ärende togs bort)
+
+  const toggleNotifications = async () => {
+    if (!('Notification' in window)) {
+      alert('Din webbläsare stödjer tyvärr inte notiser.');
       return;
     }
-    setAgentStatus('busy');
-    setActiveSession(session);
+    if (notificationsEnabled) {
+      setNotificationsEnabled(false);
+      localStorage.setItem('chat_notifications', 'false');
+    } else {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        setNotificationsEnabled(true);
+        localStorage.setItem('chat_notifications', 'true');
+      } else {
+        alert('Du måste tillåta notiser i din webbläsare för att detta ska fungera.');
+      }
+    }
   };
 
   // Skicka meddelande
@@ -414,18 +475,31 @@ export default function SupportView() {
               </button>
             </>
           )}
-          <button
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            style={{
-              background: 'rgba(255,255,255,0.1)', color: '#fff',
-              border: 'none', padding: '0.6rem 1rem',
-              borderRadius: '8px', cursor: 'pointer',
-              fontWeight: 'bold', fontSize: '1rem'
-            }}
-            title={isFullscreen ? "Minimera" : "Helskärm"}
-          >
-            {isFullscreen ? "🗗" : "🖵"}
-          </button>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <button
+              onClick={toggleNotifications}
+              style={{
+                background: notificationsEnabled ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.05)',
+                color: notificationsEnabled ? '#10b981' : 'var(--text-secondary)',
+                border: notificationsEnabled ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.1)',
+                padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer',
+                fontSize: '0.8rem', fontWeight: 'bold'
+              }}
+            >
+              {notificationsEnabled ? '🔔 Notiser PÅ' : '🔕 Notiser AV'}
+            </button>
+            <button
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              style={{
+                background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none',
+                padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer',
+                fontSize: '0.9rem'
+              }}
+              title={isFullscreen ? "Stäng helskärm" : "Öppna helskärm"}
+            >
+              {isFullscreen ? '✖' : '🖵'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -467,15 +541,28 @@ export default function SupportView() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '0.4rem' }}>
-              <button
-                onClick={handleClose}
-                style={{
-                  background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)',
-                  padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem'
-                }}
-              >
-                ✅ Avsluta ärende
-              </button>
+              {activeSession.status === 'assigned' ? (
+                <button
+                  onClick={handleAcceptAssigned}
+                  style={{
+                    background: '#10b981', color: '#fff', border: 'none',
+                    padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem',
+                    boxShadow: '0 0 10px rgba(16,185,129,0.5)', animation: 'pulse 1.5s infinite'
+                  }}
+                >
+                  🔔 Ta ärende
+                </button>
+              ) : (
+                <button
+                  onClick={handleClose}
+                  style={{
+                    background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)',
+                    padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem'
+                  }}
+                >
+                  ✅ Avsluta ärende
+                </button>
+              )}
             </div>
           </div>
 
@@ -502,36 +589,45 @@ export default function SupportView() {
             ))}
           </div>
 
-          {/* Skriv meddelande */}
-          <form onSubmit={handleSend} style={{
-            display: 'flex', gap: '0.75rem', padding: '0.75rem 1rem',
-            borderTop: '1px solid rgba(255,255,255,0.08)'
-          }}>
-            <textarea
-              value={inputText}
-              onChange={e => setInputText(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (inputText.trim()) handleSend(e as any); }
-              }}
-              placeholder="Skriv svar... (Enter för att skicka)"
-              style={{
-                flex: 1, padding: '0.75rem', borderRadius: '8px',
-                border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)',
-                color: '#fff', resize: 'none', height: '72px', fontFamily: 'inherit', fontSize: '0.9rem'
-              }}
-            />
-            <button
-              type="submit"
-              disabled={isSending || !inputText.trim()}
-              style={{
-                padding: '0 1.25rem', background: 'var(--accent-gradient)', color: '#fff',
-                border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
-                opacity: !inputText.trim() ? 0.5 : 1
-              }}
-            >
-              Skicka
-            </button>
-          </form>
+          {/* Skriv meddelande (endast om chatt är igång) */}
+          {activeSession.status === 'active' ? (
+            <form onSubmit={handleSend} style={{
+              display: 'flex', gap: '0.75rem', padding: '0.75rem 1rem',
+              borderTop: '1px solid rgba(255,255,255,0.08)'
+            }}>
+              <textarea
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (inputText.trim()) handleSend(e as any); }
+                }}
+                placeholder="Skriv svar... (Enter för att skicka)"
+                style={{
+                  flex: 1, padding: '0.75rem', borderRadius: '8px',
+                  border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)',
+                  color: '#fff', resize: 'none', height: '72px', fontFamily: 'inherit', fontSize: '0.9rem'
+                }}
+              />
+              <button
+                type="submit"
+                disabled={isSending || !inputText.trim()}
+                style={{
+                  padding: '0 1.25rem', background: 'var(--accent-gradient)', color: '#fff',
+                  border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
+                  opacity: !inputText.trim() ? 0.5 : 1
+                }}
+              >
+                Skicka
+              </button>
+            </form>
+          ) : (
+            <div style={{ padding: '2rem', textAlign: 'center', background: 'rgba(0,0,0,0.2)' }}>
+              <h3 style={{ color: '#10b981', margin: '0 0 1rem 0' }}>Ett ärende har tilldelats dig!</h3>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                Klicka på "Ta ärende" i övre högra hörnet för att svara kunden.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -546,12 +642,6 @@ export default function SupportView() {
               📋 Kö ({pendingQueue.length} väntande)
             </h3>
           </div>
-
-          {claimError && (
-            <div style={{ background: 'rgba(244,63,94,0.15)', color: '#f43f5e', padding: '0.75rem 1.5rem', fontSize: '0.9rem' }}>
-              ⚠️ {claimError}
-            </div>
-          )}
 
           {cooldown > 0 && agentStatus === 'available' ? (
             <div style={{ padding: '2rem', textAlign: 'center' }}>
@@ -570,44 +660,20 @@ export default function SupportView() {
                 </div>
               )}
 
-              {/* Väntande – kan tas */}
-              {pendingQueue.map(s => (
-                <div key={s.id} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
-                  gap: '1rem', flexWrap: 'wrap'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{
-                      width: 10, height: 10, borderRadius: '50%',
-                      background: '#f59e0b', boxShadow: '0 0 8px #f59e0b',
-                      animation: 'pulse 1.5s infinite'
-                    }} />
-                    <div>
-                      <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
-                        {s.profiles?.email || 'Anonym besökare'}
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        ⏱ Väntat {formatWait(s.created_at)}
-                      </div>
-                    </div>
+              {/* Väntande summering */}
+              {pendingQueue.length > 0 && !activeSession && (
+                <div style={{ padding: '2rem 1.5rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                    Väntar på hjälp: {pendingQueue.length} personer
                   </div>
-                  <button
-                    onClick={() => handleClaim(s)}
-                    disabled={agentStatus === 'busy'}
-                    style={{
-                      background: agentStatus === 'busy'
-                        ? 'rgba(255,255,255,0.05)'
-                        : 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
-                      color: '#fff', border: 'none', padding: '0.5rem 1.1rem',
-                      borderRadius: '8px', cursor: agentStatus === 'busy' ? 'not-allowed' : 'pointer',
-                      fontWeight: 'bold', fontSize: '0.85rem', opacity: agentStatus === 'busy' ? 0.5 : 1
-                    }}
-                  >
-                    🔔 Ta ärende
-                  </button>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                    Längsta väntetid: {formatWait(pendingQueue[0].created_at)}
+                  </div>
+                  <div style={{ marginTop: '1.5rem', color: '#a855f7', fontSize: '0.85rem' }}>
+                    <i>När det är din tur tilldelas det äldsta ärendet automatiskt till dig.</i>
+                  </div>
                 </div>
-              ))}
+              )}
 
               {/* Aktiva av kollega */}
               {takenByOthers.map(s => (
