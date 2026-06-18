@@ -222,15 +222,16 @@ export default function SupportView() {
       const pendingQueue = queue.filter(s => s.status === 'waiting');
       if (agentStatus === 'available' && cooldown === 0 && !activeSession && pendingQueue.length > 0) {
         // Räkna ut om jag är den lediga agenten som väntat längst
-        // Sortera bara på vem som har äldst updated_at (har varit available längst).
-        // Eftersom vi litar på "cooldown === 0" för oss själva, behöver vi inte mäta 20s mot klockan här.
         const availableAgents = allAgents.filter(a => 
           a.status === 'available' && a.updated_at
         ).sort((a, b) => new Date(a.updated_at!).getTime() - new Date(b.updated_at!).getTime());
         
         if (availableAgents.length > 0 && availableAgents[0].agent_id === user?.id) {
            const { data, error } = await supabase.rpc('auto_assign_oldest_chat');
-           if (error) console.error("Auto-assign error:", error);
+           if (error) {
+              console.error("Auto-assign error:", error);
+              setConnectError('Fel vid auto-tilldelning: ' + error.message);
+           }
            if (data && active) {
              setAgentStatus('busy');
              // fetchQueue kommer snart via Realtime och sätter activeSession (via useEffect),
@@ -240,6 +241,14 @@ export default function SupportView() {
              if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
                new Notification('Kundtjänst', { body: 'Ett ärende har tilldelats dig!' });
              }
+           }
+        } else if (availableAgents.length > 0) {
+           // Not my turn
+        } else {
+           // I am not in availableAgents!
+           if (user?.id && !allAgents.some(a => a.agent_id === user.id)) {
+              // Workaround: if I am not in allAgents yet, fetch them!
+              fetchAgents();
            }
         }
       }
