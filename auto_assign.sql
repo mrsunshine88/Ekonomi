@@ -36,7 +36,7 @@ BEGIN
   END IF;
 
   UPDATE chat_sessions
-  SET status = 'assigned', assigned_to = auth.uid(), assigned_name = (SELECT full_name FROM profiles WHERE id = auth.uid()), updated_at = NOW()
+  SET status = 'assigned', assigned_to = auth.uid(), assigned_name = (SELECT email FROM profiles WHERE id = auth.uid()), updated_at = NOW()
   WHERE id = (
     SELECT id FROM chat_sessions 
     WHERE status = 'waiting' 
