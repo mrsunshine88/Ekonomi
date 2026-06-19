@@ -8,7 +8,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -226,13 +226,13 @@ export default function LoginScreen() {
               <span className="logo-icon">E</span>
               SmartEkonomi
             </div>
-            <h2>{isForgotPassword ? 'Återställ Lösenord' : isLogin ? 'Välkommen tillbaka' : 'Skapa ditt konto'}</h2>
+            <h2>{isForgotPassword ? 'Återställ Lösenord' : isLogin ? 'Logga in' : 'Testa fritt i 14 dagar'}</h2>
             <p>
               {isForgotPassword 
                 ? 'Fyll i din e-post så skickar vi en länk'
                 : isLogin 
-                  ? 'Logga in för att fortsätta till ditt hushåll' 
-                  : 'Kom igång på 30 sekunder och slipp excel-arken.'}
+                  ? 'Fortsätt till ditt hushåll.' 
+                  : 'Full tillgång till alla funktioner. Därefter 59 kr/mån.'}
             </p>
           </div>
 
@@ -295,7 +295,7 @@ export default function LoginScreen() {
                   ? 'Skicka återställningslänk' 
                   : isLogin 
                     ? 'Logga in' 
-                    : 'Skapa konto'}
+                    : 'Starta din provperiod'}
             </button>
           </form>
 
@@ -347,7 +347,7 @@ export default function LoginScreen() {
                 ? 'Tillbaka till inloggning' 
                 : isLogin 
                   ? <>Har du inget konto? <span>Skapa ett konto här</span></> 
-                  : <>Har du redan ett konto? <span>Logga in</span></>}
+                  : <>Har du redan ett konto? <span>Logga in här</span></>}
             </button>
           </div>
         </div>

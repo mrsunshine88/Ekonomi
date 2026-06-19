@@ -390,16 +390,12 @@ function App() {
               {/* CTA-sektion: lila pill + knapp */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <span style={{
-                  background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
-                  color: '#fff',
+                  color: '#1f2937',
                   fontWeight: 'bold',
-                  fontSize: '0.9rem',
-                  padding: '0.45rem 1rem',
-                  borderRadius: '20px',
-                  boxShadow: '0 2px 12px rgba(124,58,237,0.45)',
+                  fontSize: '0.95rem',
                   whiteSpace: 'nowrap'
                 }}>
-                  👉 Gillar du vad du ser? Prova gratis i 14 dagar.
+                  👉 Gillar du vad du ser? Testa fritt i 14 dagar.
                 </span>
                 <button
                   onClick={() => {
@@ -408,7 +404,7 @@ function App() {
                   }}
                   style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)', color: '#fff', border: 'none', padding: '0.5rem 1.2rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem', whiteSpace: 'nowrap', boxShadow: '0 2px 10px rgba(124,58,237,0.4)' }}
                 >
-                  ✨ Skapa gratis konto
+                  ✨ Starta provperiod
                 </button>
               </div>
 
