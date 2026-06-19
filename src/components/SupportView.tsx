@@ -498,27 +498,16 @@ export default function SupportView() {
           <p style={{ margin: '0 0 1.5rem 0', color: 'var(--text-secondary)' }}>
             {activeSession.ticket_type === 'email' ? '📧 E-post' : '💬 Chatt'} från {activeSession.profiles?.email || activeSession.customer_email || 'Okänd'}
           </p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button 
-              onClick={handleDisconnect}
-              style={{
-                background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff',
-                padding: '1rem 2rem', borderRadius: '8px', cursor: 'pointer',
-                fontSize: '1rem', fontWeight: 'bold'
-              }}>
-              🔙 Gå offline & Släpp tillbaka
-            </button>
-            <button 
-              onClick={handleAcceptAssigned}
-              style={{
-                background: 'var(--accent-gradient)', border: 'none', color: '#fff',
-                padding: '1rem 2rem', borderRadius: '8px', cursor: 'pointer',
-                fontSize: '1.2rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)'
-              }}>
-              <span>⚡</span> Ta ärende
-            </button>
-          </div>
+          <button 
+            onClick={handleAcceptAssigned}
+            style={{
+              background: 'var(--accent-gradient)', border: 'none', color: '#fff',
+              padding: '1rem 2rem', borderRadius: '8px', cursor: 'pointer',
+              fontSize: '1.2rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+              boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)'
+            }}>
+            <span>⚡</span> Ta ärende
+          </button>
         </div>
       )}
 
