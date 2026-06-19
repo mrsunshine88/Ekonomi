@@ -494,6 +494,7 @@ export default function AdminDashboard() {
       }
     } catch (e: unknown) {
       console.error("Kunde inte hämta admin-statistik", e);
+      setMsg('❌ Fel vid hämtning av statistik: ' + (e instanceof Error ? e.message : String(e)));
     }
   };
 
