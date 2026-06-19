@@ -407,12 +407,15 @@ export default function AdminDashboard() {
 
 
   // Dölj meddelanden automatiskt efter 5 sekunder
+  // Inaktiverat för felsökning
+  /*
   useEffect(() => {
     if (msg) {
       const timer = setTimeout(() => setMsg(''), 5000);
       return () => clearTimeout(timer);
     }
   }, [msg]);
+  */
 
   const fetchMembersList = async () => {
     try {
@@ -421,7 +424,7 @@ export default function AdminDashboard() {
       setMembersList(data || []);
     } catch (e: unknown) {
       console.error("Kunde inte hämta medlemmar", e);
-      setMsg('❌ Fel vid hämtning av användare: ' + (e instanceof Error ? e.message : String(e)));
+      setMsg('❌ Fel vid hämtning av användare: ' + (e instanceof Error ? e.message : JSON.stringify(e)));
     }
   };
 
@@ -494,7 +497,7 @@ export default function AdminDashboard() {
       }
     } catch (e: unknown) {
       console.error("Kunde inte hämta admin-statistik", e);
-      setMsg('❌ Fel vid hämtning av statistik: ' + (e instanceof Error ? e.message : String(e)));
+      setMsg('❌ Fel vid hämtning av statistik: ' + (e instanceof Error ? e.message : JSON.stringify(e)));
     }
   };
 
