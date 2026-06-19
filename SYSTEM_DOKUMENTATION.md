@@ -1976,10 +1976,21 @@ För att klara Stripes granskning och uppfylla GDPR har juridiska policys i sidf
   - **Dynamisk Personuppgiftsansvarig:** Hämtar automatiskt företagsnamn och e-postadress från inställningar i databasen via `global_settings`.
   - **Tredjepart & GDPR-Rättigheter:** Klargör att Stripe hanterar all betaldata (vi sparar inte kort), rätten till radering (SQL Cascade), samt rätten att klaga till IMY.
 
-## Kundtjänst: Chatt och E-postköer
+## 23. Kundtjänst: Chatt och E-postköer (Omnikanal)
 
-Systemet stödjer separata köer för live-chatt och e-postärenden. 
-1. **Databas**: Tabellen `chat_sessions` använder fältet `ticket_type` ('chat' eller 'email') för att särskilja ärenden. För e-post sparas även `inbound_address`, `customer_email` och `email_subject`.
-2. **Agentbehörigheter**: I tabellen `profiles` lagras `handles_chat` (boolean) och `handles_email` (boolean) för att styra vilken typ av ärenden en specifik agent (`chat_agent = true`) får ta.
-3. **Tilldelning**: Funktionen `auto_assign_oldest_chat()` letar upp äldsta väntande ärende men filtrerar utifrån agentens `handles_chat`/`handles_email`-inställningar, så agenter bara drar från de köer de är behöriga för.
-4. **In/Ut**: Inkommande e-post konverteras till kod via en Webhook/Inbound Parse (t.ex. Resend eller Postmark) och läggs i `chat_sessions`. Utgående svar via e-post skickas genom en Edge Function via SMTP.
+Systemet stödjer separata köer för live-chatt och e-postärenden, men samlar båda i samma kundtjänstpanel (`SupportView`).
+
+### 23.1 Arkitektur för E-post
+1. **Databas**: Tabellen `chat_sessions` använder fältet `ticket_type` ('chat' eller 'email') för att särskilja ärenden. För e-post sparas även `inbound_address` (t.ex. info@smartekonomi.nu), `customer_email` och `email_subject`.
+2. **Inkommande E-post (Postmark Inbound)**: 
+   - E-postdomänen (t.ex. Strato) vidarebefordrar (forward) all inkommande e-post till en "Inbound Stream" i Postmark (`[hash]@inbound.postmarkapp.com`).
+   - Postmark omvandlar mejlet till ett JSON-objekt och skickar det via en Webhook till en Supabase Edge Function (`webhook_incoming_email`).
+   - Edge-funktionen parsar JSON-datan och gör en `INSERT` i `chat_sessions` (skapar ärendet) samt `chat_messages` (lägger in själva e-postmeddelandet).
+3. **Utgående E-post (Edge Function & Resend/Postmark)**:
+   - När en agent skriver ett svar i ett e-postärende fångas detta via databas-triggers eller kod, och skickas tillbaka till kunden som ett vanligt e-postmeddelande via en Edge Function (`send_email_reply`).
+4. **Agentbehörigheter**: I tabellen `profiles` lagras `handles_chat` (boolean) och `handles_email` (boolean) för att styra vilken typ av ärenden en specifik agent (`chat_agent = true`) får ta. Tilldelning (`auto_assign_oldest_chat()`) filtrerar utifrån dessa så att agenter enbart drar ärenden från de köer de är behöriga för.
+
+### 23.2 Förbättrad Agent-UX (`SupportView.tsx`)
+- **Tydlig E-postinformation**: För e-postärenden modifieras ärendehuvudet till att vara extremt tydligt med fält för **Från:** (kund), **Till:** (inbound adress, färgkodad) och **Ämne:**. Detta gör att agenten direkt ser om mejlet var ämnat för Support eller Info.
+- **Automatisk Signaturmall**: Agenter kan ställa in sin egen e-postsignatur (Förnamn och Efternamn) via en knapp ("⚙️ Signatur"). Denna sparas i webbläsarens `localStorage` och klistras automatiskt in i slutet av svarsrutan när agenten tar ett nytt e-postärende.
+- **Alltid Synlig Kö**: För att agenter och administratörer ska kunna hålla koll på belastningen visas kön och väntetider permanent i botten av vyn, oavsett om agenten är inloggad (`available`/`busy`) eller frånkopplad (`offline`).

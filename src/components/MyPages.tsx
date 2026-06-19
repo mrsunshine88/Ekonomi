@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
 import { useStore } from '../store';
 import { supabase } from '../supabase';
+import { exportToExcel } from '../excel';
 
 export default function MyPages() {
   const { user, householdId, role, refreshHousehold } = useAuth();
@@ -213,6 +214,19 @@ export default function MyPages() {
         }
       }
     });
+  };
+
+  const handleExportData = async () => {
+    setLoading(true);
+    try {
+      setMsg('Laddar ner din data... ⏳');
+      await exportToExcel(useStore.getState().state, user?.id);
+      setMsg('✅ Din data har laddats ner som en Excel-fil!');
+    } catch (e: unknown) {
+      setMsg('❌ Kunde inte exportera data: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleToggleShare = async () => {
@@ -695,6 +709,14 @@ export default function MyPages() {
               </button>
             )
           )}
+
+          <button 
+            onClick={handleExportData} 
+            disabled={loading} 
+            style={{ padding: '0.75rem 1rem', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            📊 Exportera all min data (Excel)
+          </button>
 
           <button 
             onClick={handleDeleteAccount} 

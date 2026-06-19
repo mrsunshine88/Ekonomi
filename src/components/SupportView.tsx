@@ -55,10 +55,14 @@ export default function SupportView() {
   const [cooldown, setCooldown] = useState(0);
   const [, setSessionTick] = useState(0);
   
-  // Notiser
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [agentSignature, setAgentSignature] = useState('');
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+
   useEffect(() => {
     setNotificationsEnabled(localStorage.getItem('chat_notifications') === 'true');
+    const savedSignature = localStorage.getItem('agent_signature');
+    if (savedSignature) setAgentSignature(savedSignature);
   }, []);
 
   // Timers för andrum och aktiv chatt
@@ -301,6 +305,14 @@ export default function SupportView() {
        return;
     }
     setActiveSession({...activeSession, status: 'active'});
+    
+    // Auto-fill signature for email tickets
+    if (activeSession.ticket_type === 'email') {
+      const sig = localStorage.getItem('agent_signature') || agentSignature;
+      if (sig && !inputText.trim()) {
+        setInputText(`\n\n--\nMed vänliga hälsningar,\n${sig}\nSmart Ekonomi`);
+      }
+    }
   };
 
   // (Gamla knappen för att ta ärende togs bort)
@@ -494,6 +506,16 @@ export default function SupportView() {
           )}
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
             <button
+              onClick={() => setShowSignatureModal(true)}
+              style={{
+                background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)',
+                padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer',
+                fontSize: '0.8rem', fontWeight: 'bold'
+              }}
+            >
+              ⚙️ Signatur
+            </button>
+            <button
               onClick={toggleNotifications}
               style={{
                 background: notificationsEnabled ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.05)',
@@ -548,16 +570,35 @@ export default function SupportView() {
             background: 'var(--accent-gradient)', padding: '1rem 1.5rem',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center'
           }}>
-            <div>
-              <div style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '0.2rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <span>{activeSession.ticket_type === 'email' ? '📧 E-post' : '💬 Aktiv chatt'}: {activeSession.customer_email || activeSession.profiles?.email || 'Anonym besökare'}</span>
-                {activeSession.ticket_type === 'email' && activeSession.inbound_address && (
-                   <span style={{ fontSize: '0.7rem', background: 'rgba(255,255,255,0.1)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>Skickat till {activeSession.inbound_address}</span>
-                )}
-              </div>
-              {activeSession.ticket_type === 'email' && activeSession.email_subject && (
-                <div style={{ fontSize: '0.9rem', marginBottom: '0.3rem', opacity: 0.9, fontStyle: 'italic' }}>
-                  Ämne: {activeSession.email_subject}
+            <div style={{ flex: 1 }}>
+              {activeSession.ticket_type === 'email' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginBottom: '0.5rem' }}>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
+                    📧 E-postärende
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '50px 1fr', gap: '0.5rem', fontSize: '0.9rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '8px', marginRight: '1rem' }}>
+                    <strong style={{ color: 'var(--text-secondary)' }}>Från:</strong> 
+                    <span style={{ fontWeight: 'bold' }}>{activeSession.customer_email || activeSession.profiles?.email || 'Okänd avsändare'}</span>
+                    
+                    <strong style={{ color: 'var(--text-secondary)' }}>Till:</strong> 
+                    <span style={{ 
+                      fontWeight: 'bold', 
+                      color: activeSession.inbound_address?.includes('info@') ? '#3b82f6' : '#10b981' 
+                    }}>
+                      {activeSession.inbound_address || 'Okänd mottagare'}
+                    </span>
+                    
+                    {activeSession.email_subject && (
+                      <>
+                        <strong style={{ color: 'var(--text-secondary)' }}>Ämne:</strong> 
+                        <span>{activeSession.email_subject}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '0.5rem' }}>
+                  💬 Aktiv chatt: {activeSession.profiles?.email || 'Anonym besökare'}
                 </div>
               )}
               <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', opacity: 0.85 }}>
@@ -657,7 +698,6 @@ export default function SupportView() {
       )}
 
       {/* ─── Kön ─── */}
-      {agentStatus !== 'offline' && (
         <div style={{
           background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '12px', overflow: 'hidden'
@@ -760,6 +800,56 @@ export default function SupportView() {
               ))}
             </>
           )}
+        </div>
+
+      {/* ─── Signatur Modal ─── */}
+      {showSignatureModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(11, 15, 25, 0.9)', backdropFilter: 'blur(5px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100000
+        }}>
+          <div style={{
+            background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)',
+            padding: '2rem', borderRadius: '16px', maxWidth: '400px', width: '100%',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '1rem', color: '#fff' }}>⚙️ Min e-postsignatur</h3>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+              Fyll i ditt för- och efternamn. Detta kommer automatiskt klistras in i slutet av alla dina e-post-svar som en färdig mall.
+            </p>
+            <input
+              type="text"
+              placeholder="T.ex. Anna Andersson"
+              value={agentSignature}
+              onChange={(e) => setAgentSignature(e.target.value)}
+              style={{
+                width: '100%', padding: '0.75rem', borderRadius: '8px',
+                border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)',
+                color: '#fff', marginBottom: '1.5rem', fontSize: '1rem'
+              }}
+            />
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setShowSignatureModal(false)}
+                style={{ background: 'transparent', color: '#fff', border: 'none', cursor: 'pointer' }}
+              >
+                Avbryt
+              </button>
+              <button 
+                onClick={() => {
+                  localStorage.setItem('agent_signature', agentSignature);
+                  setShowSignatureModal(false);
+                }}
+                style={{
+                  background: 'var(--accent-gradient)', color: '#fff', border: 'none',
+                  padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'
+                }}
+              >
+                Spara Signatur
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
