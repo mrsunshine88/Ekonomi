@@ -40,7 +40,7 @@ export default function SupportView() {
 
   // Agent-status
   const [agentStatus, setAgentStatus] = useState<AgentStatusType>('offline');
-  const [allAgents, setAllAgents] = useState<AgentSession[]>([]);
+
 
   // Kö (nu dold i UI)
 
@@ -86,12 +86,7 @@ export default function SupportView() {
   // Hämta agent-sessioner och kö
   const fetchQueue = async () => {};
 
-  const fetchAgents = async () => {
-    const { data } = await supabase
-      .from('agent_sessions')
-      .select('agent_id, status, updated_at');
-    if (data) setAllAgents(data);
-  };
+
 
   // Hämta min egen agent-status vid mount
   useEffect(() => {
@@ -105,7 +100,7 @@ export default function SupportView() {
         .maybeSingle();
       if (data) setAgentStatus(data.status as any);
       await fetchQueue();
-      await fetchAgents();
+
 
       // Auto-återta ärende om agenten navigerade bort och kom tillbaka
       const { data: myActive } = await supabase
@@ -146,7 +141,6 @@ export default function SupportView() {
     // Realtime: agent-närvaro
     const agentChannel = supabase.channel('support_agents')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_sessions' }, () => {
-        fetchAgents();
       })
       .subscribe();
 
