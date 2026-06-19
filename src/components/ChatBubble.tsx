@@ -253,7 +253,12 @@ export default function ChatBubble() {
               <button onClick={() => setIsOpen(false)} title="Minimera" style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.5rem', lineHeight: '10px', paddingBottom: '8px' }}>_</button>
               <button onClick={async () => {
                 if (sessionId && sessionStatus !== 'closed') {
-                  await supabase.from('chat_sessions').update({ status: 'closed' }).eq('id', sessionId);
+                  // Skicka ett meddelande om att kunden lämnat chatten, men stäng inte sessionen för agenten
+                  await supabase.from('chat_messages').insert({
+                    session_id: sessionId,
+                    sender_type: 'visitor',
+                    message: '👋 *Kunden har stängt chatten*'
+                  });
                 }
                 setSessionId(null);
                 setSessionStatus(null);
