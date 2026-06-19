@@ -421,6 +421,7 @@ export default function AdminDashboard() {
       setMembersList(data || []);
     } catch (e: unknown) {
       console.error("Kunde inte hämta medlemmar", e);
+      setMsg('❌ Fel vid hämtning av användare: ' + (e instanceof Error ? e.message : String(e)));
     }
   };
 
