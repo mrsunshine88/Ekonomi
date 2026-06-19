@@ -4,12 +4,6 @@ import { useAuth } from '../AuthContext';
 
 type AgentStatusType = 'offline' | 'available' | 'busy' | 'post_work' | 'break' | 'lunch';
 
-interface AgentSession {
-  agent_id: string;
-  status: AgentStatusType;
-  agent_email?: string;
-  updated_at?: string;
-}
 
 interface ChatSession {
   id: string;
