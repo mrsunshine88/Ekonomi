@@ -65,30 +65,28 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
   ];
 
   useEffect(() => {
-    if (type === 'contact') {
-      const fetchContactInfo = async () => {
-        setLoading(true);
-        const { data } = await supabase.from('global_settings').select('key, value');
-        if (data) {
-          const info = {
-            company: data.find(d => d.key === 'contact_company')?.value || 'SmartEkonomi AB',
-            email: data.find(d => d.key === 'contact_email')?.value || 'info@exempel.se',
-            address: data.find(d => d.key === 'contact_address')?.value || '-',
-            phone: data.find(d => d.key === 'contact_phone')?.value || '-'
-          };
-          setContactInfo(info);
-          setVisibility({
-            company: data.find(d => d.key === 'show_contact_company')?.value !== 'false',
-            email: data.find(d => d.key === 'show_contact_email')?.value !== 'false',
-            address: data.find(d => d.key === 'show_contact_address')?.value !== 'false',
-            phone: data.find(d => d.key === 'show_contact_phone')?.value !== 'false'
-          });
-        }
-        setLoading(false);
-      };
-      fetchContactInfo();
-    }
-  }, [type]);
+    const fetchContactInfo = async () => {
+      setLoading(true);
+      const { data } = await supabase.from('global_settings').select('key, value');
+      if (data) {
+        const info = {
+          company: data.find(d => d.key === 'contact_company')?.value || 'SmartEkonomi AB',
+          email: data.find(d => d.key === 'contact_email')?.value || 'info@exempel.se',
+          address: data.find(d => d.key === 'contact_address')?.value || '-',
+          phone: data.find(d => d.key === 'contact_phone')?.value || '-'
+        };
+        setContactInfo(info);
+        setVisibility({
+          company: data.find(d => d.key === 'show_contact_company')?.value !== 'false',
+          email: data.find(d => d.key === 'show_contact_email')?.value !== 'false',
+          address: data.find(d => d.key === 'show_contact_address')?.value !== 'false',
+          phone: data.find(d => d.key === 'show_contact_phone')?.value !== 'false'
+        });
+      }
+      setLoading(false);
+    };
+    fetchContactInfo();
+  }, []);
 
   const titles = {
     tos: 'Användarvillkor (Terms of Service)',
@@ -125,28 +123,46 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
 
         <div style={{ color: '#ccc', fontSize: '0.95rem', lineHeight: '1.6' }}>
           {type === 'tos' && (
-            <>
-              <p style={{ marginBottom: '1rem' }}>
-                <strong style={{ color: '#fff' }}>Ansvarsfriskrivning:</strong> Appen är ett beräkningsverktyg. Vi ansvarar inte för eventuella matematiska fel, buggar eller ekonomiska beslut som fattas baserat på appens data.
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <p>
+                <strong style={{ color: '#fff' }}>Ansvarsbegränsning och friskrivning:</strong> SmartEkonomi tillhandahålls som ett hjälpmedel för beräkningar och budgetering. Appen ska ses som ett komplement och inte som finansiell rådgivning. Användaren ansvarar själv för att kontrollera att alla uträkningar och uppgifter stämmer innan ekonomiska beslut fattas. SmartEkonomi eller dess ägare kan inte hållas ansvariga för eventuella ekonomiska förluster, felaktiga beräkningar eller beslut baserade på appens data.
               </p>
               <p>
-                <strong style={{ color: '#fff' }}>Betalning:</strong> Tjänsten kostar 59 kr/månad per hushåll. Nya prenumeranter får alltid 14 dagars gratis provperiod innan den första debiteringen sker via Stripe. Prenumerationen dras löpande tills man avslutar.
+                <strong style={{ color: '#fff' }}>Prenumeration & Avgifter:</strong> Tjänsten kostar 59 kr/månad per hushåll. Nya användare får alltid 14 dagars kostnadsfri provperiod innan den första debiteringen sker via vår betalningspartner Stripe.
               </p>
-            </>
+              <p>
+                <strong style={{ color: '#fff' }}>Uppsägning av tjänst:</strong> Du kan när som helst avsluta din prenumeration. Detta görs genom att navigera till <strong>Mina Sidor -> Premium</strong> i appen och klicka på knappen <strong>Hantera Prenumeration</strong>. Du skickas då till Stripes säkra kundportal där du kan avbryta prenumerationen. Avslutar du under din 14-dagars provperiod debiteras du ingenting.
+              </p>
+              <p>
+                <strong style={{ color: '#fff' }}>Återbetalningspolicy:</strong> Prenumerationen debiteras i förskott för varje påbörjad månad. Inga återbetalningar görs för delvis utnyttjade månader.
+              </p>
+              <p>
+                <strong style={{ color: '#fff' }}>Tillämplig lag:</strong> Svensk lag gäller för dessa villkor.
+              </p>
+            </div>
           )}
 
           {type === 'privacy' && (
-            <>
-              <p style={{ marginBottom: '1rem' }}>
-                <strong style={{ color: '#fff' }}>Vilken data du sparar:</strong> Vi sparar din e-postadress (för inloggning) samt de ekonomiska siffror du själv matar in i appen.
-              </p>
-              <p style={{ marginBottom: '1rem' }}>
-                <strong style={{ color: '#fff' }}>Tredjepart:</strong> Betalningsdata hanteras säkert av Stripe. Vi ser eller sparar aldrig dina kortuppgifter på våra servrar.
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <p>
+                <strong style={{ color: '#fff' }}>Personuppgiftsansvarig:</strong> {contactInfo.company} ({contactInfo.email}) är personuppgiftsansvarig för behandlingen av dina uppgifter i appen.
               </p>
               <p>
-                <strong style={{ color: '#fff' }}>Rätten att bli glömd:</strong> Du kan när som helst radera ditt konto, vilket källkodsmässigt rensar all din data helt från databasen via vår SQL Cascade-logik.
+                <strong style={{ color: '#fff' }}>Vilka uppgifter vi samlar in:</strong> Vi samlar enbart in din e-postadress (krävs för inloggning) samt de ekonomiska siffror och texter (såsom räkningar) du frivilligt matar in i systemet.
               </p>
-            </>
+              <p>
+                <strong style={{ color: '#fff' }}>Laglig grund:</strong> Vi behandlar dina uppgifter med stöd i att kunna fullgöra vårt avtal med dig (leverera appens funktioner).
+              </p>
+              <p>
+                <strong style={{ color: '#fff' }}>Tredjepart & Betalningar:</strong> Betalningsdata och kortuppgifter hanteras uteslutande av vår partner Stripe. Vi varken ser eller sparar dina kortuppgifter på våra egna servrar.
+              </p>
+              <p>
+                <strong style={{ color: '#fff' }}>Dina rättigheter & Rätten att bli glömd:</strong> Du äger din data. Raderar du ditt konto i appen försvinner all din relaterade data automatiskt och permanent från vår databas. Du har även rätt att begära utdrag av din data, och rätt att lämna klagomål till Integritetsskyddsmyndigheten (IMY).
+              </p>
+              <p>
+                <strong style={{ color: '#fff' }}>Cookies:</strong> Vi använder nödvändiga kakor (cookies/localstorage) uteslutande för att hålla dig inloggad och komma ihåg dina val (t.ex. att du sett välkomstrutan). Vi använder inga spårningscookies för tredjepartsreklam.
+              </p>
+            </div>
           )}
 
           {type === 'contact' && (
