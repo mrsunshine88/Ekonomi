@@ -21,6 +21,10 @@ interface ChatSession {
   created_at: string;
   updated_at?: string;
   profiles?: { email: string } | null;
+  ticket_type?: 'chat' | 'email';
+  inbound_address?: string;
+  customer_email?: string;
+  email_subject?: string;
 }
 
 interface ChatMessage {
@@ -40,6 +44,7 @@ export default function SupportView() {
 
   // Kö
   const [queue, setQueue] = useState<ChatSession[]>([]);
+  const [queueTab, setQueueTab] = useState<'chat' | 'email'>('chat');
 
   // Aktiv chatt
   const [activeSession, setActiveSession] = useState<ChatSession | null>(null);
@@ -80,7 +85,7 @@ export default function SupportView() {
   const fetchQueue = async () => {
     const { data, error } = await supabase
       .from('chat_sessions')
-      .select('id, user_id, visitor_id, status, assigned_to, assigned_name, created_at, updated_at')
+      .select('id, user_id, visitor_id, status, assigned_to, assigned_name, created_at, updated_at, ticket_type, inbound_address, customer_email, email_subject')
       .in('status', ['waiting', 'assigned', 'active'])
       .order('created_at', { ascending: true });
 
@@ -130,7 +135,7 @@ export default function SupportView() {
       // Auto-återta ärende om agenten navigerade bort och kom tillbaka
       const { data: myActive } = await supabase
         .from('chat_sessions')
-        .select('id, user_id, visitor_id, status, assigned_to, assigned_name, created_at, updated_at')
+        .select('id, user_id, visitor_id, status, assigned_to, assigned_name, created_at, updated_at, ticket_type, inbound_address, customer_email, email_subject')
         .eq('assigned_to', user.id)
         .in('status', ['active', 'assigned'])
         .maybeSingle();
@@ -384,9 +389,11 @@ export default function SupportView() {
   const statusLabel: Record<AgentStatusType, string> = { offline: 'Frånkopplad', available: 'Ledig', busy: 'I ärende', post_work: 'Efterarbete', break: 'Rast', lunch: 'Lunch' };
   const statusIcon: Record<AgentStatusType, string> = { offline: '⚫', available: '🟢', busy: '🟡', post_work: '📝', break: '☕', lunch: '🍔' };
 
-  const pendingQueue = queue.filter(s => s.status === 'waiting' && !s.assigned_to);
-  const takenByMe = queue.filter(s => s.assigned_to === user?.id && s.status === 'active');
-  const takenByOthers = queue.filter(s => s.assigned_to && s.assigned_to !== user?.id && s.status === 'active');
+  const pendingQueue = queue.filter(s => s.status === 'waiting' && !s.assigned_to && (s.ticket_type || 'chat') === queueTab);
+  const pendingChatCount = queue.filter(s => s.status === 'waiting' && !s.assigned_to && (s.ticket_type || 'chat') === 'chat').length;
+  const pendingEmailCount = queue.filter(s => s.status === 'waiting' && !s.assigned_to && s.ticket_type === 'email').length;
+  const takenByMe = queue.filter(s => s.assigned_to === user?.id && s.status === 'active' && (s.ticket_type || 'chat') === queueTab);
+  const takenByOthers = queue.filter(s => s.assigned_to && s.assigned_to !== user?.id && s.status === 'active' && (s.ticket_type || 'chat') === queueTab);
 
   const fullscreenStyles: React.CSSProperties = isFullscreen ? {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -542,9 +549,17 @@ export default function SupportView() {
             display: 'flex', justifyContent: 'space-between', alignItems: 'center'
           }}>
             <div>
-              <div style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '0.2rem' }}>
-                💬 Aktiv chatt: {activeSession.profiles?.email || 'Anonym besökare'}
+              <div style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '0.2rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <span>{activeSession.ticket_type === 'email' ? '📧 E-post' : '💬 Aktiv chatt'}: {activeSession.customer_email || activeSession.profiles?.email || 'Anonym besökare'}</span>
+                {activeSession.ticket_type === 'email' && activeSession.inbound_address && (
+                   <span style={{ fontSize: '0.7rem', background: 'rgba(255,255,255,0.1)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>Skickat till {activeSession.inbound_address}</span>
+                )}
               </div>
+              {activeSession.ticket_type === 'email' && activeSession.email_subject && (
+                <div style={{ fontSize: '0.9rem', marginBottom: '0.3rem', opacity: 0.9, fontStyle: 'italic' }}>
+                  Ämne: {activeSession.email_subject}
+                </div>
+              )}
               <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', opacity: 0.85 }}>
                 <span>Ärende-ID: {activeSession.id.slice(0, 8)}...</span>
                 <span style={{ fontWeight: 'bold' }}>⏱ Öppet i {formatWait(activeSession.updated_at || activeSession.created_at)}</span>
@@ -647,10 +662,27 @@ export default function SupportView() {
           background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '12px', overflow: 'hidden'
         }}>
-          <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-            <h3 style={{ margin: 0, fontSize: '1rem' }}>
-              📋 Kö ({pendingQueue.length} väntande)
-            </h3>
+          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <button
+              onClick={() => setQueueTab('chat')}
+              style={{
+                flex: 1, padding: '1rem', border: 'none', background: queueTab === 'chat' ? 'rgba(255,255,255,0.05)' : 'transparent',
+                color: queueTab === 'chat' ? '#fff' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem',
+                borderBottom: queueTab === 'chat' ? '2px solid #10b981' : '2px solid transparent'
+              }}
+            >
+              💬 Chatt-kö ({pendingChatCount})
+            </button>
+            <button
+              onClick={() => setQueueTab('email')}
+              style={{
+                flex: 1, padding: '1rem', border: 'none', background: queueTab === 'email' ? 'rgba(255,255,255,0.05)' : 'transparent',
+                color: queueTab === 'email' ? '#fff' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem',
+                borderBottom: queueTab === 'email' ? '2px solid #10b981' : '2px solid transparent'
+              }}
+            >
+              📧 Mejl-kö ({pendingEmailCount})
+            </button>
           </div>
 
           {cooldown > 0 && agentStatus === 'available' ? (
