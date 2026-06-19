@@ -18,18 +18,36 @@ const FUNNEL_STEPS = [
 
 // ─── Support Queue Widget ────────────────────────────────────────────────────
 function SupportQueueWidget() {
-  const [waitingCount, setWaitingCount] = useState(0);
+  const [waitingChat, setWaitingChat] = useState(0);
+  const [waitingSupport, setWaitingSupport] = useState(0);
+  const [waitingInfo, setWaitingInfo] = useState(0);
   const [longestWait, setLongestWait] = useState<string | null>(null);
   const [agentCount, setAgentCount] = useState(0);
 
   const fetchQueueStats = async () => {
     const { data } = await supabase
       .from('chat_sessions')
-      .select('created_at')
+      .select('created_at, ticket_type, inbound_address')
       .eq('status', 'waiting');
     
     if (data) {
-      setWaitingCount(data.length);
+      let chat = 0;
+      let support = 0;
+      let info = 0;
+
+      data.forEach(d => {
+        if (d.ticket_type === 'email') {
+          if (d.inbound_address?.includes('info@')) info++;
+          else support++; // Fallback if it's email but not info
+        } else {
+          chat++;
+        }
+      });
+
+      setWaitingChat(chat);
+      setWaitingSupport(support);
+      setWaitingInfo(info);
+
       if (data.length > 0) {
         const oldest = data.reduce((prev, curr) =>
           new Date(prev.created_at) < new Date(curr.created_at) ? prev : curr
@@ -69,16 +87,30 @@ function SupportQueueWidget() {
     };
   }, []);
 
+  const totalWaiting = waitingChat + waitingSupport + waitingInfo;
+
   return (
     <div style={{ marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(99,102,241,0.05)', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.2)' }}>
       <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span>💬</span> Kundservice – Live
       </h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
-        <div style={{ background: waitingCount > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.08)', padding: '1rem', borderRadius: '8px', border: `1px solid ${waitingCount > 0 ? 'rgba(245,158,11,0.4)' : 'rgba(16,185,129,0.2)'}`, textAlign: 'center' }}>
-          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: waitingCount > 0 ? '#f59e0b' : '#10b981' }}>{waitingCount}</div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>I kö just nu</div>
+        {/* Chatt Kö */}
+        <div style={{ background: waitingChat > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.08)', padding: '1rem', borderRadius: '8px', border: `1px solid ${waitingChat > 0 ? 'rgba(245,158,11,0.4)' : 'rgba(16,185,129,0.2)'}`, textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: waitingChat > 0 ? '#f59e0b' : '#10b981' }}>{waitingChat}</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Chatt-kö</div>
         </div>
+        {/* Support Kö */}
+        <div style={{ background: waitingSupport > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.08)', padding: '1rem', borderRadius: '8px', border: `1px solid ${waitingSupport > 0 ? 'rgba(245,158,11,0.4)' : 'rgba(16,185,129,0.2)'}`, textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: waitingSupport > 0 ? '#f59e0b' : '#10b981' }}>{waitingSupport}</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Support-kö</div>
+        </div>
+        {/* Info Kö */}
+        <div style={{ background: waitingInfo > 0 ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.08)', padding: '1rem', borderRadius: '8px', border: `1px solid ${waitingInfo > 0 ? 'rgba(245,158,11,0.4)' : 'rgba(16,185,129,0.2)'}`, textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: waitingInfo > 0 ? '#f59e0b' : '#10b981' }}>{waitingInfo}</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Info-kö</div>
+        </div>
+
         <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
           <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: longestWait ? '#f43f5e' : '#10b981' }}>
             {longestWait ?? '—'}
@@ -90,9 +122,9 @@ function SupportQueueWidget() {
           <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Agenter online</div>
         </div>
       </div>
-      {waitingCount > 0 && longestWait && (
+      {totalWaiting > 0 && longestWait && (
         <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          ⚠️ {waitingCount} kund{waitingCount > 1 ? 'er' : ''} väntar – längst {longestWait} min
+          ⚠️ {totalWaiting} kund{totalWaiting > 1 ? 'er' : ''} väntar totalt – längst {longestWait} min
         </div>
       )}
     </div>
