@@ -490,7 +490,7 @@ function App() {
         </div>
       </main>
 
-      {!isChatAgent && currentView !== 'support' && <ChatBubble />}
+      <ChatBubble />
     </div>
   );
 }
