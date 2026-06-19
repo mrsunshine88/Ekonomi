@@ -744,32 +744,66 @@ export default function SupportView() {
 
               {/* Väntande summering */}
               {pendingQueue.length > 0 && !activeSession && (
-                <div style={{ padding: '2rem 1.5rem', textAlign: 'center' }}>
+                <div style={{ padding: '1rem 1.5rem', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                    Väntar på hjälp: {pendingQueue.length} personer
+                    Väntar på hjälp: {pendingQueue.length} ärenden
                   </div>
                   <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                     Längsta väntetid: {formatWait(pendingQueue[0].created_at)}
                   </div>
-                  <div style={{ marginTop: '1.5rem', color: '#a855f7', fontSize: '0.85rem' }}>
-                    <i>När det är din tur tilldelas det äldsta ärendet automatiskt till dig.</i>
-                  </div>
                 </div>
               )}
+
+              {/* Väntande ärenden (Lista) */}
+              {!activeSession && pendingQueue.map(s => (
+                <div key={s.id} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  gap: '1rem', flexWrap: 'wrap'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px rgba(16,185,129,0.5)' }} />
+                    <div>
+                      {s.ticket_type === 'email' ? (
+                        <>
+                           <div style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>📧 Från: {s.customer_email || s.profiles?.email || 'Okänd avsändare'}</div>
+                           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Till: {s.inbound_address || 'Okänd mottagare'}</div>
+                           {s.email_subject && <div style={{ fontSize: '0.85rem', fontStyle: 'italic', color: 'rgba(255,255,255,0.8)' }}>Ämne: {s.email_subject}</div>}
+                        </>
+                      ) : (
+                        <div style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>
+                          💬 Chatt: {s.profiles?.email || 'Anonym besökare'}
+                        </div>
+                      )}
+                      <div style={{ fontSize: '0.75rem', color: '#10b981', marginTop: '0.3rem', fontWeight: 'bold' }}>
+                        ⏳ Väntat i {formatWait(s.created_at)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
 
               {/* Aktiva av kollega */}
               {takenByOthers.map(s => (
                 <div key={s.id} style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
-                  opacity: 0.55, gap: '1rem', flexWrap: 'wrap'
+                  opacity: 0.6, gap: '1rem', flexWrap: 'wrap'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#6b7280' }} />
                     <div>
-                      <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
-                        {s.profiles?.email || 'Anonym besökare'}
-                      </div>
+                      {s.ticket_type === 'email' ? (
+                        <>
+                           <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>📧 Från: {s.customer_email || s.profiles?.email || 'Okänd'}</div>
+                           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Till: {s.inbound_address}</div>
+                           {s.email_subject && <div style={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--text-secondary)' }}>Ämne: {s.email_subject}</div>}
+                        </>
+                      ) : (
+                        <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
+                          💬 Chatt: {s.profiles?.email || 'Anonym besökare'}
+                        </div>
+                      )}
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                         🔒 Hanteras av {s.assigned_name || 'kollega'}
                       </div>
@@ -788,10 +822,18 @@ export default function SupportView() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#6366f1' }} />
                     <div>
-                      <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
-                        {s.profiles?.email || 'Anonym besökare'}
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: '#6366f1' }}>
+                      {s.ticket_type === 'email' ? (
+                        <>
+                           <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>📧 Från: {s.customer_email || s.profiles?.email || 'Okänd'}</div>
+                           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Till: {s.inbound_address}</div>
+                           {s.email_subject && <div style={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--text-secondary)' }}>Ämne: {s.email_subject}</div>}
+                        </>
+                      ) : (
+                        <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
+                          💬 Chatt: {s.profiles?.email || 'Anonym besökare'}
+                        </div>
+                      )}
+                      <div style={{ fontSize: '0.8rem', color: '#6366f1', marginTop: '0.2rem' }}>
                         ✍️ Du hanterar detta ärende
                       </div>
                     </div>

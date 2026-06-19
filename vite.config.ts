@@ -11,7 +11,8 @@ export default defineConfig({
         enabled: true
       },
       workbox: {
-        importScripts: ['/push-sw.js']
+        importScripts: ['/push-sw.js'],
+        maximumFileSizeToCacheInBytes: 5000000
       },
       includeAssets: ['favicon.png', 'icon-192x192.png', 'icon-512x512.png'],
       manifest: {
