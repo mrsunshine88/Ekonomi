@@ -42,8 +42,7 @@ export default function SupportView() {
   const [agentStatus, setAgentStatus] = useState<AgentStatusType>('offline');
   const [allAgents, setAllAgents] = useState<AgentSession[]>([]);
 
-  // Kö
-  const [queue, setQueue] = useState<ChatSession[]>([]);
+  // Kö (nu dold i UI)
 
   // Aktiv chatt
   const [activeSession, setActiveSession] = useState<ChatSession | null>(null);
@@ -85,34 +84,7 @@ export default function SupportView() {
   const [connectError, setConnectError] = useState('');
 
   // Hämta agent-sessioner och kö
-  const fetchQueue = async () => {
-    const { data, error } = await supabase
-      .from('chat_sessions')
-      .select('id, user_id, visitor_id, status, assigned_to, assigned_name, created_at, updated_at, ticket_type, inbound_address, customer_email, email_subject')
-      .in('status', ['waiting', 'assigned', 'active'])
-      .order('created_at', { ascending: true });
-
-    if (error) { console.error('fetchQueue error:', error); return; }
-
-    if (data) {
-      const userIds = [...new Set(data.filter((s: any) => s.user_id).map((s: any) => s.user_id as string))];
-      let emailMap: Record<string, string> = {};
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, email')
-          .in('id', userIds);
-        if (profiles) {
-          (profiles as Array<{id: string; email: string}>).forEach(p => { emailMap[p.id] = p.email; });
-        }
-      }
-      const enriched = data.map((s: any) => ({
-        ...s,
-        profiles: s.user_id ? { email: emailMap[s.user_id] || 'Okänd användare' } : null
-      }));
-      setQueue(enriched);
-    }
-  };
+  const fetchQueue = async () => {};
 
   const fetchAgents = async () => {
     const { data } = await supabase
@@ -324,6 +296,10 @@ export default function SupportView() {
         return [...prev, msg];
       });
       setInputText('');
+      if (activeSession.ticket_type === 'email') {
+        alert('E-post skickad!');
+        await handleClose();
+      }
     } catch (err) {
       console.error('Kunde inte skicka:', err);
     } finally {
@@ -368,10 +344,6 @@ export default function SupportView() {
   const statusLabel: Record<AgentStatusType, string> = { offline: 'Frånkopplad', available: 'Ledig', busy: 'I ärende', post_work: 'Efterarbete', break: 'Rast', lunch: 'Lunch' };
   const statusIcon: Record<AgentStatusType, string> = { offline: '⚫', available: '🟢', busy: '🟡', post_work: '📝', break: '☕', lunch: '🍔' };
 
-  const pendingQueue = queue.filter(s => s.status === 'waiting' && !s.assigned_to);
-  const takenByOthers = queue.filter(s => s.assigned_to && s.assigned_to !== user?.id && s.status === 'active');
-  const takenByMe = queue.filter(s => s.assigned_to === user?.id && s.status === 'active');
-
   const fullscreenStyles: React.CSSProperties = isFullscreen ? {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
     zIndex: 9999, backgroundColor: '#0f172a',
@@ -383,9 +355,9 @@ export default function SupportView() {
   return (
     <div style={fullscreenStyles}>
 
-      {!activeSession && (
-        <div style={{
-          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+      {/* ─── Toppmeny ─── */}
+      <div style={{
+        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '12px', padding: '1rem 1.5rem', marginBottom: '1.5rem',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem'
         }}>
@@ -498,8 +470,8 @@ export default function SupportView() {
               </button>
             </div>
           </div>
-        </div>
-      )}
+      </div>
+
       {/* ─── Felmeddelande vid uppkoppling ─── */}
       {connectError && (
         <div style={{ background: 'rgba(244,63,94,0.12)', border: '1px solid rgba(244,63,94,0.4)', borderRadius: '8px', padding: '0.75rem 1.25rem', marginBottom: '1rem', fontSize: '0.9rem', color: '#f43f5e' }}>
@@ -617,7 +589,7 @@ export default function SupportView() {
                 color: '#e2e8f0', whiteSpace: 'pre-wrap', fontFamily: 'sans-serif', fontSize: '0.95rem',
                 marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.1)'
               }}>
-                {messages.filter(m => m.sender_type === 'user').map(m => m.message).join('\n\n') || "Kunde inte ladda mejlet..."}
+                {messages.filter(m => m.sender_type !== 'admin').map(m => m.message).join('\n\n') || "Kunde inte ladda mejlet..."}
               </div>
               
               <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -709,96 +681,8 @@ export default function SupportView() {
         </div>
       )}
 
-      {/* ─── Kön ─── */}
-      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', overflow: 'hidden' }}>
-        
-        {cooldown > 0 && agentStatus === 'available' ? (
-          <div style={{ padding: '2rem', textAlign: 'center' }}>
-            <div style={{ marginBottom: '1rem', color: '#10b981', fontWeight: 'bold', fontSize: '1.1rem' }}>
-              ⏳ Andrum... {cooldown} sekunder
-            </div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              Kön visas snart igen. Du hinner byta status i rullgardinen ovan.
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Väntande summering */}
-            {pendingQueue.length > 0 && !activeSession && (
-              <div style={{ padding: '2rem', textAlign: 'center', background: 'rgba(0,0,0,0.2)' }}>
-                <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-secondary)' }}>Väntar på hjälp: {pendingQueue.length} ärenden</h3>
-                <p style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  När du är "Ledig" tilldelas du automatiskt nästa ärende i kön.
-                </p>
-              </div>
-            )}
-
-            {pendingQueue.length === 0 && takenByOthers.length === 0 && !activeSession && (
-              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                Inga väntande ärenden just nu.
-              </div>
-            )}
-
-              {/* Aktiva av kollega */}
-              {takenByOthers.map(s => (
-                <div key={s.id} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
-                  opacity: 0.6, gap: '1rem', flexWrap: 'wrap'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#6b7280' }} />
-                    <div>
-                      {s.ticket_type === 'email' ? (
-                        <>
-                           <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>📧 Från: {s.customer_email || s.profiles?.email || 'Okänd'}</div>
-                           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Till: {s.inbound_address}</div>
-                           {s.email_subject && <div style={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--text-secondary)' }}>Ämne: {s.email_subject}</div>}
-                        </>
-                      ) : (
-                        <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
-                          💬 Chatt: {s.profiles?.email || 'Anonym besökare'}
-                        </div>
-                      )}
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        🔒 Hanteras av {s.assigned_name || 'kollega'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Mitt eget aktiva ärende i listan */}
-              {takenByMe.map(s => (
-                <div key={s.id} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
-                  background: 'rgba(99,102,241,0.08)', gap: '1rem', flexWrap: 'wrap'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#6366f1' }} />
-                    <div>
-                      {s.ticket_type === 'email' ? (
-                        <>
-                           <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>📧 Från: {s.customer_email || s.profiles?.email || 'Okänd'}</div>
-                           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Till: {s.inbound_address}</div>
-                           {s.email_subject && <div style={{ fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--text-secondary)' }}>Ämne: {s.email_subject}</div>}
-                        </>
-                      ) : (
-                        <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
-                          💬 Chatt: {s.profiles?.email || 'Anonym besökare'}
-                        </div>
-                      )}
-                      <div style={{ fontSize: '0.8rem', color: '#6366f1', marginTop: '0.2rem' }}>
-                        ✍️ Du hanterar detta ärende
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-          </>
-        )}
-      </div>
+      {/* ─── Kön (DOLD ENLIGT ÖNSKEMÅL) ─── */}
+      {/* <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', overflow: 'hidden' }}> ... </div> */}
 
       {/* ─── Signatur Modal ─── */}
       {showSignatureModal && (
