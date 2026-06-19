@@ -223,8 +223,20 @@ export default function SupportView() {
     return () => { supabase.removeChannel(channel); };
   }, [activeSession]);
 
-  // (Auto-Routing borttaget, nu använder vi manuell "Ta nästa ärende"-knapp)
-
+  // Auto-Routing: Tilldela äldsta ärendet om jag är ledig och har väntat länge nog
+  useEffect(() => {
+    const tryAutoAssign = async () => {
+      if (agentStatus === 'available' && !activeSession && cooldown === 0) {
+        const { data, error } = await supabase.rpc('auto_assign_oldest_chat');
+        if (!error && data) {
+           setAgentStatus('busy');
+           setActiveSession({...data, status: 'assigned'});
+        }
+      }
+    };
+    const interval = setInterval(tryAutoAssign, 2000);
+    return () => clearInterval(interval);
+  }, [agentStatus, activeSession, cooldown]);
   // Koppla upp
   const handleConnect = async () => {
     setConnectError('');
@@ -248,19 +260,20 @@ export default function SupportView() {
     await fetchQueue();
   };
 
-  // Ta ärende manuellt
-  const handleTakeNextTicket = async () => {
-    if (activeSession) return;
-    const { data, error } = await supabase.rpc('manual_assign_oldest_chat');
+  // Ta emot ett tilldelat ärende
+  const handleAcceptAssigned = async () => {
+    if (!activeSession) return;
+    const { data, error } = await supabase.rpc('accept_assigned_chat_session', { target_session_id: activeSession.id });
     if (error || !data) {
-       console.error("Fel vid tilldelning:", error);
-       alert("Inga fler ärenden i kön, eller så saknar du behörighet för de ärenden som finns.");
+       console.error("Fel vid accept_assigned:", error);
+       alert("Ärendet kunde inte öppnas, eller togs av en annan agent.");
+       setActiveSession(null);
+       setAgentStatus('available');
        await fetchQueue();
        return;
     }
     
     // Vi fick ett ärende, sätt det som aktivt
-    setAgentStatus('busy');
     setActiveSession({...data, status: 'active'});
     
     // Auto-fill signature for email tickets
@@ -271,9 +284,6 @@ export default function SupportView() {
       }
     }
   };
-
-  // (Gamla knappen för att ta ärende togs bort)
-
   const toggleNotifications = async () => {
     if (!('Notification' in window)) {
       alert('Din webbläsare stödjer tyvärr inte notiser.');
@@ -515,8 +525,29 @@ export default function SupportView() {
         </div>
       )}
 
-      {/* ─── Aktiv chatt ─── */}
-      {activeSession && (
+      {/* ─── Tilldelat ärende (Väntar på att du klickar Ta ärende) ─── */}
+      {activeSession && activeSession.status === 'assigned' && (
+        <div style={{ padding: '2rem', textAlign: 'center', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.4)', borderRadius: '12px', marginBottom: '1rem' }}>
+          <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '1rem' }}>🔔</span>
+          <h3 style={{ margin: '0 0 0.5rem 0', color: '#fff' }}>Du har tilldelats ett nytt ärende!</h3>
+          <p style={{ margin: '0 0 1.5rem 0', color: 'var(--text-secondary)' }}>
+            {activeSession.ticket_type === 'email' ? '📧 E-post' : '💬 Chatt'} från {activeSession.profiles?.email || activeSession.customer_email || 'Okänd'}
+          </p>
+          <button 
+            onClick={handleAcceptAssigned}
+            style={{
+              background: 'var(--accent-gradient)', border: 'none', color: '#fff',
+              padding: '1rem 2rem', borderRadius: '8px', cursor: 'pointer',
+              fontSize: '1.2rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+              boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)'
+            }}>
+            <span>⚡</span> Ta ärende
+          </button>
+        </div>
+      )}
+
+      {/* ─── Aktiv chatt / mejl (Öppen för redigering) ─── */}
+      {activeSession && activeSession.status === 'active' && (
         <div style={{
           background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.3)',
           borderRadius: '12px', marginBottom: '1rem', overflow: 'hidden'
@@ -655,31 +686,11 @@ export default function SupportView() {
           <>
             {/* Väntande summering */}
             {pendingQueue.length > 0 && !activeSession && (
-              <div style={{ padding: '2rem', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)' }}>
-                <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Väntar på hjälp: {pendingQueue.length} ärenden</h3>
-                
-                {agentStatus === 'available' && cooldown === 0 && (
-                  <button 
-                    onClick={handleTakeNextTicket}
-                    style={{
-                      marginTop: '1.5rem',
-                      background: 'var(--accent-color)',
-                      color: 'white',
-                      border: 'none',
-                      padding: '1rem 3rem',
-                      borderRadius: '50px',
-                      fontSize: '1.1rem',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
-                      transition: 'transform 0.1s'
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                    onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                  >
-                    Ta nästa ärende
-                  </button>
-                )}
+              <div style={{ padding: '2rem', textAlign: 'center', background: 'rgba(0,0,0,0.2)' }}>
+                <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-secondary)' }}>Väntar på hjälp: {pendingQueue.length} ärenden</h3>
+                <p style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  När du är "Ledig" tilldelas du automatiskt nästa ärende i kön.
+                </p>
               </div>
             )}
 
@@ -688,36 +699,6 @@ export default function SupportView() {
                 Inga väntande ärenden just nu.
               </div>
             )}
-
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {/* Väntande ärenden (Lista) */}
-              {!activeSession && pendingQueue.map(s => (
-                <div key={s.id} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)',
-                  gap: '1rem', flexWrap: 'wrap'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px rgba(16,185,129,0.5)' }} />
-                    <div>
-                      {s.ticket_type === 'email' ? (
-                        <>
-                           <div style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>📧 Från: {s.customer_email || s.profiles?.email || 'Okänd avsändare'}</div>
-                           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Till: {s.inbound_address || 'Okänd mottagare'}</div>
-                           {s.email_subject && <div style={{ fontSize: '0.85rem', fontStyle: 'italic', color: 'rgba(255,255,255,0.8)' }}>Ämne: {s.email_subject}</div>}
-                        </>
-                      ) : (
-                        <div style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>
-                          💬 Chatt: {s.profiles?.email || 'Anonym besökare'}
-                        </div>
-                      )}
-                      <div style={{ fontSize: '0.75rem', color: '#10b981', marginTop: '0.3rem', fontWeight: 'bold' }}>
-                        ⏳ Väntat i {formatWait(s.created_at)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
 
               {/* Aktiva av kollega */}
               {takenByOthers.map(s => (
@@ -776,7 +757,6 @@ export default function SupportView() {
                   </div>
                 </div>
               ))}
-            </div>
           </>
         )}
       </div>
