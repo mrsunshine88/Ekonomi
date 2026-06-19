@@ -490,7 +490,7 @@ function App() {
         </div>
       </main>
 
-      <ChatBubble />
+      {currentView !== 'support' && <ChatBubble />}
     </div>
   );
 }

@@ -44,7 +44,6 @@ export default function SupportView() {
 
   // Kö
   const [queue, setQueue] = useState<ChatSession[]>([]);
-  const [queueTab, setQueueTab] = useState<'chat' | 'email'>('chat');
 
   // Aktiv chatt
   const [activeSession, setActiveSession] = useState<ChatSession | null>(null);
@@ -224,48 +223,7 @@ export default function SupportView() {
     return () => { supabase.removeChannel(channel); };
   }, [activeSession]);
 
-  // Auto-Routing: Tilldela äldsta ärendet om jag är ledig och har väntat längst
-  useEffect(() => {
-    let active = true;
-    const tryAutoAssign = async () => {
-      const pendingQueue = queue.filter(s => s.status === 'waiting');
-      if (agentStatus === 'available' && cooldown === 0 && !activeSession && pendingQueue.length > 0) {
-        // Räkna ut om jag är den lediga agenten som väntat längst
-        const availableAgents = allAgents.filter(a => 
-          a.status === 'available' && a.updated_at
-        ).sort((a, b) => new Date(a.updated_at!).getTime() - new Date(b.updated_at!).getTime());
-        
-        if (availableAgents.length > 0 && availableAgents[0].agent_id === user?.id) {
-           const { data, error } = await supabase.rpc('auto_assign_oldest_chat');
-           if (error) {
-              console.error("Auto-assign error:", error);
-              setConnectError('Fel vid auto-tilldelning: ' + error.message);
-           }
-           if (data && active) {
-             setAgentStatus('busy');
-             // fetchQueue kommer snart via Realtime och sätter activeSession (via useEffect),
-             // men vi kan sätta det direkt för snabbare UI.
-             const enrichedSession = pendingQueue.find(q => q.id === data.id) || data;
-             setActiveSession({...enrichedSession, status: 'assigned'});
-             if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-               new Notification('Kundtjänst', { body: 'Ett ärende har tilldelats dig!' });
-             }
-           }
-        } else if (availableAgents.length > 0) {
-           // Not my turn
-        } else {
-           // I am not in availableAgents!
-           if (user?.id && !allAgents.some(a => a.agent_id === user.id)) {
-              // Workaround: if I am not in allAgents yet, fetch them!
-              fetchAgents();
-           }
-        }
-      }
-    };
-
-    const timer = setInterval(tryAutoAssign, 2000);
-    return () => clearInterval(timer);
-  }, [agentStatus, cooldown, activeSession, queue, allAgents, user, notificationsEnabled]);
+  // (Auto-Routing borttaget, nu använder vi manuell "Ta nästa ärende"-knapp)
 
   // Koppla upp
   const handleConnect = async () => {
@@ -290,24 +248,23 @@ export default function SupportView() {
     await fetchQueue();
   };
 
-  // Ta ärende (när det har blivit "assigned" till mig)
-  const handleAcceptAssigned = async () => {
-    if (!activeSession) return;
-    const { data, error } = await supabase.rpc('accept_assigned_chat_session', {
-      target_session_id: activeSession.id
-    });
+  // Ta ärende manuellt
+  const handleTakeNextTicket = async () => {
+    if (activeSession) return;
+    const { data, error } = await supabase.rpc('manual_assign_oldest_chat');
     if (error || !data) {
-       console.error("Fel vid accept:", error);
-       alert("Ärendet kunde inte öppnas, eller togs av en annan agent.");
-       setActiveSession(null);
-       setAgentStatus('available');
-       setCooldown(20);
+       console.error("Fel vid tilldelning:", error);
+       alert("Inga fler ärenden i kön, eller så saknar du behörighet för de ärenden som finns.");
+       await fetchQueue();
        return;
     }
-    setActiveSession({...activeSession, status: 'active'});
+    
+    // Vi fick ett ärende, sätt det som aktivt
+    setAgentStatus('busy');
+    setActiveSession({...data, status: 'active'});
     
     // Auto-fill signature for email tickets
-    if (activeSession.ticket_type === 'email') {
+    if (data.ticket_type === 'email') {
       const sig = localStorage.getItem('agent_signature') || agentSignature;
       if (sig && !inputText.trim()) {
         setInputText(`\n\n--\nMed vänliga hälsningar,\n${sig}\nSmart Ekonomi`);
@@ -401,11 +358,9 @@ export default function SupportView() {
   const statusLabel: Record<AgentStatusType, string> = { offline: 'Frånkopplad', available: 'Ledig', busy: 'I ärende', post_work: 'Efterarbete', break: 'Rast', lunch: 'Lunch' };
   const statusIcon: Record<AgentStatusType, string> = { offline: '⚫', available: '🟢', busy: '🟡', post_work: '📝', break: '☕', lunch: '🍔' };
 
-  const pendingQueue = queue.filter(s => s.status === 'waiting' && !s.assigned_to && (s.ticket_type || 'chat') === queueTab);
-  const pendingChatCount = queue.filter(s => s.status === 'waiting' && !s.assigned_to && (s.ticket_type || 'chat') === 'chat').length;
-  const pendingEmailCount = queue.filter(s => s.status === 'waiting' && !s.assigned_to && s.ticket_type === 'email').length;
-  const takenByMe = queue.filter(s => s.assigned_to === user?.id && s.status === 'active' && (s.ticket_type || 'chat') === queueTab);
-  const takenByOthers = queue.filter(s => s.assigned_to && s.assigned_to !== user?.id && s.status === 'active' && (s.ticket_type || 'chat') === queueTab);
+  const pendingQueue = queue.filter(s => s.status === 'waiting' && !s.assigned_to);
+  const takenByOthers = queue.filter(s => s.assigned_to && s.assigned_to !== user?.id && s.status === 'active');
+  const takenByMe = queue.filter(s => s.assigned_to === user?.id && s.status === 'active');
 
   const fullscreenStyles: React.CSSProperties = isFullscreen ? {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -607,28 +562,15 @@ export default function SupportView() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '0.4rem' }}>
-              {activeSession.status === 'assigned' ? (
-                <button
-                  onClick={handleAcceptAssigned}
-                  style={{
-                    background: '#10b981', color: '#fff', border: 'none',
-                    padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem',
-                    boxShadow: '0 0 10px rgba(16,185,129,0.5)', animation: 'pulse 1.5s infinite'
-                  }}
-                >
-                  🔔 Ta ärende
-                </button>
-              ) : (
-                <button
-                  onClick={handleClose}
-                  style={{
-                    background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)',
-                    padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem'
-                  }}
-                >
-                  ✅ Avsluta ärende
-                </button>
-              )}
+              <button
+                onClick={handleClose}
+                style={{
+                  background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)',
+                  padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem'
+                }}
+              >
+                ✅ Avsluta ärende
+              </button>
             </div>
           </div>
 
@@ -698,62 +640,56 @@ export default function SupportView() {
       )}
 
       {/* ─── Kön ─── */}
-        <div style={{
-          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: '12px', overflow: 'hidden'
-        }}>
-          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-            <button
-              onClick={() => setQueueTab('chat')}
-              style={{
-                flex: 1, padding: '1rem', border: 'none', background: queueTab === 'chat' ? 'rgba(255,255,255,0.05)' : 'transparent',
-                color: queueTab === 'chat' ? '#fff' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem',
-                borderBottom: queueTab === 'chat' ? '2px solid #10b981' : '2px solid transparent'
-              }}
-            >
-              💬 Chatt-kö ({pendingChatCount})
-            </button>
-            <button
-              onClick={() => setQueueTab('email')}
-              style={{
-                flex: 1, padding: '1rem', border: 'none', background: queueTab === 'email' ? 'rgba(255,255,255,0.05)' : 'transparent',
-                color: queueTab === 'email' ? '#fff' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem',
-                borderBottom: queueTab === 'email' ? '2px solid #10b981' : '2px solid transparent'
-              }}
-            >
-              📧 Mejl-kö ({pendingEmailCount})
-            </button>
-          </div>
-
-          {cooldown > 0 && agentStatus === 'available' ? (
-            <div style={{ padding: '2rem', textAlign: 'center' }}>
-              <div style={{ marginBottom: '1rem', color: '#10b981', fontWeight: 'bold', fontSize: '1.1rem' }}>
-                ⏳ Andrum... {cooldown} sekunder
-              </div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                Kön visas snart igen. Du hinner byta status i rullgardinen ovan.
-              </div>
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', overflow: 'hidden' }}>
+        
+        {cooldown > 0 && agentStatus === 'available' ? (
+          <div style={{ padding: '2rem', textAlign: 'center' }}>
+            <div style={{ marginBottom: '1rem', color: '#10b981', fontWeight: 'bold', fontSize: '1.1rem' }}>
+              ⏳ Andrum... {cooldown} sekunder
             </div>
-          ) : (
-            <>
-              {pendingQueue.length === 0 && takenByOthers.length === 0 && !activeSession && (
-                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                  Inga väntande ärenden just nu.
-                </div>
-              )}
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              Kön visas snart igen. Du hinner byta status i rullgardinen ovan.
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Väntande summering */}
+            {pendingQueue.length > 0 && !activeSession && (
+              <div style={{ padding: '2rem', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)' }}>
+                <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Väntar på hjälp: {pendingQueue.length} ärenden</h3>
+                
+                {agentStatus === 'available' && cooldown === 0 && (
+                  <button 
+                    onClick={handleTakeNextTicket}
+                    style={{
+                      marginTop: '1.5rem',
+                      background: 'var(--accent-color)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '1rem 3rem',
+                      borderRadius: '50px',
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+                      transition: 'transform 0.1s'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                    onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    Ta nästa ärende
+                  </button>
+                )}
+              </div>
+            )}
 
-              {/* Väntande summering */}
-              {pendingQueue.length > 0 && !activeSession && (
-                <div style={{ padding: '1rem 1.5rem', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                    Väntar på hjälp: {pendingQueue.length} ärenden
-                  </div>
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    Längsta väntetid: {formatWait(pendingQueue[0].created_at)}
-                  </div>
-                </div>
-              )}
+            {pendingQueue.length === 0 && takenByOthers.length === 0 && !activeSession && (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                Inga väntande ärenden just nu.
+              </div>
+            )}
 
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               {/* Väntande ärenden (Lista) */}
               {!activeSession && pendingQueue.map(s => (
                 <div key={s.id} style={{
@@ -840,9 +776,10 @@ export default function SupportView() {
                   </div>
                 </div>
               ))}
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
+      </div>
 
       {/* ─── Signatur Modal ─── */}
       {showSignatureModal && (

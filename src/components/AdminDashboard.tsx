@@ -21,8 +21,18 @@ function SupportQueueWidget() {
   const [waitingChat, setWaitingChat] = useState(0);
   const [waitingSupport, setWaitingSupport] = useState(0);
   const [waitingInfo, setWaitingInfo] = useState(0);
-  const [longestWait, setLongestWait] = useState<string | null>(null);
+  const [longestWaitChat, setLongestWaitChat] = useState<string | null>(null);
+  const [longestWaitSupport, setLongestWaitSupport] = useState<string | null>(null);
+  const [longestWaitInfo, setLongestWaitInfo] = useState<string | null>(null);
   const [agentCount, setAgentCount] = useState(0);
+
+  const formatWait = (oldestDate: Date | null) => {
+    if (!oldestDate) return null;
+    const secs = Math.floor((Date.now() - oldestDate.getTime()) / 1000);
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
 
   const fetchQueueStats = async () => {
     const { data } = await supabase
