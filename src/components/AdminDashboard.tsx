@@ -407,15 +407,12 @@ export default function AdminDashboard() {
 
 
   // Dölj meddelanden automatiskt efter 5 sekunder
-  // Inaktiverat för felsökning
-  /*
   useEffect(() => {
     if (msg) {
       const timer = setTimeout(() => setMsg(''), 5000);
       return () => clearTimeout(timer);
     }
   }, [msg]);
-  */
 
   const fetchMembersList = async () => {
     try {
