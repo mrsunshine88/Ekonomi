@@ -297,7 +297,6 @@ export default function SupportView() {
       });
       setInputText('');
       if (activeSession.ticket_type === 'email') {
-        alert('E-post skickad!');
         await handleClose();
       }
     } catch (err) {
