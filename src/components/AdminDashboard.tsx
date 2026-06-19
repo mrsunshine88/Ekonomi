@@ -1343,39 +1343,42 @@ export default function AdminDashboard() {
                     </div>
                   )}
                 </div>
-                {m.email !== 'apersson508@gmail.com' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.5rem' }}>
-                      <button onClick={() => handleToggleVip(m.email, m.is_vip)} disabled={loading} style={{ flex: '1 1 auto', background: m.is_vip ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.08)', color: m.is_vip ? '#10b981' : '#fff', border: `1px solid ${m.is_vip ? '#10b981' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
-                        {m.is_vip ? '💎 VIP' : 'Gör VIP'}
-                      </button>
-                      <button onClick={() => handleToggleAdmin(m.email, m.is_admin)} disabled={loading} style={{ flex: '1 1 auto', background: m.is_admin ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.08)', color: m.is_admin ? '#a855f7' : '#fff', border: `1px solid ${m.is_admin ? '#a855f7' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
-                        {m.is_admin ? '👑 Admin' : 'Gör Admin'}
-                      </button>
-                      <button onClick={() => handleToggleChatAgent(m.email, m.chat_agent, m.handles_chat, m.handles_email)} disabled={loading} style={{ flex: '1 1 auto', background: m.chat_agent ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.08)', color: m.chat_agent ? '#10b981' : '#fff', border: `1px solid ${m.chat_agent ? 'rgba(16,185,129,0.5)' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
-                        {m.chat_agent ? '💬 KS PÅ' : '💬 KS AV'}
-                      </button>
-                      <button onClick={() => handleToggleBan(m.id, m.is_banned)} disabled={loading} style={{ flex: '1 1 auto', background: m.is_banned ? 'rgba(244,63,94,0.2)' : 'rgba(255,255,255,0.08)', color: m.is_banned ? '#f43f5e' : '#fff', border: `1px solid ${m.is_banned ? '#f43f5e' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
-                        {m.is_banned ? '🔓 Lås upp' : '🚫 Blockera'}
-                      </button>
-                      <button onClick={() => handleDeleteUser(m.id, m.email)} disabled={loading} style={{ flex: '1 1 auto', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
-                        🗑️ Radera
-                      </button>
-                    </div>
-                    {m.chat_agent && (
-                      <div style={{ display: 'flex', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
-                          <input type="checkbox" checked={m.handles_chat} onChange={(e) => handleUpdateAgentQueues(m.email, e.target.checked, m.handles_email)} style={{ accentColor: '#10b981' }} />
-                          Chatt-kö
-                        </label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
-                          <input type="checkbox" checked={m.handles_email} onChange={(e) => handleUpdateAgentQueues(m.email, m.handles_chat, e.target.checked)} style={{ accentColor: '#10b981' }} />
-                          Mejl-kö
-                        </label>
-                      </div>
+                {/* Knapp-rad: Alla knappar renderas, men blockera/radera inaktiveras för ägaren */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.5rem' }}>
+                    <button onClick={() => handleToggleVip(m.email, m.is_vip)} disabled={loading} style={{ flex: '1 1 auto', background: m.is_vip ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.08)', color: m.is_vip ? '#10b981' : '#fff', border: `1px solid ${m.is_vip ? '#10b981' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+                      {m.is_vip ? '💎 VIP' : 'Gör VIP'}
+                    </button>
+                    <button onClick={() => handleToggleAdmin(m.email, m.is_admin)} disabled={loading || m.email === 'apersson508@gmail.com'} style={{ flex: '1 1 auto', background: m.is_admin ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.08)', color: m.is_admin ? '#a855f7' : '#fff', border: `1px solid ${m.is_admin ? '#a855f7' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: m.email === 'apersson508@gmail.com' ? 'not-allowed' : 'pointer', fontSize: '0.8rem', fontWeight: 600, opacity: m.email === 'apersson508@gmail.com' ? 0.5 : 1 }}>
+                      {m.is_admin ? '👑 Admin' : 'Gör Admin'}
+                    </button>
+                    <button onClick={() => handleToggleChatAgent(m.email, m.chat_agent, m.handles_chat, m.handles_email)} disabled={loading} style={{ flex: '1 1 auto', background: m.chat_agent ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.08)', color: m.chat_agent ? '#10b981' : '#fff', border: `1px solid ${m.chat_agent ? 'rgba(16,185,129,0.5)' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+                      {m.chat_agent ? '💬 KS PÅ' : '💬 KS AV'}
+                    </button>
+                    {m.email !== 'apersson508@gmail.com' && (
+                      <>
+                        <button onClick={() => handleToggleBan(m.id, m.is_banned)} disabled={loading} style={{ flex: '1 1 auto', background: m.is_banned ? 'rgba(244,63,94,0.2)' : 'rgba(255,255,255,0.08)', color: m.is_banned ? '#f43f5e' : '#fff', border: `1px solid ${m.is_banned ? '#f43f5e' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+                          {m.is_banned ? '🔓 Lås upp' : '🚫 Blockera'}
+                        </button>
+                        <button onClick={() => handleDeleteUser(m.id, m.email)} disabled={loading} style={{ flex: '1 1 auto', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+                          🗑️ Radera
+                        </button>
+                      </>
                     )}
                   </div>
-                )}
+                  {m.chat_agent && (
+                    <div style={{ display: 'flex', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                        <input type="checkbox" checked={m.handles_chat} onChange={(e) => handleUpdateAgentQueues(m.email, e.target.checked, m.handles_email)} style={{ accentColor: '#10b981' }} />
+                        Chatt-kö
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                        <input type="checkbox" checked={m.handles_email} onChange={(e) => handleUpdateAgentQueues(m.email, m.handles_chat, e.target.checked)} style={{ accentColor: '#10b981' }} />
+                        Mejl-kö
+                      </label>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
             {membersList.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Inga medlemmar hittades.</div>}
