@@ -200,9 +200,12 @@ export default function SupportView() {
     const tryAutoAssign = async () => {
       if (agentStatus === 'available' && !activeSession && cooldown === 0) {
         const { data, error } = await supabase.rpc('auto_assign_oldest_chat');
-        if (!error && data) {
-           setAgentStatus('busy');
-           setActiveSession({...data, status: 'assigned'});
+        if (!error && data && data.success) {
+           const { data: sessionData } = await supabase.from('chat_sessions').select('*').eq('id', data.session_id).single();
+           if (sessionData) {
+             setAgentStatus('busy');
+             setActiveSession({...sessionData, status: 'assigned'});
+           }
         }
       }
     };
