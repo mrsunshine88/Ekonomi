@@ -375,16 +375,7 @@ export default function SupportView() {
                 {statusIcon[agentStatus]} Du: {statusLabel[agentStatus]}
               </span>
             </div>
-            {/* Andra agenter */}
-            {allAgents.filter(a => a.agent_id !== user?.id && a.status !== 'offline').map(a => (
-              <div key={a.agent_id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: 0.75 }}>
-                <div style={{
-                  width: 8, height: 8, borderRadius: '50%',
-                  background: statusColor[a.status]
-                }} />
-                <span style={{ fontSize: '0.85rem' }}>{statusIcon[a.status]} {statusLabel[a.status]}</span>
-              </div>
-            ))}
+            {/* Andra agenter borttaget enligt begäran */}
           </div>
 
           {/* Status-väljare & Koppla-knappar */}

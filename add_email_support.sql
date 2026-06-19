@@ -144,8 +144,9 @@ BEGIN
 
     IF v_session_id IS NOT NULL THEN
         UPDATE chat_sessions
-        SET status = 'active',
-            agent_id = v_agent_id,
+        SET status = 'assigned',
+            assigned_to = v_agent_id,
+            assigned_name = (SELECT email FROM profiles WHERE id = v_agent_id),
             updated_at = NOW()
         WHERE id = v_session_id;
 
@@ -154,7 +155,7 @@ BEGIN
         VALUES (v_session_id, v_agent_id, 'system', 'En agent har tagit över ärendet.');
 
         -- Uppdatera agentens status till busy
-        UPDATE chat_agents_status SET status = 'busy', last_ping = NOW() WHERE agent_id = v_agent_id;
+        UPDATE agent_sessions SET status = 'busy', updated_at = NOW() WHERE agent_id = v_agent_id;
 
         RETURN jsonb_build_object('success', true, 'session_id', v_session_id);
     END IF;

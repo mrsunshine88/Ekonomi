@@ -256,7 +256,7 @@ export default function ChatBubble() {
                   // Skicka ett meddelande om att kunden lämnat chatten, men stäng inte sessionen för agenten
                   await supabase.from('chat_messages').insert({
                     session_id: sessionId,
-                    sender_type: 'visitor',
+                    sender_type: 'user',
                     message: '👋 *Kunden har stängt chatten*'
                   });
                 }
