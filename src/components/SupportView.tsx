@@ -102,6 +102,17 @@ export default function SupportView() {
   // Hämta agent-sessioner och kö
   const fetchQueue = async () => {};
 
+  // Auto-timeout om man inte tar ett tilldelat ärende inom 60 sekunder
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    if (activeSession?.status === 'assigned') {
+      timeoutId = setTimeout(() => {
+        handleSetStatus('other_absence');
+      }, 60000);
+    }
+    return () => clearTimeout(timeoutId);
+  }, [activeSession?.status]);
+
 
 
   // Hämta min egen agent-status vid mount
@@ -621,7 +632,7 @@ export default function SupportView() {
             <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '1rem', fontWeight: '500' }}>
               {activeSession?.status === 'assigned' ? (
                 <span style={{ color: '#10b981', fontWeight: 'bold', animation: 'pulse-text 1.5s infinite', width: '100%', textAlign: 'center' }}>
-                  🔔 Nytt ärende från {activeSession.ticket_type === 'email' ? '📧 E-post' : '💬 Chatt'}: {activeSession.profiles?.email || activeSession.customer_email || 'Okänd'}
+                  🔔 Nytt ärende {activeSession.ticket_type === 'email' ? 'till 📧 E-post' : 'från 💬 Chatt'}: {activeSession.profiles?.email || activeSession.customer_email || 'Okänd'}
                 </span>
               ) : (
                 <>
