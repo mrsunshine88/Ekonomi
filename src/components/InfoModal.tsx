@@ -158,7 +158,7 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
           {type === 'privacy' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <p>
-                <strong style={{ color: '#fff' }}>Personuppgiftsansvarig:</strong> {contactInfo.company} (org.nr {contactInfo.orgnr}) är personuppgiftsansvarig för behandlingen av dina uppgifter i appen.
+                <strong style={{ color: '#fff' }}>Personuppgiftsansvarig:</strong> {contactInfo.company}{visibility.orgnr && contactInfo.orgnr ? ` (org.nr ${contactInfo.orgnr})` : ''} är personuppgiftsansvarig för behandlingen av dina uppgifter i appen.
               </p>
               <p>
                 <strong style={{ color: '#fff' }}>Vilka uppgifter vi samlar in:</strong> Vi samlar enbart in din e-postadress (krävs för inloggning) samt de ekonomiska siffror och texter (såsom räkningar) du frivilligt matar in i systemet.
