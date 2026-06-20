@@ -275,10 +275,6 @@ export default function SupportView() {
     }
   };
 
-      }
-    }
-  };
-
   const handleSendNewEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEmailTo.trim() || !newEmailSubject.trim() || !newEmailMessage.trim() || isSendingNewEmail) return;
