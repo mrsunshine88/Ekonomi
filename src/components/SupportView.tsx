@@ -448,7 +448,12 @@ export default function SupportView() {
   // Stäng ärende
   const handleClose = async () => {
     if (!activeSession) return;
-    await supabase.rpc('release_chat_session', { target_session_id: activeSession.id, next_status: 'available' });
+    const { error } = await supabase.rpc('release_chat_session', { target_session_id: activeSession.id });
+    if (error) {
+      console.error('Misslyckades att stänga ärendet:', error);
+      alert('Kunde inte stänga ärendet. Vänligen försök igen.');
+      return;
+    }
     setActiveSession(null);
     setAgentStatus('available');
     setStatusUpdatedAt(new Date().toISOString());
