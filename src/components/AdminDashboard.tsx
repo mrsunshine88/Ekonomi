@@ -401,13 +401,13 @@ export default function AdminDashboard() {
   
 
   const [contactCompany, setContactCompany] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
+  const [contactOrgnr, setContactOrgnr] = useState('');
+  const [contactVat, setContactVat] = useState('');
   const [contactAddress, setContactAddress] = useState('');
 
   const [showCompany, setShowCompany] = useState(true);
-  const [showEmail, setShowEmail] = useState(true);
-  const [showPhone, setShowPhone] = useState(true);
+  const [showOrgnr, setShowOrgnr] = useState(true);
+  const [showVat, setShowVat] = useState(true);
   const [showAddress, setShowAddress] = useState(true);
   
   const [loginDemoEnabled, setLoginDemoEnabled] = useState(false);
@@ -540,13 +540,13 @@ export default function AdminDashboard() {
       const { data } = await supabase.from('global_settings').select('key, value');
       if (data) {
         setContactCompany(data.find(d => d.key === 'contact_company')?.value || '');
-        setContactEmail(data.find(d => d.key === 'contact_email')?.value || '');
-        setContactPhone(data.find(d => d.key === 'contact_phone')?.value || '');
+        setContactOrgnr(data.find(d => d.key === 'contact_orgnr')?.value || '');
+        setContactVat(data.find(d => d.key === 'contact_vat')?.value || '');
         setContactAddress(data.find(d => d.key === 'contact_address')?.value || '');
         
         setShowCompany(data.find(d => d.key === 'show_contact_company')?.value !== 'false');
-        setShowEmail(data.find(d => d.key === 'show_contact_email')?.value !== 'false');
-        setShowPhone(data.find(d => d.key === 'show_contact_phone')?.value !== 'false');
+        setShowOrgnr(data.find(d => d.key === 'show_contact_orgnr')?.value !== 'false');
+        setShowVat(data.find(d => d.key === 'show_contact_vat')?.value !== 'false');
         setShowAddress(data.find(d => d.key === 'show_contact_address')?.value !== 'false');
         
         setLoginDemoEnabled(data.find(d => d.key === 'login_demo_enabled')?.value === 'true');
@@ -747,12 +747,12 @@ export default function AdminDashboard() {
     try {
       const calls = [
         supabase.rpc('set_global_setting', { setting_key: 'contact_company', setting_value: contactCompany }),
-        supabase.rpc('set_global_setting', { setting_key: 'contact_email', setting_value: contactEmail }),
-        supabase.rpc('set_global_setting', { setting_key: 'contact_phone', setting_value: contactPhone }),
+        supabase.rpc('set_global_setting', { setting_key: 'contact_orgnr', setting_value: contactOrgnr }),
+        supabase.rpc('set_global_setting', { setting_key: 'contact_vat', setting_value: contactVat }),
         supabase.rpc('set_global_setting', { setting_key: 'contact_address', setting_value: contactAddress }),
         supabase.rpc('set_global_setting', { setting_key: 'show_contact_company', setting_value: showCompany.toString() }),
-        supabase.rpc('set_global_setting', { setting_key: 'show_contact_email', setting_value: showEmail.toString() }),
-        supabase.rpc('set_global_setting', { setting_key: 'show_contact_phone', setting_value: showPhone.toString() }),
+        supabase.rpc('set_global_setting', { setting_key: 'show_contact_orgnr', setting_value: showOrgnr.toString() }),
+        supabase.rpc('set_global_setting', { setting_key: 'show_contact_vat', setting_value: showVat.toString() }),
         supabase.rpc('set_global_setting', { setting_key: 'show_contact_address', setting_value: showAddress.toString() })
       ];
       
@@ -1224,40 +1224,40 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>E-postadress</label>
-            <input 
-              type="email" 
-              value={contactEmail}
-              onChange={e => setContactEmail(e.target.value)}
-              placeholder="Ex: info@exempel.se"
-              style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
-            />
-            <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <input type="checkbox" checked={showEmail} onChange={e => setShowEmail(e.target.checked)} id="show_email" />
-              <label htmlFor="show_email" style={{ fontSize: '0.85rem' }}>Visa på hemsidan</label>
-            </div>
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Telefonnummer</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Organisationsnummer</label>
             <input 
               type="text" 
-              value={contactPhone}
-              onChange={e => setContactPhone(e.target.value)}
-              placeholder="Ex: 070-123 45 67"
+              value={contactOrgnr}
+              onChange={e => setContactOrgnr(e.target.value)}
+              placeholder="Ex: 556123-4567"
               style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
             />
             <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <input type="checkbox" checked={showPhone} onChange={e => setShowPhone(e.target.checked)} id="show_phone" />
-              <label htmlFor="show_phone" style={{ fontSize: '0.85rem' }}>Visa på hemsidan</label>
+              <input type="checkbox" checked={showOrgnr} onChange={e => setShowOrgnr(e.target.checked)} id="show_orgnr" />
+              <label htmlFor="show_orgnr" style={{ fontSize: '0.85rem' }}>Visa på hemsidan</label>
             </div>
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Adress</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Momsregistreringsnummer (VAT)</label>
+            <input 
+              type="text" 
+              value={contactVat}
+              onChange={e => setContactVat(e.target.value)}
+              placeholder="Ex: SE556123456701"
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
+            />
+            <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input type="checkbox" checked={showVat} onChange={e => setShowVat(e.target.checked)} id="show_vat" />
+              <label htmlFor="show_vat" style={{ fontSize: '0.85rem' }}>Visa på hemsidan</label>
+            </div>
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Säte/Adress</label>
             <input 
               type="text" 
               value={contactAddress}
               onChange={e => setContactAddress(e.target.value)}
-              placeholder="Ex: Storgatan 1"
+              placeholder="Ex: Storgatan 1, Stockholm"
               style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff' }}
             />
             <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

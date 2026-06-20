@@ -11,20 +11,20 @@ interface InfoModalProps {
 export default function InfoModal({ type, onClose }: InfoModalProps) {
   const [contactInfo, setContactInfo] = useState<{
     company: string;
-    email: string;
+    orgnr: string;
     address: string;
-    phone: string;
+    vat: string;
   }>({
     company: '',
-    email: '',
+    orgnr: '',
     address: '',
-    phone: ''
+    vat: ''
   });
   const [visibility, setVisibility] = useState({
     company: true,
-    email: true,
+    orgnr: true,
     address: true,
-    phone: true
+    vat: true
   });
   const [loading, setLoading] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
@@ -65,22 +65,28 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
   ];
 
   useEffect(() => {
+    // Förhindra scroll i bakgrunden
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
+
+  useEffect(() => {
     const fetchContactInfo = async () => {
       setLoading(true);
       const { data } = await supabase.from('global_settings').select('key, value');
       if (data) {
         const info = {
           company: data.find(d => d.key === 'contact_company')?.value || 'SmartEkonomi AB',
-          email: data.find(d => d.key === 'contact_email')?.value || 'info@exempel.se',
+          orgnr: data.find(d => d.key === 'contact_orgnr')?.value || '-',
           address: data.find(d => d.key === 'contact_address')?.value || '-',
-          phone: data.find(d => d.key === 'contact_phone')?.value || '-'
+          vat: data.find(d => d.key === 'contact_vat')?.value || '-'
         };
         setContactInfo(info);
         setVisibility({
           company: data.find(d => d.key === 'show_contact_company')?.value !== 'false',
-          email: data.find(d => d.key === 'show_contact_email')?.value !== 'false',
+          orgnr: data.find(d => d.key === 'show_contact_orgnr')?.value !== 'false',
           address: data.find(d => d.key === 'show_contact_address')?.value !== 'false',
-          phone: data.find(d => d.key === 'show_contact_phone')?.value !== 'false'
+          vat: data.find(d => d.key === 'show_contact_vat')?.value !== 'false'
         });
       }
       setLoading(false);
@@ -145,7 +151,7 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
           {type === 'privacy' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <p>
-                <strong style={{ color: '#fff' }}>Personuppgiftsansvarig:</strong> {contactInfo.company} ({contactInfo.email}) är personuppgiftsansvarig för behandlingen av dina uppgifter i appen.
+                <strong style={{ color: '#fff' }}>Personuppgiftsansvarig:</strong> {contactInfo.company} (org.nr {contactInfo.orgnr}) är personuppgiftsansvarig för behandlingen av dina uppgifter i appen.
               </p>
               <p>
                 <strong style={{ color: '#fff' }}>Vilka uppgifter vi samlar in:</strong> Vi samlar enbart in din e-postadress (krävs för inloggning) samt de ekonomiska siffror och texter (såsom räkningar) du frivilligt matar in i systemet.
@@ -240,7 +246,9 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                   {visibility.company && (
                     <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
                       <strong style={{ color: '#fff' }}>{contactInfo.company}</strong>
-                      {visibility.address && <span style={{ display: 'block' }}>{contactInfo.address}</span>}
+                      {visibility.orgnr && <span style={{ display: 'block' }}>Org.nr: {contactInfo.orgnr}</span>}
+                      {visibility.vat && <span style={{ display: 'block' }}>Momsregistreringsnummer/VAT: {contactInfo.vat}</span>}
+                      {visibility.address && <span style={{ display: 'block', marginTop: '0.25rem' }}>Säte: {contactInfo.address}</span>}
                     </div>
                   )}
                 </div>
