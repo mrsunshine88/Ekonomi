@@ -48,6 +48,7 @@ export default function SupportView() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [, setSessionTick] = useState(0);
+  const [statusUpdatedAt, setStatusUpdatedAt] = useState<string | null>(null);
   
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [agentSignature, setAgentSignature] = useState('');
@@ -110,10 +111,13 @@ export default function SupportView() {
     const init = async () => {
       const { data } = await supabase
         .from('agent_sessions')
-        .select('status')
+        .select('status, updated_at')
         .eq('agent_id', user.id)
         .maybeSingle();
-      if (data) setAgentStatus(data.status as any);
+      if (data) {
+        setAgentStatus(data.status as any);
+        setStatusUpdatedAt(data.updated_at);
+      }
       await fetchQueue();
 
 
@@ -230,6 +234,7 @@ export default function SupportView() {
       return;
     }
     setAgentStatus('available');
+    setStatusUpdatedAt(new Date().toISOString());
   };
 
   // Koppla från
@@ -243,6 +248,7 @@ export default function SupportView() {
     }
     await supabase.rpc('agent_disconnect');
     setAgentStatus('offline');
+    setStatusUpdatedAt(null);
     setActiveSession(null);
     await fetchQueue();
   };
@@ -387,6 +393,7 @@ export default function SupportView() {
     await supabase.rpc('release_chat_session', { target_session_id: activeSession.id, next_status: 'available' });
     setActiveSession(null);
     setAgentStatus('available');
+    setStatusUpdatedAt(new Date().toISOString());
     setCooldown(20);
     await fetchQueue();
   };
@@ -409,6 +416,7 @@ export default function SupportView() {
       return;
     }
     setAgentStatus(newStatus);
+    setStatusUpdatedAt(new Date().toISOString());
     setCooldown(0);
   };
 
@@ -418,6 +426,16 @@ export default function SupportView() {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
     return `${m}:${String(s).padStart(2, '0')}`;
+  };
+
+  const formatDuration = (isoStr: string | null) => {
+    if (!isoStr) return '00:00';
+    const secs = Math.floor((Date.now() - new Date(isoStr).getTime()) / 1000);
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
   const statusColor: Record<AgentStatusType, string> = { offline: '#6b7280', available: '#10b981', busy: '#f59e0b', post_work: '#f97316', break: '#8b5cf6', lunch: '#ec4899', other_absence: '#ef4444' };
@@ -608,8 +626,9 @@ export default function SupportView() {
               ) : (
                 <>
                   <span style={{ color: statusColor[agentStatus] }}>Status: {statusLabel[agentStatus]}</span>
-                  <span>Väntande ärenden: 0</span>
-                  <span>Uppkopplad: {agentStatus !== 'offline' ? '00:00' : '--:--'}</span>
+                  {agentStatus !== 'offline' && (
+                    <span>Tid: {formatDuration(statusUpdatedAt)}</span>
+                  )}
                   {agentStatus === 'available' && cooldown > 0 && (
                     <span style={{ color: '#f59e0b' }}>(Efterarbete {cooldown}s)</span>
                   )}

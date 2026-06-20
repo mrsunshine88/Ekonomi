@@ -138,15 +138,15 @@ function SupportQueueWidget() {
 
 // ─── Agent Live Monitor Widget ───────────────────────────────────────────────
 function AgentLiveMonitor() {
-  type AgentStatusType = 'offline' | 'available' | 'busy' | 'post_work' | 'break' | 'lunch';
+  type AgentStatusType = 'offline' | 'available' | 'busy' | 'post_work' | 'break' | 'lunch' | 'other_absence';
   interface AgentInfo { agent_id: string; status: AgentStatusType; updated_at: string; agent_email?: string; }
 
   const [agents, setAgents] = useState<AgentInfo[]>([]);
   const [, setTick] = useState(0); // force re-render for timer
 
-  const statusColor: Record<AgentStatusType, string> = { offline: '#6b7280', available: '#10b981', busy: '#f59e0b', post_work: '#f97316', break: '#8b5cf6', lunch: '#ec4899' };
-  const statusLabel: Record<AgentStatusType, string> = { offline: 'Frånkopplad', available: 'Ledig', busy: 'I ärende', post_work: 'Efterarbete', break: 'Rast', lunch: 'Lunch' };
-  const statusIcon: Record<AgentStatusType, string> = { offline: '⚫', available: '🟢', busy: '🟡', post_work: '📝', break: '☕', lunch: '🍔' };
+  const statusColor: Record<AgentStatusType, string> = { offline: '#6b7280', available: '#10b981', busy: '#f59e0b', post_work: '#f97316', break: '#8b5cf6', lunch: '#ec4899', other_absence: '#ef4444' };
+  const statusLabel: Record<AgentStatusType, string> = { offline: 'Frånkopplad', available: 'Ledig', busy: 'I ärende', post_work: 'Efterarbete', break: 'Rast', lunch: 'Lunch', other_absence: 'Övrig frånvaro' };
+  const statusIcon: Record<AgentStatusType, string> = { offline: '⚫', available: '🟢', busy: '🟡', post_work: '📝', break: '☕', lunch: '🍔', other_absence: '⛔' };
 
   const fetchAgents = async () => {
     // Hämta alla agenter som inte är offline
