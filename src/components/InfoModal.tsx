@@ -196,8 +196,13 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                       <span style={{ fontSize: '1.5rem' }}>💬</span> För kunder
                     </h3>
                     <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                      Har du problem med appen, funkar inte bankfilen, vill du avsluta din prenumeration eller har frågor om ditt konto?
+                      Har du problem med appen eller frågor om ditt konto?
                     </p>
+                    <ul style={{ margin: '0', paddingLeft: '1.5rem', color: '#e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.85rem' }}>
+                      <li>Jag kommer inte in</li>
+                      <li>Hur funkar bankfilen?</li>
+                      <li>Jag vill säga upp prenumerationen</li>
+                    </ul>
                     <a href="mailto:support@smartekonomi.nu" style={{ 
                       display: 'inline-flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center',
                       background: 'rgba(255,255,255,0.05)',
@@ -222,11 +227,13 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                     boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                   }}>
                     <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
-                      <span style={{ fontSize: '1.5rem' }}>🏢</span> För press & samarbeten
+                      <span style={{ fontSize: '1.5rem' }}>🏢</span> För press, samarbeten och övriga frågor
                     </h3>
-                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                      Vill ni skriva om oss, samarbeta kring en tjänst, eller undrar ni om vi kan sponsra ert event?
-                    </p>
+                    <ul style={{ margin: '0', paddingLeft: '1.5rem', color: '#e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.85rem' }}>
+                      <li>Vi vill skriva om er i tidningen</li>
+                      <li>Vi vill samarbeta</li>
+                      <li>Kan ni sponsra vårt event?</li>
+                    </ul>
                     <a href="mailto:info@smartekonomi.nu" style={{ 
                       display: 'inline-flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center',
                       background: 'rgba(255,255,255,0.05)',
