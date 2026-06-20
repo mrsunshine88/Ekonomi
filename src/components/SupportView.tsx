@@ -435,8 +435,9 @@ export default function SupportView() {
         </div>
       )}
 
-      <div style={{
-        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+      {!(activeSession && activeSession.status === 'active') && (
+        <div style={{
+          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '12px', padding: '1rem 1.5rem', marginBottom: '1.5rem',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem'
         }}>
@@ -452,7 +453,6 @@ export default function SupportView() {
                 {statusIcon[agentStatus]} Du: {statusLabel[agentStatus]}
               </span>
             </div>
-            {/* Andra agenter borttaget enligt begäran */}
           </div>
 
           {/* Status-väljare & Koppla-knappar */}
@@ -550,7 +550,8 @@ export default function SupportView() {
               </button>
             </div>
           </div>
-      </div>
+        </div>
+      )}
 
       {/* ─── Felmeddelande vid uppkoppling ─── */}
       {connectError && (
@@ -600,7 +601,8 @@ export default function SupportView() {
               borderRadius: '12px', marginBottom: '1rem', overflow: 'hidden',
               display: 'flex', flexDirection: 'column',
               border: '1px solid rgba(255,255,255,0.1)',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.3)'
+              boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+              minHeight: '65vh'
             }}>
               {/* Header (Top bar) */}
               <div style={{ 
@@ -669,7 +671,7 @@ export default function SupportView() {
                 </div>
 
                 {/* Text-editor yta */}
-                <div style={{ display: 'flex', flexDirection: 'column', paddingTop: '1rem', paddingBottom: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', paddingTop: '1rem', paddingBottom: '1rem', flex: 1 }}>
                   <textarea
                     placeholder="Skriv ditt svar här..."
                     value={inputText}
@@ -677,7 +679,7 @@ export default function SupportView() {
                     style={{
                       width: '100%', border: 'none', background: 'transparent', 
                       color: '#e2e8f0', fontSize: '1rem', resize: 'vertical', outline: 'none', 
-                      fontFamily: 'inherit', lineHeight: '1.6', minHeight: '150px'
+                      fontFamily: 'inherit', lineHeight: '1.6', minHeight: '350px', flex: 1
                     }}
                   />
                   
@@ -726,7 +728,7 @@ export default function SupportView() {
               
               {/* Meddelanden (Chatt) */}
               <div ref={scrollRef} style={{
-                height: '35vh', maxHeight: '320px', minHeight: '180px',
+                height: '60vh', minHeight: '400px',
                 overflowY: 'auto', padding: '1rem',
                 display: 'flex', flexDirection: 'column', gap: '0.6rem'
               }}>
