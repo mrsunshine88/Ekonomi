@@ -322,12 +322,7 @@ export default function SupportView() {
       setNewEmailMessage('');
       setShowNewEmailModal(false);
       
-      const sessionData = await supabase.from('chat_sessions').select('*').eq('id', session.id).single();
-      if(sessionData.data) {
-        setActiveSession({...sessionData.data, status: 'active'});
-        setAgentStatus('busy');
-        await supabase.from('agent_sessions').update({ status: 'busy' }).eq('agent_id', user?.id);
-      }
+      alert('Mejlet har skickats till kön för utskick!');
     } catch (err) {
       console.error('Kunde inte skapa e-post:', err);
       alert('Ett fel uppstod när mejlet skulle skapas.');
