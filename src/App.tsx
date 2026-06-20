@@ -100,7 +100,8 @@ function App() {
 
   // ─── Supabase Realtime Presence ─────────────────────────────────────────
   useEffect(() => {
-    if (isDemoMode) return;
+    // 🔒 MILITÄR SÄKERHET: Endast inloggade användare ansluter till Realtime
+    if (isDemoMode || !user) return;
 
     let presenceSessionId = sessionStorage.getItem('presence_session_id');
     if (!presenceSessionId) {
@@ -126,8 +127,8 @@ function App() {
       if (status === 'SUBSCRIBED') {
         channel.track({
           session_id: presenceSessionId,
-          user_id: user?.id || 'anonymous',
-          role: isAdmin ? 'admin' : user ? 'user' : 'anonymous',
+          user_id: user.id,
+          role: isAdmin ? 'admin' : 'user',
           page: VIEW_TO_URL[currentView as keyof typeof VIEW_TO_URL] || '/',
           page_label: VIEW_LABELS[currentView] || currentView,
           page_entered_at: new Date().toISOString(),
@@ -144,7 +145,8 @@ function App() {
 
   // Uppdatera presence-sida när vyn ändras
   useEffect(() => {
-    if (isDemoMode) return;
+    // 🔒 MILITÄR SÄKERHET: Endast inloggade användare
+    if (isDemoMode || !user) return;
     const channel = supabase.getChannels().find(c => c.topic === 'realtime:live-presence');
     if (channel && channel.state === 'joined') {
       const VIEW_LABELS: Record<string, string> = {
@@ -154,14 +156,14 @@ function App() {
       };
       channel.track({
         session_id: sessionStorage.getItem('presence_session_id'),
-        user_id: user?.id || 'anonymous',
-        role: isAdmin ? 'admin' : user ? 'user' : 'anonymous',
+        user_id: user.id,
+        role: isAdmin ? 'admin' : 'user',
         page: VIEW_TO_URL[currentView as keyof typeof VIEW_TO_URL] || '/',
         page_label: VIEW_LABELS[currentView] || currentView,
         page_entered_at: new Date().toISOString(),
       });
     }
-  }, [currentView]);
+  }, [currentView, isDemoMode, user, isAdmin]);
   // ────────────────────────────────────────────────────────────────────────
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
