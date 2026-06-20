@@ -68,6 +68,13 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
       questions: [
         { q: "Vad visar statistiken?", a: "Utvecklingen av inkomster, utgifter och kvarvarande pengar över tid." }
       ]
+    },
+    {
+      category: "🛡️ Integritet & GDPR",
+      questions: [
+        { q: "Är min data säker hos er?", a: "Din data är skyddad med strikt Row Level Security (RLS), vilket innebär att endast du har åtkomst till din information via applikationen." },
+        { q: "Hur exporterar eller raderar jag mitt konto?", a: "Under 'Mina Sidor' i appen (längst ner i den Farliga zonen) har du full kontroll över din data i enlighet med GDPR:\n- Exportera: Du kan med ett klick ladda ner en maskinläsbar Excel-fil som innehåller absolut all data vi har kopplat till dig (profil, inställningar, historik och ekonomi).\n- Radera: Om du väljer att radera ditt konto raderas det permanent. Vår strikta databasarkitektur garanterar att din data plockas bort från alla aktiva system utan att kvarlämna användarrelaterad information i systemet." }
+      ]
     }
   ];
 
