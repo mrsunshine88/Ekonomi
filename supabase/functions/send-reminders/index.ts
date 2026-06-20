@@ -41,59 +41,86 @@ serve(async () => {
     const targetMonthId = targetDate.toISOString().slice(0, 7); // Ex: "2026-07"
     
     let sentCount = 0;
+    const CHUNK_SIZE = 500;
 
-    for (const hh of households) {
-      // 2. Kolla om månaden är låst (har de fört över pengar?)
-      // Vi kollar om det finns några is_handled = true i month_handled_payments
+    // Helper för chunking av arrayer
+    const chunkArray = <T>(arr: T[], size: number): T[][] => {
+      const result = [];
+      for (let i = 0; i < arr.length; i += size) {
+        result.push(arr.slice(i, i + size));
+      }
+      return result;
+    };
+
+    const householdChunks = chunkArray(households, CHUNK_SIZE);
+
+    for (const chunk of householdChunks) {
+      const hhIds = chunk.map(hh => hh.household_id);
+
+      // 2. Batch-kolla om månaden är låst
       const { data: handled } = await supabase
         .from('month_handled_payments')
-        .select('is_handled')
-        .eq('household_id', hh.household_id)
+        .select('household_id')
+        .in('household_id', hhIds)
         .eq('month_id', targetMonthId)
-        .eq('is_handled', true)
-        .limit(1);
+        .eq('is_handled', true);
 
-      const isDone = handled && handled.length > 0;
+      const handledSet = new Set((handled || []).map(h => h.household_id));
+      const unhandledHhIds = hhIds.filter(id => !handledSet.has(id));
 
-      // Om de INTE är klara, skicka notis
-      if (!isDone) {
-        // Hämta alla användare i hushållet
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('household_id', hh.household_id);
+      if (unhandledHhIds.length === 0) continue;
 
-        if (profiles) {
-          for (const profile of profiles) {
-            // Hämta prenumerationer för användaren
-            const { data: subs } = await supabase
-              .from('push_subscriptions')
-              .select('id, subscription')
-              .eq('user_id', profile.id);
+      // 3. Batch-hämta profiler
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id')
+        .in('household_id', unhandledHhIds);
 
-            if (subs) {
-              for (const subRow of subs) {
-                try {
-                  const payload = JSON.stringify({
-                    title: 'Dags att fixa ekonomin! 💸',
-                    body: 'Ni har obetalda eller ohanterade gemensamma räkningar för denna månad.',
-                    url: '/'
-                  });
-                  await webpush.sendNotification(subRow.subscription, payload);
-                  sentCount++;
-                } catch (pushErr: unknown) {
-                  // Om prenumerationen är död (t.ex. användaren rensat data), radera den
-                  if (typeof pushErr === 'object' && pushErr !== null && 'statusCode' in pushErr) {
-                    if (pushErr.statusCode === 410 || pushErr.statusCode === 404) {
-                      await supabase.from('push_subscriptions').delete().eq('id', subRow.id);
-                    }
-                  }
-                  console.error("Fel vid push:", pushErr);
-                }
-              }
-            }
+      if (!profiles || profiles.length === 0) continue;
+      const userIds = profiles.map(p => p.id);
+
+      // 4. Batch-hämta push-prenumerationer
+      const { data: subs } = await supabase
+        .from('push_subscriptions')
+        .select('id, subscription')
+        .in('user_id', userIds);
+
+      if (!subs || subs.length === 0) continue;
+
+      const payload = JSON.stringify({
+        title: 'Dags att fixa ekonomin! 💸',
+        body: 'Ni har obetalda eller ohanterade gemensamma räkningar för denna månad.',
+        url: '/'
+      });
+
+      // 5. Parallella Push-notiser (Concurrent Chunking)
+      const pushPromises = subs.map(async (subRow) => {
+        try {
+          await webpush.sendNotification(subRow.subscription, payload);
+          return { success: true, id: subRow.id };
+        } catch (pushErr: any) {
+          // Permanenta fel markeras som Dead Letter
+          if (pushErr && (pushErr.statusCode === 410 || pushErr.statusCode === 404)) {
+            return { success: false, deadLetter: true, id: subRow.id };
           }
+          console.error("Fel vid push:", pushErr);
+          return { success: false, deadLetter: false, id: subRow.id };
         }
+      });
+
+      const results = await Promise.allSettled(pushPromises);
+      
+      const deadLetterIds: string[] = [];
+      for (const res of results) {
+        if (res.status === 'fulfilled') {
+          if (res.value.success) sentCount++;
+          if (res.value.deadLetter) deadLetterIds.push(res.value.id);
+        }
+      }
+
+      // 6. Dead Letter Cleanup i batch
+      if (deadLetterIds.length > 0) {
+        await supabase.from('push_subscriptions').delete().in('id', deadLetterIds);
       }
     }
 
