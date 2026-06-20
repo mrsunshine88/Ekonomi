@@ -469,10 +469,10 @@ export default function SupportView() {
             borderRadius: '16px', padding: '1.5rem 2rem',
             display: 'flex', flexDirection: 'column', gap: '1.5rem',
             boxShadow: '0 15px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
-            position: 'relative', overflow: 'hidden'
+            position: 'relative', overflow: 'visible'
           }}>
             {/* Subtle top gradient */}
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899)' }} />
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899)', borderRadius: '16px 16px 0 0' }} />
 
             {/* Header / Name */}
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.8rem', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
