@@ -409,7 +409,7 @@ export default function SupportView() {
 
   const statusColor: Record<AgentStatusType, string> = { offline: '#6b7280', available: '#10b981', busy: '#f59e0b', post_work: '#f97316', break: '#8b5cf6', lunch: '#ec4899' };
   const statusLabel: Record<AgentStatusType, string> = { offline: 'Frånkopplad', available: 'Ledig', busy: 'I ärende', post_work: 'Efterarbete', break: 'Rast', lunch: 'Lunch' };
-  const statusIcon: Record<AgentStatusType, string> = { offline: '⚫', available: '🟢', busy: '🟡', post_work: '📝', break: '☕', lunch: '🍔' };
+
 
   const fullscreenStyles: React.CSSProperties = isFullscreen ? {
     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -437,119 +437,146 @@ export default function SupportView() {
 
       {!(activeSession && activeSession.status === 'active') && (
         <div style={{
-          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: '12px', padding: '1rem 1.5rem', marginBottom: '1.5rem',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem'
+          background: '#0f172a',
+          border: '1px solid rgba(255,255,255,0.05)',
+          borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem',
+          display: 'flex', flexDirection: 'column', gap: '1rem',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.4)'
         }}>
-          {/* Min status */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {/* Status rad */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.8rem', alignItems: 'center' }}>
+            <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <div style={{
                 width: 10, height: 10, borderRadius: '50%',
                 background: statusColor[agentStatus],
                 boxShadow: `0 0 6px ${statusColor[agentStatus]}`
               }} />
-              <span style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>
-                {statusIcon[agentStatus]} Du: {statusLabel[agentStatus]}
-              </span>
+              Du: {statusLabel[agentStatus]}
+            </span>
+            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              <span>Väntande ärenden: 0</span>
+              <span>Uppkopplad: {agentStatus !== 'offline' ? '00:00' : '--:--'}</span>
             </div>
           </div>
 
-          {/* Status-väljare & Koppla-knappar */}
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            {agentStatus === 'offline' ? (
-              <button
-                onClick={handleConnect}
-                style={{
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  color: '#fff', border: 'none', padding: '0.6rem 1.4rem',
-                  borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem',
-                  boxShadow: '0 2px 10px rgba(16,185,129,0.35)'
-                }}
-              >
-                🟢 Koppla på
-              </button>
-            ) : (
-              <>
-                {/* Status dropdown – bara om inte i aktivt ärende */}
-                {agentStatus !== 'busy' && (
-                  <select
-                    value={agentStatus}
-                    onChange={(e) => handleSetStatus(e.target.value as AgentStatusType)}
-                    style={{
-                      padding: '0.5rem 0.7rem', fontSize: '0.9rem',
-                      background: 'rgba(0,0,0,0.3)', color: statusColor[agentStatus],
-                      border: `1px solid ${statusColor[agentStatus]}`,
-                      borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
-                      appearance: 'auto'
-                    }}
-                  >
-                    <option value="available">🟢 Ledig</option>
-                    <option value="post_work">📝 Efterarbete</option>
-                    <option value="break">☕ Rast</option>
-                    <option value="lunch">🍔 Lunch</option>
-                  </select>
-                )}
-                <button
-                  onClick={handleDisconnect}
-                  title={agentStatus === 'busy' ? 'Släpp ärendet och koppla från' : ''}
-                  style={{
-                    background: 'transparent', color: '#f43f5e',
-                    border: '1px solid #f43f5e', padding: '0.5rem 1rem',
-                    borderRadius: '8px', cursor: 'pointer',
-                    fontWeight: 'bold', fontSize: '0.85rem'
-                  }}
-                >
-                  🔴 Koppla från
-                </button>
-              </>
-            )}
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-              <button
-                onClick={openNewEmailModal}
-                style={{
-                  background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', color: '#fff', border: 'none',
-                  padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer',
-                  fontSize: '0.85rem', fontWeight: 'bold', boxShadow: '0 2px 8px rgba(139,92,246,0.3)'
-                }}
-              >
-                ✉️ Nytt mejl
-              </button>
-              <button
-                onClick={() => setShowSignatureModal(true)}
-                style={{
-                  background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)',
-                  padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer',
-                  fontSize: '0.8rem', fontWeight: 'bold'
-                }}
-              >
-                ⚙️ Signatur
-              </button>
-              <button
-                onClick={toggleNotifications}
-                style={{
-                  background: notificationsEnabled ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.05)',
-                  color: notificationsEnabled ? '#10b981' : 'var(--text-secondary)',
-                  border: notificationsEnabled ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.1)',
-                  padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer',
-                  fontSize: '0.8rem', fontWeight: 'bold'
-                }}
-              >
-                {notificationsEnabled ? '🔔 Notiser PÅ' : '🔕 Notiser AV'}
-              </button>
-              <button
-                onClick={() => setIsFullscreen(!isFullscreen)}
-                style={{
-                  background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none',
-                  padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer',
-                  fontSize: '0.9rem'
-                }}
-                title={isFullscreen ? "Stäng helskärm" : "Öppna helskärm"}
-              >
-                {isFullscreen ? '✖' : '🖵'}
-              </button>
-            </div>
+          {/* Runda Huvudknappar */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '2.5rem', padding: '1rem 0', flexWrap: 'wrap' }}>
+            
+            {/* Koppla på / Ledig - Grön */}
+            <button
+              onClick={agentStatus === 'offline' ? handleConnect : () => handleSetStatus('available')}
+              style={{
+                width: '70px', height: '70px', borderRadius: '50%',
+                background: agentStatus === 'available' ? '#10b981' : 'transparent',
+                border: `3px solid #10b981`,
+                color: agentStatus === 'available' ? '#fff' : '#10b981',
+                cursor: 'pointer', fontSize: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: agentStatus === 'available' ? '0 0 20px rgba(16,185,129,0.4)' : 'none',
+                transition: 'all 0.2s',
+                opacity: agentStatus === 'busy' ? 0.3 : 1
+              }}
+              title={agentStatus === 'offline' ? 'Koppla på' : 'Sätt status: Ledig'}
+              disabled={agentStatus === 'busy'}
+            >
+              👤
+            </button>
+
+            {/* Efterarbete - Orange */}
+            <button
+              onClick={() => handleSetStatus('post_work')}
+              style={{
+                width: '70px', height: '70px', borderRadius: '50%',
+                background: agentStatus === 'post_work' ? '#f59e0b' : 'transparent',
+                border: `3px solid #f59e0b`,
+                color: agentStatus === 'post_work' ? '#fff' : '#f59e0b',
+                cursor: agentStatus === 'offline' || agentStatus === 'busy' ? 'not-allowed' : 'pointer', 
+                fontSize: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: agentStatus === 'post_work' ? '0 0 20px rgba(245,158,11,0.4)' : 'none',
+                transition: 'all 0.2s',
+                opacity: agentStatus === 'offline' || agentStatus === 'busy' ? 0.3 : 1
+              }}
+              title="Sätt status: Efterarbete"
+              disabled={agentStatus === 'offline' || agentStatus === 'busy'}
+            >
+              📝
+            </button>
+
+            {/* Nytt mejl - Lila */}
+            <button
+              onClick={openNewEmailModal}
+              style={{
+                width: '70px', height: '70px', borderRadius: '50%',
+                background: 'transparent',
+                border: `3px solid #8b5cf6`,
+                color: '#8b5cf6',
+                cursor: 'pointer', fontSize: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.2s',
+                opacity: agentStatus === 'busy' ? 0.3 : 1
+              }}
+              title="Skapa nytt mejl"
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(139,92,246,0.1)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              ✉️
+            </button>
+
+            {/* Koppla från / Rast - Röd */}
+            <button
+              onClick={handleDisconnect}
+              style={{
+                width: '70px', height: '70px', borderRadius: '50%',
+                background: 'transparent',
+                border: `3px solid #f43f5e`,
+                color: '#f43f5e',
+                cursor: agentStatus === 'offline' ? 'not-allowed' : 'pointer', 
+                fontSize: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.2s',
+                opacity: agentStatus === 'offline' ? 0.3 : 1
+              }}
+              title="Koppla från"
+              disabled={agentStatus === 'offline'}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(244,63,94,0.1)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            >
+              🛑
+            </button>
           </div>
+
+          {/* Underverktyg */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.8rem' }}>
+            <button
+              onClick={() => setShowSignatureModal(true)}
+              style={{
+                background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', border: 'none',
+                cursor: 'pointer', fontSize: '1rem', padding: '0.5rem 0.8rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem'
+              }}
+              title="Signatur inställningar"
+            >
+              ⚙️ Signatur
+            </button>
+            <button
+              onClick={toggleNotifications}
+              style={{
+                background: notificationsEnabled ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)', 
+                color: notificationsEnabled ? '#10b981' : 'var(--text-secondary)', border: 'none',
+                cursor: 'pointer', fontSize: '1rem', padding: '0.5rem 0.8rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem'
+              }}
+              title={notificationsEnabled ? 'Notiser PÅ' : 'Notiser AV'}
+            >
+              {notificationsEnabled ? '🔔 PÅ' : '🔕 AV'}
+            </button>
+            <button
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              style={{
+                background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', border: 'none',
+                cursor: 'pointer', fontSize: '1rem', padding: '0.5rem 0.8rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem'
+              }}
+              title={isFullscreen ? "Stäng helskärm" : "Öppna helskärm"}
+            >
+              {isFullscreen ? '✖' : '🖵'} Helskärm
+            </button>
+          </div>
+
         </div>
       )}
 
@@ -612,7 +639,7 @@ export default function SupportView() {
               }}>
                 <button
                   onClick={(e) => handleSend(e as any)}
-                  disabled={isSending || !inputText.trim()}
+                  disabled={isSending || !inputText.trim() || !(activeSession.customer_email || activeSession.profiles?.email) || !activeSession.email_subject}
                   style={{
                     background: '#3b82f6', color: '#fff', border: 'none', 
                     padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', 
@@ -624,6 +651,14 @@ export default function SupportView() {
                   {isSending ? 'Skickar...' : 'Skicka ›'}
                 </button>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  {/* Status Badge */}
+                  <div style={{
+                    background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6',
+                    padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold',
+                    border: '1px solid rgba(59, 130, 246, 0.3)'
+                  }}>
+                    TAGET ÄRENDE
+                  </div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     <span>ID: {activeSession.id.slice(0, 8)}</span>
                     <span style={{ margin: '0 0.5rem' }}>•</span>
@@ -685,12 +720,19 @@ export default function SupportView() {
                   
                   {/* Tidigare meddelanden */}
                   <div style={{ 
-                    marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)',
-                    color: 'var(--text-secondary)', fontSize: '0.9rem', whiteSpace: 'pre-wrap', fontFamily: 'inherit',
-                    lineHeight: '1.5'
+                    marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)'
                   }}>
-                    <div style={{ marginBottom: '1rem' }}>--<br/>Ursprungligt meddelande:</div>
-                    {messages.filter(m => m.sender_type !== 'admin').map(m => m.message).join('\n\n') || "Kunde inte ladda mejlet..."}
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                      Ursprungligt meddelande:
+                    </div>
+                    <div style={{
+                      background: 'rgba(0,0,0,0.2)', borderLeft: '4px solid rgba(255,255,255,0.2)',
+                      padding: '1rem', borderRadius: '0 8px 8px 0',
+                      color: 'var(--text-secondary)', fontSize: '0.95rem', whiteSpace: 'pre-wrap', fontFamily: 'inherit',
+                      lineHeight: '1.5'
+                    }}>
+                      {messages.filter(m => m.sender_type !== 'admin').map(m => m.message).join('\n\n') || "Kunde inte ladda mejlet..."}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -861,12 +903,12 @@ export default function SupportView() {
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button 
                   onClick={handleSendNewEmail}
-                  disabled={isSendingNewEmail || !newEmailTo.trim() || !newEmailSubject.trim() || !newEmailMessage.trim()}
+                  disabled={isSendingNewEmail || !newEmailFrom.trim() || !newEmailTo.trim() || !newEmailSubject.trim() || !newEmailMessage.trim()}
                   style={{
                     background: '#2563eb', color: '#fff', border: 'none',
                     padding: '0.5rem 1.2rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem',
                     display: 'flex', alignItems: 'center', gap: '0.5rem',
-                    opacity: (isSendingNewEmail || !newEmailTo.trim() || !newEmailSubject.trim() || !newEmailMessage.trim()) ? 0.5 : 1,
+                    opacity: (isSendingNewEmail || !newEmailFrom.trim() || !newEmailTo.trim() || !newEmailSubject.trim() || !newEmailMessage.trim()) ? 0.5 : 1,
                     boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)'
                   }}
                 >
