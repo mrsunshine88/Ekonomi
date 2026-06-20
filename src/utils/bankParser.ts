@@ -84,7 +84,7 @@ const SYSTEM_ALIASES: Record<string, string> = {
 const SYSTEM_BILLS_ALL = Object.values(SYSTEM_CATEGORIES).flat();
 
 export function parseBankData(
-  jsonData: any[][], 
+  jsonData: (string | number | boolean | null)[][], 
   rules: HouseholdImportRule[],
   householdAccounts: { id: string, name: string }[],
   householdProfiles: { id: string, display_name?: string, email?: string }[] = [],
@@ -128,7 +128,7 @@ export function parseBankData(
 
     const rawDate = row[dateIdx];
     const rawDesc = row[descIdx];
-    let rawAmount = row[amountIdx];
+    const rawAmount = row[amountIdx];
 
     if (!rawDesc || (!rawAmount && rawAmount !== 0)) continue;
     

@@ -1,6 +1,6 @@
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
-import type { AppState } from './types';
+import type { AppState, Profile } from './types';
 import { calculateMonth } from './store';
 
 // Helper to style header row
@@ -376,10 +376,10 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
 };
 
 export interface GDPRData {
-  profile: any;
-  pushSubscriptions: any[];
-  chatSessions: any[];
-  agentSessions: any[];
+  profile: Profile | null;
+  pushSubscriptions: Record<string, unknown>[];
+  chatSessions: Record<string, unknown>[];
+  agentSessions: Record<string, unknown>[];
   localStorageData: Record<string, string>;
   state: AppState;
   userId: string;

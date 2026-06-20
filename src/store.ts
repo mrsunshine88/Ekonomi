@@ -214,7 +214,7 @@ export const useStore = create<StoreState>((set, get) => ({
           showTopTotal: settings.show_top_total,
           showPrivateTopTotal: settings.show_private_top_total
         } : { showSummary: true },
-        incomes: incomesData ? incomesData.map((i: any) => ({ id: i.id, userId: i.user_id, name: i.name, amount: Number(i.amount), type: i.type, payDate: i.pay_date })) : []
+        incomes: incomesData ? incomesData.map((i: { id: string, user_id: string, name: string, amount: string | number, type: 'fixed' | 'variable', pay_date?: string }) => ({ id: i.id, userId: i.user_id, name: i.name, amount: Number(i.amount), type: i.type, payDate: i.pay_date })) : []
       };
 
       if (monthBillAmounts) {
