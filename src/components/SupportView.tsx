@@ -67,6 +67,16 @@ export default function SupportView() {
     if (savedSignature) setAgentSignature(savedSignature);
   }, []);
 
+  // Förhindra scroll i bakgrunden när modaler är öppna (speciellt i mobilen)
+  useEffect(() => {
+    if (showNewEmailModal || showSignatureModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [showNewEmailModal, showSignatureModal]);
+
   // Timers för andrum och aktiv chatt
   useEffect(() => {
     const timer = setInterval(() => {
@@ -494,7 +504,7 @@ export default function SupportView() {
                 </button>
               </>
             )}
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <button
                 onClick={openNewEmailModal}
                 style={{
@@ -846,7 +856,7 @@ export default function SupportView() {
             </div>
 
             {/* Innehållsyta */}
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '0 2rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '0 1rem', overflowY: 'auto' }}>
               
               {/* Från-rad */}
               <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', padding: '0.35rem 0' }}>
