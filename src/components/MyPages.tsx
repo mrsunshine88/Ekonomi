@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
 import { useStore } from '../store';
 import { supabase } from '../supabase';
-import { exportToExcel, exportGDPRDataToExcel } from '../excel';
+import { exportGDPRDataToExcel } from '../excel';
 
 export default function MyPages() {
   const { user, householdId, role, refreshHousehold } = useAuth();
