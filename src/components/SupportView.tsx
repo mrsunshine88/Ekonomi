@@ -399,7 +399,12 @@ export default function SupportView() {
       if (error) console.error("Fel vid unclaim:", error);
       setActiveSession(null);
     }
-    await supabase.rpc('agent_set_status', { new_status: newStatus });
+    const { error: rpcError } = await supabase.rpc('agent_set_status', { new_status: newStatus });
+    if (rpcError) {
+      console.error("Fel vid byte av status:", rpcError);
+      alert("Kunde inte byta status: " + rpcError.message);
+      return;
+    }
     setAgentStatus(newStatus);
     if (newStatus === 'available') {
       setCooldown(20);
