@@ -3,7 +3,7 @@ import { supabase } from '../supabase';
 import { useAuth } from '../AuthContext';
 import { SUPPORT_EMAIL, INFO_EMAIL } from '../constants';
 
-type AgentStatusType = 'offline' | 'available' | 'busy' | 'post_work' | 'break' | 'lunch';
+type AgentStatusType = 'offline' | 'available' | 'busy' | 'post_work' | 'break' | 'lunch' | 'other_absence';
 
 
 interface ChatSession {
@@ -35,6 +35,7 @@ export default function SupportView() {
 
   // Agent-status
   const [agentStatus, setAgentStatus] = useState<AgentStatusType>('offline');
+  const [showAbsenceMenu, setShowAbsenceMenu] = useState(false);
 
 
   // Kö (nu dold i UI)
@@ -415,7 +416,8 @@ export default function SupportView() {
     return `${m}:${String(s).padStart(2, '0')}`;
   };
 
-  const statusColor: Record<AgentStatusType, string> = { offline: '#6b7280', available: '#10b981', busy: '#f59e0b', post_work: '#f97316', break: '#8b5cf6', lunch: '#ec4899' };
+  const statusColor: Record<AgentStatusType, string> = { offline: '#6b7280', available: '#10b981', busy: '#f59e0b', post_work: '#f97316', break: '#8b5cf6', lunch: '#ec4899', other_absence: '#ef4444' };
+  const statusLabel: Record<AgentStatusType, string> = { offline: 'Frånkopplad', available: 'Ledig', busy: 'I ärende', post_work: 'Efterarbete', break: 'Rast', lunch: 'Lunch', other_absence: 'Övrig frånvaro' };
 
 
 
@@ -473,19 +475,19 @@ export default function SupportView() {
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899)' }} />
 
             {/* Header / Name */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.8rem', alignItems: 'center' }}>
-              <span style={{ fontWeight: '800', fontSize: '1.2rem', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.6rem', letterSpacing: '-0.5px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.8rem', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+              <span style={{ fontWeight: '800', fontSize: '1.2rem', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.6rem', letterSpacing: '-0.5px', wordBreak: 'break-word' }}>
                 <div style={{
-                  width: 12, height: 12, borderRadius: '50%',
+                  width: 12, height: 12, borderRadius: '50%', flexShrink: 0,
                   background: statusColor[agentStatus],
                   boxShadow: `0 0 10px ${statusColor[agentStatus]}`
                 }} />
-                SmartAgent <span style={{ color: 'var(--text-secondary)', fontWeight: '400', fontSize: '1.1rem' }}>|</span> {displayAgentName}
+                SmartAgent <span style={{ color: 'var(--text-secondary)', fontWeight: '400', fontSize: '1.1rem' }}>|</span> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayAgentName}</span>
               </span>
             </div>
 
             {/* Runda Huvudknappar */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', padding: '0.5rem 0', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', padding: '0.5rem 0', flexWrap: 'wrap' }}>
               
               {/* Koppla på / Ledig / Ta ärende - Grön */}
               <button
@@ -514,28 +516,43 @@ export default function SupportView() {
                 )}
               </button>
 
-              {/* Efterarbete - Orange */}
-              <button
-                onClick={() => handleSetStatus('post_work')}
-                style={{
-                  width: '76px', height: '76px', borderRadius: '50%',
-                  background: agentStatus === 'post_work' ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : 'rgba(255,255,255,0.03)',
-                  border: agentStatus === 'post_work' ? 'none' : `2px solid #f59e0b`,
-                  color: agentStatus === 'post_work' ? '#fff' : '#f59e0b',
-                  cursor: agentStatus === 'offline' || agentStatus === 'busy' ? 'not-allowed' : 'pointer', 
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: agentStatus === 'post_work' ? '0 8px 25px rgba(245,158,11,0.5)' : 'none',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  opacity: agentStatus === 'offline' || agentStatus === 'busy' ? 0.3 : 1,
-                  transform: agentStatus === 'post_work' ? 'scale(1.05)' : 'scale(1)'
-                }}
-                title="Sätt status: Efterarbete"
-                disabled={agentStatus === 'offline' || agentStatus === 'busy'}
-                onMouseOver={(e) => { if(agentStatus !== 'post_work' && agentStatus !== 'offline' && agentStatus !== 'busy') e.currentTarget.style.background = 'rgba(245,158,11,0.1)'}}
-                onMouseOut={(e) => { if(agentStatus !== 'post_work' && agentStatus !== 'offline' && agentStatus !== 'busy') e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}}
-              >
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-              </button>
+              {/* Frånvaro Meny (Istället för bara Efterarbete) - Orange */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowAbsenceMenu(!showAbsenceMenu)}
+                  style={{
+                    width: '76px', height: '76px', borderRadius: '50%',
+                    background: (agentStatus === 'post_work' || agentStatus === 'break' || agentStatus === 'lunch' || agentStatus === 'other_absence') ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : 'rgba(255,255,255,0.03)',
+                    border: (agentStatus === 'post_work' || agentStatus === 'break' || agentStatus === 'lunch' || agentStatus === 'other_absence') ? 'none' : `2px solid #f59e0b`,
+                    color: (agentStatus === 'post_work' || agentStatus === 'break' || agentStatus === 'lunch' || agentStatus === 'other_absence') ? '#fff' : '#f59e0b',
+                    cursor: agentStatus === 'offline' || (agentStatus === 'busy' && activeSession?.status !== 'assigned') ? 'not-allowed' : 'pointer', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: (agentStatus === 'post_work' || agentStatus === 'break' || agentStatus === 'lunch' || agentStatus === 'other_absence') ? '0 8px 25px rgba(245,158,11,0.5)' : 'none',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    opacity: agentStatus === 'offline' || (agentStatus === 'busy' && activeSession?.status !== 'assigned') ? 0.3 : 1,
+                    transform: (agentStatus === 'post_work' || agentStatus === 'break' || agentStatus === 'lunch' || agentStatus === 'other_absence') ? 'scale(1.05)' : 'scale(1)'
+                  }}
+                  title="Sätt status: Frånvaro"
+                  disabled={agentStatus === 'offline' || (agentStatus === 'busy' && activeSession?.status !== 'assigned')}
+                  onMouseOver={(e) => { if(!['post_work', 'break', 'lunch', 'other_absence'].includes(agentStatus) && agentStatus !== 'offline' && !(agentStatus === 'busy' && activeSession?.status !== 'assigned')) e.currentTarget.style.background = 'rgba(245,158,11,0.1)'}}
+                  onMouseOut={(e) => { if(!['post_work', 'break', 'lunch', 'other_absence'].includes(agentStatus) && agentStatus !== 'offline' && !(agentStatus === 'busy' && activeSession?.status !== 'assigned')) e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}}
+                >
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                </button>
+                {showAbsenceMenu && (
+                  <div style={{
+                    position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: '0.8rem',
+                    background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '0.5rem',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', flexDirection: 'column', gap: '0.25rem',
+                    minWidth: '160px'
+                  }}>
+                    <button onClick={() => { handleSetStatus('post_work'); setShowAbsenceMenu(false); }} style={{ background: 'transparent', border: 'none', color: '#fff', padding: '0.6rem', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.9rem' }} onMouseOver={(e) => e.currentTarget.style.background='rgba(255,255,255,0.1)'} onMouseOut={(e) => e.currentTarget.style.background='transparent'}>📝 Efterarbete</button>
+                    <button onClick={() => { handleSetStatus('break'); setShowAbsenceMenu(false); }} style={{ background: 'transparent', border: 'none', color: '#fff', padding: '0.6rem', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.9rem' }} onMouseOver={(e) => e.currentTarget.style.background='rgba(255,255,255,0.1)'} onMouseOut={(e) => e.currentTarget.style.background='transparent'}>☕ Rast</button>
+                    <button onClick={() => { handleSetStatus('lunch'); setShowAbsenceMenu(false); }} style={{ background: 'transparent', border: 'none', color: '#fff', padding: '0.6rem', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.9rem' }} onMouseOver={(e) => e.currentTarget.style.background='rgba(255,255,255,0.1)'} onMouseOut={(e) => e.currentTarget.style.background='transparent'}>🍔 Lunch</button>
+                    <button onClick={() => { handleSetStatus('other_absence'); setShowAbsenceMenu(false); }} style={{ background: 'transparent', border: 'none', color: '#fff', padding: '0.6rem', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '0.9rem' }} onMouseOver={(e) => e.currentTarget.style.background='rgba(255,255,255,0.1)'} onMouseOut={(e) => e.currentTarget.style.background='transparent'}>⛔ Övrig frånvaro</button>
+                  </div>
+                )}
+              </div>
 
               {/* Nytt mejl - Lila */}
               <button
@@ -579,22 +596,26 @@ export default function SupportView() {
             </div>
 
             {/* Info under knapparna */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem', fontWeight: '500' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '1rem', fontWeight: '500' }}>
               {activeSession?.status === 'assigned' ? (
-                <span style={{ color: '#10b981', fontWeight: 'bold', animation: 'pulse-text 1.5s infinite' }}>
+                <span style={{ color: '#10b981', fontWeight: 'bold', animation: 'pulse-text 1.5s infinite', width: '100%', textAlign: 'center' }}>
                   🔔 Nytt ärende från {activeSession.ticket_type === 'email' ? '📧 E-post' : '💬 Chatt'}: {activeSession.profiles?.email || activeSession.customer_email || 'Okänd'}
                 </span>
               ) : (
                 <>
+                  <span style={{ color: statusColor[agentStatus] }}>Status: {statusLabel[agentStatus]}</span>
                   <span>Väntande ärenden: 0</span>
                   <span>Uppkopplad: {agentStatus !== 'offline' ? '00:00' : '--:--'}</span>
+                  {agentStatus === 'available' && cooldown > 0 && (
+                    <span style={{ color: '#f59e0b' }}>(Nytt ärende om {cooldown}s)</span>
+                  )}
                 </>
               )}
             </div>
           </div>
 
-          {/* Underverktyg UTANFÖR rutan */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem', paddingRight: '0.5rem' }}>
+          {/* Underverktyg UTANFÖR rutan (Fixad för mobilen med flexWrap) */}
+          <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '1rem', marginTop: '1.5rem' }}>
             <button
               onClick={() => setShowSignatureModal(true)}
               style={{
