@@ -787,7 +787,7 @@ export default function SupportView() {
               {/* Header (Top bar) */}
               <div style={{ 
                 background: '#252b43', padding: '0.75rem 1rem', 
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem',
                 borderBottom: '1px solid rgba(255,255,255,0.05)'
               }}>
                 <button
@@ -803,7 +803,7 @@ export default function SupportView() {
                 >
                   {isSending ? 'Skickar...' : 'Skicka ›'}
                 </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                   {/* Status Badge */}
                   <div style={{
                     background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6',
@@ -897,7 +897,7 @@ export default function SupportView() {
             }}>
               <div style={{
                 background: 'var(--accent-gradient)', padding: '1rem 1.5rem',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem'
               }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '0.5rem' }}>
