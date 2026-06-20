@@ -449,6 +449,12 @@ export default function SupportView() {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
+  const cleanEmail = (raw: string | null | undefined) => {
+    if (!raw) return 'Okänd';
+    const match = raw.match(/<([^>]+)>/);
+    return match ? match[1] : raw;
+  };
+
   const statusColor: Record<AgentStatusType, string> = { offline: '#6b7280', available: '#10b981', busy: '#f59e0b', post_work: '#f97316', break: '#8b5cf6', lunch: '#ec4899', other_absence: '#ef4444' };
   const statusLabel: Record<AgentStatusType, string> = { offline: 'Frånkopplad', available: 'Ledig', busy: 'I ärende', post_work: 'Efterarbete', break: 'Rast', lunch: 'Lunch', other_absence: 'Övrig frånvaro' };
 
@@ -632,7 +638,7 @@ export default function SupportView() {
             <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '1rem', fontWeight: '500' }}>
               {activeSession?.status === 'assigned' ? (
                 <span style={{ color: '#10b981', fontWeight: 'bold', animation: 'pulse-text 1.5s infinite', width: '100%', textAlign: 'center' }}>
-                  🔔 Nytt ärende {activeSession.ticket_type === 'email' ? 'till 📧 E-post' : 'från 💬 Chatt'}: {activeSession.ticket_type === 'email' ? (activeSession.inbound_address || 'Okänd') : (activeSession.profiles?.email || activeSession.customer_email || 'Okänd')}
+                  🔔 Nytt ärende {activeSession.ticket_type === 'email' ? 'till 📧 E-post' : 'från 💬 Chatt'}: {activeSession.ticket_type === 'email' ? cleanEmail(activeSession.inbound_address) : (activeSession.profiles?.email || activeSession.customer_email || 'Okänd')}
                 </span>
               ) : (
                 <>
