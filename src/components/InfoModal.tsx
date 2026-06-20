@@ -204,8 +204,8 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                       <li>Jag vill säga upp prenumerationen</li>
                     </ul>
                     <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.2rem', position: 'relative', zIndex: 1, maxWidth: '100%' }}>
-                      <a href="mailto:support@smartekonomi.nu" className="contact-btn-green" style={{ flex: 1, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 'auto', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        📧 support@smartekonomi.nu
+                      <a href="mailto:support@smartekonomi.nu" className="contact-btn-green" style={{ flex: 1, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 'auto', minWidth: 0, padding: '0 0.5rem' }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 'clamp(0.75rem, 3.5vw, 0.9rem)' }}>📧 support@smartekonomi.nu</span>
                       </a>
                       <button 
                         onClick={() => handleCopy('support@smartekonomi.nu')}
@@ -238,8 +238,8 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                       <li>Kan ni sponsra vårt event?</li>
                     </ul>
                     <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.2rem', position: 'relative', zIndex: 1, maxWidth: '100%' }}>
-                      <a href="mailto:info@smartekonomi.nu" className="contact-btn-blue" style={{ flex: 1, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 'auto', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        ✉️ info@smartekonomi.nu
+                      <a href="mailto:info@smartekonomi.nu" className="contact-btn-blue" style={{ flex: 1, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 'auto', minWidth: 0, padding: '0 0.5rem' }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 'clamp(0.75rem, 3.5vw, 0.9rem)' }}>✉️ info@smartekonomi.nu</span>
                       </a>
                       <button 
                         onClick={() => handleCopy('info@smartekonomi.nu')}
