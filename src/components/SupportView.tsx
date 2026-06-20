@@ -423,6 +423,18 @@ export default function SupportView() {
 
   return (
     <div style={fullscreenStyles}>
+      <style>{`
+        @keyframes pulse-green {
+          0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+          70% { box-shadow: 0 0 0 20px rgba(16, 185, 129, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        @keyframes pulse-text {
+          0% { opacity: 1; }
+          50% { opacity: 0.5; }
+          100% { opacity: 1; }
+        }
+      `}</style>
 
       {/* ─── Toppmeny ─── */}
       {/* Toast Notification */}
@@ -437,6 +449,7 @@ export default function SupportView() {
         </div>
       )}
 
+      {/* Kontrollpanel visas alltid om vi inte är INNE i en aktiv chatt */}
       {!(activeSession && activeSession.status === 'active') && (
         <div style={{ marginBottom: '2rem' }}>
           {/* Main "Phone" Box */}
@@ -466,26 +479,31 @@ export default function SupportView() {
             {/* Runda Huvudknappar */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', padding: '0.5rem 0', flexWrap: 'wrap' }}>
               
-              {/* Koppla på / Ledig - Grön */}
+              {/* Koppla på / Ledig / Ta ärende - Grön */}
               <button
-                onClick={agentStatus === 'offline' ? handleConnect : () => handleSetStatus('available')}
+                onClick={activeSession?.status === 'assigned' ? handleAcceptAssigned : (agentStatus === 'offline' ? handleConnect : () => handleSetStatus('available'))}
                 style={{
                   width: '76px', height: '76px', borderRadius: '50%',
-                  background: agentStatus === 'available' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'rgba(255,255,255,0.03)',
-                  border: agentStatus === 'available' ? 'none' : `2px solid #10b981`,
-                  color: agentStatus === 'available' ? '#fff' : '#10b981',
+                  background: (agentStatus === 'available' || activeSession?.status === 'assigned') ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'rgba(255,255,255,0.03)',
+                  border: (agentStatus === 'available' || activeSession?.status === 'assigned') ? 'none' : `2px solid #10b981`,
+                  color: (agentStatus === 'available' || activeSession?.status === 'assigned') ? '#fff' : '#10b981',
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: agentStatus === 'available' ? '0 8px 25px rgba(16,185,129,0.5)' : 'none',
+                  boxShadow: (agentStatus === 'available' && activeSession?.status !== 'assigned') ? '0 8px 25px rgba(16,185,129,0.5)' : 'none',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  opacity: agentStatus === 'busy' ? 0.3 : 1,
-                  transform: agentStatus === 'available' ? 'scale(1.05)' : 'scale(1)'
+                  opacity: (agentStatus === 'busy' && activeSession?.status !== 'assigned') ? 0.3 : 1,
+                  transform: (agentStatus === 'available' || activeSession?.status === 'assigned') ? 'scale(1.05)' : 'scale(1)',
+                  animation: activeSession?.status === 'assigned' ? 'pulse-green 1.5s infinite' : 'none',
                 }}
-                title={agentStatus === 'offline' ? 'Koppla på' : 'Sätt status: Ledig'}
-                disabled={agentStatus === 'busy'}
-                onMouseOver={(e) => { if(agentStatus !== 'available' && agentStatus !== 'busy') e.currentTarget.style.background = 'rgba(16,185,129,0.1)'}}
-                onMouseOut={(e) => { if(agentStatus !== 'available' && agentStatus !== 'busy') e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}}
+                title={activeSession?.status === 'assigned' ? 'Ta ärende' : (agentStatus === 'offline' ? 'Koppla på' : 'Sätt status: Ledig')}
+                disabled={agentStatus === 'busy' && activeSession?.status !== 'assigned'}
+                onMouseOver={(e) => { if(agentStatus !== 'available' && agentStatus !== 'busy' && activeSession?.status !== 'assigned') e.currentTarget.style.background = 'rgba(16,185,129,0.1)'}}
+                onMouseOut={(e) => { if(agentStatus !== 'available' && agentStatus !== 'busy' && activeSession?.status !== 'assigned') e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}}
               >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                {activeSession?.status === 'assigned' ? (
+                  <span style={{ fontSize: '1.8rem' }}>⚡</span>
+                ) : (
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                )}
               </button>
 
               {/* Efterarbete - Orange */}
@@ -554,8 +572,16 @@ export default function SupportView() {
 
             {/* Info under knapparna */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem', fontWeight: '500' }}>
-              <span>Väntande ärenden: 0</span>
-              <span>Uppkopplad: {agentStatus !== 'offline' ? '00:00' : '--:--'}</span>
+              {activeSession?.status === 'assigned' ? (
+                <span style={{ color: '#10b981', fontWeight: 'bold', animation: 'pulse-text 1.5s infinite' }}>
+                  🔔 Nytt ärende från {activeSession.ticket_type === 'email' ? '📧 E-post' : '💬 Chatt'}: {activeSession.profiles?.email || activeSession.customer_email || 'Okänd'}
+                </span>
+              ) : (
+                <>
+                  <span>Väntande ärenden: 0</span>
+                  <span>Uppkopplad: {agentStatus !== 'offline' ? '00:00' : '--:--'}</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -632,26 +658,7 @@ export default function SupportView() {
         </div>
       )}
 
-      {/* ─── Tilldelat ärende (Väntar på att du klickar Ta ärende) ─── */}
-      {activeSession && activeSession.status === 'assigned' && (
-        <div style={{ padding: '2rem', textAlign: 'center', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.4)', borderRadius: '12px', marginBottom: '1rem' }}>
-          <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '1rem' }}>🔔</span>
-          <h3 style={{ margin: '0 0 0.5rem 0', color: '#fff' }}>Du har tilldelats ett nytt ärende!</h3>
-          <p style={{ margin: '0 0 1.5rem 0', color: 'var(--text-secondary)' }}>
-            {activeSession.ticket_type === 'email' ? '📧 E-post' : '💬 Chatt'} från {activeSession.profiles?.email || activeSession.customer_email || 'Okänd'}
-          </p>
-          <button 
-            onClick={handleAcceptAssigned}
-            style={{
-              background: 'var(--accent-gradient)', border: 'none', color: '#fff',
-              padding: '1rem 2rem', borderRadius: '8px', cursor: 'pointer',
-              fontSize: '1.2rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-              boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)'
-            }}>
-            <span>⚡</span> Ta ärende
-          </button>
-        </div>
-      )}
+
 
       {/* ─── Aktiv chatt / mejl (Öppen för redigering) ─── */}
       {activeSession && activeSession.status === 'active' && (
