@@ -235,7 +235,10 @@ export default function SupportView() {
   const handleDisconnect = async () => {
     if (activeSession) {
       // Släpp tillbaka ärendet till kön via RPC för att kringgå RLS
-      await supabase.rpc('unclaim_chat_session', { target_session_id: activeSession.id });
+      const { error } = await supabase.rpc('unclaim_chat_session', { target_session_id: activeSession.id });
+      if (error) {
+        console.error("Fel vid unclaim:", error);
+      }
     }
     await supabase.rpc('agent_disconnect');
     setAgentStatus('offline');
@@ -389,6 +392,11 @@ export default function SupportView() {
     if (newStatus === 'offline') {
       await handleDisconnect();
       return;
+    }
+    if (activeSession && activeSession.status === 'assigned') {
+      const { error } = await supabase.rpc('unclaim_chat_session', { target_session_id: activeSession.id });
+      if (error) console.error("Fel vid unclaim:", error);
+      setActiveSession(null);
     }
     await supabase.rpc('agent_set_status', { new_status: newStatus });
     setAgentStatus(newStatus);
