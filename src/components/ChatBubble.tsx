@@ -242,12 +242,6 @@ export default function ChatBubble() {
           <div style={{ background: 'var(--accent-gradient)', padding: '15px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Kundservice</h3>
-              {sessionStatus === 'waiting' && queuePosition !== null && (
-                <div style={{ fontSize: '0.8rem', opacity: 0.9, marginTop: '2px' }}>Din köplats: {queuePosition}</div>
-              )}
-              {sessionStatus === 'assigned' && (
-                <div style={{ fontSize: '0.8rem', opacity: 0.9, color: '#10b981', marginTop: '2px', fontWeight: 'bold', animation: 'pulse 1.5s infinite' }}>Agent kopplas in...</div>
-              )}
             </div>
             <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
               <button onClick={() => setIsOpen(false)} title="Minimera" style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.5rem', lineHeight: '10px', paddingBottom: '8px' }}>_</button>
@@ -275,19 +269,62 @@ export default function ChatBubble() {
                 <p>👋 Hej! Hur kan vi hjälpa dig idag?</p>
               </div>
             ) : (
-              messages.map(msg => (
-                <div key={msg.id} style={{ 
-                  alignSelf: msg.sender_type === 'user' ? 'flex-end' : 'flex-start',
-                  background: msg.sender_type === 'user' ? 'var(--accent-color)' : 'rgba(255,255,255,0.1)',
-                  color: msg.sender_type === 'user' ? 'white' : 'var(--text-primary)',
-                  padding: '8px 12px',
-                  borderRadius: '12px',
-                  maxWidth: '80%',
-                  wordBreak: 'break-word'
-                }}>
-                  {msg.message}
-                </div>
-              ))
+              messages.map(msg => {
+                const isSystem = msg.sender_type === 'system';
+                return (
+                  <div key={msg.id} style={{ 
+                    alignSelf: msg.sender_type === 'user' ? 'flex-end' : 'flex-start',
+                    background: msg.sender_type === 'user' ? 'var(--accent-color)' : (isSystem ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255,255,255,0.1)'),
+                    color: msg.sender_type === 'user' ? 'white' : 'var(--text-primary)',
+                    padding: '8px 12px',
+                    borderRadius: '12px',
+                    maxWidth: '80%',
+                    wordBreak: 'break-word',
+                    border: isSystem ? '1px solid rgba(99, 102, 241, 0.3)' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    {msg.message}
+                  </div>
+                );
+              })
+            )}
+            
+            {/* Virtual System Messages */}
+            {sessionStatus === 'waiting' && queuePosition !== null && (
+              <div style={{ 
+                alignSelf: 'flex-start',
+                background: 'rgba(99, 102, 241, 0.15)',
+                color: 'var(--text-primary)',
+                padding: '8px 12px',
+                borderRadius: '12px',
+                maxWidth: '80%',
+                wordBreak: 'break-word',
+                border: '1px solid rgba(99, 102, 241, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                🤖 Din köplats är {queuePosition}.
+              </div>
+            )}
+            {sessionStatus === 'assigned' && (
+              <div style={{ 
+                alignSelf: 'flex-start',
+                background: 'rgba(99, 102, 241, 0.15)',
+                color: 'var(--text-primary)',
+                padding: '8px 12px',
+                borderRadius: '12px',
+                maxWidth: '80%',
+                wordBreak: 'break-word',
+                border: '1px solid rgba(99, 102, 241, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                🤖 Du kopplas nu fram till en kundservicemedarbetare...
+              </div>
             )}
           </div>
 

@@ -68,7 +68,8 @@ export default function SupportView() {
   const [statusUpdatedAt, setStatusUpdatedAt] = useState<string | null>(null);
   
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const [agentSignature, setAgentSignature] = useState('');
+  const [agentSignatureFirst, setAgentSignatureFirst] = useState('');
+  const [agentSignatureLast, setAgentSignatureLast] = useState('');
   const [showSignatureModal, setShowSignatureModal] = useState(false);
 
   // Nytt e-postmeddelande
@@ -82,8 +83,10 @@ export default function SupportView() {
 
   useEffect(() => {
     setNotificationsEnabled(localStorage.getItem('chat_notifications') === 'true');
-    const savedSignature = localStorage.getItem('agent_signature');
-    if (savedSignature) setAgentSignature(savedSignature);
+    const savedSignatureFirst = localStorage.getItem('agent_signature_first');
+    const savedSignatureLast = localStorage.getItem('agent_signature_last');
+    if (savedSignatureFirst) setAgentSignatureFirst(savedSignatureFirst);
+    if (savedSignatureLast) setAgentSignatureLast(savedSignatureLast);
   }, []);
 
   // Förhindra scroll i bakgrunden när modaler är öppna (speciellt i mobilen)
@@ -329,10 +332,22 @@ export default function SupportView() {
     
     // Auto-fill signature for email tickets
     if (data.ticket_type === 'email') {
-      const sig = localStorage.getItem('agent_signature') || agentSignature;
+      const first = localStorage.getItem('agent_signature_first') || agentSignatureFirst;
+      const last = localStorage.getItem('agent_signature_last') || agentSignatureLast;
+      const sig = [first, last].filter(Boolean).join(' ');
       if (sig && !inputText.trim()) {
         setInputText(`\n\n--\nMed vänliga hälsningar,\n${sig}\nSmart Ekonomi`);
       }
+    } else {
+      // It's a chat! Insert the AI system message greeting
+      const firstName = localStorage.getItem('agent_signature_first') || agentSignatureFirst || 'kundtjänst';
+      const greeting = `🤖 Du pratar med ${firstName}, vad kan jag hjälpa dig med?`;
+      
+      await supabase.from('chat_messages').insert({
+        session_id: activeSession.id,
+        sender_type: 'system',
+        message: greeting
+      });
     }
   };
   const toggleNotifications = async () => {
@@ -358,7 +373,9 @@ export default function SupportView() {
     if (agentStatus === 'available') {
       handleSetStatus('post_work');
     }
-    const sig = localStorage.getItem('agent_signature') || agentSignature;
+    const first = localStorage.getItem('agent_signature_first') || agentSignatureFirst;
+    const last = localStorage.getItem('agent_signature_last') || agentSignatureLast;
+    const sig = [first, last].filter(Boolean).join(' ');
     if (sig) {
       setNewEmailMessage(`\n\n--\nMed vänliga hälsningar,\n${sig}\nSmart Ekonomi`);
     } else {
@@ -520,7 +537,7 @@ export default function SupportView() {
     maxWidth: '900px', margin: '0 auto', padding: '1rem'
   };
 
-  const displayAgentName = agentSignature?.trim() || user?.email?.split('@')[0] || 'Agent';
+  const displayAgentName = agentSignatureFirst?.trim() || user?.email?.split('@')[0] || 'Agent';
 
   return (
     <div style={fullscreenStyles}>
@@ -1007,17 +1024,30 @@ export default function SupportView() {
             <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
               Fyll i ditt för- och efternamn. Detta kommer automatiskt klistras in i slutet av alla dina e-post-svar som en färdig mall.
             </p>
-            <input
-              type="text"
-              placeholder="T.ex. Anna Andersson"
-              value={agentSignature}
-              onChange={(e) => setAgentSignature(e.target.value)}
-              style={{
-                width: '100%', padding: '0.75rem', borderRadius: '8px',
-                border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)',
-                color: '#fff', marginBottom: '1.5rem', fontSize: '1rem'
-              }}
-            />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <input
+                type="text"
+                placeholder="Förnamn"
+                value={agentSignatureFirst}
+                onChange={(e) => setAgentSignatureFirst(e.target.value)}
+                style={{
+                  flex: 1, padding: '0.75rem', borderRadius: '8px',
+                  border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)',
+                  color: '#fff', marginBottom: '1.5rem', fontSize: '1rem'
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Efternamn"
+                value={agentSignatureLast}
+                onChange={(e) => setAgentSignatureLast(e.target.value)}
+                style={{
+                  flex: 1, padding: '0.75rem', borderRadius: '8px',
+                  border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)',
+                  color: '#fff', marginBottom: '1.5rem', fontSize: '1rem'
+                }}
+              />
+            </div>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <button 
                 onClick={() => setShowSignatureModal(false)}
@@ -1027,7 +1057,8 @@ export default function SupportView() {
               </button>
               <button 
                 onClick={() => {
-                  localStorage.setItem('agent_signature', agentSignature);
+                  localStorage.setItem('agent_signature_first', agentSignatureFirst);
+                  localStorage.setItem('agent_signature_last', agentSignatureLast);
                   setShowSignatureModal(false);
                 }}
                 style={{
