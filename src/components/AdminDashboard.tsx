@@ -578,6 +578,19 @@ export default function AdminDashboard() {
     fetchStats();
     fetchContactSettings();
     fetchStripeStatus();
+
+    const channel = supabase.channel('admin_global_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'analytics' }, fetchStats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        fetchStats();
+        fetchMembersList();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'households' }, fetchStats)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
 
