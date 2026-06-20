@@ -408,7 +408,7 @@ export default function SupportView() {
   };
 
   const statusColor: Record<AgentStatusType, string> = { offline: '#6b7280', available: '#10b981', busy: '#f59e0b', post_work: '#f97316', break: '#8b5cf6', lunch: '#ec4899' };
-  const statusLabel: Record<AgentStatusType, string> = { offline: 'Frånkopplad', available: 'Ledig', busy: 'I ärende', post_work: 'Efterarbete', break: 'Rast', lunch: 'Lunch' };
+
 
 
   const fullscreenStyles: React.CSSProperties = isFullscreen ? {
@@ -418,6 +418,8 @@ export default function SupportView() {
   } : {
     maxWidth: '900px', margin: '0 auto', padding: '1rem'
   };
+
+  const displayAgentName = agentSignature?.trim() || user?.email?.split('@')[0] || 'Agent';
 
   return (
     <div style={fullscreenStyles}>
@@ -436,147 +438,179 @@ export default function SupportView() {
       )}
 
       {!(activeSession && activeSession.status === 'active') && (
-        <div style={{
-          background: '#0f172a',
-          border: '1px solid rgba(255,255,255,0.05)',
-          borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem',
-          display: 'flex', flexDirection: 'column', gap: '1rem',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.4)'
-        }}>
-          {/* Status rad */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.8rem', alignItems: 'center' }}>
-            <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{
-                width: 10, height: 10, borderRadius: '50%',
-                background: statusColor[agentStatus],
-                boxShadow: `0 0 6px ${statusColor[agentStatus]}`
-              }} />
-              Du: {statusLabel[agentStatus]}
-            </span>
-            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+        <div style={{ marginBottom: '2rem' }}>
+          {/* Main "Phone" Box */}
+          <div style={{
+            background: '#1e293b',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '16px', padding: '1.5rem 2rem',
+            display: 'flex', flexDirection: 'column', gap: '1.5rem',
+            boxShadow: '0 15px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
+            position: 'relative', overflow: 'hidden'
+          }}>
+            {/* Subtle top gradient */}
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899)' }} />
+
+            {/* Header / Name */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.8rem', alignItems: 'center' }}>
+              <span style={{ fontWeight: '800', fontSize: '1.2rem', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.6rem', letterSpacing: '-0.5px' }}>
+                <div style={{
+                  width: 12, height: 12, borderRadius: '50%',
+                  background: statusColor[agentStatus],
+                  boxShadow: `0 0 10px ${statusColor[agentStatus]}`
+                }} />
+                SmartAgent <span style={{ color: 'var(--text-secondary)', fontWeight: '400', fontSize: '1.1rem' }}>|</span> {displayAgentName}
+              </span>
+            </div>
+
+            {/* Runda Huvudknappar */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', padding: '0.5rem 0', flexWrap: 'wrap' }}>
+              
+              {/* Koppla på / Ledig - Grön */}
+              <button
+                onClick={agentStatus === 'offline' ? handleConnect : () => handleSetStatus('available')}
+                style={{
+                  width: '76px', height: '76px', borderRadius: '50%',
+                  background: agentStatus === 'available' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'rgba(255,255,255,0.03)',
+                  border: agentStatus === 'available' ? 'none' : `2px solid #10b981`,
+                  color: agentStatus === 'available' ? '#fff' : '#10b981',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: agentStatus === 'available' ? '0 8px 25px rgba(16,185,129,0.5)' : 'none',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  opacity: agentStatus === 'busy' ? 0.3 : 1,
+                  transform: agentStatus === 'available' ? 'scale(1.05)' : 'scale(1)'
+                }}
+                title={agentStatus === 'offline' ? 'Koppla på' : 'Sätt status: Ledig'}
+                disabled={agentStatus === 'busy'}
+                onMouseOver={(e) => { if(agentStatus !== 'available' && agentStatus !== 'busy') e.currentTarget.style.background = 'rgba(16,185,129,0.1)'}}
+                onMouseOut={(e) => { if(agentStatus !== 'available' && agentStatus !== 'busy') e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}}
+              >
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </button>
+
+              {/* Efterarbete - Orange */}
+              <button
+                onClick={() => handleSetStatus('post_work')}
+                style={{
+                  width: '76px', height: '76px', borderRadius: '50%',
+                  background: agentStatus === 'post_work' ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : 'rgba(255,255,255,0.03)',
+                  border: agentStatus === 'post_work' ? 'none' : `2px solid #f59e0b`,
+                  color: agentStatus === 'post_work' ? '#fff' : '#f59e0b',
+                  cursor: agentStatus === 'offline' || agentStatus === 'busy' ? 'not-allowed' : 'pointer', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: agentStatus === 'post_work' ? '0 8px 25px rgba(245,158,11,0.5)' : 'none',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  opacity: agentStatus === 'offline' || agentStatus === 'busy' ? 0.3 : 1,
+                  transform: agentStatus === 'post_work' ? 'scale(1.05)' : 'scale(1)'
+                }}
+                title="Sätt status: Efterarbete"
+                disabled={agentStatus === 'offline' || agentStatus === 'busy'}
+                onMouseOver={(e) => { if(agentStatus !== 'post_work' && agentStatus !== 'offline' && agentStatus !== 'busy') e.currentTarget.style.background = 'rgba(245,158,11,0.1)'}}
+                onMouseOut={(e) => { if(agentStatus !== 'post_work' && agentStatus !== 'offline' && agentStatus !== 'busy') e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}}
+              >
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              </button>
+
+              {/* Nytt mejl - Lila */}
+              <button
+                onClick={openNewEmailModal}
+                style={{
+                  width: '76px', height: '76px', borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: `2px solid #8b5cf6`,
+                  color: '#8b5cf6',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  opacity: agentStatus === 'busy' ? 0.3 : 1
+                }}
+                title="Skapa nytt mejl"
+                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(139,92,246,0.1)'; e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(139,92,246,0.3)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              </button>
+
+              {/* Koppla från / Rast - Röd */}
+              <button
+                onClick={handleDisconnect}
+                style={{
+                  width: '76px', height: '76px', borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: `2px solid #f43f5e`,
+                  color: '#f43f5e',
+                  cursor: agentStatus === 'offline' ? 'not-allowed' : 'pointer', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  opacity: agentStatus === 'offline' ? 0.3 : 1
+                }}
+                title="Koppla från"
+                disabled={agentStatus === 'offline'}
+                onMouseOver={(e) => { if(agentStatus !== 'offline') { e.currentTarget.style.background = 'rgba(244,63,94,0.1)'; e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(244,63,94,0.3)'; } }}
+                onMouseOut={(e) => { if(agentStatus !== 'offline') { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; } }}
+              >
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>
+              </button>
+            </div>
+
+            {/* Info under knapparna */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem', fontWeight: '500' }}>
               <span>Väntande ärenden: 0</span>
               <span>Uppkopplad: {agentStatus !== 'offline' ? '00:00' : '--:--'}</span>
             </div>
           </div>
 
-          {/* Runda Huvudknappar */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '2.5rem', padding: '1rem 0', flexWrap: 'wrap' }}>
-            
-            {/* Koppla på / Ledig - Grön */}
-            <button
-              onClick={agentStatus === 'offline' ? handleConnect : () => handleSetStatus('available')}
-              style={{
-                width: '70px', height: '70px', borderRadius: '50%',
-                background: agentStatus === 'available' ? '#10b981' : 'transparent',
-                border: `3px solid #10b981`,
-                color: agentStatus === 'available' ? '#fff' : '#10b981',
-                cursor: 'pointer', fontSize: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: agentStatus === 'available' ? '0 0 20px rgba(16,185,129,0.4)' : 'none',
-                transition: 'all 0.2s',
-                opacity: agentStatus === 'busy' ? 0.3 : 1
-              }}
-              title={agentStatus === 'offline' ? 'Koppla på' : 'Sätt status: Ledig'}
-              disabled={agentStatus === 'busy'}
-            >
-              👤
-            </button>
-
-            {/* Efterarbete - Orange */}
-            <button
-              onClick={() => handleSetStatus('post_work')}
-              style={{
-                width: '70px', height: '70px', borderRadius: '50%',
-                background: agentStatus === 'post_work' ? '#f59e0b' : 'transparent',
-                border: `3px solid #f59e0b`,
-                color: agentStatus === 'post_work' ? '#fff' : '#f59e0b',
-                cursor: agentStatus === 'offline' || agentStatus === 'busy' ? 'not-allowed' : 'pointer', 
-                fontSize: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: agentStatus === 'post_work' ? '0 0 20px rgba(245,158,11,0.4)' : 'none',
-                transition: 'all 0.2s',
-                opacity: agentStatus === 'offline' || agentStatus === 'busy' ? 0.3 : 1
-              }}
-              title="Sätt status: Efterarbete"
-              disabled={agentStatus === 'offline' || agentStatus === 'busy'}
-            >
-              📝
-            </button>
-
-            {/* Nytt mejl - Lila */}
-            <button
-              onClick={openNewEmailModal}
-              style={{
-                width: '70px', height: '70px', borderRadius: '50%',
-                background: 'transparent',
-                border: `3px solid #8b5cf6`,
-                color: '#8b5cf6',
-                cursor: 'pointer', fontSize: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.2s',
-                opacity: agentStatus === 'busy' ? 0.3 : 1
-              }}
-              title="Skapa nytt mejl"
-              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(139,92,246,0.1)'}
-              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-            >
-              ✉️
-            </button>
-
-            {/* Koppla från / Rast - Röd */}
-            <button
-              onClick={handleDisconnect}
-              style={{
-                width: '70px', height: '70px', borderRadius: '50%',
-                background: 'transparent',
-                border: `3px solid #f43f5e`,
-                color: '#f43f5e',
-                cursor: agentStatus === 'offline' ? 'not-allowed' : 'pointer', 
-                fontSize: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.2s',
-                opacity: agentStatus === 'offline' ? 0.3 : 1
-              }}
-              title="Koppla från"
-              disabled={agentStatus === 'offline'}
-              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(244,63,94,0.1)'}
-              onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-            >
-              🛑
-            </button>
-          </div>
-
-          {/* Underverktyg */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.8rem' }}>
+          {/* Underverktyg UTANFÖR rutan */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem', paddingRight: '0.5rem' }}>
             <button
               onClick={() => setShowSignatureModal(true)}
               style={{
-                background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', border: 'none',
-                cursor: 'pointer', fontSize: '1rem', padding: '0.5rem 0.8rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem'
+                background: 'rgba(255,255,255,0.03)', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.08)',
+                cursor: 'pointer', fontSize: '0.9rem', padding: '0.6rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                transition: 'all 0.2s', boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
               }}
               title="Signatur inställningar"
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
             >
-              ⚙️ Signatur
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg> 
+              Signatur
             </button>
             <button
               onClick={toggleNotifications}
               style={{
-                background: notificationsEnabled ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)', 
-                color: notificationsEnabled ? '#10b981' : 'var(--text-secondary)', border: 'none',
-                cursor: 'pointer', fontSize: '1rem', padding: '0.5rem 0.8rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem'
+                background: notificationsEnabled ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.03)', 
+                color: notificationsEnabled ? '#10b981' : 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.08)',
+                cursor: 'pointer', fontSize: '0.9rem', padding: '0.6rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                transition: 'all 0.2s', boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
               }}
               title={notificationsEnabled ? 'Notiser PÅ' : 'Notiser AV'}
+              onMouseOver={(e) => { if(!notificationsEnabled) e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}}
+              onMouseOut={(e) => { if(!notificationsEnabled) e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}}
             >
-              {notificationsEnabled ? '🔔 PÅ' : '🔕 AV'}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+              Notiser {notificationsEnabled ? 'PÅ' : 'AV'}
             </button>
             <button
               onClick={() => setIsFullscreen(!isFullscreen)}
               style={{
-                background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', border: 'none',
-                cursor: 'pointer', fontSize: '1rem', padding: '0.5rem 0.8rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem'
+                background: 'rgba(255,255,255,0.03)', color: 'var(--text-secondary)', border: '1px solid rgba(255,255,255,0.08)',
+                cursor: 'pointer', fontSize: '0.9rem', padding: '0.6rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                transition: 'all 0.2s', boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
               }}
               title={isFullscreen ? "Stäng helskärm" : "Öppna helskärm"}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
             >
-              {isFullscreen ? '✖' : '🖵'} Helskärm
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {isFullscreen ? (
+                  <><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path></>
+                ) : (
+                  <><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></>
+                )}
+              </svg>
+              Helskärm
             </button>
           </div>
-
         </div>
       )}
 
