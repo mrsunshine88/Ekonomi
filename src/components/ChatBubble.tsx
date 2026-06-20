@@ -68,7 +68,7 @@ export default function ChatBubble() {
 
   // Fetch existing session and messages if user is logged in or visitor
   useEffect(() => {
-    if (!chatGlobalOpen || (!user && !visitorId)) return;
+    if ((!chatGlobalOpen && !sessionId) || (!user && !visitorId)) return;
 
     const initChat = async () => {
       // Find active, assigned or waiting session
@@ -238,7 +238,7 @@ export default function ChatBubble() {
     }
   };
 
-  if (!chatGlobalOpen || (!user && !visitorId)) return null;
+  if ((!chatGlobalOpen && !sessionId) || (!user && !visitorId)) return null;
 
   return (
     <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
