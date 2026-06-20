@@ -161,14 +161,16 @@ export default function SupportView() {
 
 
       // Auto-återta ärende om agenten navigerade bort och kom tillbaka
-      const { data: myActive } = await supabase
+      const { data: myActives } = await supabase
         .from('chat_sessions')
         .select('id, user_id, visitor_id, status, assigned_to, assigned_name, created_at, updated_at, ticket_type, inbound_address, customer_email, email_subject')
         .eq('assigned_to', user.id)
         .in('status', ['active', 'assigned'])
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(1);
         
-      if (myActive) {
+      if (myActives && myActives.length > 0) {
+        const myActive = myActives[0];
         // Hämta e-post för att berika activeSession (samma som fetchQueue)
         let email = 'Okänd användare';
         if (myActive.user_id) {
@@ -178,13 +180,14 @@ export default function SupportView() {
         const enrichedSession = { ...myActive, profiles: myActive.user_id ? { email } : null };
         
         setActiveSession(enrichedSession as ChatSession);
-        
         // Se till att agenten är 'busy'
         if (!data || data.status !== 'busy') {
            await supabase.rpc('agent_connect');
            await supabase.from('agent_sessions').update({ status: 'busy' }).eq('agent_id', user.id);
            setAgentStatus('busy');
         }
+      } else {
+        setActiveSession(null);
       }
     };
     init();

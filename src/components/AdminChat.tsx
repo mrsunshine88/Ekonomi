@@ -72,17 +72,8 @@ export default function AdminChat() {
       })
       .subscribe();
 
-    const notifyChannel = supabase.channel('admin_chat_notifications')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: "sender_type=eq.user" }, (payload: { new: { [key: string]: string } }) => {
-        if (localStorage.getItem('chat_notifications') === 'true' && 'Notification' in window && Notification.permission === 'granted') {
-           new Notification('Nytt Kundtjänst-meddelande', { body: payload.new.message });
-        }
-      })
-      .subscribe();
-
     return () => {
       supabase.removeChannel(channel);
-      supabase.removeChannel(notifyChannel);
     };
   }, []);
 
