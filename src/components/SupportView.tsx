@@ -257,6 +257,18 @@ export default function SupportView() {
            if (sessionData) {
              setAgentStatus('busy');
              setActiveSession({...sessionData, status: 'assigned'});
+             
+             // Skicka en notis till webbläsaren / skrivbordet om det är påslaget
+             if (localStorage.getItem('chat_notifications') === 'true' && 'Notification' in window && Notification.permission === 'granted') {
+               try {
+                 new Notification('SmartAgent', {
+                   body: sessionData.ticket_type === 'email' ? 'Nytt e-postärende i kön! Öppna fliken för att svara.' : 'Ny chatt i kön! Öppna fliken för att svara.',
+                   icon: '/pwa-192x192.png'
+                 });
+               } catch(err) {
+                 console.log('Notis blockerades:', err);
+               }
+             }
            }
         }
       }
