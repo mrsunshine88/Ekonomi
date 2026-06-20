@@ -131,34 +131,7 @@ export default function SupportView() {
   const [connectError, setConnectError] = useState('');
 
   // Hämta agent-sessioner och kö
-  const checkAssignedSession = async () => {
-    if (!user) return;
-    const { data: myActives } = await supabase
-      .from('chat_sessions')
-      .select('id, user_id, visitor_id, status, assigned_to, assigned_name, created_at, updated_at, ticket_type, inbound_address, customer_email, email_subject')
-      .eq('assigned_to', user.id)
-      .in('status', ['active', 'assigned'])
-      .order('created_at', { ascending: false })
-      .limit(1);
-      
-    if (myActives && myActives.length > 0) {
-      const myActive = myActives[0];
-      let email = 'Okänd användare';
-      if (myActive.user_id) {
-        const { data: profile } = await supabase.from('profiles').select('email').eq('id', myActive.user_id).maybeSingle();
-        if (profile) email = profile.email;
-      }
-      setActiveSession({ ...myActive, profiles: myActive.user_id ? { email } : null } as ChatSession);
-      
-      // Säkerhetskoll: om vi har ett ärende men inte är busy, bli busy
-      if (agentStatus !== 'busy') {
-        await supabase.from('agent_sessions').update({ status: 'busy' }).eq('agent_id', user.id);
-        setAgentStatus('busy');
-      }
-    } else {
-      setActiveSession(null);
-    }
-  };
+  const fetchQueue = async () => {};
 
   // Auto-timeout om man inte tar ett tilldelat ärende inom 60 sekunder
   useEffect(() => {
@@ -187,14 +160,45 @@ export default function SupportView() {
         setAgentStatus(data.status as any);
         setStatusUpdatedAt(data.updated_at);
       }
-      await checkAssignedSession();
+      await fetchQueue();
+
+
+      // Auto-återta ärende om agenten navigerade bort och kom tillbaka
+      const { data: myActives } = await supabase
+        .from('chat_sessions')
+        .select('id, user_id, visitor_id, status, assigned_to, assigned_name, created_at, updated_at, ticket_type, inbound_address, customer_email, email_subject')
+        .eq('assigned_to', user.id)
+        .in('status', ['active', 'assigned'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+        
+      if (myActives && myActives.length > 0) {
+        const myActive = myActives[0];
+        // Hämta e-post för att berika activeSession (samma som fetchQueue)
+        let email = 'Okänd användare';
+        if (myActive.user_id) {
+          const { data: profile } = await supabase.from('profiles').select('email').eq('id', myActive.user_id).maybeSingle();
+          if (profile) email = profile.email;
+        }
+        const enrichedSession = { ...myActive, profiles: myActive.user_id ? { email } : null };
+        
+        setActiveSession(enrichedSession as ChatSession);
+        // Se till att agenten är 'busy'
+        if (!data || data.status !== 'busy') {
+           await supabase.rpc('agent_connect');
+           await supabase.from('agent_sessions').update({ status: 'busy' }).eq('agent_id', user.id);
+           setAgentStatus('busy');
+        }
+      } else {
+        setActiveSession(null);
+      }
     };
     init();
 
     // Realtime: kö-uppdateringar
     const queueChannel = supabase.channel('support_queue')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_sessions' }, () => {
-        checkAssignedSession();
+        fetchQueue();
       })
       .subscribe();
 
@@ -307,26 +311,19 @@ export default function SupportView() {
     setAgentStatus('offline');
     setStatusUpdatedAt(null);
     setActiveSession(null);
-    await checkAssignedSession();
+    await fetchQueue();
   };
 
   // Ta emot ett tilldelat ärende
   const handleAcceptAssigned = async () => {
     if (!activeSession) return;
-    
-    const firstName = localStorage.getItem('agent_signature_first') || agentSignatureFirst || '';
-    
-    const { data, error } = await supabase.rpc('accept_assigned_chat_session', { 
-      target_session_id: activeSession.id,
-      p_first_name: firstName
-    });
-    
+    const { data, error } = await supabase.rpc('accept_assigned_chat_session', { target_session_id: activeSession.id });
     if (error || !data) {
        console.error("Fel vid accept_assigned:", error);
        alert("Ärendet kunde inte öppnas, eller togs av en annan agent.");
        setActiveSession(null);
        setAgentStatus('available');
-       await checkAssignedSession();
+       await fetchQueue();
        return;
     }
     
@@ -341,6 +338,16 @@ export default function SupportView() {
       if (sig && !inputText.trim()) {
         setInputText(`\n\n--\nMed vänliga hälsningar,\n${sig}\nSmart Ekonomi`);
       }
+    } else {
+      // It's a chat! Insert the AI system message greeting
+      const firstName = localStorage.getItem('agent_signature_first') || agentSignatureFirst || 'kundtjänst';
+      const greeting = `🤖 Du pratar med ${firstName}, vad kan jag hjälpa dig med?`;
+      
+      await supabase.from('chat_messages').insert({
+        session_id: activeSession.id,
+        sender_type: 'system',
+        message: greeting
+      });
     }
   };
   const toggleNotifications = async () => {
@@ -468,7 +475,7 @@ export default function SupportView() {
     setAgentStatus('available');
     setStatusUpdatedAt(new Date().toISOString());
     startCooldown(20);
-    await checkAssignedSession();
+    await fetchQueue();
   };
 
   // Byt status (Efterarbete / Rast / Lunch)
