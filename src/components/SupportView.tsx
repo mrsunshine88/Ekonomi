@@ -291,6 +291,9 @@ export default function SupportView() {
   };
 
   const openNewEmailModal = () => {
+    if (agentStatus === 'available') {
+      handleSetStatus('post_work');
+    }
     const sig = localStorage.getItem('agent_signature') || agentSignature;
     if (sig) {
       setNewEmailMessage(`\n\n--\nMed vänliga hälsningar,\n${sig}\nSmart Ekonomi`);
@@ -406,11 +409,7 @@ export default function SupportView() {
       return;
     }
     setAgentStatus(newStatus);
-    if (newStatus === 'available') {
-      setCooldown(20);
-    } else {
-      setCooldown(0);
-    }
+    setCooldown(0);
   };
 
   // Formatera tid i kö
