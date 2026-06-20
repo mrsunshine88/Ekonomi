@@ -183,31 +183,28 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                   
                   {/* Kundservice / Support */}
                   <div style={{
-                    background: 'rgba(16, 185, 129, 0.05)',
-                    border: '1px solid rgba(16, 185, 129, 0.3)',
-                    borderRadius: '12px',
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '16px',
                     padding: '1.25rem',
-                    position: 'relative',
-                    overflow: 'hidden'
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                   }}>
-                    <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '4.5rem', opacity: 0.1 }}>💬</div>
-                    <h3 style={{ margin: '0 0 0.25rem 0', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
-                      För kunder
+                    <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
+                      <span style={{ fontSize: '1.5rem' }}>💬</span> För kunder
                     </h3>
-                    <p style={{ margin: '0 0 0.75rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                      Har du problem med appen eller frågor om ditt konto?
+                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                      Har du problem med appen, funkar inte bankfilen, vill du avsluta din prenumeration eller har frågor om ditt konto?
                     </p>
-                    <ul style={{ margin: '0 0 1rem 0', paddingLeft: '1.5rem', color: '#e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.9rem' }}>
-                      <li>Jag kommer inte in</li>
-                      <li>Hur funkar bankfilen?</li>
-                      <li>Jag vill säga upp prenumerationen</li>
-                    </ul>
                     <a href="mailto:support@smartekonomi.nu" style={{ 
-                      display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      display: 'inline-flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center',
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid var(--border-color)',
                       color: '#fff', textDecoration: 'none', padding: '0.6rem 1.2rem',
-                      borderRadius: '8px', fontWeight: 'bold', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
-                      fontSize: '0.95rem'
+                      borderRadius: '8px', fontWeight: 'bold', transition: 'all 0.2s',
+                      fontSize: '0.95rem', marginTop: '0.25rem'
                     }}>
                       📧 support@smartekonomi.nu
                     </a>
@@ -215,28 +212,28 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
 
                   {/* Info / Övrigt */}
                   <div style={{
-                    background: 'rgba(59, 130, 246, 0.05)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)',
-                    borderRadius: '12px',
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '16px',
                     padding: '1.25rem',
-                    position: 'relative',
-                    overflow: 'hidden'
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                   }}>
-                    <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '4.5rem', opacity: 0.1 }}>🏢</div>
-                    <h3 style={{ margin: '0 0 0.25rem 0', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
-                      För press, samarbeten och övriga frågor
+                    <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
+                      <span style={{ fontSize: '1.5rem' }}>🏢</span> För press & samarbeten
                     </h3>
-                    <ul style={{ margin: '0.5rem 0 1rem 0', paddingLeft: '1.5rem', color: '#e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.9rem' }}>
-                      <li>Vi vill skriva om er i tidningen</li>
-                      <li>Vi vill samarbeta</li>
-                      <li>Kan ni sponsra vårt event?</li>
-                    </ul>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                      Vill ni skriva om oss, samarbeta kring en tjänst, eller undrar ni om vi kan sponsra ert event?
+                    </p>
                     <a href="mailto:info@smartekonomi.nu" style={{ 
-                      display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                      display: 'inline-flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center',
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid var(--border-color)',
                       color: '#fff', textDecoration: 'none', padding: '0.6rem 1.2rem',
-                      borderRadius: '8px', fontWeight: 'bold', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)',
-                      fontSize: '0.95rem'
+                      borderRadius: '8px', fontWeight: 'bold', transition: 'all 0.2s',
+                      fontSize: '0.95rem', marginTop: '0.25rem'
                     }}>
                       ✉️ info@smartekonomi.nu
                     </a>
