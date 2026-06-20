@@ -159,10 +159,10 @@ export default function LoginScreen() {
         <div className="login-info-content">
           <div className="brand-badge">🏠 SmartEkonomi</div>
           <h1 className="login-hero-title" style={{ fontSize: '2.5rem', lineHeight: '1.2' }}>
-            SmartEkonomi – En smart ekonomi-app för hushållet
+            Slipp miniräknaren. <br/>
+            <span className="text-gradient">Spara tid och få full kontroll över hushållets ekonomi.</span>
           </h1>
           <p className="login-hero-subtitle" style={{ lineHeight: '1.6' }}>
-            Slipp miniräknaren. Spara tid och få full kontroll över hushållets ekonomi.<br/><br/>
             SmartEkonomi är en ny ekonomi-app som automatiskt räknar ut vem som ska betala vad, håller er privata ekonomi separat och visar hur era kostnader utvecklas över tid. Perfekt för sambor och familjer som vill ha en smidig budget-app för en rättvis delad ekonomi.
           </p>
 
