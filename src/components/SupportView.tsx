@@ -607,7 +607,7 @@ export default function SupportView() {
                   <span>Väntande ärenden: 0</span>
                   <span>Uppkopplad: {agentStatus !== 'offline' ? '00:00' : '--:--'}</span>
                   {agentStatus === 'available' && cooldown > 0 && (
-                    <span style={{ color: '#f59e0b' }}>(Nytt ärende om {cooldown}s)</span>
+                    <span style={{ color: '#f59e0b' }}>(Efterarbete {cooldown}s)</span>
                   )}
                 </>
               )}
