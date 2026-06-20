@@ -374,3 +374,124 @@ export const exportToExcel = async (state: AppState, userId?: string) => {
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   saveAs(blob, "Statistik_Sammanstallning.xlsx");
 };
+
+export interface GDPRData {
+  profile: any;
+  pushSubscriptions: any[];
+  chatSessions: any[];
+  agentSessions: any[];
+  localStorageData: Record<string, string>;
+  state: AppState;
+  userId: string;
+}
+
+export const exportGDPRDataToExcel = async (data: GDPRData) => {
+  const { state, userId, profile, pushSubscriptions, chatSessions, agentSessions, localStorageData } = data;
+  
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'SmartEkonomi';
+  wb.created = new Date();
+
+  // 1. Profil & Inställningar
+  const ws1 = wb.addWorksheet('Profil & Inställningar');
+  const headerRow1 = ws1.addRow(['Datatyp', 'Nyckel', 'Värde']);
+  styleHeaderRow(headerRow1);
+
+  // Profil
+  if (profile) {
+    Object.entries(profile).forEach(([key, value]) => {
+      ws1.addRow(['Profil', key, String(value)]);
+    });
+  }
+
+  // App Settings
+  if (state.settings) {
+    Object.entries(state.settings).forEach(([key, value]) => {
+      ws1.addRow(['Appinställning', key, String(value)]);
+    });
+  }
+
+  // LocalStorage
+  if (localStorageData) {
+    Object.entries(localStorageData).forEach(([key, value]) => {
+      ws1.addRow(['LocalStorage', key, String(value)]);
+    });
+  }
+
+  ws1.columns = [{ width: 20 }, { width: 30 }, { width: 50 }];
+
+  // 2. Mina Ekonomiska Uppgifter
+  const ws2 = wb.addWorksheet('Mina Ekonomiska Uppgifter');
+  const headerRow2 = ws2.addRow(['Kategori', 'ID / Namn', 'Detaljer']);
+  styleHeaderRow(headerRow2);
+
+  // Konton
+  state.accounts.forEach(acc => {
+    ws2.addRow(['Konto', acc.name, JSON.stringify(acc)]);
+  });
+
+  // Gemensamma Räkningar
+  state.bills.forEach(bill => {
+    ws2.addRow(['Gemensam Räkning', bill.name, JSON.stringify(bill)]);
+  });
+
+  // Privata Räkningar
+  if (state.privateBills) {
+    state.privateBills.filter(b => b.userId === userId).forEach(bill => {
+      ws2.addRow(['Privat Räkning', bill.name, JSON.stringify(bill)]);
+    });
+  }
+
+  // Inkomster
+  if (state.incomes) {
+    state.incomes.filter(i => i.userId === userId).forEach(inc => {
+      ws2.addRow(['Inkomst', inc.name, JSON.stringify(inc)]);
+    });
+  }
+  
+  // Månadsdata
+  Object.keys(state.months).forEach(mId => {
+    ws2.addRow(['Månad (Gemensam)', mId, JSON.stringify(state.months[mId])]);
+  });
+  
+  if (state.privateMonths) {
+    Object.keys(state.privateMonths).forEach(mId => {
+      ws2.addRow(['Månad (Privat)', mId, JSON.stringify(state.privateMonths![mId])]);
+    });
+  }
+
+  ws2.columns = [{ width: 25 }, { width: 30 }, { width: 80 }];
+
+  // 3. Support & Admin-data
+  const ws3 = wb.addWorksheet('Support & Admin Data');
+  const headerRow3 = ws3.addRow(['Typ av post', 'Skapad / Uppdaterad', 'Innehåll']);
+  styleHeaderRow(headerRow3);
+
+  // Push Subscriptions
+  if (pushSubscriptions && pushSubscriptions.length > 0) {
+    pushSubscriptions.forEach(sub => {
+      ws3.addRow(['Push Notis', sub.created_at || 'Okänd', JSON.stringify(sub)]);
+    });
+  }
+
+  // Agent Sessions
+  if (agentSessions && agentSessions.length > 0) {
+    agentSessions.forEach(sess => {
+      ws3.addRow(['Arbetspass (Agent)', sess.updated_at || 'Okänd', JSON.stringify(sess)]);
+    });
+  }
+
+  // Chat Sessions
+  if (chatSessions && chatSessions.length > 0) {
+    chatSessions.forEach(chat => {
+      ws3.addRow(['Supportärende', chat.created_at || 'Okänd', JSON.stringify(chat)]);
+    });
+  }
+
+  ws3.columns = [{ width: 25 }, { width: 25 }, { width: 100 }];
+
+  // Ladda ner
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveAs(blob, "Min_Data_GDPR.xlsx");
+};

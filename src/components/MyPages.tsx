@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
 import { useStore } from '../store';
 import { supabase } from '../supabase';
-import { exportToExcel } from '../excel';
+import { exportToExcel, exportGDPRDataToExcel } from '../excel';
 
 export default function MyPages() {
   const { user, householdId, role, refreshHousehold } = useAuth();
@@ -219,9 +219,44 @@ export default function MyPages() {
   const handleExportData = async () => {
     setLoading(true);
     try {
-      setMsg('Laddar ner din data... ⏳');
-      await exportToExcel(useStore.getState().state, user?.id);
-      setMsg('✅ Din data har laddats ner som en Excel-fil!');
+      setMsg('Laddar ner all din data... ⏳');
+      
+      const userId = user?.id;
+      if (!userId) throw new Error("Kunde inte identifiera användaren.");
+
+      // 1. Profil
+      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+      
+      // 2. Push-prenumerationer
+      const { data: pushData } = await supabase.from('push_subscriptions').select('*').eq('user_id', userId);
+      
+      // 3. Agent Sessions
+      const { data: agentData } = await supabase.from('agent_sessions').select('*').eq('agent_id', userId);
+      
+      // 4. Chat Sessions (ärenden man varit tilldelad)
+      const { data: chatData } = await supabase.from('chat_sessions').select('*').eq('assigned_to', userId);
+
+      // 5. LocalStorage
+      const localStorageData: Record<string, string> = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          localStorageData[key] = localStorage.getItem(key) || '';
+        }
+      }
+
+      const gdprData = {
+        state: useStore.getState().state,
+        userId: userId,
+        profile: profileData,
+        pushSubscriptions: pushData || [],
+        chatSessions: chatData || [],
+        agentSessions: agentData || [],
+        localStorageData: localStorageData
+      };
+
+      await exportGDPRDataToExcel(gdprData);
+      setMsg('✅ All din data har laddats ner som en Excel-fil!');
     } catch (e: unknown) {
       setMsg('❌ Kunde inte exportera data: ' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -709,6 +744,19 @@ export default function MyPages() {
               </button>
             )
           )}
+
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.25rem', marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <h4 style={{ margin: 0, color: '#fff', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>🛡️</span> Din data, dina rättigheter (GDPR)
+            </h4>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              Vi värnar om din integritet. Här har du full kontroll över den information vi har sparat om dig.
+            </p>
+            <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              <li><strong>Exportera:</strong> Laddar ner en fullständig, maskinläsbar kopia (Excel) av precis all din personliga data (profil, ekonomi, inställningar och historik).</li>
+              <li><strong>Radera:</strong> Innebär en oåterkallelig borttagning. Tack vare vår strikta databas-arkitektur utplånas din användare och all relaterad data omedelbart från samtliga servrar, utan att lämna några spår.</li>
+            </ul>
+          </div>
 
           <button 
             onClick={handleExportData} 
