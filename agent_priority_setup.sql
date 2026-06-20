@@ -1,7 +1,9 @@
--- 1. Lägg till prio-kolumner
+-- 1. Lägg till prio-kolumner och info-behörighet
 ALTER TABLE public.profiles 
+ADD COLUMN IF NOT EXISTS handles_info BOOLEAN DEFAULT false,
 ADD COLUMN IF NOT EXISTS prio_chat INTEGER DEFAULT 1,
-ADD COLUMN IF NOT EXISTS prio_email INTEGER DEFAULT 1;
+ADD COLUMN IF NOT EXISTS prio_email INTEGER DEFAULT 1,
+ADD COLUMN IF NOT EXISTS prio_info INTEGER DEFAULT 1;
 
 -- 2. Uppdatera admin_get_all_users
 DROP FUNCTION IF EXISTS public.admin_get_all_users();
@@ -17,8 +19,10 @@ RETURNS TABLE (
     chat_agent BOOLEAN,
     handles_chat BOOLEAN,
     handles_email BOOLEAN,
+    handles_info BOOLEAN,
     prio_chat INTEGER,
-    prio_email INTEGER
+    prio_email INTEGER,
+    prio_info INTEGER
 ) AS $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM public.system_admins sa WHERE sa.user_id = auth.uid()) THEN
@@ -41,8 +45,10 @@ BEGIN
         COALESCE((SELECT pr.chat_agent FROM public.profiles pr WHERE pr.id = u.id), false) as chat_agent,
         COALESCE((SELECT pr.handles_chat FROM public.profiles pr WHERE pr.id = u.id), true) as handles_chat,
         COALESCE((SELECT pr.handles_email FROM public.profiles pr WHERE pr.id = u.id), false) as handles_email,
+        COALESCE((SELECT pr.handles_info FROM public.profiles pr WHERE pr.id = u.id), false) as handles_info,
         COALESCE((SELECT pr.prio_chat FROM public.profiles pr WHERE pr.id = u.id), 1) as prio_chat,
-        COALESCE((SELECT pr.prio_email FROM public.profiles pr WHERE pr.id = u.id), 1) as prio_email
+        COALESCE((SELECT pr.prio_email FROM public.profiles pr WHERE pr.id = u.id), 1) as prio_email,
+        COALESCE((SELECT pr.prio_info FROM public.profiles pr WHERE pr.id = u.id), 1) as prio_info
     FROM auth.users u
     ORDER BY u.created_at DESC;
 END;
@@ -51,8 +57,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 -- 3. Uppdatera toggle_chat_agent
 DROP FUNCTION IF EXISTS public.toggle_chat_agent(text, boolean, boolean, boolean);
 DROP FUNCTION IF EXISTS public.toggle_chat_agent(text, boolean, boolean, boolean, integer, integer);
+DROP FUNCTION IF EXISTS public.toggle_chat_agent(text, boolean, boolean, boolean, boolean, integer, integer, integer);
 
-CREATE OR REPLACE FUNCTION toggle_chat_agent(target_email TEXT, enable BOOLEAN, p_handles_chat BOOLEAN DEFAULT true, p_handles_email BOOLEAN DEFAULT false, p_prio_chat INTEGER DEFAULT 1, p_prio_email INTEGER DEFAULT 1)
+CREATE OR REPLACE FUNCTION toggle_chat_agent(target_email TEXT, enable BOOLEAN, p_handles_chat BOOLEAN DEFAULT true, p_handles_email BOOLEAN DEFAULT false, p_handles_info BOOLEAN DEFAULT false, p_prio_chat INTEGER DEFAULT 1, p_prio_email INTEGER DEFAULT 1, p_prio_info INTEGER DEFAULT 1)
 RETURNS VOID AS $$
 DECLARE
   target_user_id UUID;
@@ -71,13 +78,15 @@ BEGIN
       chat_agent = enable,
       handles_chat = p_handles_chat,
       handles_email = p_handles_email,
+      handles_info = p_handles_info,
       prio_chat = p_prio_chat,
-      prio_email = p_prio_email
+      prio_email = p_prio_email,
+      prio_info = p_prio_info
   WHERE id = target_user_id;
 
   IF NOT FOUND THEN
-    INSERT INTO public.profiles (id, chat_agent, handles_chat, handles_email, prio_chat, prio_email) 
-    VALUES (target_user_id, enable, p_handles_chat, p_handles_email, p_prio_chat, p_prio_email);
+    INSERT INTO public.profiles (id, chat_agent, handles_chat, handles_email, handles_info, prio_chat, prio_email, prio_info) 
+    VALUES (target_user_id, enable, p_handles_chat, p_handles_email, p_handles_info, p_prio_chat, p_prio_email, p_prio_info);
   END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
@@ -92,8 +101,10 @@ DECLARE
   v_my_status TEXT;
   v_can_chat BOOLEAN;
   v_can_email BOOLEAN;
+  v_can_info BOOLEAN;
   v_prio_chat INTEGER;
   v_prio_email INTEGER;
+  v_prio_info INTEGER;
 BEGIN
   -- Ensure caller is available
   SELECT status INTO v_my_status FROM agent_sessions WHERE agent_id = auth.uid();
@@ -102,8 +113,8 @@ BEGIN
   END IF;
 
   -- Kolla att agenten finns, vad den får hantera och dess prioriteringar
-  SELECT handles_chat, handles_email, COALESCE(prio_chat, 1), COALESCE(prio_email, 1) 
-  INTO v_can_chat, v_can_email, v_prio_chat, v_prio_email
+  SELECT handles_chat, handles_email, COALESCE(handles_info, false), COALESCE(prio_chat, 1), COALESCE(prio_email, 1), COALESCE(prio_info, 1)
+  INTO v_can_chat, v_can_email, v_can_info, v_prio_chat, v_prio_email, v_prio_info
   FROM profiles WHERE id = auth.uid() AND chat_agent = true;
 
   IF v_can_chat IS NULL THEN
@@ -119,12 +130,16 @@ BEGIN
       AND (
           (v_can_chat = true AND (ticket_type = 'chat' OR ticket_type IS NULL))
           OR 
-          (v_can_email = true AND ticket_type = 'email')
+          (v_can_email = true AND ticket_type = 'email' AND (inbound_address NOT LIKE '%info@%' OR inbound_address IS NULL))
+          OR
+          (v_can_info = true AND ticket_type = 'email' AND inbound_address LIKE '%info@%')
       )
     ORDER BY 
       CASE 
+        WHEN ticket_type = 'chat' OR ticket_type IS NULL THEN v_prio_chat
+        WHEN ticket_type = 'email' AND inbound_address LIKE '%info@%' THEN v_prio_info
         WHEN ticket_type = 'email' THEN v_prio_email
-        ELSE v_prio_chat
+        ELSE 1
       END DESC,
       created_at ASC 
     LIMIT 1
@@ -145,4 +160,4 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 ALTER FUNCTION public.auto_assign_oldest_chat() SET search_path = public;
 GRANT EXECUTE ON FUNCTION public.auto_assign_oldest_chat() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_get_all_users() TO authenticated;
-GRANT EXECUTE ON FUNCTION public.toggle_chat_agent(text, boolean, boolean, boolean, integer, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.toggle_chat_agent(text, boolean, boolean, boolean, boolean, integer, integer, integer) TO authenticated;

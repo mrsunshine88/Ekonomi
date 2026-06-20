@@ -372,7 +372,7 @@ export default function AdminDashboard() {
   const [stripeSecret, setStripeSecret] = useState('');
   const [stripeWebhook, setStripeWebhook] = useState('');
   const [stripePriceId, setStripePriceId] = useState('');
-  const [membersList, setMembersList] = useState<{ id: string, email: string, is_banned: boolean, is_vip: boolean, is_admin: boolean, chat_agent: boolean, handles_chat: boolean, handles_email: boolean, prio_chat: number, prio_email: number, created_at: string, last_sign_in_at: string }[]>([]);
+  const [membersList, setMembersList] = useState<{ id: string, email: string, is_banned: boolean, is_vip: boolean, is_admin: boolean, chat_agent: boolean, handles_chat: boolean, handles_email: boolean, handles_info: boolean, prio_chat: number, prio_email: number, prio_info: number, created_at: string, last_sign_in_at: string }[]>([]);
   const [memberSearch, setMemberSearch] = useState('');
   const [stats, setStats] = useState<{ 
     total_members: number, 
@@ -664,7 +664,7 @@ export default function AdminDashboard() {
   };
 
 
-  const handleToggleChatAgent = async (email: string, isChatAgent: boolean, handlesChat: boolean = true, handlesEmail: boolean = false, prioChat: number = 1, prioEmail: number = 1) => {
+  const handleToggleChatAgent = async (email: string, isChatAgent: boolean, handlesChat: boolean = true, handlesEmail: boolean = false, handlesInfo: boolean = false, prioChat: number = 1, prioEmail: number = 1, prioInfo: number = 1) => {
     setLoading(true);
     try {
       const { error } = await supabase.rpc('toggle_chat_agent', { 
@@ -672,8 +672,10 @@ export default function AdminDashboard() {
         enable: !isChatAgent,
         p_handles_chat: handlesChat,
         p_handles_email: handlesEmail,
+        p_handles_info: handlesInfo,
         p_prio_chat: prioChat,
-        p_prio_email: prioEmail
+        p_prio_email: prioEmail,
+        p_prio_info: prioInfo
       });
       if (error) throw error;
       setMsg(isChatAgent ? `💬 Kundservice avaktiverad för ${email}.` : `💬 ${email} kan nu jobba i kundservice!`);
@@ -685,7 +687,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleUpdateAgentQueues = async (email: string, handlesChat: boolean, handlesEmail: boolean, prioChat: number, prioEmail: number) => {
+  const handleUpdateAgentQueues = async (email: string, handlesChat: boolean, handlesEmail: boolean, handlesInfo: boolean, prioChat: number, prioEmail: number, prioInfo: number) => {
     setLoading(true);
     try {
       const { error } = await supabase.rpc('toggle_chat_agent', { 
@@ -693,8 +695,10 @@ export default function AdminDashboard() {
         enable: true,
         p_handles_chat: handlesChat,
         p_handles_email: handlesEmail,
+        p_handles_info: handlesInfo,
         p_prio_chat: prioChat,
-        p_prio_email: prioEmail
+        p_prio_email: prioEmail,
+        p_prio_info: prioInfo
       });
       if (error) throw error;
       setMsg(`💬 Kö-behörigheter uppdaterade för ${email}.`);
@@ -1394,7 +1398,7 @@ export default function AdminDashboard() {
                       <button onClick={() => handleToggleAdmin(m.email, m.is_admin)} disabled={loading} style={{ flex: '1 1 auto', background: m.is_admin ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.08)', color: m.is_admin ? '#a855f7' : '#fff', border: `1px solid ${m.is_admin ? '#a855f7' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
                         {m.is_admin ? '👑 Admin' : 'Gör Admin'}
                       </button>
-                      <button onClick={() => handleToggleChatAgent(m.email, m.chat_agent, m.handles_chat, m.handles_email, m.prio_chat, m.prio_email)} disabled={loading} style={{ flex: '1 1 auto', background: m.chat_agent ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.08)', color: m.chat_agent ? '#10b981' : '#fff', border: `1px solid ${m.chat_agent ? 'rgba(16,185,129,0.5)' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+                      <button onClick={() => handleToggleChatAgent(m.email, m.chat_agent, m.handles_chat, m.handles_email, m.handles_info, m.prio_chat, m.prio_email, m.prio_info)} disabled={loading} style={{ flex: '1 1 auto', background: m.chat_agent ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.08)', color: m.chat_agent ? '#10b981' : '#fff', border: `1px solid ${m.chat_agent ? 'rgba(16,185,129,0.5)' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
                         {m.chat_agent ? '💬 KS PÅ' : '💬 KS AV'}
                       </button>
                       <button onClick={() => handleToggleBan(m.id, m.is_banned)} disabled={loading} style={{ flex: '1 1 auto', background: m.is_banned ? 'rgba(244,63,94,0.2)' : 'rgba(255,255,255,0.08)', color: m.is_banned ? '#f43f5e' : '#fff', border: `1px solid ${m.is_banned ? '#f43f5e' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
@@ -1408,23 +1412,34 @@ export default function AdminDashboard() {
                       <div style={{ display: 'flex', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
-                            <input type="checkbox" checked={m.handles_chat} onChange={(e) => handleUpdateAgentQueues(m.email, e.target.checked, m.handles_email, m.prio_chat, m.prio_email)} style={{ accentColor: '#10b981' }} />
+                            <input type="checkbox" checked={m.handles_chat} onChange={(e) => handleUpdateAgentQueues(m.email, e.target.checked, m.handles_email, m.handles_info, m.prio_chat, m.prio_email, m.prio_info)} style={{ accentColor: '#10b981' }} />
                             Chatt-kö
                           </label>
                           {m.handles_chat && (
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginLeft: '0.5rem' }}>
-                              Prio: <input type="number" min="1" max="10" defaultValue={m.prio_chat || 1} onBlur={(e) => { const val = parseInt(e.target.value) || 1; if (val !== m.prio_chat) handleUpdateAgentQueues(m.email, m.handles_chat, m.handles_email, val, m.prio_email); }} style={{ width: '40px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: '4px', padding: '0.1rem 0.25rem', fontSize: '0.75rem', textAlign: 'center' }} />
+                              Prio: <input type="number" min="1" max="10" defaultValue={m.prio_chat || 1} onBlur={(e) => { const val = parseInt(e.target.value) || 1; if (val !== m.prio_chat) handleUpdateAgentQueues(m.email, m.handles_chat, m.handles_email, m.handles_info, val, m.prio_email, m.prio_info); }} style={{ width: '40px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: '4px', padding: '0.1rem 0.25rem', fontSize: '0.75rem', textAlign: 'center' }} />
                             </span>
                           )}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
-                            <input type="checkbox" checked={m.handles_email} onChange={(e) => handleUpdateAgentQueues(m.email, m.handles_chat, e.target.checked, m.prio_chat, m.prio_email)} style={{ accentColor: '#10b981' }} />
-                            Mejl-kö
+                            <input type="checkbox" checked={m.handles_email} onChange={(e) => handleUpdateAgentQueues(m.email, m.handles_chat, e.target.checked, m.handles_info, m.prio_chat, m.prio_email, m.prio_info)} style={{ accentColor: '#10b981' }} />
+                            Support-kö
                           </label>
                           {m.handles_email && (
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginLeft: '0.5rem' }}>
-                              Prio: <input type="number" min="1" max="10" defaultValue={m.prio_email || 1} onBlur={(e) => { const val = parseInt(e.target.value) || 1; if (val !== m.prio_email) handleUpdateAgentQueues(m.email, m.handles_chat, m.handles_email, m.prio_chat, val); }} style={{ width: '40px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: '4px', padding: '0.1rem 0.25rem', fontSize: '0.75rem', textAlign: 'center' }} />
+                              Prio: <input type="number" min="1" max="10" defaultValue={m.prio_email || 1} onBlur={(e) => { const val = parseInt(e.target.value) || 1; if (val !== m.prio_email) handleUpdateAgentQueues(m.email, m.handles_chat, m.handles_email, m.handles_info, m.prio_chat, val, m.prio_info); }} style={{ width: '40px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: '4px', padding: '0.1rem 0.25rem', fontSize: '0.75rem', textAlign: 'center' }} />
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                            <input type="checkbox" checked={m.handles_info} onChange={(e) => handleUpdateAgentQueues(m.email, m.handles_chat, m.handles_email, e.target.checked, m.prio_chat, m.prio_email, m.prio_info)} style={{ accentColor: '#10b981' }} />
+                            Info-kö
+                          </label>
+                          {m.handles_info && (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginLeft: '0.5rem' }}>
+                              Prio: <input type="number" min="1" max="10" defaultValue={m.prio_info || 1} onBlur={(e) => { const val = parseInt(e.target.value) || 1; if (val !== m.prio_info) handleUpdateAgentQueues(m.email, m.handles_chat, m.handles_email, m.handles_info, m.prio_chat, m.prio_email, val); }} style={{ width: '40px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: '4px', padding: '0.1rem 0.25rem', fontSize: '0.75rem', textAlign: 'center' }} />
                             </span>
                           )}
                         </div>
