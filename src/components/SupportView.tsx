@@ -199,9 +199,13 @@ export default function SupportView() {
       })
       .subscribe();
 
-    // Realtime: agent-närvaro
+    // Realtime: agent-närvaro (synkar status mellan mobilen och datorn)
     const agentChannel = supabase.channel('support_agents')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_sessions' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_sessions' }, (payload: any) => {
+        if (payload.new && payload.new.agent_id === user.id) {
+          setAgentStatus(payload.new.status);
+          setStatusUpdatedAt(payload.new.updated_at);
+        }
       })
       .subscribe();
 
