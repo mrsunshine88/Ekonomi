@@ -15,7 +15,7 @@ webpush.setVapidDetails(
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-serve(async (_req) => {
+serve(async () => {
   try {
     const today = new Date().getDate();
 

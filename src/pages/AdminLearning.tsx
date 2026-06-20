@@ -25,10 +25,6 @@ export default function AdminLearning() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [editCategory, setEditCategory] = useState<string>('');
 
-  useEffect(() => {
-    checkAdminAndLoadData();
-  }, []);
-
   const checkAdminAndLoadData = async () => {
     setLoading(true);
     try {
@@ -49,6 +45,10 @@ export default function AdminLearning() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    checkAdminAndLoadData();
+  }, []);
 
   const triggerApprove = (candidate: Candidate) => {
     setConfirmCandidate(candidate);

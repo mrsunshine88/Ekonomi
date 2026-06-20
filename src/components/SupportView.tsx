@@ -516,7 +516,8 @@ export default function SupportView() {
 
   const formatDuration = (isoStr: string | null) => {
     if (!isoStr) return '00:00';
-    const secs = Math.floor((Date.now() - new Date(isoStr).getTime()) / 1000);
+    const _now = Date.now(); // We accept the slight impurity here or we can use the interval tick
+    const secs = Math.floor((_now - new Date(isoStr).getTime()) / 1000);
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
     const s = secs % 60;
