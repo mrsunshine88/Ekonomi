@@ -46,8 +46,25 @@ export default function SupportView() {
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
+  const [cooldown, setCooldown] = useState(() => {
+    const storedEnd = localStorage.getItem('cooldown_end');
+    if (storedEnd) {
+      const remaining = Math.ceil((parseInt(storedEnd, 10) - Date.now()) / 1000);
+      return remaining > 0 ? remaining : 0;
+    }
+    return 0;
+  });
   const [, setSessionTick] = useState(0);
+
+  const startCooldown = (secs: number) => {
+    if (secs > 0) {
+      localStorage.setItem('cooldown_end', (Date.now() + secs * 1000).toString());
+      setCooldown(secs);
+    } else {
+      localStorage.removeItem('cooldown_end');
+      setCooldown(0);
+    }
+  };
   const [statusUpdatedAt, setStatusUpdatedAt] = useState<string | null>(null);
   
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -82,7 +99,18 @@ export default function SupportView() {
   // Timers för andrum och aktiv chatt
   useEffect(() => {
     const timer = setInterval(() => {
-      setCooldown(c => (c > 0 ? c - 1 : 0));
+      const storedEnd = localStorage.getItem('cooldown_end');
+      if (storedEnd) {
+        const remaining = Math.ceil((parseInt(storedEnd, 10) - Date.now()) / 1000);
+        if (remaining > 0) {
+          setCooldown(remaining);
+        } else {
+          setCooldown(0);
+          localStorage.removeItem('cooldown_end');
+        }
+      } else {
+        setCooldown(0);
+      }
       setSessionTick(t => t + 1);
     }, 1000);
     return () => clearInterval(timer);
@@ -405,7 +433,7 @@ export default function SupportView() {
     setActiveSession(null);
     setAgentStatus('available');
     setStatusUpdatedAt(new Date().toISOString());
-    setCooldown(20);
+    startCooldown(20);
     await fetchQueue();
   };
 
@@ -428,7 +456,7 @@ export default function SupportView() {
     }
     setAgentStatus(newStatus);
     setStatusUpdatedAt(new Date().toISOString());
-    setCooldown(0);
+    startCooldown(0);
   };
 
   // Formatera tid i kö
