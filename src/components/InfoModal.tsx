@@ -26,7 +26,7 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
     address: true,
     vat: true
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const faqs = [
@@ -223,7 +223,7 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                   }}>
                     <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '5rem', opacity: 0.1 }}>🏢</div>
                     <h3 style={{ margin: '0 0 0.5rem 0', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      För allt konstigt som dyker upp
+                      För press, samarbeten och övriga frågor
                     </h3>
                     <p style={{ margin: '0 0 1rem 0', color: 'var(--text-secondary)' }}>
                       För samarbeten, press och övriga ärenden.
