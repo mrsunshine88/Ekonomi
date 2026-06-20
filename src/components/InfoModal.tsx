@@ -182,72 +182,36 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                   </p>
                   
                   {/* Kundservice / Support */}
-                  <div style={{
-                    background: 'rgba(16, 185, 129, 0.05)',
-                    border: '1px solid rgba(16, 185, 129, 0.3)',
-                    borderRadius: '16px',
-                    padding: '1rem',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.5rem',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                  }}>
-                    <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '4.5rem', opacity: 0.1 }}>💬</div>
-                    <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', color: '#10b981' }}>
+                  <div className="contact-card-green">
+                    <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '4.5rem', opacity: 0.1, pointerEvents: 'none' }}>💬</div>
+                    <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', color: '#10b981', position: 'relative', zIndex: 1 }}>
                       För kunder
                     </h3>
-                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.4' }}>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.4', position: 'relative', zIndex: 1 }}>
                       Har du problem med appen eller frågor om ditt konto?
                     </p>
-                    <ul style={{ margin: '0', paddingLeft: '1.5rem', color: '#e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.1rem', fontSize: '0.85rem' }}>
+                    <ul style={{ margin: '0', paddingLeft: '1.5rem', color: '#e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.1rem', fontSize: '0.85rem', position: 'relative', zIndex: 1 }}>
                       <li>Jag kommer inte in</li>
                       <li>Hur funkar bankfilen?</li>
                       <li>Jag vill säga upp prenumerationen</li>
                     </ul>
-                    <a href="mailto:support@smartekonomi.nu" style={{ 
-                      display: 'block', textAlign: 'center', width: '100%', boxSizing: 'border-box',
-                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                      color: '#fff', textDecoration: 'none', padding: '0.6rem 1rem',
-                      borderRadius: '8px', fontWeight: 'bold', transition: 'all 0.2s',
-                      boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
-                      fontSize: '0.95rem', marginTop: '0.2rem'
-                    }}>
+                    <a href="mailto:support@smartekonomi.nu" className="contact-btn-green" style={{ position: 'relative', zIndex: 1 }}>
                       📧 support@smartekonomi.nu
                     </a>
                   </div>
 
                   {/* Info / Övrigt */}
-                  <div style={{
-                    background: 'rgba(59, 130, 246, 0.05)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)',
-                    borderRadius: '16px',
-                    padding: '1rem',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.5rem',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                  }}>
-                    <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '4.5rem', opacity: 0.1 }}>🏢</div>
-                    <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', color: '#3b82f6' }}>
+                  <div className="contact-card-blue">
+                    <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '4.5rem', opacity: 0.1, pointerEvents: 'none' }}>🏢</div>
+                    <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', color: '#3b82f6', position: 'relative', zIndex: 1 }}>
                       För press, samarbeten och övriga frågor
                     </h3>
-                    <ul style={{ margin: '0', paddingLeft: '1.5rem', color: '#e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.1rem', fontSize: '0.85rem' }}>
+                    <ul style={{ margin: '0', paddingLeft: '1.5rem', color: '#e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.1rem', fontSize: '0.85rem', position: 'relative', zIndex: 1 }}>
                       <li>Vi vill skriva om er i tidningen</li>
                       <li>Vi vill samarbeta</li>
                       <li>Kan ni sponsra vårt event?</li>
                     </ul>
-                    <a href="mailto:info@smartekonomi.nu" style={{ 
-                      display: 'block', textAlign: 'center', width: '100%', boxSizing: 'border-box',
-                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                      color: '#fff', textDecoration: 'none', padding: '0.6rem 1rem',
-                      borderRadius: '8px', fontWeight: 'bold', transition: 'all 0.2s',
-                      boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)',
-                      fontSize: '0.95rem', marginTop: '0.2rem'
-                    }}>
+                    <a href="mailto:info@smartekonomi.nu" className="contact-btn-blue" style={{ position: 'relative', zIndex: 1 }}>
                       ✉️ info@smartekonomi.nu
                     </a>
                   </div>

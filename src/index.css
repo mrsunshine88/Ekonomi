@@ -1001,3 +1001,21 @@ button.primary:hover {
   border-radius: 50%; border-top-color: #fff;
   animation: spin 1s ease-in-out infinite;
 }
+  
+/* Contact Modal Premium Styles */  
+.contact-card-green, .contact-card-blue {  
+  position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem; border-radius: 16px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;  
+}  
+.contact-card-green { background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.2); box-shadow: 0 4px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05); }  
+.contact-card-green:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.1), inset 0 1px 0 rgba(255,255,255,0.1); background: rgba(16, 185, 129, 0.06); }  
+.contact-card-blue { background: rgba(59, 130, 246, 0.03); border: 1px solid rgba(59, 130, 246, 0.2); box-shadow: 0 4px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05); }  
+.contact-card-blue:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(59, 130, 246, 0.1), inset 0 1px 0 rgba(255,255,255,0.1); background: rgba(59, 130, 246, 0.06); }  
+.contact-btn-green, .contact-btn-blue {  
+  display: block; text-align: center; width: 100%%; box-sizing: border-box; color: #fff; text-decoration: none; padding: 0.6rem 1rem; border-radius: 8px; font-weight: bold; font-size: 0.95rem; margin-top: 0.2rem; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease, filter 0.2s ease;  
+}  
+.contact-btn-green { background: linear-gradient(135deg, #10b981 0%%, #059669 100%%); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5); }  
+.contact-btn-green:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4); filter: brightness(1.1); }  
+.contact-btn-green:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); }  
+.contact-btn-blue { background: linear-gradient(135deg, #3b82f6 0%%, #2563eb 100%%); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.5); }  
+.contact-btn-blue:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4); filter: brightness(1.1); }  
+.contact-btn-blue:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3); } 
