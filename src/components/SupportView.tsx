@@ -317,7 +317,14 @@ export default function SupportView() {
   // Ta emot ett tilldelat ärende
   const handleAcceptAssigned = async () => {
     if (!activeSession) return;
-    const { data, error } = await supabase.rpc('accept_assigned_chat_session', { target_session_id: activeSession.id });
+    
+    const firstName = localStorage.getItem('agent_signature_first') || agentSignatureFirst || '';
+    
+    const { data, error } = await supabase.rpc('accept_assigned_chat_session', { 
+      target_session_id: activeSession.id,
+      p_first_name: firstName
+    });
+    
     if (error || !data) {
        console.error("Fel vid accept_assigned:", error);
        alert("Ärendet kunde inte öppnas, eller togs av en annan agent.");
@@ -338,16 +345,6 @@ export default function SupportView() {
       if (sig && !inputText.trim()) {
         setInputText(`\n\n--\nMed vänliga hälsningar,\n${sig}\nSmart Ekonomi`);
       }
-    } else {
-      // It's a chat! Insert the AI system message greeting
-      const firstName = localStorage.getItem('agent_signature_first') || agentSignatureFirst || 'kundtjänst';
-      const greeting = `🤖 Du pratar med ${firstName}, vad kan jag hjälpa dig med?`;
-      
-      await supabase.from('chat_messages').insert({
-        session_id: activeSession.id,
-        sender_type: 'system',
-        message: greeting
-      });
     }
   };
   const toggleNotifications = async () => {

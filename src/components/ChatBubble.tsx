@@ -133,7 +133,7 @@ export default function ChatBubble() {
     };
   }, [sessionId]);
 
-  // Poll queue position when waiting
+  // Prenumerera på kö-förändringar i realtid + en långsam fallback-poll
   useEffect(() => {
     if (sessionStatus !== 'waiting' || !sessionId) {
       setQueuePosition(null);
@@ -152,9 +152,26 @@ export default function ChatBubble() {
       }
     };
 
+    // Kör direkt en gång
     fetchQueue();
-    const interval = setInterval(fetchQueue, 15000);
-    return () => clearInterval(interval);
+    
+    // Säkerhets-poll var 30:e sekund
+    const interval = setInterval(fetchQueue, 30000);
+
+    // Realtidsprenumeration på databasen (tvingar en uppdatering så fort någon chatt ändras)
+    const queueChannel = supabase.channel('global_queue_updates_for_visitor')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_sessions' }, () => {
+        fetchQueue();
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_sessions' }, () => {
+        fetchQueue();
+      })
+      .subscribe();
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(queueChannel);
+    };
   }, [sessionStatus, sessionId]);
 
   const sendMessage = async (e: React.FormEvent) => {
@@ -270,22 +287,30 @@ export default function ChatBubble() {
               </div>
             ) : (
               messages.map(msg => {
-                const isSystem = msg.sender_type === 'system';
+                const isSystem = msg.message.startsWith('🤖');
                 return (
                   <div key={msg.id} style={{ 
                     alignSelf: msg.sender_type === 'user' ? 'flex-end' : 'flex-start',
                     background: msg.sender_type === 'user' ? 'var(--accent-color)' : (isSystem ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255,255,255,0.1)'),
                     color: msg.sender_type === 'user' ? 'white' : 'var(--text-primary)',
-                    padding: '8px 12px',
+                    padding: isSystem ? '10px 14px' : '8px 12px',
                     borderRadius: '12px',
-                    maxWidth: '80%',
-                    wordBreak: 'break-word',
+                    maxWidth: isSystem ? '85%' : '80%',
                     border: isSystem ? '1px solid rgba(99, 102, 241, 0.3)' : 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
+                    display: isSystem ? 'flex' : 'block',
+                    alignItems: isSystem ? 'flex-start' : 'initial',
+                    gap: isSystem ? '10px' : '0',
+                    boxShadow: isSystem ? '0 4px 12px rgba(0,0,0,0.1)' : 'none',
+                    wordBreak: 'break-word'
                   }}>
-                    {msg.message}
+                    {isSystem ? (
+                      <>
+                        <span style={{ fontSize: '1.2rem', flexShrink: 0, lineHeight: 1 }}>🤖</span>
+                        <span style={{ lineHeight: 1.4 }}>{msg.message.replace('🤖 ', '')}</span>
+                      </>
+                    ) : (
+                      msg.message
+                    )}
                   </div>
                 );
               })
@@ -297,16 +322,17 @@ export default function ChatBubble() {
                 alignSelf: 'flex-start',
                 background: 'rgba(99, 102, 241, 0.15)',
                 color: 'var(--text-primary)',
-                padding: '8px 12px',
+                padding: '10px 14px',
                 borderRadius: '12px',
-                maxWidth: '80%',
-                wordBreak: 'break-word',
+                maxWidth: '85%',
                 border: '1px solid rgba(99, 102, 241, 0.3)',
                 display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
+                alignItems: 'flex-start',
+                gap: '10px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
               }}>
-                🤖 Din köplats är {queuePosition}.
+                <span style={{ fontSize: '1.2rem', flexShrink: 0, lineHeight: 1 }}>🤖</span>
+                <span style={{ lineHeight: 1.4, wordBreak: 'break-word' }}>Din köplats är {queuePosition}.</span>
               </div>
             )}
             {sessionStatus === 'assigned' && (
@@ -314,16 +340,17 @@ export default function ChatBubble() {
                 alignSelf: 'flex-start',
                 background: 'rgba(99, 102, 241, 0.15)',
                 color: 'var(--text-primary)',
-                padding: '8px 12px',
+                padding: '10px 14px',
                 borderRadius: '12px',
-                maxWidth: '80%',
-                wordBreak: 'break-word',
+                maxWidth: '85%',
                 border: '1px solid rgba(99, 102, 241, 0.3)',
                 display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
+                alignItems: 'flex-start',
+                gap: '10px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
               }}>
-                🤖 Du kopplas nu fram till en kundservicemedarbetare...
+                <span style={{ fontSize: '1.2rem', flexShrink: 0, lineHeight: 1 }}>🤖</span>
+                <span style={{ lineHeight: 1.4, wordBreak: 'break-word' }}>Du kopplas nu fram till en kundservicemedarbetare...</span>
               </div>
             )}
           </div>
