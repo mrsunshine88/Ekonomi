@@ -275,6 +275,18 @@ export default function SupportView() {
     }
   };
 
+  const openNewEmailModal = () => {
+    const sig = localStorage.getItem('agent_signature') || agentSignature;
+    if (sig) {
+      setNewEmailMessage(`\n\n--\nMed vänliga hälsningar,\n${sig}\nSmart Ekonomi`);
+    } else {
+      setNewEmailMessage('');
+    }
+    setNewEmailTo('');
+    setNewEmailSubject('');
+    setShowNewEmailModal(true);
+  };
+
   const handleSendNewEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEmailTo.trim() || !newEmailSubject.trim() || !newEmailMessage.trim() || isSendingNewEmail) return;
@@ -296,15 +308,12 @@ export default function SupportView() {
         .single();
       if (sessionError) throw sessionError;
 
-      const sig = localStorage.getItem('agent_signature') || agentSignature;
-      const fullMessage = sig ? `${newEmailMessage.trim()}\n\n--\nMed vänliga hälsningar,\n${sig}\nSmart Ekonomi` : newEmailMessage.trim();
-
       const { error: msgError } = await supabase
         .from('chat_messages')
         .insert({
           session_id: session.id,
           sender_type: 'admin',
-          message: fullMessage
+          message: newEmailMessage.trim()
         });
       if (msgError) throw msgError;
 
@@ -478,7 +487,7 @@ export default function SupportView() {
             )}
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
               <button
-                onClick={() => setShowNewEmailModal(true)}
+                onClick={openNewEmailModal}
                 style={{
                   background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', color: '#fff', border: 'none',
                   padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer',
