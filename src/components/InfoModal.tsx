@@ -203,8 +203,8 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                       <li>Hur funkar bankfilen?</li>
                       <li>Jag vill säga upp prenumerationen</li>
                     </ul>
-                    <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.2rem', position: 'relative', zIndex: 1 }}>
-                      <a href="mailto:support@smartekonomi.nu" className="contact-btn-green" style={{ flex: 1, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.2rem', position: 'relative', zIndex: 1, maxWidth: '100%' }}>
+                      <a href="mailto:support@smartekonomi.nu" className="contact-btn-green" style={{ flex: 1, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 'auto', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         📧 support@smartekonomi.nu
                       </a>
                       <button 
@@ -237,8 +237,8 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                       <li>Vi vill samarbeta</li>
                       <li>Kan ni sponsra vårt event?</li>
                     </ul>
-                    <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.2rem', position: 'relative', zIndex: 1 }}>
-                      <a href="mailto:info@smartekonomi.nu" className="contact-btn-blue" style={{ flex: 1, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.2rem', position: 'relative', zIndex: 1, maxWidth: '100%' }}>
+                      <a href="mailto:info@smartekonomi.nu" className="contact-btn-blue" style={{ flex: 1, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 'auto', minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         ✉️ info@smartekonomi.nu
                       </a>
                       <button 
