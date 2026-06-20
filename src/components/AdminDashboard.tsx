@@ -1402,8 +1402,8 @@ export default function AdminDashboard() {
                     </div>
                   )}
                 </div>
-                {m.email !== 'apersson508@gmail.com' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  {m.email !== 'apersson508@gmail.com' && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.5rem' }}>
                       <button onClick={() => handleToggleVip(m.email, m.is_vip)} disabled={loading} style={{ flex: '1 1 auto', background: m.is_vip ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.08)', color: m.is_vip ? '#10b981' : '#fff', border: `1px solid ${m.is_vip ? '#10b981' : 'transparent'}`, padding: '0.45rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
                         {m.is_vip ? '💎 VIP' : 'Gör VIP'}
@@ -1421,45 +1421,45 @@ export default function AdminDashboard() {
                         🗑️ Radera
                       </button>
                     </div>
-                    {m.chat_agent && (
-                      <div style={{ display: 'flex', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
-                            <input type="checkbox" checked={m.handles_chat} onChange={(e) => handleUpdateAgentQueues(m.email, e.target.checked, m.handles_email, m.handles_info, m.prio_chat, m.prio_email, m.prio_info)} style={{ accentColor: '#10b981' }} />
-                            Chatt-kö
-                          </label>
-                          {m.handles_chat && (
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginLeft: '0.5rem' }}>
-                              Prio: <input type="number" min="1" max="10" defaultValue={m.prio_chat || 1} onBlur={(e) => { const val = parseInt(e.target.value) || 1; if (val !== m.prio_chat) handleUpdateAgentQueues(m.email, m.handles_chat, m.handles_email, m.handles_info, val, m.prio_email, m.prio_info); }} style={{ width: '40px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: '4px', padding: '0.1rem 0.25rem', fontSize: '0.75rem', textAlign: 'center' }} />
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
-                            <input type="checkbox" checked={m.handles_email} onChange={(e) => handleUpdateAgentQueues(m.email, m.handles_chat, e.target.checked, m.handles_info, m.prio_chat, m.prio_email, m.prio_info)} style={{ accentColor: '#10b981' }} />
-                            Support-kö
-                          </label>
-                          {m.handles_email && (
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginLeft: '0.5rem' }}>
-                              Prio: <input type="number" min="1" max="10" defaultValue={m.prio_email || 1} onBlur={(e) => { const val = parseInt(e.target.value) || 1; if (val !== m.prio_email) handleUpdateAgentQueues(m.email, m.handles_chat, m.handles_email, m.handles_info, m.prio_chat, val, m.prio_info); }} style={{ width: '40px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: '4px', padding: '0.1rem 0.25rem', fontSize: '0.75rem', textAlign: 'center' }} />
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
-                            <input type="checkbox" checked={m.handles_info} onChange={(e) => handleUpdateAgentQueues(m.email, m.handles_chat, m.handles_email, e.target.checked, m.prio_chat, m.prio_email, m.prio_info)} style={{ accentColor: '#10b981' }} />
-                            Info-kö
-                          </label>
-                          {m.handles_info && (
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginLeft: '0.5rem' }}>
-                              Prio: <input type="number" min="1" max="10" defaultValue={m.prio_info || 1} onBlur={(e) => { const val = parseInt(e.target.value) || 1; if (val !== m.prio_info) handleUpdateAgentQueues(m.email, m.handles_chat, m.handles_email, m.handles_info, m.prio_chat, m.prio_email, val); }} style={{ width: '40px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: '4px', padding: '0.1rem 0.25rem', fontSize: '0.75rem', textAlign: 'center' }} />
-                            </span>
-                          )}
-                        </div>
+                  )}
+                  {m.chat_agent && (
+                    <div style={{ display: 'flex', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                          <input type="checkbox" checked={m.handles_chat} onChange={(e) => handleUpdateAgentQueues(m.email, e.target.checked, m.handles_email, m.handles_info, m.prio_chat, m.prio_email, m.prio_info)} style={{ accentColor: '#10b981' }} />
+                          Chatt-kö
+                        </label>
+                        {m.handles_chat && (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginLeft: '0.5rem' }}>
+                            Prio: <input type="number" min="1" max="10" defaultValue={m.prio_chat || 1} onBlur={(e) => { const val = parseInt(e.target.value) || 1; if (val !== m.prio_chat) handleUpdateAgentQueues(m.email, m.handles_chat, m.handles_email, m.handles_info, val, m.prio_email, m.prio_info); }} style={{ width: '40px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: '4px', padding: '0.1rem 0.25rem', fontSize: '0.75rem', textAlign: 'center' }} />
+                          </span>
+                        )}
                       </div>
-                    )}
-                  </div>
-                )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                          <input type="checkbox" checked={m.handles_email} onChange={(e) => handleUpdateAgentQueues(m.email, m.handles_chat, e.target.checked, m.handles_info, m.prio_chat, m.prio_email, m.prio_info)} style={{ accentColor: '#10b981' }} />
+                          Support-kö
+                        </label>
+                        {m.handles_email && (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginLeft: '0.5rem' }}>
+                            Prio: <input type="number" min="1" max="10" defaultValue={m.prio_email || 1} onBlur={(e) => { const val = parseInt(e.target.value) || 1; if (val !== m.prio_email) handleUpdateAgentQueues(m.email, m.handles_chat, m.handles_email, m.handles_info, m.prio_chat, val, m.prio_info); }} style={{ width: '40px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: '4px', padding: '0.1rem 0.25rem', fontSize: '0.75rem', textAlign: 'center' }} />
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                          <input type="checkbox" checked={m.handles_info} onChange={(e) => handleUpdateAgentQueues(m.email, m.handles_chat, m.handles_email, e.target.checked, m.prio_chat, m.prio_email, m.prio_info)} style={{ accentColor: '#10b981' }} />
+                          Info-kö
+                        </label>
+                        {m.handles_info && (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginLeft: '0.5rem' }}>
+                            Prio: <input type="number" min="1" max="10" defaultValue={m.prio_info || 1} onBlur={(e) => { const val = parseInt(e.target.value) || 1; if (val !== m.prio_info) handleUpdateAgentQueues(m.email, m.handles_chat, m.handles_email, m.handles_info, m.prio_chat, m.prio_email, val); }} style={{ width: '40px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', borderRadius: '4px', padding: '0.1rem 0.25rem', fontSize: '0.75rem', textAlign: 'center' }} />
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
             {membersList.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Inga medlemmar hittades.</div>}

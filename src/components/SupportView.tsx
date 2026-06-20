@@ -178,6 +178,19 @@ export default function SupportView() {
     if (!user) return;
 
     const init = async () => {
+      // Hämta signatur från databasen
+      const { data: profile } = await supabase.from('profiles').select('first_name, last_name').eq('id', user.id).maybeSingle();
+      if (profile) {
+        if (profile.first_name) {
+          setAgentSignatureFirst(profile.first_name);
+          localStorage.setItem('agent_signature_first', profile.first_name);
+        }
+        if (profile.last_name) {
+          setAgentSignatureLast(profile.last_name);
+          localStorage.setItem('agent_signature_last', profile.last_name);
+        }
+      }
+
       const { data } = await supabase
         .from('agent_sessions')
         .select('status, updated_at')
@@ -1049,9 +1062,12 @@ export default function SupportView() {
                 Avbryt
               </button>
               <button 
-                onClick={() => {
+                onClick={async () => {
                   localStorage.setItem('agent_signature_first', agentSignatureFirst);
                   localStorage.setItem('agent_signature_last', agentSignatureLast);
+                  if (user) {
+                    await supabase.from('profiles').update({ first_name: agentSignatureFirst, last_name: agentSignatureLast }).eq('id', user.id);
+                  }
                   setShowSignatureModal(false);
                 }}
                 style={{
