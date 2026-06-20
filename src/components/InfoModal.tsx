@@ -192,7 +192,7 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                     gap: '0.75rem',
                     boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                   }}>
-                    <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
+                    <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', color: '#fff' }}>
                       <span style={{ fontSize: '1.5rem' }}>💬</span> För kunder
                     </h3>
                     <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5' }}>
@@ -204,10 +204,10 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                       <li>Jag vill säga upp prenumerationen</li>
                     </ul>
                     <a href="mailto:support@smartekonomi.nu" style={{ 
-                      display: 'inline-flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center',
+                      display: 'block', textAlign: 'center', width: '100%', boxSizing: 'border-box',
                       background: 'rgba(255,255,255,0.05)',
                       border: '1px solid var(--border-color)',
-                      color: '#fff', textDecoration: 'none', padding: '0.6rem 1.2rem',
+                      color: '#fff', textDecoration: 'none', padding: '0.7rem 1.2rem',
                       borderRadius: '8px', fontWeight: 'bold', transition: 'all 0.2s',
                       fontSize: '0.95rem', marginTop: '0.25rem'
                     }}>
@@ -226,7 +226,7 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                     gap: '0.75rem',
                     boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                   }}>
-                    <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
+                    <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', color: '#fff' }}>
                       <span style={{ fontSize: '1.5rem' }}>🏢</span> För press, samarbeten och övriga frågor
                     </h3>
                     <ul style={{ margin: '0', paddingLeft: '1.5rem', color: '#e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.85rem' }}>
@@ -235,10 +235,10 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                       <li>Kan ni sponsra vårt event?</li>
                     </ul>
                     <a href="mailto:info@smartekonomi.nu" style={{ 
-                      display: 'inline-flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center',
+                      display: 'block', textAlign: 'center', width: '100%', boxSizing: 'border-box',
                       background: 'rgba(255,255,255,0.05)',
                       border: '1px solid var(--border-color)',
-                      color: '#fff', textDecoration: 'none', padding: '0.6rem 1.2rem',
+                      color: '#fff', textDecoration: 'none', padding: '0.7rem 1.2rem',
                       borderRadius: '8px', fontWeight: 'bold', transition: 'all 0.2s',
                       fontSize: '0.95rem', marginTop: '0.25rem'
                     }}>
