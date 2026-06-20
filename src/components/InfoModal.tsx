@@ -176,7 +176,8 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
               {loading ? (
                 <p>Laddar kontaktuppgifter...</p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'relative', paddingTop: '1rem' }}>
+                  <div className="contact-modal-accent" />
                   <p style={{ color: 'var(--text-secondary)', marginTop: '-0.5rem', marginBottom: '0' }}>
                     Välj rätt e-postadress för ditt ärende så kan vi hjälpa dig snabbare.
                   </p>
