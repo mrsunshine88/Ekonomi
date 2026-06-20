@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
 import { useAuth } from '../AuthContext';
+import { SUPPORT_EMAIL, INFO_EMAIL } from '../constants';
 
 type AgentStatusType = 'offline' | 'available' | 'busy' | 'post_work' | 'break' | 'lunch';
 
@@ -50,6 +51,14 @@ export default function SupportView() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [agentSignature, setAgentSignature] = useState('');
   const [showSignatureModal, setShowSignatureModal] = useState(false);
+
+  // Nytt e-postmeddelande
+  const [showNewEmailModal, setShowNewEmailModal] = useState(false);
+  const [newEmailFrom, setNewEmailFrom] = useState(SUPPORT_EMAIL);
+  const [newEmailTo, setNewEmailTo] = useState('');
+  const [newEmailSubject, setNewEmailSubject] = useState('');
+  const [newEmailMessage, setNewEmailMessage] = useState('');
+  const [isSendingNewEmail, setIsSendingNewEmail] = useState(false);
 
   useEffect(() => {
     setNotificationsEnabled(localStorage.getItem('chat_notifications') === 'true');
@@ -266,6 +275,62 @@ export default function SupportView() {
     }
   };
 
+      }
+    }
+  };
+
+  const handleSendNewEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmailTo.trim() || !newEmailSubject.trim() || !newEmailMessage.trim() || isSendingNewEmail) return;
+    setIsSendingNewEmail(true);
+    try {
+      const { data: session, error: sessionError } = await supabase
+        .from('chat_sessions')
+        .insert({
+          user_id: user?.id,
+          status: 'queued',
+          assigned_to: user?.id,
+          assigned_name: user?.email,
+          ticket_type: 'email',
+          inbound_address: newEmailFrom,
+          customer_email: newEmailTo.trim(),
+          email_subject: newEmailSubject.trim()
+        })
+        .select()
+        .single();
+      if (sessionError) throw sessionError;
+
+      const sig = localStorage.getItem('agent_signature') || agentSignature;
+      const fullMessage = sig ? `${newEmailMessage.trim()}\n\n--\nMed vänliga hälsningar,\n${sig}\nSmart Ekonomi` : newEmailMessage.trim();
+
+      const { error: msgError } = await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: session.id,
+          sender_type: 'admin',
+          message: fullMessage
+        });
+      if (msgError) throw msgError;
+
+      setNewEmailTo('');
+      setNewEmailSubject('');
+      setNewEmailMessage('');
+      setShowNewEmailModal(false);
+      
+      const sessionData = await supabase.from('chat_sessions').select('*').eq('id', session.id).single();
+      if(sessionData.data) {
+        setActiveSession({...sessionData.data, status: 'active'});
+        setAgentStatus('busy');
+        await supabase.from('agent_sessions').update({ status: 'busy' }).eq('agent_id', user?.id);
+      }
+    } catch (err) {
+      console.error('Kunde inte skapa e-post:', err);
+      alert('Ett fel uppstod när mejlet skulle skapas.');
+    } finally {
+      setIsSendingNewEmail(false);
+    }
+  };
+
   // Skicka meddelande
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -416,6 +481,16 @@ export default function SupportView() {
               </>
             )}
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <button
+                onClick={() => setShowNewEmailModal(true)}
+                style={{
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', color: '#fff', border: 'none',
+                  padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer',
+                  fontSize: '0.85rem', fontWeight: 'bold', boxShadow: '0 2px 8px rgba(139,92,246,0.3)'
+                }}
+              >
+                ✉️ Nytt mejl
+              </button>
               <button
                 onClick={() => setShowSignatureModal(true)}
                 style={{
@@ -701,6 +776,105 @@ export default function SupportView() {
                 Spara Signatur
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Nytt Mejl Modal ─── */}
+      {showNewEmailModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(11, 15, 25, 0.9)', backdropFilter: 'blur(5px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100000
+        }}>
+          <div style={{
+            background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)',
+            padding: '2rem', borderRadius: '16px', maxWidth: '600px', width: '100%',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', display: 'flex', flexDirection: 'column', gap: '1rem'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#fff', display: 'flex', justifyContent: 'space-between' }}>
+              <span>✉️ Skapa nytt e-postärende</span>
+              <button onClick={() => setShowNewEmailModal(false)} style={{ background: 'none', border: 'none', color: '#f43f5e', cursor: 'pointer', fontSize: '1.2rem' }}>✖</button>
+            </h3>
+            
+            <form onSubmit={handleSendNewEmail} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Från:</label>
+                <select
+                  value={newEmailFrom}
+                  onChange={(e) => setNewEmailFrom(e.target.value)}
+                  style={{
+                    width: '100%', padding: '0.75rem', borderRadius: '8px',
+                    border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)',
+                    color: '#fff', fontSize: '1rem'
+                  }}
+                >
+                  <option value={SUPPORT_EMAIL}>Kundservice ({SUPPORT_EMAIL})</option>
+                  <option value={INFO_EMAIL}>Info ({INFO_EMAIL})</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Till (Mottagarens e-post):</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="T.ex. kund@exempel.se"
+                  value={newEmailTo}
+                  onChange={(e) => setNewEmailTo(e.target.value)}
+                  style={{
+                    width: '100%', padding: '0.75rem', borderRadius: '8px',
+                    border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)',
+                    color: '#fff', fontSize: '1rem'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Ämne:</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Skriv ett tydligt ämne..."
+                  value={newEmailSubject}
+                  onChange={(e) => setNewEmailSubject(e.target.value)}
+                  style={{
+                    width: '100%', padding: '0.75rem', borderRadius: '8px',
+                    border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)',
+                    color: '#fff', fontSize: '1rem'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Meddelande:</label>
+                <textarea
+                  required
+                  placeholder="Skriv ditt mejl här..."
+                  value={newEmailMessage}
+                  onChange={(e) => setNewEmailMessage(e.target.value)}
+                  style={{
+                    width: '100%', padding: '0.75rem', borderRadius: '8px',
+                    border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)',
+                    color: '#fff', fontSize: '1rem', minHeight: '150px', resize: 'vertical', fontFamily: 'inherit'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                <button 
+                  type="submit"
+                  disabled={isSendingNewEmail || !newEmailTo.trim() || !newEmailSubject.trim() || !newEmailMessage.trim()}
+                  style={{
+                    background: 'var(--accent-gradient)', color: '#fff', border: 'none',
+                    padding: '0.8rem 2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem',
+                    opacity: (isSendingNewEmail || !newEmailTo.trim() || !newEmailSubject.trim() || !newEmailMessage.trim()) ? 0.5 : 1
+                  }}
+                >
+                  {isSendingNewEmail ? 'Skickar till kö...' : 'Skicka E-post'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
