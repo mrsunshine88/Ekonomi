@@ -840,14 +840,14 @@ export default function SupportView() {
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '0 2rem' }}>
               
               {/* Från-rad */}
-              <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0.75rem 0' }}>
-                <span style={{ color: 'var(--text-secondary)', width: '60px', fontSize: '0.9rem' }}>Från</span>
+              <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', padding: '0.35rem 0' }}>
+                <span style={{ color: 'var(--text-secondary)', width: '60px', fontSize: '0.85rem' }}>Från</span>
                 <select
                   value={newEmailFrom}
                   onChange={(e) => setNewEmailFrom(e.target.value)}
                   style={{
                     flex: 1, border: 'none', background: 'transparent', color: '#fff', 
-                    fontSize: '0.95rem', outline: 'none', cursor: 'pointer'
+                    fontSize: '0.9rem', outline: 'none', cursor: 'pointer'
                   }}
                 >
                   <option value={SUPPORT_EMAIL}>Kundservice ({SUPPORT_EMAIL})</option>
@@ -856,8 +856,8 @@ export default function SupportView() {
               </div>
 
               {/* Till-rad */}
-              <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0.75rem 0' }}>
-                <span style={{ color: 'var(--text-secondary)', width: '60px', fontSize: '0.9rem' }}>Till</span>
+              <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', padding: '0.35rem 0' }}>
+                <span style={{ color: 'var(--text-secondary)', width: '60px', fontSize: '0.85rem' }}>Till</span>
                 <input
                   type="email"
                   placeholder=""
@@ -865,13 +865,13 @@ export default function SupportView() {
                   onChange={(e) => setNewEmailTo(e.target.value)}
                   style={{
                     flex: 1, border: 'none', background: 'transparent', color: '#fff', 
-                    fontSize: '0.95rem', outline: 'none'
+                    fontSize: '0.9rem', outline: 'none'
                   }}
                 />
               </div>
 
               {/* Ämne-rad */}
-              <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '1rem 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.2)', padding: '0.45rem 0' }}>
                 <input
                   type="text"
                   placeholder="Lägg till ett ämne"
@@ -879,7 +879,7 @@ export default function SupportView() {
                   onChange={(e) => setNewEmailSubject(e.target.value)}
                   style={{
                     width: '100%', border: 'none', background: 'transparent', color: '#fff', 
-                    fontSize: '1.1rem', outline: 'none', fontWeight: '500'
+                    fontSize: '1rem', outline: 'none', fontWeight: '500'
                   }}
                 />
               </div>
