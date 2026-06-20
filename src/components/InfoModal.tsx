@@ -28,6 +28,13 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
   });
   const [loading, setLoading] = useState(true);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(text);
+    setTimeout(() => setCopied(null), 2000);
+  };
 
   const faqs = [
     {
@@ -196,9 +203,27 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                       <li>Hur funkar bankfilen?</li>
                       <li>Jag vill säga upp prenumerationen</li>
                     </ul>
-                    <a href="mailto:support@smartekonomi.nu" className="contact-btn-green" style={{ position: 'relative', zIndex: 1 }}>
-                      📧 support@smartekonomi.nu
-                    </a>
+                    <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.2rem', position: 'relative', zIndex: 1 }}>
+                      <a href="mailto:support@smartekonomi.nu" className="contact-btn-green" style={{ flex: 1, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        📧 support@smartekonomi.nu
+                      </a>
+                      <button 
+                        onClick={() => handleCopy('support@smartekonomi.nu')}
+                        title="Kopiera e-postadress"
+                        style={{ 
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
+                          border: '1px solid rgba(16, 185, 129, 0.5)', 
+                          borderRadius: '8px', padding: '0 1rem', color: '#fff', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          boxShadow: '0 4px 15px rgba(16, 185, 129, 0.15)', transition: 'all 0.2s',
+                          filter: copied === 'support@smartekonomi.nu' ? 'brightness(1.2)' : 'none'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
+                        onMouseOut={(e) => e.currentTarget.style.filter = copied === 'support@smartekonomi.nu' ? 'brightness(1.2)' : 'none'}
+                      >
+                        {copied === 'support@smartekonomi.nu' ? '✓' : '📋'}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Info / Övrigt */}
@@ -212,9 +237,27 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                       <li>Vi vill samarbeta</li>
                       <li>Kan ni sponsra vårt event?</li>
                     </ul>
-                    <a href="mailto:info@smartekonomi.nu" className="contact-btn-blue" style={{ position: 'relative', zIndex: 1 }}>
-                      ✉️ info@smartekonomi.nu
-                    </a>
+                    <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.2rem', position: 'relative', zIndex: 1 }}>
+                      <a href="mailto:info@smartekonomi.nu" className="contact-btn-blue" style={{ flex: 1, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        ✉️ info@smartekonomi.nu
+                      </a>
+                      <button 
+                        onClick={() => handleCopy('info@smartekonomi.nu')}
+                        title="Kopiera e-postadress"
+                        style={{ 
+                          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', 
+                          border: '1px solid rgba(59, 130, 246, 0.5)', 
+                          borderRadius: '8px', padding: '0 1rem', color: '#fff', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          boxShadow: '0 4px 15px rgba(59, 130, 246, 0.15)', transition: 'all 0.2s',
+                          filter: copied === 'info@smartekonomi.nu' ? 'brightness(1.2)' : 'none'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
+                        onMouseOut={(e) => e.currentTarget.style.filter = copied === 'info@smartekonomi.nu' ? 'brightness(1.2)' : 'none'}
+                      >
+                        {copied === 'info@smartekonomi.nu' ? '✓' : '📋'}
+                      </button>
+                    </div>
                   </div>
                   
                   {visibility.company && (

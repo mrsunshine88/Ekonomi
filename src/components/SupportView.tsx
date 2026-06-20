@@ -593,104 +593,137 @@ export default function SupportView() {
 
       {/* ─── Aktiv chatt / mejl (Öppen för redigering) ─── */}
       {activeSession && activeSession.status === 'active' && (
-        <div style={{
-          background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.3)',
-          borderRadius: '12px', marginBottom: '1rem', overflow: 'hidden'
-        }}>
-          <div style={{
-            background: 'var(--accent-gradient)', padding: '1rem 1.5rem',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-          }}>
-            <div style={{ flex: 1 }}>
-              {activeSession.ticket_type === 'email' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginBottom: '0.5rem' }}>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>
-                    📧 E-postärende
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '50px 1fr', gap: '0.5rem', fontSize: '0.9rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '8px', marginRight: '1rem' }}>
-                    <strong style={{ color: 'var(--text-secondary)' }}>Från:</strong> 
-                    <span style={{ fontWeight: 'bold' }}>{activeSession.customer_email || activeSession.profiles?.email || 'Okänd avsändare'}</span>
-                    
-                    <strong style={{ color: 'var(--text-secondary)' }}>Till:</strong> 
-                    <span style={{ 
-                      fontWeight: 'bold', 
-                      color: activeSession.inbound_address?.includes('info@') ? '#3b82f6' : '#10b981' 
-                    }}>
-                      {activeSession.inbound_address || 'Okänd mottagare'}
-                    </span>
-                    
-                    {activeSession.email_subject && (
-                      <>
-                        <strong style={{ color: 'var(--text-secondary)' }}>Ämne:</strong> 
-                        <span>{activeSession.email_subject}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '0.5rem' }}>
-                  💬 Aktiv chatt: {activeSession.profiles?.email || 'Anonym besökare'}
-                </div>
-              )}
-              <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', opacity: 0.85 }}>
-                <span>Ärende-ID: {activeSession.id.slice(0, 8)}...</span>
-                <span style={{ fontWeight: 'bold' }}>⏱ Öppet i {formatWait(activeSession.updated_at || activeSession.created_at)}</span>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '0.4rem' }}>
-              <button
-                onClick={handleClose}
-                style={{
-                  background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)',
-                  padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem'
-                }}
-              >
-                ✅ Avsluta ärende
-              </button>
-            </div>
-          </div>
-
-          {/* Innehåll beroende på ärendetyp */}
+        <>
           {activeSession.ticket_type === 'email' ? (
-            <div style={{ padding: '1rem' }}>
-              <div style={{
-                background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '8px',
-                color: '#e2e8f0', whiteSpace: 'pre-wrap', fontFamily: 'sans-serif', fontSize: '0.95rem',
-                marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.1)'
+            <div style={{
+              background: '#1c2135',
+              borderRadius: '12px', marginBottom: '1rem', overflow: 'hidden',
+              display: 'flex', flexDirection: 'column',
+              border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.3)'
+            }}>
+              {/* Header (Top bar) */}
+              <div style={{ 
+                background: '#252b43', padding: '0.75rem 1rem', 
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                borderBottom: '1px solid rgba(255,255,255,0.05)'
               }}>
-                {messages.filter(m => m.sender_type !== 'admin').map(m => m.message).join('\n\n') || "Kunde inte ladda mejlet..."}
-              </div>
-              
-              <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <textarea
-                  value={inputText}
-                  onChange={e => setInputText(e.target.value)}
-                  placeholder="Skriv ditt svar här..."
+                <button
+                  onClick={(e) => handleSend(e as any)}
+                  disabled={isSending || !inputText.trim()}
                   style={{
-                    width: '100%', padding: '1.5rem', borderRadius: '8px',
-                    border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)',
-                    color: '#fff', resize: 'vertical', minHeight: '250px', fontFamily: 'inherit', fontSize: '1rem'
+                    background: '#3b82f6', color: '#fff', border: 'none', 
+                    padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', 
+                    fontWeight: 'bold', fontSize: '0.9rem',
+                    opacity: (!inputText.trim() || isSending) ? 0.6 : 1,
+                    display: 'flex', alignItems: 'center', gap: '0.5rem'
                   }}
-                />
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button
-                    type="submit"
-                    disabled={isSending || !inputText.trim()}
-                    style={{
-                      padding: '1rem 2.5rem', background: 'var(--accent-gradient)', color: '#fff',
-                      border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
-                      fontSize: '1.1rem', opacity: !inputText.trim() ? 0.5 : 1,
-                      display: 'flex', alignItems: 'center', gap: '0.5rem',
-                      boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)'
+                >
+                  {isSending ? 'Skickar...' : 'Skicka ›'}
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    <span>ID: {activeSession.id.slice(0, 8)}</span>
+                    <span style={{ margin: '0 0.5rem' }}>•</span>
+                    <span>Öppet i {formatWait(activeSession.updated_at || activeSession.created_at)}</span>
+                  </div>
+                  <button 
+                    onClick={handleClose} 
+                    title="Avsluta ärende"
+                    style={{ 
+                      background: 'none', border: 'none', color: 'var(--text-secondary)', 
+                      cursor: 'pointer', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      width: '32px', height: '32px', borderRadius: '50%'
                     }}
+                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                    onMouseOut={(e) => e.currentTarget.style.background = 'none'}
                   >
-                    📤 Skicka E-post
+                    ✖
                   </button>
                 </div>
-              </form>
+              </div>
+
+              {/* Från, Till, Ämne */}
+              <div style={{ display: 'flex', flexDirection: 'column', padding: '0 1.5rem' }}>
+                {/* Från-rad */}
+                <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0.5rem 0' }}>
+                  <span style={{ color: 'var(--text-secondary)', width: '60px', fontSize: '0.85rem' }}>Från</span>
+                  <span style={{ color: '#fff', fontSize: '0.9rem' }}>
+                    {activeSession.inbound_address?.includes('info@') ? `Info (${INFO_EMAIL})` : `Kundservice (${SUPPORT_EMAIL})`}
+                  </span>
+                </div>
+
+                {/* Till-rad */}
+                <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0.5rem 0' }}>
+                  <span style={{ color: 'var(--text-secondary)', width: '60px', fontSize: '0.85rem' }}>Till</span>
+                  <span style={{ color: '#fff', fontSize: '0.9rem' }}>
+                    {activeSession.customer_email || activeSession.profiles?.email || 'Okänd avsändare'}
+                  </span>
+                </div>
+
+                {/* Ämne-rad */}
+                <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0.6rem 0' }}>
+                  <span style={{ color: '#fff', fontSize: '1rem', fontWeight: '500' }}>
+                    {activeSession.email_subject?.startsWith('Re:') ? activeSession.email_subject : `Re: ${activeSession.email_subject || 'Ärende'}`}
+                  </span>
+                </div>
+
+                {/* Text-editor yta */}
+                <div style={{ display: 'flex', flexDirection: 'column', paddingTop: '1rem', paddingBottom: '1rem' }}>
+                  <textarea
+                    placeholder="Skriv ditt svar här..."
+                    value={inputText}
+                    onChange={e => setInputText(e.target.value)}
+                    style={{
+                      width: '100%', border: 'none', background: 'transparent', 
+                      color: '#e2e8f0', fontSize: '1rem', resize: 'vertical', outline: 'none', 
+                      fontFamily: 'inherit', lineHeight: '1.6', minHeight: '150px'
+                    }}
+                  />
+                  
+                  {/* Tidigare meddelanden */}
+                  <div style={{ 
+                    marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)',
+                    color: 'var(--text-secondary)', fontSize: '0.9rem', whiteSpace: 'pre-wrap', fontFamily: 'inherit',
+                    lineHeight: '1.5'
+                  }}>
+                    <div style={{ marginBottom: '1rem' }}>--<br/>Ursprungligt meddelande:</div>
+                    {messages.filter(m => m.sender_type !== 'admin').map(m => m.message).join('\n\n') || "Kunde inte ladda mejlet..."}
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
-            <>
+            <div style={{
+              background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.3)',
+              borderRadius: '12px', marginBottom: '1rem', overflow: 'hidden'
+            }}>
+              <div style={{
+                background: 'var(--accent-gradient)', padding: '1rem 1.5rem',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '0.5rem' }}>
+                    💬 Aktiv chatt: {activeSession.profiles?.email || 'Anonym besökare'}
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', opacity: 0.85 }}>
+                    <span>Ärende-ID: {activeSession.id.slice(0, 8)}...</span>
+                    <span style={{ fontWeight: 'bold' }}>⏱ Öppet i {formatWait(activeSession.updated_at || activeSession.created_at)}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  <button
+                    onClick={handleClose}
+                    style={{
+                      background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)',
+                      padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem'
+                    }}
+                  >
+                    ✅ Avsluta ärende
+                  </button>
+                </div>
+              </div>
+              
               {/* Meddelanden (Chatt) */}
               <div ref={scrollRef} style={{
                 height: '35vh', maxHeight: '320px', minHeight: '180px',
@@ -744,10 +777,9 @@ export default function SupportView() {
                   Skicka
                 </button>
               </form>
-            </>
+            </div>
           )}
-
-        </div>
+        </>
       )}
 
       {/* ─── Kön (DOLD ENLIGT ÖNSKEMÅL) ─── */}
