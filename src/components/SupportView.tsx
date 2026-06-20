@@ -59,6 +59,7 @@ export default function SupportView() {
   const [newEmailSubject, setNewEmailSubject] = useState('');
   const [newEmailMessage, setNewEmailMessage] = useState('');
   const [isSendingNewEmail, setIsSendingNewEmail] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   useEffect(() => {
     setNotificationsEnabled(localStorage.getItem('chat_notifications') === 'true');
@@ -322,7 +323,8 @@ export default function SupportView() {
       setNewEmailMessage('');
       setShowNewEmailModal(false);
       
-      alert('Mejlet har skickats till kön för utskick!');
+      setToastMessage('Mejlet har skickats till kön för utskick!');
+      setTimeout(() => setToastMessage(''), 3000);
     } catch (err) {
       console.error('Kunde inte skapa e-post:', err);
       alert('Ett fel uppstod när mejlet skulle skapas.');
@@ -411,6 +413,18 @@ export default function SupportView() {
     <div style={fullscreenStyles}>
 
       {/* ─── Toppmeny ─── */}
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed', bottom: '2rem', right: '2rem',
+          background: '#10b981', color: '#fff', padding: '1rem 2rem',
+          borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          zIndex: 100001, fontWeight: 'bold'
+        }}>
+          ✅ {toastMessage}
+        </div>
+      )}
+
       <div style={{
         background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '12px', padding: '1rem 1.5rem', marginBottom: '1.5rem',
