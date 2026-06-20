@@ -2118,3 +2118,13 @@ För att säkerställa 100% efterlevnad av GDPR (särskilt rätten till radering
 ### Varför
 - **Underhåll och Bugg-minimering:** Att manuellt ange \`DELETE FROM...\` för varje nyskapad tabell introducerar hög risk för "kvarlämnad" data. Genom att förlita oss på databasens motor (\`CASCADE\`) är raderingen omedelbar, konsekvent och atomisk.
 - **Säkerställande av korrekta scheman:** Övervakningsskriptet eliminerar risken att framtida uppdateringar till databasschemat bryter mot GDPR-kraven.
+
+## Enterprise-nivå Transparens och FAQ
+
+### Vad
+För att inge förtroende och möta kraven hos en modern SaaS-plattform är GDPR- och sekretessinformationen även integrerad direkt i appens "Frågor & Svar"-sektion (InfoModal). Användaren kan där snabbt få svar på vanliga frågor om datasäkerhet.
+
+### Hur
+- **Row Level Security (RLS):** Under sektionen "🛡️ Integritet & GDPR" förklaras det tydligt att datan är skyddad med strikt Row Level Security, vilket innebär att endast användaren har åtkomst till informationen. Inte ens plattformens administratörer kan se privata ekonomiska uppgifter.
+- **Permanent Radering:** Beskrivningen av kontoradering är slipad med Enterprise SaaS-terminologi. Den garanterar att konton raderas "permanent" och utplånas från "alla aktiva system" utan att kvarlämna någon "användarrelaterad information i systemet".
+- Detta skapar en juridisk och psykologisk trygghet utan onödiga överdrifter.
