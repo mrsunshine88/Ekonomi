@@ -159,7 +159,7 @@ export default function LoginScreen() {
         <div className="login-info-content">
           <div className="brand-badge">🏠 SmartEkonomi</div>
           <h1 className="login-hero-title" style={{ fontSize: '2.5rem', lineHeight: '1.2' }}>
-            SmartEkonomi – En smart ekonomi-app för hushållet
+            SmartEkonomi – <span className="text-gradient">En smart ekonomi-app för hushållet</span>
           </h1>
           <p className="login-hero-subtitle" style={{ lineHeight: '1.6' }}>
             <span style={{ color: '#fff', fontWeight: 600 }}>Slipp miniräknaren.</span> <span className="text-gradient" style={{ fontWeight: 600 }}>Spara tid och få full kontroll över hushållets ekonomi.</span><br/><br/>
