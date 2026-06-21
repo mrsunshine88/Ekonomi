@@ -18,7 +18,9 @@ self.addEventListener('push', function(event) {
     icon: data.icon || '/icon-192x192.png',
     badge: data.badge || '/icon-192x192.png',
     vibrate: [200, 100, 200, 100, 200, 100, 200], // Vibration pattern
-    data: data.data || {}
+    data: data.data || {},
+    tag: data.tag || 'ticket-assigned',
+    renotify: true
   };
 
   event.waitUntil(
