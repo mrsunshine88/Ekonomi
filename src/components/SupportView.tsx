@@ -236,6 +236,11 @@ export default function SupportView() {
       })
       .subscribe();
 
+    // Fallback: kolla var 5:e sekund för säkerhets skull om websocket droppar
+    const checkInterval = setInterval(() => {
+      checkAssignedSession();
+    }, 5000);
+
     // Realtime: agent-närvaro (synkar status mellan mobilen och datorn)
     const agentChannel = supabase.channel('support_agents')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_sessions' }, (payload: any) => {
@@ -253,6 +258,7 @@ export default function SupportView() {
     window.addEventListener('beforeunload', handleUnload);
 
     return () => {
+      clearInterval(checkInterval);
       supabase.removeChannel(queueChannel);
       supabase.removeChannel(agentChannel);
       window.removeEventListener('beforeunload', handleUnload);
@@ -409,6 +415,8 @@ export default function SupportView() {
         .select()
         .single();
       if (sessionError) throw sessionError;
+
+      currentSessionId = session.id;
 
       const { error: msgError } = await supabase
         .from('chat_messages')

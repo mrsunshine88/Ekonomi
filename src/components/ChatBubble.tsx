@@ -198,6 +198,13 @@ export default function ChatBubble() {
         if (sessionErr) throw sessionErr;
         currentSessionId = newSession.id;
         setSessionId(newSession.id);
+        
+        // Fix: Läs av status igen efter en halv sekund eftersom backend-triggern 
+        // kan tilldela ärendet omedelbart (innan vår websocket hinner prenumerera)
+        setTimeout(async () => {
+          const { data: verifySession } = await supabase.from('chat_sessions').select('status').eq('id', newSession.id).single();
+          if (verifySession) setSessionStatus(verifySession.status as any);
+        }, 800);
       }
 
       // Insert message
