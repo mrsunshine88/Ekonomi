@@ -204,8 +204,24 @@ export default function ChatBubble() {
         // Fix: Läs av status igen efter en halv sekund eftersom backend-triggern 
         // kan tilldela ärendet omedelbart (innan vår websocket hinner prenumerera)
         setTimeout(async () => {
-          const { data: verifySession } = await supabase.from('chat_sessions').select('status').eq('id', newSession.id).single();
-          if (verifySession) setSessionStatus(verifySession.status as any);
+          const { data: verifySession } = await supabase.from('chat_sessions').select('status, assigned_name, ticket_type').eq('id', newSession.id).single();
+          if (verifySession) {
+            setSessionStatus(verifySession.status as any);
+            
+            // Om backend-triggern precis tilldelade ärendet till en agent,
+            // väcker vi agentens telefon genom att trigga Vercel Push härifrån kundens webbläsare!
+            if (verifySession.status === 'assigned' && verifySession.assigned_name) {
+              fetch('https://www.smartekonomi.nu/api/send-push', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'assigned',
+                  target_email: verifySession.assigned_name,
+                  ticket_type: verifySession.ticket_type || 'chat'
+                })
+              }).catch(err => console.error('Kunde inte skicka push från kund-vy:', err));
+            }
+          }
         }, 800);
       }
 

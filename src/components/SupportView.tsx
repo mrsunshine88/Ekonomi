@@ -167,17 +167,6 @@ export default function SupportView() {
                console.log('Notis blockerades:', err);
              }
            }
-           
-           // Trigga riktig Web Push via Vercel (för att väcka eventuell mobil)
-           fetch('https://www.smartekonomi.nu/api/send-push', {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({
-               action: 'assigned',
-               target_email: user?.email,
-               ticket_type: myActive.ticket_type
-             })
-           }).catch(err => console.error('Kunde inte skicka push:', err));
         }
       }
     } else {
@@ -236,11 +225,6 @@ export default function SupportView() {
       })
       .subscribe();
 
-    // Fallback: kolla var 5:e sekund för säkerhets skull om websocket droppar
-    const checkInterval = setInterval(() => {
-      checkAssignedSession();
-    }, 5000);
-
     // Realtime: agent-närvaro (synkar status mellan mobilen och datorn)
     const agentChannel = supabase.channel('support_agents')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_sessions' }, (payload: any) => {
@@ -258,7 +242,6 @@ export default function SupportView() {
     window.addEventListener('beforeunload', handleUnload);
 
     return () => {
-      clearInterval(checkInterval);
       supabase.removeChannel(queueChannel);
       supabase.removeChannel(agentChannel);
       window.removeEventListener('beforeunload', handleUnload);

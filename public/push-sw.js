@@ -23,13 +23,9 @@ self.addEventListener('push', function(event) {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      const isAppActive = windowClients.some(client => 
-        client.visibilityState === 'visible' || client.focused
-      );
-      
-      if (!isAppActive) {
-        return self.registration.showNotification(title, options);
-      }
+      // Vi tvingar fram notisen oavsett om appen är aktiv eller inte,
+      // eftersom iOS annars ofta döljer notiser om telefonen nyss var vaken eller låst.
+      return self.registration.showNotification(title, options);
     })
   );
 });
