@@ -150,8 +150,11 @@ export default function SupportView() {
       }
       setActiveSession({ ...myActive, profiles: myActive.user_id ? { email } : null } as ChatSession);
       
-      // Säkerhetskoll: om vi har ett ärende men inte är busy, bli busy
-      if (agentStatus !== 'busy') {
+      // Säkerhetskoll: om vi har ett ärende men inte är busy, bli busy.
+      // Hämta färsk status från DB istället för 'agentStatus' för att undvika "Stale Closure" loopar!
+      const { data: dbAgent } = await supabase.from('agent_sessions').select('status').eq('agent_id', user.id).single();
+      
+      if (dbAgent && dbAgent.status !== 'busy') {
         await supabase.from('agent_sessions').update({ status: 'busy' }).eq('agent_id', user.id);
         setAgentStatus('busy');
         
@@ -457,17 +460,28 @@ export default function SupportView() {
   // Stäng ärende
   const handleClose = async () => {
     if (!activeSession) return;
-    const { error } = await supabase.rpc('release_chat_session', { target_session_id: activeSession.id });
+    // Sätt databas-status till 'post_work' så triggern inte tilldelar direkt!
+    const { error } = await supabase.rpc('release_chat_session', { target_session_id: activeSession.id, next_status: 'post_work' });
     if (error) {
       console.error('Misslyckades att stänga ärendet:', error);
       alert('Kunde inte stänga ärendet. Vänligen försök igen.');
       return;
     }
     setActiveSession(null);
-    setAgentStatus('available');
+    setAgentStatus('post_work');
     setStatusUpdatedAt(new Date().toISOString());
     startCooldown(20);
-    await checkAssignedSession();
+    
+    // Automatiskt bli "Ledig" när cooldown på 20s är över
+    setTimeout(async () => {
+      if (user?.id) {
+        // Kontrollera att vi inte har stängt ner eller bytt status manuellt under tiden
+        const { data: dbAgent } = await supabase.from('agent_sessions').select('status').eq('agent_id', user.id).single();
+        if (dbAgent && dbAgent.status === 'post_work') {
+          await supabase.from('agent_sessions').update({ status: 'available' }).eq('agent_id', user.id);
+        }
+      }
+    }, 20000);
   };
 
   // Byt status (Efterarbete / Rast / Lunch)

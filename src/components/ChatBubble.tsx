@@ -211,7 +211,7 @@ export default function ChatBubble() {
             // Om backend-triggern precis tilldelade ärendet till en agent,
             // väcker vi agentens telefon genom att trigga Vercel Push härifrån kundens webbläsare!
             if (verifySession.status === 'assigned' && verifySession.assigned_name) {
-              fetch('https://www.smartekonomi.nu/api/send-push', {
+              fetch('/api/send-push', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
