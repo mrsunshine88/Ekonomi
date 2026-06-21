@@ -218,17 +218,7 @@ export default function ChatBubble() {
         return [...prev, insertedMsg];
       });
 
-      // Trigger push notification directly via Vercel instead of relying on Supabase Webhooks
-      fetch('/api/send-push', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          record: {
-            sender_type: 'user',
-            message: inputText.trim()
-          }
-        })
-      }).catch(err => console.error("Push API trigger failed:", err));
+
 
       setInputText('');
     } catch (err: any) {

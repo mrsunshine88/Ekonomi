@@ -70,6 +70,6 @@ REVOKE EXECUTE ON FUNCTION public.revoke_household_vip_by_email(character varyin
 REVOKE EXECUTE ON FUNCTION public.revoke_household_vip_by_email(text) FROM authenticated;
 REVOKE EXECUTE ON FUNCTION public.toggle_paywall(boolean) FROM authenticated;
 REVOKE EXECUTE ON FUNCTION public.set_global_setting(character varying, character varying) FROM authenticated;
-REVOKE EXECUTE ON FUNCTION public.set_user_role(uuid, text) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.set_user_role(uuid, text) TO authenticated;
 REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM authenticated;
 REVOKE EXECUTE ON FUNCTION public.is_user_admin() FROM authenticated;

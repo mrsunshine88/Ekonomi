@@ -288,6 +288,17 @@ export default function SupportView() {
                  console.log('Notis blockerades:', err);
                }
              }
+
+             // Skicka riktig Push Notis via Vercel API
+             fetch('/api/send-push', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({
+                 action: 'assigned',
+                 target_email: user?.email,
+                 ticket_type: sessionData.ticket_type
+               })
+             }).catch(err => console.error("Push API trigger failed:", err));
            }
         }
       }

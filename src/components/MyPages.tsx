@@ -143,8 +143,9 @@ export default function MyPages() {
       
       setMembers(members.map(m => m.id === memberId ? { ...m, role: newRole } : m));
       setMsg(`✅ Behörighet ändrad! Personen är nu ${newRole === 'owner' ? 'Medägare (full tillgång till gemensamma räkningar)' : 'Medlem (Låst läge)'}.`);
-    } catch (e: unknown) {
-      setMsg('❌ ' + (e instanceof Error ? e.message : String(e)) + '. (Tips: Kör SQL-skriptet för behörigheter om databasen blockerar)');
+    } catch (e: any) {
+      const errMessage = e instanceof Error ? e.message : e?.message || JSON.stringify(e);
+      setMsg('❌ ' + errMessage + '. (Tips: Kör SQL-skriptet för behörigheter om databasen blockerar)');
     } finally {
       setLoading(false);
     }
@@ -721,7 +722,7 @@ export default function MyPages() {
               <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid var(--accent-color)' }}>
                 <strong style={{ color: '#fff', fontSize: '1.1rem' }}>👑 Ditt hushåll</strong>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem', lineHeight: 1.5 }}>
-                  Eftersom du är grundare av detta hushåll så äger du datan. Därför kan du inte lämna hushållet. Om du vill bli ensam i appen igen kan du gå upp till medlemslistan och kicka ut de övriga.
+                  Du har full kontroll över vilka som får vara med.
                 </p>
               </div>
             ) : (

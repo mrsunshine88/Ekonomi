@@ -32,21 +32,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    // This endpoint will be called by Supabase Webhook when a new message is inserted
     const payload = req.body;
     
-    // Check if the message is from a user
-    if (payload?.record?.sender_type !== 'user') {
-      return res.status(200).json({ message: 'Not a user message, ignored.' });
+    // Check if the payload is for an assignment
+    if (payload.action !== 'assigned') {
+      return res.status(200).json({ message: 'Not an assignment event, ignored.' });
     }
 
-    const messageText = payload.record.message;
+    const targetEmail = payload.target_email;
+    const isEmailTicket = payload.ticket_type === 'email';
+    const pushTitle = 'Nytt ärende tilldelat';
+    const pushBody = isEmailTicket ? 'Du har blivit tilldelad ett nytt e-postärende.' : 'Du har blivit tilldelad en ny chatt.';
 
-    // Fetch all admin subscriptions
+    // Fetch admin subscriptions for the target admin
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { data: subscriptions, error } = await supabase
       .from('admin_push_subscriptions')
-      .select('*');
+      .select('*')
+      .eq('admin_email', targetEmail);
 
     if (error) {
       console.error("Failed to fetch subscriptions:", error);
@@ -54,26 +57,26 @@ export default async function handler(req, res) {
     }
 
     if (!subscriptions || subscriptions.length === 0) {
-      return res.status(200).json({ message: 'No active admin subscriptions.' });
+      return res.status(200).json({ message: 'No active push subscriptions for this admin.' });
     }
 
-    // Send push notification to all admins
+    // Send push notification to the assigned admin
     const sendPromises = subscriptions.map(record => {
       let pushSubscription = record.subscription;
       if (typeof pushSubscription === 'string') {
         pushSubscription = JSON.parse(pushSubscription);
       }
 
-      const payload = JSON.stringify({
-        title: 'Nytt meddelande',
-        body: messageText,
+      const pushPayload = JSON.stringify({
+        title: pushTitle,
+        body: pushBody,
         icon: '/icon-192x192.png',
         badge: '/icon-192x192.png',
-        tag: 'chat-message',
+        tag: 'ticket-assigned',
         data: { url: '/admin-dashboard' }
       });
 
-      return webpush.sendNotification(pushSubscription, payload)
+      return webpush.sendNotification(pushSubscription, pushPayload)
         .then(() => ({ endpoint: pushSubscription.endpoint, success: true }))
         .catch(err => ({ endpoint: pushSubscription.endpoint, success: false, error: err.message }));
     });
