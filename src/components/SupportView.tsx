@@ -154,6 +154,20 @@ export default function SupportView() {
       if (agentStatus !== 'busy') {
         await supabase.from('agent_sessions').update({ status: 'busy' }).eq('agent_id', user.id);
         setAgentStatus('busy');
+        
+        // Skicka en lokal notis till webbläsaren om det är påslaget
+        if (myActive.status === 'assigned') {
+           if (localStorage.getItem('chat_notifications') === 'true' && 'Notification' in window && Notification.permission === 'granted') {
+             try {
+               new Notification('SmartAgent', {
+                 body: myActive.ticket_type === 'email' ? 'Nytt e-postärende i kön! Öppna fliken för att svara.' : 'Ny chatt i kön! Öppna fliken för att svara.',
+                 icon: '/pwa-192x192.png'
+               });
+             } catch(err) {
+               console.log('Notis blockerades:', err);
+             }
+           }
+        }
       }
     } else {
       setActiveSession(null);
@@ -266,46 +280,7 @@ export default function SupportView() {
     return () => { supabase.removeChannel(channel); };
   }, [activeSession]);
 
-  // Auto-Routing: Tilldela äldsta ärendet om jag är ledig och har väntat länge nog
-  useEffect(() => {
-    const tryAutoAssign = async () => {
-      if (agentStatus === 'available' && !activeSession && cooldown === 0) {
-        const { data, error } = await supabase.rpc('auto_assign_oldest_chat');
-        if (!error && data && data.success) {
-           const { data: sessionData } = await supabase.from('chat_sessions').select('*').eq('id', data.session_id).single();
-           if (sessionData) {
-             setAgentStatus('busy');
-             setActiveSession({...sessionData, status: 'assigned'});
-             
-             // Skicka en notis till webbläsaren / skrivbordet om det är påslaget
-             if (localStorage.getItem('chat_notifications') === 'true' && 'Notification' in window && Notification.permission === 'granted') {
-               try {
-                 new Notification('SmartAgent', {
-                   body: sessionData.ticket_type === 'email' ? 'Nytt e-postärende i kön! Öppna fliken för att svara.' : 'Ny chatt i kön! Öppna fliken för att svara.',
-                   icon: '/pwa-192x192.png'
-                 });
-               } catch(err) {
-                 console.log('Notis blockerades:', err);
-               }
-             }
 
-             // Skicka riktig Push Notis via Vercel API
-             fetch('/api/send-push', {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({
-                 action: 'assigned',
-                 target_email: user?.email,
-                 ticket_type: sessionData.ticket_type
-               })
-             }).catch(err => console.error("Push API trigger failed:", err));
-           }
-        }
-      }
-    };
-    const interval = setInterval(tryAutoAssign, 2000);
-    return () => clearInterval(interval);
-  }, [agentStatus, activeSession, cooldown]);
   // Koppla upp
   const handleConnect = async () => {
     setConnectError('');
