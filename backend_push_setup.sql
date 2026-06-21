@@ -11,7 +11,7 @@ SET search_path = public
 AS $$
 BEGIN
     -- Validera next_status
-    IF next_status NOT IN ('available', 'post_work', 'break', 'lunch') THEN
+    IF next_status NOT IN ('available', 'post_work', 'break', 'lunch', 'cooldown') THEN
         next_status := 'available';
     END IF;
 
@@ -20,11 +20,10 @@ BEGIN
     SET status = 'closed', updated_at = NOW()
     WHERE id = target_session_id AND assigned_to = auth.uid();
 
-    -- BRUTE FORCE: Sätt ALLTID cooldown till 20s in i framtiden oavsett status!
+    -- Sätt agenten till nästa status (tex 'cooldown')
     UPDATE agent_sessions
     SET status = next_status, 
-        updated_at = NOW(),
-        cooldown_until = NOW() + INTERVAL '20 seconds'
+        updated_at = NOW()
     WHERE agent_id = auth.uid();
 END;
 $$;
@@ -44,15 +43,6 @@ DECLARE
 BEGIN
     -- Om en specifik agent nyss blev "Ledig"
     IF target_agent_id IS NOT NULL THEN
-        -- BRUTE FORCE KONTROLL: Är cooldown in i framtiden? Då kastar vi ut den direkt!
-        IF EXISTS (
-            SELECT 1 FROM agent_sessions 
-            WHERE agent_id = target_agent_id 
-              AND cooldown_until > NOW()
-        ) THEN
-            RETURN;
-        END IF;
-
         -- Annars kolla om agenten är ledig
         IF NOT EXISTS (
             SELECT 1 FROM agent_sessions 
@@ -102,7 +92,6 @@ BEGIN
             FROM agent_sessions a
             JOIN profiles p ON a.agent_id = p.id
             WHERE a.status = 'available'
-              AND (a.cooldown_until IS NULL OR a.cooldown_until <= NOW())
               AND (
                   (v_ticket_type = 'chat' AND COALESCE(p.handles_chat, true) = true)
                   OR

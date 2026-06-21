@@ -19,7 +19,7 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
-type AgentStatusType = 'offline' | 'available' | 'busy' | 'post_work' | 'break' | 'lunch' | 'other_absence';
+type AgentStatusType = 'offline' | 'available' | 'busy' | 'post_work' | 'break' | 'lunch' | 'other_absence' | 'cooldown';
 
 
 interface ChatSession {
@@ -554,16 +554,29 @@ export default function SupportView() {
   // Stäng ärende
   const handleClose = async () => {
     if (!activeSession) return;
-    const { error } = await supabase.rpc('release_chat_session', { target_session_id: activeSession.id });
+    // Stäng ärendet och sätt agenten till det osynliga "cooldown"-läget i databasen
+    const { error } = await supabase.rpc('release_chat_session', { target_session_id: activeSession.id, next_status: 'cooldown' });
     if (error) {
       console.error('Misslyckades att stänga ärendet:', error);
       alert('Kunde inte stänga ärendet. Vänligen försök igen.');
       return;
     }
     setActiveSession(null);
-    setAgentStatus('available');
+    setAgentStatus('cooldown');
     setStatusUpdatedAt(new Date().toISOString());
     startCooldown(20);
+    
+    // Automatiskt byta status i databasen till 'available' efter 20 sekunder
+    setTimeout(async () => {
+      if (user?.id) {
+        const { data: dbAgent } = await supabase.from('agent_sessions').select('status').eq('agent_id', user.id).single();
+        if (dbAgent && dbAgent.status === 'cooldown') {
+          await supabase.from('agent_sessions').update({ status: 'available' }).eq('agent_id', user.id);
+          // setAgentStatus('available') kommer ske automatiskt via agentChannel
+        }
+      }
+    }, 20000);
+    
     await checkAssignedSession();
   };
 
@@ -614,8 +627,8 @@ export default function SupportView() {
     return match ? match[1] : raw;
   };
 
-  const statusColor: Record<AgentStatusType, string> = { offline: '#6b7280', available: '#10b981', busy: '#f59e0b', post_work: '#f97316', break: '#8b5cf6', lunch: '#ec4899', other_absence: '#ef4444' };
-  const statusLabel: Record<AgentStatusType, string> = { offline: 'Frånkopplad', available: 'Ledig', busy: 'I ärende', post_work: 'Efterarbete', break: 'Rast', lunch: 'Lunch', other_absence: 'Övrig frånvaro' };
+  const statusColor: Record<AgentStatusType, string> = { offline: '#6b7280', available: '#10b981', busy: '#f59e0b', post_work: '#f97316', break: '#8b5cf6', lunch: '#ec4899', other_absence: '#ef4444', cooldown: '#10b981' };
+  const statusLabel: Record<AgentStatusType, string> = { offline: 'Frånkopplad', available: 'Ledig', busy: 'I ärende', post_work: 'Efterarbete', break: 'Rast', lunch: 'Lunch', other_absence: 'Övrig frånvaro', cooldown: 'Ledig' };
 
 
 
@@ -692,20 +705,20 @@ export default function SupportView() {
                 onClick={activeSession?.status === 'assigned' ? handleAcceptAssigned : (agentStatus === 'offline' ? handleConnect : () => handleSetStatus('available'))}
                 style={{
                   width: '76px', height: '76px', borderRadius: '50%',
-                  background: (agentStatus === 'available' || activeSession?.status === 'assigned') ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'rgba(255,255,255,0.03)',
-                  border: (agentStatus === 'available' || activeSession?.status === 'assigned') ? 'none' : `2px solid #10b981`,
-                  color: (agentStatus === 'available' || activeSession?.status === 'assigned') ? '#fff' : '#10b981',
+                  background: (agentStatus === 'available' || agentStatus === 'cooldown' || activeSession?.status === 'assigned') ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'rgba(255,255,255,0.03)',
+                  border: (agentStatus === 'available' || agentStatus === 'cooldown' || activeSession?.status === 'assigned') ? 'none' : `2px solid #10b981`,
+                  color: (agentStatus === 'available' || agentStatus === 'cooldown' || activeSession?.status === 'assigned') ? '#fff' : '#10b981',
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: (agentStatus === 'available' && activeSession?.status !== 'assigned') ? '0 8px 25px rgba(16,185,129,0.5)' : 'none',
+                  boxShadow: ((agentStatus === 'available' || agentStatus === 'cooldown') && activeSession?.status !== 'assigned') ? '0 8px 25px rgba(16,185,129,0.5)' : 'none',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   opacity: (agentStatus === 'busy' && activeSession?.status !== 'assigned') ? 0.3 : 1,
-                  transform: (agentStatus === 'available' || activeSession?.status === 'assigned') ? 'scale(1.05)' : 'scale(1)',
+                  transform: (agentStatus === 'available' || agentStatus === 'cooldown' || activeSession?.status === 'assigned') ? 'scale(1.05)' : 'scale(1)',
                   animation: activeSession?.status === 'assigned' ? 'pulse-green 1.5s infinite' : 'none',
                 }}
                 title={activeSession?.status === 'assigned' ? 'Ta ärende' : (agentStatus === 'offline' ? 'Koppla på' : 'Sätt status: Ledig')}
                 disabled={agentStatus === 'busy' && activeSession?.status !== 'assigned'}
-                onMouseOver={(e) => { if(agentStatus !== 'available' && agentStatus !== 'busy' && activeSession?.status !== 'assigned') e.currentTarget.style.background = 'rgba(16,185,129,0.1)'}}
-                onMouseOut={(e) => { if(agentStatus !== 'available' && agentStatus !== 'busy' && activeSession?.status !== 'assigned') e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}}
+                onMouseOver={(e) => { if(agentStatus !== 'available' && agentStatus !== 'cooldown' && agentStatus !== 'busy' && activeSession?.status !== 'assigned') e.currentTarget.style.background = 'rgba(16,185,129,0.1)'}}
+                onMouseOut={(e) => { if(agentStatus !== 'available' && agentStatus !== 'cooldown' && agentStatus !== 'busy' && activeSession?.status !== 'assigned') e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}}
               >
                 {activeSession?.status === 'assigned' ? (
                   <span style={{ fontSize: '1.8rem' }}>⚡</span>
@@ -801,12 +814,12 @@ export default function SupportView() {
                 </span>
               ) : (
                 <>
-                  <span style={{ color: statusColor[agentStatus] }}>Status: {statusLabel[agentStatus]}</span>
+                  <span style={{ color: agentStatus === 'cooldown' ? '#10b981' : statusColor[agentStatus] }}>Status: {agentStatus === 'cooldown' ? 'Ledig' : statusLabel[agentStatus]}</span>
                   {agentStatus !== 'offline' && (
                     <span>Tid: {formatDuration(statusUpdatedAt)}</span>
                   )}
-                  {agentStatus === 'available' && cooldown > 0 && (
-                    <span style={{ color: '#f59e0b' }}>(Efterarbete {cooldown}s)</span>
+                  {agentStatus === 'cooldown' && cooldown > 0 && (
+                    <span style={{ color: '#10b981' }}>(Efterarbete {cooldown}s)</span>
                   )}
                 </>
               )}
