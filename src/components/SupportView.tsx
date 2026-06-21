@@ -42,6 +42,7 @@ export default function SupportView() {
 
   // Aktiv chatt
   const [activeSession, setActiveSession] = useState<ChatSession | null>(null);
+  const lastNotifiedSessionId = useRef<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -151,15 +152,15 @@ export default function SupportView() {
       setActiveSession({ ...myActive, profiles: myActive.user_id ? { email } : null } as ChatSession);
       
       // Säkerhetskoll: om vi har ett ärende men inte är busy, bli busy.
-      // Hämta färsk status från DB istället för 'agentStatus' för att undvika "Stale Closure" loopar!
-      const { data: dbAgent } = await supabase.from('agent_sessions').select('status').eq('agent_id', user.id).single();
-      
-      if (dbAgent && dbAgent.status !== 'busy') {
+      if (agentStatus !== 'busy') {
         await supabase.from('agent_sessions').update({ status: 'busy' }).eq('agent_id', user.id);
         setAgentStatus('busy');
-        
-        // Skicka en lokal notis till webbläsaren om det är påslaget
-        if (myActive.status === 'assigned') {
+      }
+
+      // Skicka en lokal notis till webbläsaren, men BARA EN GÅNG per ärende!
+      if (myActive.status === 'assigned') {
+         if (lastNotifiedSessionId.current !== myActive.id) {
+           lastNotifiedSessionId.current = myActive.id; // Markera som plingad
            if (localStorage.getItem('chat_notifications') === 'true' && 'Notification' in window && Notification.permission === 'granted') {
              try {
                new Notification('SmartAgent', {
@@ -170,10 +171,11 @@ export default function SupportView() {
                console.log('Notis blockerades:', err);
              }
            }
-        }
+         }
       }
     } else {
       setActiveSession(null);
+      lastNotifiedSessionId.current = null; // Återställ när vi inte har något ärende
     }
   };
 
@@ -460,28 +462,17 @@ export default function SupportView() {
   // Stäng ärende
   const handleClose = async () => {
     if (!activeSession) return;
-    // Sätt databas-status till 'post_work' så triggern inte tilldelar direkt!
-    const { error } = await supabase.rpc('release_chat_session', { target_session_id: activeSession.id, next_status: 'post_work' });
+    const { error } = await supabase.rpc('release_chat_session', { target_session_id: activeSession.id });
     if (error) {
       console.error('Misslyckades att stänga ärendet:', error);
       alert('Kunde inte stänga ärendet. Vänligen försök igen.');
       return;
     }
     setActiveSession(null);
-    setAgentStatus('post_work');
+    setAgentStatus('available');
     setStatusUpdatedAt(new Date().toISOString());
     startCooldown(20);
-    
-    // Automatiskt bli "Ledig" när cooldown på 20s är över
-    setTimeout(async () => {
-      if (user?.id) {
-        // Kontrollera att vi inte har stängt ner eller bytt status manuellt under tiden
-        const { data: dbAgent } = await supabase.from('agent_sessions').select('status').eq('agent_id', user.id).single();
-        if (dbAgent && dbAgent.status === 'post_work') {
-          await supabase.from('agent_sessions').update({ status: 'available' }).eq('agent_id', user.id);
-        }
-      }
-    }, 20000);
+    await checkAssignedSession();
   };
 
   // Byt status (Efterarbete / Rast / Lunch)
