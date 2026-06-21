@@ -73,7 +73,7 @@ DECLARE
 BEGIN
   SELECT COUNT(*) INTO active_count
   FROM agent_sessions
-  WHERE status IN ('available', 'busy');
+  WHERE status IN ('available', 'busy', 'cooldown');
 
   INSERT INTO global_settings (key, value)
   VALUES ('chat_open', CASE WHEN active_count > 0 THEN 'true' ELSE 'false' END)
