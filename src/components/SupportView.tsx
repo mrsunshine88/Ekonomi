@@ -416,8 +416,6 @@ export default function SupportView() {
         .single();
       if (sessionError) throw sessionError;
 
-      currentSessionId = session.id;
-
       const { error: msgError } = await supabase
         .from('chat_messages')
         .insert({
