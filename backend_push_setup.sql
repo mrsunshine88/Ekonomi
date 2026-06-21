@@ -9,19 +9,23 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-DECLARE
-    v_agent_id UUID;
 BEGIN
-    SELECT assigned_to INTO v_agent_id FROM chat_sessions WHERE id = target_session_id;
-
-    IF v_agent_id IS NOT NULL THEN
-        -- Sätt agenten till nästa status, och sätt cooldown om de går till 'available'
-        UPDATE agent_sessions
-        SET status = next_status, 
-            updated_at = NOW(),
-            cooldown_until = CASE WHEN next_status = 'available' THEN NOW() + INTERVAL '20 seconds' ELSE NULL END
-        WHERE agent_id = v_agent_id;
+    -- Validera next_status
+    IF next_status NOT IN ('available', 'post_work', 'break', 'lunch') THEN
+        next_status := 'available';
     END IF;
+
+    -- Stäng sessionen
+    UPDATE chat_sessions
+    SET status = 'closed', updated_at = NOW()
+    WHERE id = target_session_id AND assigned_to = auth.uid();
+
+    -- Sätt agenten till nästa status, och sätt cooldown om de går till 'available'
+    UPDATE agent_sessions
+    SET status = next_status, 
+        updated_at = NOW(),
+        cooldown_until = CASE WHEN next_status = 'available' THEN NOW() + INTERVAL '20 seconds' ELSE NULL END
+    WHERE agent_id = auth.uid();
 END;
 $$;
 
