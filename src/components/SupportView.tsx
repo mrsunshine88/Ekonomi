@@ -161,6 +161,8 @@ export default function SupportView() {
       if (myActive.status === 'assigned') {
          if (lastNotifiedSessionId.current !== myActive.id) {
            lastNotifiedSessionId.current = myActive.id; // Markera som plingad
+           
+           // 1. Datorns webbläsar-notis
            if (localStorage.getItem('chat_notifications') === 'true' && 'Notification' in window && Notification.permission === 'granted') {
              try {
                new Notification('SmartAgent', {
@@ -170,6 +172,19 @@ export default function SupportView() {
              } catch(err) {
                console.log('Notis blockerades:', err);
              }
+           }
+           
+           // 2. Trigga Vercel Push så att den vakna datorn väcker den låsta mobilen!
+           if (myActive.assigned_name) {
+             fetch('https://www.smartekonomi.nu/api/send-push', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'assigned',
+                  target_email: myActive.assigned_name,
+                  ticket_type: myActive.ticket_type || 'chat'
+                })
+              }).catch(err => console.error('Kunde inte trigga Push-notis från datorn:', err));
            }
          }
       }
@@ -223,6 +238,19 @@ export default function SupportView() {
     };
     init();
 
+    // Fallback-loop: Synka med databasen var 5:e sekund
+    const syncInterval = setInterval(() => {
+      checkAssignedSession();
+    }, 5000);
+    
+    // Väckarklocka: Synka omedelbart när skärmen tänds
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkAssignedSession();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     // Realtime: kö-uppdateringar
     const queueChannel = supabase.channel('support_queue')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_sessions' }, () => {
@@ -249,6 +277,8 @@ export default function SupportView() {
     return () => {
       supabase.removeChannel(queueChannel);
       supabase.removeChannel(agentChannel);
+      clearInterval(syncInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleUnload);
     };
   }, [user]);

@@ -1,31 +1,7 @@
--- ==========================================
--- ÄKTA BAKGRUNDS-TILLDELNING OCH PUSH
--- ==========================================
+-- 1. Lägg till cooldown_until i agent_sessions
+ALTER TABLE public.agent_sessions ADD COLUMN IF NOT EXISTS cooldown_until TIMESTAMP WITH TIME ZONE;
 
--- 0. Helper-funktion för att släppa ett ärende och sätta agent i status
-CREATE OR REPLACE FUNCTION public.release_chat_session(target_session_id UUID, next_status TEXT DEFAULT 'available')
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-    v_agent_id UUID;
-BEGIN
-    SELECT assigned_to INTO v_agent_id FROM chat_sessions WHERE id = target_session_id;
-
-    IF v_agent_id IS NOT NULL THEN
-        -- Sätt agenten till nästa status, och sätt cooldown om de går till 'available'
-        UPDATE agent_sessions
-        SET status = next_status, 
-            updated_at = NOW(),
-            cooldown_until = CASE WHEN next_status = 'available' THEN NOW() + INTERVAL '20 seconds' ELSE NULL END
-        WHERE agent_id = v_agent_id;
-    END IF;
-END;
-$$;
-
--- 1. Helper-funktion för att tilldela ärenden server-side
+-- 2. Uppdatera system_auto_assign_ticket för att respektera cooldown_until
 CREATE OR REPLACE FUNCTION public.system_auto_assign_ticket(target_agent_id UUID DEFAULT NULL)
 RETURNS void
 LANGUAGE plpgsql
@@ -40,8 +16,13 @@ DECLARE
 BEGIN
     -- Om en specifik agent nyss blev "Ledig"
     IF target_agent_id IS NOT NULL THEN
-        -- Kontrollera att agenten fortfarande är ledig och inte har cooldown
-        IF NOT EXISTS (SELECT 1 FROM agent_sessions WHERE agent_id = target_agent_id AND status = 'available' AND (cooldown_until IS NULL OR cooldown_until <= NOW())) THEN
+        -- Kontrollera att agenten fortfarande är ledig och att cooldown har gått ut
+        IF NOT EXISTS (
+            SELECT 1 FROM agent_sessions 
+            WHERE agent_id = target_agent_id 
+              AND status = 'available' 
+              AND (cooldown_until IS NULL OR cooldown_until <= NOW())
+        ) THEN
             RETURN;
         END IF;
 
@@ -67,7 +48,7 @@ BEGIN
             WHERE id = v_session_id;
             
             UPDATE agent_sessions
-            SET status = 'busy'
+            SET status = 'busy', cooldown_until = NULL
             WHERE agent_id = target_agent_id;
 
             -- Skicka systemmeddelande om tilldelning
@@ -80,7 +61,7 @@ BEGIN
         FOR v_session_id, v_ticket_type IN 
             SELECT id, ticket_type FROM chat_sessions WHERE status = 'waiting' ORDER BY created_at ASC FOR UPDATE SKIP LOCKED
         LOOP
-            -- Hitta en ledig agent som har behörighet och har väntat längst
+            -- Hitta en ledig agent som har behörighet, ingen cooldown, och har väntat längst
             SELECT a.agent_id, p.email INTO v_agent_id, v_agent_email
             FROM agent_sessions a
             JOIN profiles p ON a.agent_id = p.id
@@ -112,44 +93,3 @@ BEGIN
     END IF;
 END;
 $$;
-
--- 2. Trigger: När ett NYTT ärende skapas
-CREATE OR REPLACE FUNCTION public.trigger_on_new_ticket()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.status = 'waiting' THEN
-        -- Försök tilldela direkt till valfri ledig agent
-        PERFORM public.system_auto_assign_ticket();
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS on_new_ticket_auto_assign ON chat_sessions;
-CREATE TRIGGER on_new_ticket_auto_assign
-AFTER INSERT ON chat_sessions
-FOR EACH ROW
-EXECUTE FUNCTION public.trigger_on_new_ticket();
-
--- 3. Trigger: När en agent blir "Ledig"
-CREATE OR REPLACE FUNCTION public.trigger_on_agent_available()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.status = 'available' AND OLD.status != 'available' THEN
-        -- Försök tilldela äldsta väntande ärende till denna agent
-        PERFORM public.system_auto_assign_ticket(NEW.agent_id);
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS on_agent_available_auto_assign ON agent_sessions;
-CREATE TRIGGER on_agent_available_auto_assign
-AFTER UPDATE ON agent_sessions
-FOR EACH ROW
-EXECUTE FUNCTION public.trigger_on_agent_available();
-
--- 4. BORTTAGET: Trigger Webhook för Push-notis
--- (Eftersom pg_net visade sig vara instabilt, triggas detta nu direkt från den aktiva agentens webbläsare istället)
-DROP TRIGGER IF EXISTS on_ticket_assigned_send_push ON chat_sessions;
-DROP FUNCTION IF EXISTS public.trigger_push_on_assignment();
