@@ -30,9 +30,9 @@ BEGIN
         FROM chat_sessions
         WHERE status = 'waiting'
           AND (
-              (ticket_type = 'chat' AND EXISTS (SELECT 1 FROM profiles WHERE id = target_agent_id AND handles_chat = true))
+              (ticket_type = 'chat' AND EXISTS (SELECT 1 FROM profiles WHERE id = target_agent_id AND COALESCE(handles_chat, true) = true))
               OR
-              (ticket_type = 'email' AND EXISTS (SELECT 1 FROM profiles WHERE id = target_agent_id AND handles_email = true))
+              (ticket_type = 'email' AND EXISTS (SELECT 1 FROM profiles WHERE id = target_agent_id AND COALESCE(handles_email, false) = true))
           )
         ORDER BY created_at ASC
         FOR UPDATE SKIP LOCKED
@@ -46,6 +46,10 @@ BEGIN
             UPDATE agent_sessions
             SET status = 'busy'
             WHERE agent_id = target_agent_id;
+
+            -- Skicka systemmeddelande om tilldelning
+            INSERT INTO chat_messages (session_id, sender_type, message)
+            VALUES (v_session_id, 'system', 'En agent har tagit över ärendet.');
         END IF;
 
     ELSE
@@ -59,9 +63,9 @@ BEGIN
             JOIN profiles p ON a.agent_id = p.id
             WHERE a.status = 'available'
               AND (
-                  (v_ticket_type = 'chat' AND p.handles_chat = true)
+                  (v_ticket_type = 'chat' AND COALESCE(p.handles_chat, true) = true)
                   OR
-                  (v_ticket_type = 'email' AND p.handles_email = true)
+                  (v_ticket_type = 'email' AND COALESCE(p.handles_email, false) = true)
               )
             ORDER BY a.updated_at ASC
             FOR UPDATE OF a SKIP LOCKED
@@ -75,6 +79,10 @@ BEGIN
                 UPDATE agent_sessions
                 SET status = 'busy'
                 WHERE agent_id = v_agent_id;
+
+                -- Skicka systemmeddelande om tilldelning
+                INSERT INTO chat_messages (session_id, sender_type, message)
+                VALUES (v_session_id, 'system', 'En agent har tagit över ärendet.');
             END IF;
         END LOOP;
     END IF;
@@ -117,33 +125,7 @@ AFTER UPDATE ON agent_sessions
 FOR EACH ROW
 EXECUTE FUNCTION public.trigger_on_agent_available();
 
--- 4. Trigger Webhook för Push-notis
--- Noterar Vercel-API:et i bakgrunden via pg_net
-CREATE OR REPLACE FUNCTION public.trigger_push_on_assignment()
-RETURNS TRIGGER AS $$
-DECLARE
-    req_id bigint;
-BEGIN
-    IF OLD.status = 'waiting' AND NEW.status = 'assigned' AND NEW.assigned_to IS NOT NULL THEN
-        -- Kontrollera om pg_net finns installerat så vi inte kraschar appen om det saknas
-        IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_net') THEN
-            SELECT net.http_post(
-                url:='https://www.smartekonomi.nu/api/send-push',
-                headers:='{"Content-Type": "application/json"}'::jsonb,
-                body:=json_build_object(
-                    'action', 'assigned',
-                    'target_email', NEW.assigned_name,
-                    'ticket_type', NEW.ticket_type
-                )::jsonb
-            ) INTO req_id;
-        END IF;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
+-- 4. BORTTAGET: Trigger Webhook för Push-notis
+-- (Eftersom pg_net visade sig vara instabilt, triggas detta nu direkt från den aktiva agentens webbläsare istället)
 DROP TRIGGER IF EXISTS on_ticket_assigned_send_push ON chat_sessions;
-CREATE TRIGGER on_ticket_assigned_send_push
-AFTER UPDATE ON chat_sessions
-FOR EACH ROW
-EXECUTE FUNCTION public.trigger_push_on_assignment();
+DROP FUNCTION IF EXISTS public.trigger_push_on_assignment();

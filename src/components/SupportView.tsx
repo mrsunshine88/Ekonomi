@@ -167,6 +167,17 @@ export default function SupportView() {
                console.log('Notis blockerades:', err);
              }
            }
+           
+           // Trigga riktig Web Push via Vercel (för att väcka eventuell mobil)
+           fetch('https://www.smartekonomi.nu/api/send-push', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({
+               action: 'assigned',
+               target_email: user?.email,
+               ticket_type: myActive.ticket_type
+             })
+           }).catch(err => console.error('Kunde inte skicka push:', err));
         }
       }
     } else {
