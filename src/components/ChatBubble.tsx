@@ -55,15 +55,17 @@ export default function ChatBubble() {
     
     fetchChatStatus();
     
-    // 🔒 MILITÄR SÄKERHET: Inga WebSockets för globala inställningar
-    // Vi skippar supabase.channel('global_settings_chat') för att inte 
-    // öppna en anslutning för varenda besökare på startsidan.
-
-    // Som fallback: Kolla statusen igen var 5:e minut
-    const interval = setInterval(fetchChatStatus, 5 * 60 * 1000);
+    // Lyssna i realtid på när admin öppnar/stänger chatten
+    const settingsChannel = supabase.channel('global_settings_chat')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'global_settings', filter: `key=eq.chat_open` }, (payload: any) => {
+        if (payload.new && payload.new.value) {
+          setChatGlobalOpen(payload.new.value === 'true');
+        }
+      })
+      .subscribe();
 
     return () => {
-      clearInterval(interval);
+      supabase.removeChannel(settingsChannel);
     };
   }, []);
 
