@@ -372,8 +372,9 @@ export default function AdminDashboard() {
   const [stripeSecret, setStripeSecret] = useState('');
   const [stripeWebhook, setStripeWebhook] = useState('');
   const [stripePriceId, setStripePriceId] = useState('');
-  const [membersList, setMembersList] = useState<{ id: string, email: string, is_banned: boolean, is_vip: boolean, is_admin: boolean, chat_agent: boolean, handles_chat: boolean, handles_email: boolean, handles_info: boolean, prio_chat: number, prio_email: number, prio_info: number, created_at: string, last_sign_in_at: string }[]>([]);
+  const [membersList, setMembersList] = useState<{ id: string, email: string, is_banned: boolean, is_vip: boolean, is_admin: boolean, chat_agent: boolean, handles_chat: boolean, handles_email: boolean, handles_info: boolean, prio_chat: number, prio_email: number, prio_info: number, created_at: string, last_sign_in_at: string, is_unconfirmed: boolean }[]>([]);
   const [memberSearch, setMemberSearch] = useState('');
+  const [userCategory, setUserCategory] = useState<'confirmed' | 'unconfirmed'>('confirmed');
   const [stats, setStats] = useState<{ 
     total_members: number, 
     active_households: number, 
@@ -851,7 +852,7 @@ export default function AdminDashboard() {
           {/* General Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
             <div 
-              onClick={() => setAdminTab('users')}
+              onClick={() => { setAdminTab('users'); setUserCategory('confirmed'); }}
               style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', transition: 'background 0.2s' }}
               onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
               onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
@@ -865,10 +866,15 @@ export default function AdminDashboard() {
               <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>{stats.active_households}</div>
               <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Betalande Hushåll</div>
             </div>
-            <div style={{ background: 'rgba(244, 63, 94, 0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(244, 63, 94, 0.2)' }}>
+            <div 
+              onClick={() => { setAdminTab('users'); setUserCategory('unconfirmed'); }}
+              style={{ background: 'rgba(244, 63, 94, 0.05)', padding: '1rem', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(244, 63, 94, 0.2)', cursor: 'pointer', transition: 'background 0.2s' }}
+              onMouseOver={e => e.currentTarget.style.background = 'rgba(244, 63, 94, 0.1)'}
+              onMouseOut={e => e.currentTarget.style.background = 'rgba(244, 63, 94, 0.05)'}
+            >
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📧</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f43f5e' }}>{stats.unconfirmed_users || 0}</div>
-              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Obekräftade E-post</div>
+              <div style={{ fontSize: '0.9rem', color: '#fca5a5' }}>Obekräftade E-post →</div>
             </div>
           </div>
 
@@ -1371,7 +1377,7 @@ export default function AdminDashboard() {
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span>👤</span> Användarhantering
+              <span>👤</span> {userCategory === 'unconfirmed' ? 'Obekräftade E-post' : 'Användarhantering'}
             </h3>
             <button onClick={fetchMembersList} style={{ background: 'rgba(255,255,255,0.08)', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>🔄 Uppdatera</button>
           </div>
@@ -1383,7 +1389,10 @@ export default function AdminDashboard() {
             style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff', marginBottom: '1rem', boxSizing: 'border-box' }}
           />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {membersList.filter(m => m.email.toLowerCase().includes(memberSearch.toLowerCase())).map(m => (
+            {membersList
+              .filter(m => userCategory === 'unconfirmed' ? m.is_unconfirmed : !m.is_unconfirmed)
+              .filter(m => m.email.toLowerCase().includes(memberSearch.toLowerCase()))
+              .map(m => (
               <div key={m.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', borderLeft: m.is_banned ? '4px solid #f43f5e' : '4px solid rgba(99,102,241,0.4)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <div>
