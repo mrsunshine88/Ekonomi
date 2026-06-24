@@ -29,13 +29,13 @@ export default function AboutView({ onBack }: AboutViewProps) {
           </a>
         )}
 
-        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '3rem', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
           
           <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'var(--accent-gradient)' }}></div>
 
           <div className="brand-badge" style={{ marginBottom: '1.5rem', display: 'inline-block' }}>📖 Historien om SmartEkonomi</div>
           
-          <h1 style={{ fontSize: '2.5rem', marginBottom: '2rem', lineHeight: 1.2 }}>
+          <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', marginBottom: '2rem', lineHeight: 1.2 }}>
             <span className="text-gradient">En svensk utmanare</span><br />byggd på frustration och lera
           </h1>
 

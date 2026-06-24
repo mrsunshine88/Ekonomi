@@ -157,10 +157,7 @@ export default function LoginScreen() {
       {/* Vänster sida: Info och Features */}
       <div className="login-info-section">
         <div className="login-info-content">
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <div className="brand-badge">🏠 SmartEkonomi</div>
-            <a href="/om" className="brand-badge" style={{ textDecoration: 'none', background: 'rgba(255,255,255,0.1)', cursor: 'pointer' }}>📖 Om Oss</a>
-          </div>
+          <div className="brand-badge">🏠 SmartEkonomi</div>
           <h1 className="login-hero-title" style={{ fontSize: '2.5rem', lineHeight: '1.2' }}>
             SmartEkonomi – <span className="text-gradient">En smart ekonomi-app för hushållet</span>
           </h1>

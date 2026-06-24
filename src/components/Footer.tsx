@@ -50,6 +50,25 @@ export default function Footer() {
           >
             Frågor & Svar (FAQ)
           </button>
+          <a 
+            href="/om"
+            style={{ 
+              fontSize: '0.85rem', 
+              padding: '0.5rem 1rem', 
+              textDecoration: 'none', 
+              color: 'var(--text-primary)', 
+              background: 'rgba(255, 255, 255, 0.05)', 
+              border: '1px solid rgba(255, 255, 255, 0.1)', 
+              borderRadius: '8px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'inherit',
+              cursor: 'pointer'
+            }}
+          >
+            Om Oss
+          </a>
         </div>
         <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
           &copy; {new Date().getFullYear()} SmartEkonomi. Alla rättigheter förbehållna.
