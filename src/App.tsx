@@ -310,7 +310,6 @@ function App() {
           <button onClick={() => navigateTo('stats')} style={navButtonStyles('stats')}>📊 Statistik</button>
           <button onClick={() => navigateTo('privat')} style={navButtonStyles('privat')}>🔒 Privat</button>
           <button onClick={() => navigateTo('manage')} style={navButtonStyles('manage')}>⚙️ Inställningar</button>
-          <button onClick={() => navigateTo('about')} style={navButtonStyles('about')}>📖 Om SmartEkonomi</button>
           
           {(!isDemoMode || user) && (
             <>
@@ -374,7 +373,6 @@ function App() {
                 <button onClick={() => navigateTo('stats')} className={`mobile-menu-item ${currentView === 'stats' ? 'active' : ''}`}>📊 Statistik</button>
                 <button onClick={() => navigateTo('privat')} className={`mobile-menu-item ${currentView === 'privat' ? 'active' : ''}`}>🔒 Privat</button>
                 <button onClick={() => navigateTo('manage')} className={`mobile-menu-item ${currentView === 'manage' ? 'active' : ''}`}>⚙️ Inställningar</button>
-                <button onClick={() => navigateTo('about')} className={`mobile-menu-item ${currentView === 'about' ? 'active' : ''}`}>📖 Om SmartEkonomi</button>
                 {(!isDemoMode || user) && (
                   <>
                     <button onClick={() => navigateTo('mypages')} className={`mobile-menu-item ${currentView === 'mypages' ? 'active' : ''}`}>👤 Mina sidor</button>
