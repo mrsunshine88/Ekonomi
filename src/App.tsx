@@ -73,15 +73,19 @@ function App() {
     }
   }, [currentView]);
 
-  // Återställ vy när man byter användare
-  const isInitialUserRef = useRef(true);
+  // Återställ vy när man byter användare, men ignorera den första uppstarten
+  const authInitializedRef = useRef(false);
   useEffect(() => {
-    if (isInitialUserRef.current) {
-      isInitialUserRef.current = false;
-      return;
+    if (loading) return; // Vänta tills AuthContext är helt färdigladdad
+    
+    if (!authInitializedRef.current) {
+      authInitializedRef.current = true;
+      return; // Vid första laddningen (efter auth), behåll nuvarande vy
     }
+    
+    // Om användaren faktiskt loggar in/ut EFTER första laddningen, gå till start
     setCurrentView('start');
-  }, [user?.id]);
+  }, [user?.id, loading]);
   
   useEffect(() => {
     initCloud(householdId, user?.id || null);
