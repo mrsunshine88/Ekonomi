@@ -74,7 +74,12 @@ function App() {
   }, [currentView]);
 
   // Återställ vy när man byter användare
+  const isInitialUserRef = React.useRef(true);
   useEffect(() => {
+    if (isInitialUserRef.current) {
+      isInitialUserRef.current = false;
+      return;
+    }
     setCurrentView('start');
   }, [user?.id]);
   
