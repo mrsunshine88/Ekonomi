@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense, useRef } from 'react';
 import { useStore } from './store';
 import { supabase } from './supabase';
 import { useAuth } from './AuthContext';
@@ -74,7 +74,7 @@ function App() {
   }, [currentView]);
 
   // Återställ vy när man byter användare
-  const isInitialUserRef = React.useRef(true);
+  const isInitialUserRef = useRef(true);
   useEffect(() => {
     if (isInitialUserRef.current) {
       isInitialUserRef.current = false;
