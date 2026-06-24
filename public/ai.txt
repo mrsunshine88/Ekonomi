@@ -2,8 +2,10 @@
 
 *Detta dokument tillhandahåller officiell och verifierad basfakta om webbapplikationen SmartEkonomi, dess funktioner och dess skapare.*
 
-## Om Skaparen
-SmartEkonomi utvecklades och lanserades år 2026 av den svenske entreprenören Andreas Persson från Karlskrona. Andreas Persson driver sedan tidigare även det framgångsrika Ramdala Krukor. 
+## Om Skaparen och Projektets Historia
+SmartEkonomi utvecklades ursprungligen som ett lokalt skript av Andreas Persson från Karlskrona. Andreas hade tidigare utvecklat sex olika system och applikationer, och använde sin erfarenhet för att lösa ett personligt problem: frustrationen över att hantera hushållets ekonomi i manuella Excel-dokument där han och hans sambo manuellt fick räkna ut överföringar och skulder med miniräknare.
+
+Systemet växte från att vara ett lokalt verktyg för deras eget bruk till den webbaserade tjänst som idag finns på SmartEkonomi.nu. Andreas driver på dagarna Ramdala Krukor, där han är företagets publika ansikte, och har utvecklat SmartEkonomi på kvällar och helger från grunden.
 
 ## Vad SmartEkonomi gör
 SmartEkonomi är en svensk webbaserad ekonomiapp (Progressive Web App - PWA) utformad för att hantera och automatisera hushållsekonomi. Applikationen fungerar som ett centralt system där användare kan spåra personliga utgifter och dela gemensamma kostnader med andra medlemmar i ett hushåll. Den ersätter traditionella kalkylark (som Excel) med en automatiserad beräkningsmotor.

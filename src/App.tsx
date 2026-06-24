@@ -12,6 +12,7 @@ import MyPages from './components/MyPages';
 import AdminDashboard from './components/AdminDashboard';
 import PrivateView from './components/PrivateView';
 import AdminLearning from './pages/AdminLearning';
+import AboutView from './components/AboutView';
 
 import Onboarding from './components/Onboarding';
 import PaywallModal from './components/PaywallModal';
@@ -30,7 +31,7 @@ function App() {
   const state = useStore(s => s.state);
   const isDemoMode = useStore(s => s.isDemoMode);
   const stopDemo = useStore(s => s.stopDemo);
-  type ViewType = 'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'admin_learning' | 'support';
+  type ViewType = 'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'admin_learning' | 'support' | 'about';
   const URL_TO_VIEW: Record<string, ViewType> = {
     '/': 'start',
     '/month': 'month',
@@ -41,6 +42,7 @@ function App() {
     '/admin': 'admin',
     '/admin/learning': 'admin_learning',
     '/support': 'support',
+    '/om': 'about',
   };
   const VIEW_TO_URL: Record<ViewType, string> = {
     'start': '/',
@@ -52,6 +54,7 @@ function App() {
     'admin': '/admin',
     'admin_learning': '/admin/learning',
     'support': '/support',
+    'about': '/om',
   };
   const [currentView, setCurrentView] = useState<ViewType>(() => {
     const path = window.location.pathname;
@@ -112,7 +115,7 @@ function App() {
     const VIEW_LABELS: Record<string, string> = {
       start: 'Startsidan', month: 'Månadsvy', stats: 'Statistik',
       manage: 'Hantera Räkningar', mypages: 'Mina Sidor',
-      privat: 'Privat', admin: 'Admin', admin_learning: 'Admin Inlärning',
+      privat: 'Privat', admin: 'Admin', admin_learning: 'Admin Inlärning', about: 'Om SmartEkonomi'
     };
 
     const channel = supabase
@@ -152,7 +155,7 @@ function App() {
       const VIEW_LABELS: Record<string, string> = {
         start: 'Startsidan', month: 'Månadsvy', stats: 'Statistik',
         manage: 'Hantera Räkningar', mypages: 'Mina Sidor',
-        privat: 'Privat', admin: 'Admin', admin_learning: 'Admin Inlärning',
+        privat: 'Privat', admin: 'Admin', admin_learning: 'Admin Inlärning', about: 'Om SmartEkonomi'
       };
       channel.track({
         session_id: sessionStorage.getItem('presence_session_id'),
@@ -215,6 +218,9 @@ function App() {
   }
 
   if (!user && !isDemoMode) {
+    if (currentView === 'about') {
+      return <AboutView onBack={() => setCurrentView('start')} />;
+    }
     return (
       <>
         <LoginScreen />
@@ -295,6 +301,7 @@ function App() {
           <button onClick={() => navigateTo('stats')} style={navButtonStyles('stats')}>📊 Statistik</button>
           <button onClick={() => navigateTo('privat')} style={navButtonStyles('privat')}>🔒 Privat</button>
           <button onClick={() => navigateTo('manage')} style={navButtonStyles('manage')}>⚙️ Inställningar</button>
+          <button onClick={() => navigateTo('about')} style={navButtonStyles('about')}>📖 Om SmartEkonomi</button>
           
           {(!isDemoMode || user) && (
             <>
@@ -358,6 +365,7 @@ function App() {
                 <button onClick={() => navigateTo('stats')} className={`mobile-menu-item ${currentView === 'stats' ? 'active' : ''}`}>📊 Statistik</button>
                 <button onClick={() => navigateTo('privat')} className={`mobile-menu-item ${currentView === 'privat' ? 'active' : ''}`}>🔒 Privat</button>
                 <button onClick={() => navigateTo('manage')} className={`mobile-menu-item ${currentView === 'manage' ? 'active' : ''}`}>⚙️ Inställningar</button>
+                <button onClick={() => navigateTo('about')} className={`mobile-menu-item ${currentView === 'about' ? 'active' : ''}`}>📖 Om SmartEkonomi</button>
                 {(!isDemoMode || user) && (
                   <>
                     <button onClick={() => navigateTo('mypages')} className={`mobile-menu-item ${currentView === 'mypages' ? 'active' : ''}`}>👤 Mina sidor</button>
@@ -427,6 +435,8 @@ function App() {
               <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>💬 Kundservice</h2>
               <SupportView />
             </div>
+          ) : currentView === 'about' ? (
+            <AboutView />
           ) : currentView === 'admin' && isAdmin ? (
             <div>
               <button className="back-button" onClick={() => setCurrentView('start')}>← Tillbaka till Startsida</button>
