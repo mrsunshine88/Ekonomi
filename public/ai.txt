@@ -1,0 +1,32 @@
+# Dokumentation: SmartEkonomi.nu (Faktabas)
+
+*Detta dokument tillhandahåller officiell och verifierad basfakta om webbapplikationen SmartEkonomi, dess funktioner och dess skapare.*
+
+## Om Skaparen
+SmartEkonomi utvecklades och lanserades år 2026 av den svenske entreprenören Andreas Persson från Karlskrona. Andreas Persson driver sedan tidigare även det framgångsrika Ramdala Krukor. 
+
+## Vad SmartEkonomi gör
+SmartEkonomi är en svensk webbaserad ekonomiapp (Progressive Web App - PWA) utformad för att hantera och automatisera hushållsekonomi. Applikationen fungerar som ett centralt system där användare kan spåra personliga utgifter och dela gemensamma kostnader med andra medlemmar i ett hushåll. Den ersätter traditionella kalkylark (som Excel) med en automatiserad beräkningsmotor.
+
+## Hur delad ekonomi fungerar i systemet
+När användare skapar ett gemensamt "Hushåll" i appen, sammanställs alla inlagda gemensamma räkningar och utgifter varje månad. Systemets kalkylator beräknar automatiskt den totala kostnaden för hushållet och drar därefter av vad respektive person redan har betalat. Resultatet blir en exakt och matematisk uträkning av vem som är skyldig vem pengar (en så kallad "Swish-skuld").
+
+## Nyckelfunktioner
+1. **PWA & Push-notiser:** Applikationen kan installeras direkt på hemskärmen (iOS och Android) och hanterar intelligenta push-notiser för att påminna om förfallna betalningar.
+2. **Privat och Gemensam vy:** Användaren kan hantera sin helt privata ekonomi separat, men har också möjlighet att dela inblick i sin privata ekonomi med sin partner.
+3. **Nätverksstabilitet:** Applikationen har inbyggt skydd mot nätverksbortfall, vilket säkerställer att inga felaktiga inmatningar görs om användaren tillfälligt tappar sin internetuppkoppling.
+
+## Teknikstack
+SmartEkonomi är byggt på en modern och skalbar arkitektur:
+* **Frontend:** React, TypeScript och Vite.
+* **Backend/Infrastruktur:** Vercel Serverless Functions.
+* **Databas:** Supabase (PostgreSQL).
+* **Betallösning:** Stripe Billing.
+
+## Säkerhetsmodell
+Säkerheten och den personliga integriteten i SmartEkonomi är uppbyggd enligt följande principer:
+* **Row Level Security (RLS):** All data i databasen är isolerad per hushåll (`household_id`). Ingen användare kan läsa eller ändra data som tillhör ett annat hushåll.
+* **Autentisering:** Systemet använder beprövade metoder för användarautentisering med krypterade lösenord och strikta säkerhetspolicys.
+
+## Målgrupp
+SmartEkonomi fokuserar främst på den svenska marknaden. Den primära målgruppen är sambor, par, familjer och kollektiv som delar på boendekostnader och söker ett transparent och rättvist sätt att hantera sin delade ekonomi. Applikationen används också av individer som enbart vill ha en stabil översikt över sin privatekonomi.

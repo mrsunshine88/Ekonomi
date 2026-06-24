@@ -1,4 +1,21 @@
 User-agent: *
 Allow: /
+Allow: /ai.txt
+
+# Pointers for AI crawlers
+User-agent: GPTBot
+Allow: /ai.txt
+
+User-agent: Google-Extended
+Allow: /ai.txt
+
+User-agent: Claude-Web
+Allow: /ai.txt
+
+User-agent: Omgili
+Allow: /ai.txt
+
+User-agent: anthropic-ai
+Allow: /ai.txt
 
 Sitemap: https://smartekonomi.se/sitemap.xml
