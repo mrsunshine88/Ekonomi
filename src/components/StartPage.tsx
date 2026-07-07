@@ -1,5 +1,6 @@
 import React from 'react';
 import { useStore } from '../store';
+import { useAuth } from '../AuthContext';
 
 interface StartPageProps {
   navigateTo: (view: 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'start') => void;
@@ -7,6 +8,7 @@ interface StartPageProps {
 
 export default function StartPage({ navigateTo }: StartPageProps) {
   const openAuthModal = useStore(s => s.openAuthModal);
+  const { user } = useAuth();
 
   const boxStyle = {
     background: 'rgba(255,255,255,0.02)', 
@@ -181,30 +183,32 @@ export default function StartPage({ navigateTo }: StartPageProps) {
       </div>
 
       {/* Prova gratis i 14 dagar */}
-      <div style={{ padding: '3rem', background: 'var(--surface-color)', borderRadius: '16px', border: '1px solid var(--accent-color)', marginBottom: '4rem', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
-        <h2 style={{ fontSize: '2.5rem', margin: '0 0 1rem' }}>Prova helt gratis i 14 dagar 🎁</h2>
-        <p style={{ fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: '1.5rem' }}>
-          Skapa ett konto på 10 sekunder och testa alla funktioner på riktigt.
-        </p>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
-          Ingen bindningstid – avsluta när du vill.
-        </p>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '1.1rem' }}>
-          Helt gratis i 14 dagar.<br/>
-          Därefter endast 59 kr/mån för full koll på ekonomin.
-        </p>
-        <button 
-          onClick={openAuthModal}
-          style={{ 
-            background: 'var(--accent-gradient)', color: '#fff', border: 'none', 
-            padding: '1.2rem 2.5rem', borderRadius: '12px', fontSize: '1.3rem', 
-            fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 8px 20px rgba(99, 102, 241, 0.4)',
-            transition: 'transform 0.2s', animation: 'pulse 2s infinite'
-          }}
-        >
-          Skapa gratis konto nu 🚀
-        </button>
-      </div>
+      {!user && (
+        <div style={{ padding: '3rem', background: 'var(--surface-color)', borderRadius: '16px', border: '1px solid var(--accent-color)', marginBottom: '4rem', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
+          <h2 style={{ fontSize: '2.5rem', margin: '0 0 1rem' }}>Prova helt gratis i 14 dagar 🎁</h2>
+          <p style={{ fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: '1.5rem' }}>
+            Skapa ett konto på 10 sekunder och testa alla funktioner på riktigt.
+          </p>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
+            Ingen bindningstid – avsluta när du vill.
+          </p>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '1.1rem' }}>
+            Helt gratis i 14 dagar.<br/>
+            Därefter endast 59 kr/mån för full koll på ekonomin.
+          </p>
+          <button 
+            onClick={openAuthModal}
+            style={{ 
+              background: 'var(--accent-gradient)', color: '#fff', border: 'none', 
+              padding: '1.2rem 2.5rem', borderRadius: '12px', fontSize: '1.3rem', 
+              fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 8px 20px rgba(99, 102, 241, 0.4)',
+              transition: 'transform 0.2s', animation: 'pulse 2s infinite'
+            }}
+          >
+            Skapa gratis konto nu 🚀
+          </button>
+        </div>
+      )}
 
     </div>
   );
