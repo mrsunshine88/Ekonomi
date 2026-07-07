@@ -7,7 +7,7 @@ import Summary from './components/Summary';
 import ManageBills from './components/ManageBills';
 import { Toaster } from 'react-hot-toast';
 const Statistics = lazy(() => import('./components/Statistics'));
-import LoginScreen from './components/Auth/LoginScreen';
+import AuthModal from './components/Auth/AuthModal';
 import MyPages from './components/MyPages';
 import AdminDashboard from './components/AdminDashboard';
 import PrivateView from './components/PrivateView';
@@ -30,7 +30,9 @@ function App() {
   const initCloud = useStore(s => s.initCloud);
   const state = useStore(s => s.state);
   const isDemoMode = useStore(s => s.isDemoMode);
-  const stopDemo = useStore(s => s.stopDemo);
+  const isAuthModalOpen = useStore(s => s.isAuthModalOpen);
+  const openAuthModal = useStore(s => s.openAuthModal);
+
   type ViewType = 'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'admin_learning' | 'support' | 'about';
   const URL_TO_VIEW: Record<string, ViewType> = {
     '/': 'start',
@@ -226,17 +228,7 @@ function App() {
     return <UpdatePassword />;
   }
 
-  if (!user && !isDemoMode) {
-    if (currentView === 'about') {
-      return <AboutView onBack={() => setCurrentView('start')} />;
-    }
-    return (
-      <>
-        <LoginScreen />
-        <ChatBubble />
-      </>
-    );
-  }
+  // Remove the old LoginScreen wall completely, let unauthenticated users see the app interface
 
   // 1. HARD GATE: Grattis-rutan vid ny bekräftelse
   if (isNewlyConfirmed) {
@@ -297,6 +289,7 @@ function App() {
   return (
     <div className="app-layout">
       <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
+      {isAuthModalOpen && <AuthModal />}
       
       {/* DESKTOP SIDEBAR */}
       <aside className="desktop-sidebar">
@@ -327,9 +320,9 @@ function App() {
           )}
         </nav>
 
-        {/* Utloggning i botten */}
+        {/* Utloggning/Inloggning i botten */}
         <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
-          {(!isDemoMode || user) ? (
+          {user ? (
             <button 
               onClick={() => supabase.auth.signOut()} 
               style={{ width: '100%', padding: '0.8rem', fontSize: '1rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s' }}
@@ -338,10 +331,17 @@ function App() {
             </button>
           ) : (
             <button 
-              onClick={stopDemo} 
-              style={{ width: '100%', padding: '0.8rem', fontSize: '1rem', background: 'transparent', color: '#f43f5e', border: '1px solid #f43f5e', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s' }}
+              onClick={openAuthModal} 
+              style={{ 
+                width: '100%', padding: '0.8rem', fontSize: '1rem', 
+                background: 'var(--accent-gradient)', color: '#fff', 
+                border: 'none', borderRadius: '8px', cursor: 'pointer', 
+                fontWeight: 'bold', transition: 'transform 0.2s, box-shadow 0.2s',
+                boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)',
+                animation: 'pulse 2s infinite'
+              }}
             >
-              🚪 Avsluta Demo
+              Spara din ekonomi
             </button>
           )}
         </div>
@@ -388,10 +388,21 @@ function App() {
                   </>
                 )}
                 <div style={{ height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
-                {(!isDemoMode || user) ? (
+                {user ? (
                   <button onClick={() => supabase.auth.signOut()} className="mobile-menu-item" style={{ color: '#f43f5e' }}>🚪 Logga ut</button>
                 ) : (
-                  <button onClick={stopDemo} className="mobile-menu-item" style={{ color: '#f43f5e' }}>🚪 Avsluta Demo</button>
+                  <button 
+                    onClick={() => { setMobileMenuOpen(false); openAuthModal(); }} 
+                    style={{ 
+                      width: 'calc(100% - 2rem)', margin: '1rem', padding: '0.8rem', fontSize: '1rem', 
+                      background: 'var(--accent-gradient)', color: '#fff', 
+                      border: 'none', borderRadius: '8px', cursor: 'pointer', 
+                      fontWeight: 'bold', boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)',
+                      animation: 'pulse 2s infinite'
+                    }}
+                  >
+                    Spara din ekonomi
+                  </button>
                 )}
               </div>
             </>
@@ -399,41 +410,7 @@ function App() {
         </div>
 
         <div className="container">
-          {isDemoMode && (
-            <div style={{ background: '#f59e0b', color: '#000', padding: '0.75rem 1.25rem', borderRadius: '8px', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-              {/* Info-text: liten och dämpad */}
-              <span style={{ fontSize: '0.8rem', opacity: 0.65, fontWeight: 500 }}>🛠️ Du utforskar appen i Demo-läge. Inget sparas.</span>
-
-              {/* CTA-sektion: lila pill + knapp */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <span style={{
-                  color: '#1f2937',
-                  fontWeight: 'bold',
-                  fontSize: '0.95rem',
-                  whiteSpace: 'nowrap'
-                }}>
-                  👉 Gillar du vad du ser? Testa fritt i 14 dagar.
-                </span>
-                <button
-                  onClick={() => {
-                    localStorage.setItem('smartEkonomi_openRegister', 'true');
-                    stopDemo();
-                  }}
-                  style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)', color: '#fff', border: 'none', padding: '0.5rem 1.2rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem', whiteSpace: 'nowrap', boxShadow: '0 2px 10px rgba(124,58,237,0.4)' }}
-                >
-                  ✨ Starta provperiod
-                </button>
-              </div>
-
-              {/* Avsluta Demo: nedtonad */}
-              <button
-                onClick={stopDemo}
-                style={{ background: 'transparent', color: 'rgba(0,0,0,0.45)', border: '1px solid rgba(0,0,0,0.25)', padding: '0.35rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.78rem', whiteSpace: 'nowrap' }}
-              >
-                Avsluta Demo
-              </button>
-            </div>
-          )}
+          {/* Old yellow demo banner has been removed */}
 
           {currentView === 'start' ? (
             <StartPage navigateTo={navigateTo} />

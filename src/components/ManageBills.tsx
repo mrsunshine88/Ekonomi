@@ -32,6 +32,7 @@ export default function ManageBills({ readOnly }: Props) {
   const onAddAccount = useStore(s => s.addAccount);
   const onRemoveAccount = useStore(s => s.removeAccount);
   const onUnlockAccount = useStore(s => s.unlockAccount);
+  const openAuthModal = useStore(s => s.openAuthModal);
   const onUpdateSettings = useStore(s => s.updateSettings);
   const onUnlockPrivateMonth = useStore(s => s.togglePrivateLock);
   const saveIncome = useStore(s => s.saveIncome);
@@ -81,7 +82,7 @@ export default function ManageBills({ readOnly }: Props) {
   const [showPaywall, setShowPaywall] = useState(false);
 
   const handleSaveBill = () => {
-    if (readOnly) { setShowPaywall(true); return; }
+    if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; }
     if (!newBillName.trim()) return;
     if (newBillScope === 'shared' && !newBillAccount) return;
     
@@ -180,7 +181,7 @@ export default function ManageBills({ readOnly }: Props) {
   };
 
   const handleConfirmDelete = async () => {
-    if (readOnly) { setShowPaywall(true); return; }
+    if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; }
     if (!billToDelete) return;
     if (billToDelete.type === 'shared') {
       onRemoveBill(billToDelete.id);
@@ -205,7 +206,7 @@ export default function ManageBills({ readOnly }: Props) {
   };
 
   const handleAddAccount = () => {
-    if (readOnly) { setShowPaywall(true); return; }
+    if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; }
     if (!newAccName.trim()) return;
     onAddAccount({
       id: crypto.randomUUID(),
@@ -222,7 +223,7 @@ export default function ManageBills({ readOnly }: Props) {
   const [householdRules, setHouseholdRules] = useState<HouseholdImportRule[]>([]);
 
   const handleConfirmBankImport = async (selectedRows: (ParsedBankRow & { shouldLearnRule?: boolean })[]) => {
-    if (readOnly) { setShowPaywall(true); return; }
+    if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; }
     let addedCount = 0;
     let learnedCount = 0;
     
@@ -465,7 +466,7 @@ export default function ManageBills({ readOnly }: Props) {
   };
 
   const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (readOnly) { setShowPaywall(true); return; }
+    if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; }
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -726,7 +727,7 @@ export default function ManageBills({ readOnly }: Props) {
                   />
                   <button 
                     onClick={() => {
-                       if (readOnly) { setShowPaywall(true); return; }
+                       if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; }
                        const amt = parseFloat(fixedIncomeAmount);
                        if (fixedIncomeName.trim() && !isNaN(amt)) {
                          saveIncome({ id: editingIncomeId || undefined, name: fixedIncomeName, amount: amt, type: 'fixed' });
@@ -764,7 +765,7 @@ export default function ManageBills({ readOnly }: Props) {
                       </button>
                       <button 
                         onClick={async () => {
-                          if (readOnly) { setShowPaywall(true); return; }
+                          if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; }
                           if (confirm('Är du säker på att du vill ta bort inkomsten?')) {
                             await removeIncome(inc.id);
                             toast.success('Inkomst borttagen');
@@ -810,7 +811,7 @@ export default function ManageBills({ readOnly }: Props) {
                   />
                   <button 
                     onClick={() => {
-                       if (readOnly) { setShowPaywall(true); return; }
+                       if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; }
                        const amt = parseFloat(variableIncomeAmount);
                        if (variableIncomeName.trim() && variableIncomeDate && !isNaN(amt)) {
                          saveIncome({ id: editingIncomeId || undefined, name: variableIncomeName, amount: amt, type: 'variable', payDate: variableIncomeDate });
@@ -855,7 +856,7 @@ export default function ManageBills({ readOnly }: Props) {
                          </button>
                          <button 
                            onClick={async () => {
-                             if (readOnly) { setShowPaywall(true); return; }
+                             if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; }
                              if (confirm('Är du säker på att du vill ta bort inkomsten?')) {
                                await removeIncome(inc.id);
                                toast.success('Inkomst borttagen');
@@ -884,7 +885,7 @@ export default function ManageBills({ readOnly }: Props) {
                 <input 
                   type="checkbox" 
                   checked={state.settings?.showTransferSummary === true} 
-                  onChange={(e) => { if (readOnly) { setShowPaywall(true); return; } onUpdateSettings({ showTransferSummary: e.target.checked }) }}
+                  onChange={(e) => { if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; } onUpdateSettings({ showTransferSummary: e.target.checked }) }}
                   style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
                 />
                 Visa sammanställning för Överföringar högst upp i månadsvyn
@@ -899,7 +900,7 @@ export default function ManageBills({ readOnly }: Props) {
                 <input 
                   type="checkbox" 
                   checked={state.settings?.showSwishSummary === true} 
-                  onChange={(e) => { if (readOnly) { setShowPaywall(true); return; } onUpdateSettings({ showSwishSummary: e.target.checked }) }}
+                  onChange={(e) => { if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; } onUpdateSettings({ showSwishSummary: e.target.checked }) }}
                   style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
                 />
                 Visa sammanställning för personliga överföringar högst upp i månadsvyn
@@ -914,7 +915,7 @@ export default function ManageBills({ readOnly }: Props) {
                 <input 
                   type="checkbox" 
                   checked={state.settings?.enableManagementButtons !== false} 
-                  onChange={(e) => { if (readOnly) { setShowPaywall(true); return; } onUpdateSettings({ enableManagementButtons: e.target.checked }) }}
+                  onChange={(e) => { if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; } onUpdateSettings({ enableManagementButtons: e.target.checked }) }}
                   style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
                 />
                 Visa hanteringsknappar (Lås & Hanterat)
@@ -929,7 +930,7 @@ export default function ManageBills({ readOnly }: Props) {
                 <input 
                   type="checkbox" 
                   checked={state.settings?.showTopTotal !== false} 
-                  onChange={(e) => { if (readOnly) { setShowPaywall(true); return; } onUpdateSettings({ showTopTotal: e.target.checked }) }}
+                  onChange={(e) => { if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; } onUpdateSettings({ showTopTotal: e.target.checked }) }}
                   style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
                 />
                 Visa totala summan på alla räkningar högst upp i gemensam vy
@@ -944,7 +945,7 @@ export default function ManageBills({ readOnly }: Props) {
                 <input 
                   type="checkbox" 
                   checked={state.settings?.showPrivateTopTotal === true} 
-                  onChange={(e) => { if (readOnly) { setShowPaywall(true); return; } onUpdateSettings({ showPrivateTopTotal: e.target.checked }) }}
+                  onChange={(e) => { if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; } onUpdateSettings({ showPrivateTopTotal: e.target.checked }) }}
                   style={{ width: '1.5rem', height: '1.5rem', cursor: 'pointer' }}
                 />
                 Visa totala summan på alla räkningar högst upp i privat vy
@@ -1031,7 +1032,7 @@ export default function ManageBills({ readOnly }: Props) {
                   <div className="bill-meta">{acc.type === 'shared' ? 'Gemensamt konto' : 'Personligt konto'}</div>
                 </div>
                 <button 
-                  onClick={() => { if (readOnly) { setShowPaywall(true); return; } onRemoveAccount(acc.id) }}
+                  onClick={() => { if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; } onRemoveAccount(acc.id) }}
                   style={{ background: 'rgba(244, 63, 94, 0.2)', color: '#f43f5e', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer' }}
                 >
                   Ta bort
@@ -1054,7 +1055,7 @@ export default function ManageBills({ readOnly }: Props) {
                       <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Kopplat konto:</span>
                       <select
                         value={profile.person_account_id || ''}
-                        onChange={(e) => { if (readOnly) { setShowPaywall(true); return; } updateProfileAccount(profile.id, e.target.value || null) }}
+                        onChange={(e) => { if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; } updateProfileAccount(profile.id, e.target.value || null) }}
                         style={{ flex: 1, padding: '0.4rem', borderRadius: '4px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid var(--border-color)', cursor: 'pointer', fontSize: '0.9rem', minWidth: '150px' }}
                       >
                         <option value="">-- Inget valt --</option>
@@ -1121,7 +1122,7 @@ export default function ManageBills({ readOnly }: Props) {
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-color)', padding: '0.75rem', borderRadius: '8px' }}>
                             <span>Total kostnad (Hela månaden) 🔒</span>
                             <button 
-                              onClick={() => { if (readOnly) { setShowPaywall(true); return; } onUnlockAccount(monthId, 'top_total_only') }}
+                              onClick={() => { if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; } onUnlockAccount(monthId, 'top_total_only') }}
                               style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', border: '1px solid #3b82f6', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
                             >
                               🔓 Lås upp
@@ -1158,7 +1159,7 @@ export default function ManageBills({ readOnly }: Props) {
                             <div key={paymentId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-color)', padding: '0.75rem', borderRadius: '8px' }}>
                               <span>{label} 🔒</span>
                               <button 
-                                onClick={() => { if (readOnly) { setShowPaywall(true); return; } useStore.getState().togglePaymentStatus(monthId, paymentId) }}
+                                onClick={() => { if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; } useStore.getState().togglePaymentStatus(monthId, paymentId) }}
                                 style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', border: '1px solid #3b82f6', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
                               >
                                 🔓 Lås upp
@@ -1189,7 +1190,7 @@ export default function ManageBills({ readOnly }: Props) {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h4 style={{ margin: 0, color: 'var(--accent-color)' }}>{monthId} 🔒</h4>
                         <button 
-                          onClick={() => { if (readOnly) { setShowPaywall(true); return; } onUnlockPrivateMonth(monthId) }}
+                          onClick={() => { if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; } onUnlockPrivateMonth(monthId) }}
                           style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', border: '1px solid #3b82f6', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
                         >
                           🔓 Lås upp

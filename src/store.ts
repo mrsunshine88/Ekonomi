@@ -107,6 +107,9 @@ interface StoreState {
   copyPrivateFromPreviousMonth: (monthId: string) => Promise<void>;
   confirmPrivateAnomaly: (monthId: string, billId: string) => Promise<void>;
   togglePrivateLock: (monthId: string) => Promise<void>;
+  isAuthModalOpen: boolean;
+  openAuthModal: () => void;
+  closeAuthModal: () => void;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -118,6 +121,10 @@ export const useStore = create<StoreState>((set, get) => ({
   isDemoMode: false,
   realState: null,
   presenceSessions: [],
+  isAuthModalOpen: false,
+
+  openAuthModal: () => set({ isAuthModalOpen: true }),
+  closeAuthModal: () => set({ isAuthModalOpen: false }),
 
   cleanup: () => {
     const { channel } = get();
@@ -128,10 +135,17 @@ export const useStore = create<StoreState>((set, get) => ({
   },
 
   initCloud: async (householdId, userId) => {
-    if (get().isDemoMode) return;
+    if (get().isDemoMode && (householdId && userId)) {
+      // If we were in demo mode and now got credentials, we should clear it
+      get().stopDemo();
+    }
 
     if (!householdId || !userId) {
       get().cleanup();
+      // Load mock data if no user is provided, acting as the test page
+      if (!get().isDemoMode) {
+        get().startDemo();
+      }
       return;
     }
     set({ householdId, userId });
@@ -968,9 +982,9 @@ export const useStore = create<StoreState>((set, get) => ({
     const prevPrevPrevMonth = `${prevPrevPrevDate.getFullYear()}-${String(prevPrevPrevDate.getMonth() + 1).padStart(2, '0')}`;
     
     const mockAccounts: Account[] = [
-      { id: 'demo_person_1', name: 'Johan (Demo)', type: 'person', transferMethod: 'swish' },
-      { id: 'demo_person_2', name: 'Maria (Demo)', type: 'person', transferMethod: 'swish' },
-      { id: 'demo_shared', name: 'Gemensamt Konto (Demo)', type: 'shared', transferMethod: 'transfer' }
+      { id: 'demo_person_1', name: 'Johan', type: 'person', transferMethod: 'swish' },
+      { id: 'demo_person_2', name: 'Maria', type: 'person', transferMethod: 'swish' },
+      { id: 'demo_shared', name: 'Gemensamt Konto', type: 'shared', transferMethod: 'transfer' }
     ];
 
     const mockBills: BillDefinition[] = [
