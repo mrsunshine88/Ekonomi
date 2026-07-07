@@ -225,6 +225,8 @@ export default function ManageBills({ readOnly }: Props) {
   const handleConfirmBankImport = async (selectedRows: (ParsedBankRow & { shouldLearnRule?: boolean })[]) => {
     if (readOnly) { setShowPaywall(true); return; }
     let addedCount = 0;
+    if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; }
+    let addedCount = 0;
     let learnedCount = 0;
     
     // Fetch household_id

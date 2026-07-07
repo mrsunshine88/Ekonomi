@@ -330,19 +330,22 @@ function App() {
               🚪 Logga ut
             </button>
           ) : (
-            <button 
-              onClick={openAuthModal} 
-              style={{ 
-                width: '100%', padding: '0.8rem', fontSize: '1rem', 
-                background: 'var(--accent-gradient)', color: '#fff', 
-                border: 'none', borderRadius: '8px', cursor: 'pointer', 
-                fontWeight: 'bold', transition: 'transform 0.2s, box-shadow 0.2s',
-                boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)',
-                animation: 'pulse 2s infinite'
-              }}
-            >
-              Spara din ekonomi
-            </button>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Skapa ett konto och spar tid och pengar</p>
+              <button 
+                onClick={openAuthModal} 
+                style={{ 
+                  width: '100%', padding: '0.8rem', fontSize: '1rem', 
+                  background: 'var(--accent-gradient)', color: '#fff', 
+                  border: 'none', borderRadius: '8px', cursor: 'pointer', 
+                  fontWeight: 'bold', transition: 'transform 0.2s, box-shadow 0.2s',
+                  boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)',
+                  animation: 'pulse 2s infinite'
+                }}
+              >
+                Logga in
+              </button>
+            </div>
           )}
         </div>
       </aside>
@@ -391,18 +394,21 @@ function App() {
                 {user ? (
                   <button onClick={() => supabase.auth.signOut()} className="mobile-menu-item" style={{ color: '#f43f5e' }}>🚪 Logga ut</button>
                 ) : (
-                  <button 
-                    onClick={() => { setMobileMenuOpen(false); openAuthModal(); }} 
-                    style={{ 
-                      width: 'calc(100% - 2rem)', margin: '1rem', padding: '0.8rem', fontSize: '1rem', 
-                      background: 'var(--accent-gradient)', color: '#fff', 
-                      border: 'none', borderRadius: '8px', cursor: 'pointer', 
-                      fontWeight: 'bold', boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)',
-                      animation: 'pulse 2s infinite'
-                    }}
-                  >
-                    Spara din ekonomi
-                  </button>
+                  <div style={{ padding: '1rem', textAlign: 'center' }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem', margin: '0 0 0.5rem 0' }}>Skapa ett konto och spar tid och pengar</p>
+                    <button 
+                      onClick={() => { setMobileMenuOpen(false); openAuthModal(); }} 
+                      style={{ 
+                        width: '100%', padding: '0.8rem', fontSize: '1rem', 
+                        background: 'var(--accent-gradient)', color: '#fff', 
+                        border: 'none', borderRadius: '8px', cursor: 'pointer', 
+                        fontWeight: 'bold', boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)',
+                        animation: 'pulse 2s infinite'
+                      }}
+                    >
+                      Logga in
+                    </button>
+                  </div>
                 )}
               </div>
             </>
