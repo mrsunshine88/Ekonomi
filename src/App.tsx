@@ -73,8 +73,8 @@ function App() {
     // Funnel: spåra varje sidvy (ej demo-läge)
     if (!isDemoMode) {
       trackFunnelEvent('page_view', { view: currentView, path: newUrl });
-    } else if (currentView !== 'start') {
-      logDemoVisit();
+    } else {
+      logDemoVisit(currentView);
     }
   }, [currentView, isDemoMode, logDemoVisit]);
 

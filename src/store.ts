@@ -77,7 +77,7 @@ interface StoreState {
 
   startDemo: () => void;
   stopDemo: () => void;
-  logDemoVisit: () => void;
+  logDemoVisit: (view: string) => void;
 
   saveIncome: (income: Omit<Income, 'id' | 'userId'> & { id?: string }) => Promise<void>;
   removeIncome: (id: string) => Promise<void>;
@@ -966,8 +966,19 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
-  logDemoVisit: () => {
-    if (!get().isDemoMode || get().hasLoggedDemoVisit) return;
+  logDemoVisit: (view: string) => {
+    // 1. Måste vara i demoläge
+    if (!get().isDemoMode) return;
+    
+    // 2. Dubbel säkerhet: Får absolut inte finnas någon inloggad användare
+    if (get().userId) return;
+
+    // 3. Vitlista över vilka sidor som får räknas
+    const validDemoViews = ['month', 'stats', 'privat', 'manage', 'mypages'];
+    if (!validDemoViews.includes(view)) return;
+
+    // 4. Se till att vi bara loggar en gång per session
+    if (get().hasLoggedDemoVisit) return;
     if (sessionStorage.getItem('has_logged_demo_visit')) return;
     
     set({ hasLoggedDemoVisit: true });
