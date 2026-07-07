@@ -47,7 +47,10 @@ export default function StartPage({ navigateTo }: StartPageProps) {
           <span className="text-gradient">Spara tid och få full kontroll<br/>över hushållets ekonomi.</span>
         </h1>
         <p className="login-hero-subtitle" style={{ maxWidth: '600px', margin: '0 auto' }}>
-          SmartEkonomi räknar automatiskt ut vem som ska betala vad, håller privat ekonomi separat och visar hur era kostnader utvecklas över tid. Prova gratis i 14 dagar – sedan 59 kr/mån utan bindningstid! 💸✨
+          SmartEkonomi räknar automatiskt ut vem som ska betala vad, håller privat ekonomi separat och visar hur era kostnader utvecklas över tid.
+          {!user && (
+            <span> Prova gratis i 14 dagar – sedan 59 kr/mån utan bindningstid! 💸✨ <button onClick={openAuthModal} style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', fontWeight: 'bold', cursor: 'pointer', padding: 0, fontSize: 'inherit', textDecoration: 'underline' }}>Skapa konto här</button></span>
+          )}
         </p>
       </div>
 
