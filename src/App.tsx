@@ -30,6 +30,7 @@ function App() {
   const initCloud = useStore(s => s.initCloud);
   const state = useStore(s => s.state);
   const isDemoMode = useStore(s => s.isDemoMode);
+  const logDemoVisit = useStore(s => s.logDemoVisit);
   const isAuthModalOpen = useStore(s => s.isAuthModalOpen);
   const openAuthModal = useStore(s => s.openAuthModal);
 
@@ -72,8 +73,10 @@ function App() {
     // Funnel: spåra varje sidvy (ej demo-läge)
     if (!isDemoMode) {
       trackFunnelEvent('page_view', { view: currentView, path: newUrl });
+    } else if (currentView !== 'start') {
+      logDemoVisit();
     }
-  }, [currentView]);
+  }, [currentView, isDemoMode, logDemoVisit]);
 
   // Återställ vy när man byter användare, men ignorera den första uppstarten
   const authInitializedRef = useRef(false);

@@ -71,11 +71,13 @@ interface StoreState {
   userId: string | null;
   channel: RealtimeChannel | null;
   isDemoMode: boolean;
+  hasLoggedDemoVisit: boolean;
   realState: AppState | null;
   presenceSessions: PresenceEntry[];
 
   startDemo: () => void;
   stopDemo: () => void;
+  logDemoVisit: () => void;
 
   saveIncome: (income: Omit<Income, 'id' | 'userId'> & { id?: string }) => Promise<void>;
   removeIncome: (id: string) => Promise<void>;
@@ -119,6 +121,7 @@ export const useStore = create<StoreState>((set, get) => ({
   userId: null,
   channel: null,
   isDemoMode: false,
+  hasLoggedDemoVisit: false,
   realState: null,
   presenceSessions: [],
   isAuthModalOpen: false,
@@ -131,7 +134,7 @@ export const useStore = create<StoreState>((set, get) => ({
     if (channel) {
       supabase.removeChannel(channel);
     }
-    set({ state: DEFAULT_STATE, channel: null, isCloudLoaded: false, householdId: null, userId: null, isDemoMode: false, realState: null });
+    set({ state: DEFAULT_STATE, channel: null, isCloudLoaded: false, householdId: null, userId: null, isDemoMode: false, hasLoggedDemoVisit: false, realState: null });
   },
 
   initCloud: async (householdId, userId) => {
@@ -963,13 +966,17 @@ export const useStore = create<StoreState>((set, get) => ({
     }
   },
 
+  logDemoVisit: () => {
+    if (!get().isDemoMode || get().hasLoggedDemoVisit) return;
+    set({ hasLoggedDemoVisit: true });
+    const sessionId = localStorage.getItem('visitor_session_id') || crypto.randomUUID();
+    supabase.from('demo_visits').insert([{ session_id: sessionId }]).then(() => {});
+  },
+
   startDemo: () => {
     const currentState = get().state;
     if (get().isDemoMode) return;
     
-    // Logga demo-besök
-    const sessionId = localStorage.getItem('visitor_session_id') || crypto.randomUUID();
-    supabase.from('demo_visits').insert([{ session_id: sessionId }]).then(() => {});
 
     const now = new Date();
     const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
