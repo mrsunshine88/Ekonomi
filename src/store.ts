@@ -968,7 +968,11 @@ export const useStore = create<StoreState>((set, get) => ({
 
   logDemoVisit: () => {
     if (!get().isDemoMode || get().hasLoggedDemoVisit) return;
+    if (sessionStorage.getItem('has_logged_demo_visit')) return;
+    
     set({ hasLoggedDemoVisit: true });
+    sessionStorage.setItem('has_logged_demo_visit', 'true');
+    
     const sessionId = localStorage.getItem('visitor_session_id') || crypto.randomUUID();
     supabase.from('demo_visits').insert([{ session_id: sessionId }]).then(() => {});
   },

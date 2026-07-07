@@ -93,8 +93,9 @@ function App() {
   }, [user?.id, loading]);
   
   useEffect(() => {
+    if (loading) return; // Vänta på AuthContext
     initCloud(householdId, user?.id || null);
-  }, [householdId, user?.id, initCloud]);
+  }, [householdId, user?.id, initCloud, loading]);
 
   // Visitor Tracking
   useEffect(() => {
