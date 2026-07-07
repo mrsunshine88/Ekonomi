@@ -52,6 +52,7 @@ export default function AuthModal() {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        closeAuthModal();
       } else {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
@@ -68,6 +69,7 @@ export default function AuthModal() {
           
           if (data.session) {
             setSuccessMsg('Konto skapat! Molnsynk aktiverad. Du loggas in...');
+            setTimeout(closeAuthModal, 1500);
           } else {
             setSuccessMsg('Konto skapat! ✅ Kolla din inkorg (och skräppost) för att bekräfta din e-postadress, logga sedan in.');
           }
