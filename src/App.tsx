@@ -302,7 +302,6 @@ function App() {
 
   return (
     <>
-      <DemoBanner />
       <div className="app-layout">
         <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
         {isAuthModalOpen && <AuthModal />}
@@ -374,6 +373,7 @@ function App() {
 
       {/* MAIN CONTENT AREA */}
       <main className="main-content">
+        <DemoBanner />
         
         {/* MOBILE HEADER (Only visible on mobile) */}
         <div className="mobile-header">
