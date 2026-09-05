@@ -154,17 +154,21 @@ export default function LoginScreen() {
 
   return (
     <div className="login-wrapper">
-      {/* Vänster sida: Info och Features */}
-      <div className="login-info-section">
-        <div className="login-info-content">
-          <div className="brand-badge">🏠 SmartEkonomi</div>
-          <h1 className="login-hero-title" style={{ fontSize: '2.5rem', lineHeight: '1.2' }}>
-            SmartEkonomi – <span className="text-gradient">En smart ekonomi-app för hushållet</span>
-          </h1>
-          <p className="login-hero-subtitle" style={{ lineHeight: '1.6' }}>
-            <span style={{ color: '#fff', fontWeight: 600 }}>Slipp miniräknaren.</span> <span className="text-gradient" style={{ fontWeight: 600 }}>Spara tid och få full kontroll över hushållets ekonomi.</span><br/><br/>
-            SmartEkonomi är en ny ekonomi-app som automatiskt räknar ut vem som ska betala vad, håller er privata ekonomi separat och visar hur era kostnader utvecklas över tid. Perfekt för sambor och familjer som vill ha en smidig budget-app för en rättvis delad ekonomi.
-          </p>
+      {/* Top Header Section */}
+      <div className="login-header-section">
+        <div className="brand-badge">🏠 SmartEkonomi</div>
+        <h1 className="login-hero-title">
+          SmartEkonomi – <span className="text-gradient">En smart ekonomi-app för hushållet</span>
+        </h1>
+        <p className="login-hero-subtitle">
+          <span style={{ color: '#fff', fontWeight: 600 }}>Slipp miniräknaren.</span> <span className="text-gradient" style={{ fontWeight: 600 }}>Spara tid och få full kontroll över hushållets ekonomi.</span><br/><br/>
+          SmartEkonomi är en ny ekonomi-app som automatiskt räknar ut vem som ska betala vad, håller er privata ekonomi separat och visar hur era kostnader utvecklas över tid. Perfekt för sambor och familjer som vill ha en smidig budget-app för en rättvis delad ekonomi.
+        </p>
+      </div>
+
+      {/* Split Middle Section */}
+      <div className="login-split-wrapper">
+        <div className="login-left-features">
           
           <div style={{ marginTop: '2rem', marginBottom: '2rem' }}>
             <button 
@@ -196,178 +200,168 @@ export default function LoginScreen() {
             ))}
           </div>
 
-          <div style={{ marginTop: '3rem', padding: '1.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem', fontWeight: 600 }}>Varför hushåll väljer SmartEkonomi</h3>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Automatisk uppdelning av hushållets kostnader</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Separat hantering av gemensam och privat ekonomi</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Smart bank-import som automatiskt upptäcker utgifter och lön</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Slipper manuella uträkningar och tjafs</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Statistik som visar hur ekonomin utvecklas över tid</li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Fungerar för hela hushållet i en gemensam app</li>
-            </ul>
-          </div>
+        </div>
 
-          <div style={{ marginTop: '3rem', padding: '2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', fontWeight: 600 }}>Vanliga frågor (FAQ)</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>Varför behöver vi en ekonomi-app för hushållet?</h3>
-                <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5' }}>Att ha en delad ekonomi kan leda till onödiga diskussioner och stress om vem som betalat vad. Med en dedikerad ekonomi-app för hushållet automatiseras alla uträkningar. Ni får stenkoll på er gemensamma budget, sparar tid och kan fokusera på roligare saker.</p>
+        {/* Höger sida: Formulär */}
+        <div className="login-form-section">
+          <div className="login-form-container">
+            <div className="login-form-header">
+              <div className="login-logo">
+                <span className="logo-icon">E</span>
+                SmartEkonomi
               </div>
-              <div>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>Fungerar er budget-app för både sambor och familjer?</h3>
-                <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5' }}>Ja, absolut! SmartEkonomi är designad för att vara flexibel. Oavsett om ni är ett nytt sambopar som precis flyttat ihop eller en stor familj med komplexa utgifter, anpassar sig vår budget-app efter era specifika behov för en rättvis delad ekonomi.</p>
-              </div>
-              <div>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>Kan vi hantera både gemensam och privat ekonomi?</h3>
-                <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5' }}>Ja, i vår ekonomi-app kan du enkelt separera dina privata utgifter från de gemensamma. Detta betyder att ni kan ha 100% transparens kring hushållets gemensamma räkningar, samtidigt som var och en behåller full kontroll över sin egen privata ekonomi och budget.</p>
-              </div>
-              <div>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>Är det svårt att komma igång med budget-appen?</h3>
-                <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5' }}>Nej, det tar bara några minuter! Du skapar ett konto och kan sedan enkelt importera utgifter direkt från din bank, eller lägga in dem manuellt. Inga fler krångliga excel-ark – vi gör det smidigt för er.</p>
-              </div>
+              <h2>{isForgotPassword ? 'Återställ Lösenord' : isLogin ? 'Logga in' : 'Skapa gratis konto'}</h2>
+              <p>
+                {isForgotPassword 
+                  ? 'Fyll i din e-post så skickar vi en länk'
+                  : isLogin 
+                    ? 'Fortsätt till ditt hushåll.' 
+                    : 'Helt gratis.'}
+              </p>
             </div>
-          </div>
 
-          <div style={{ marginTop: '2rem' }}>
-            <Footer />
+            {error && <div className="login-alert error">{error}</div>}
+            {successMsg && <div className="login-alert success">{successMsg}</div>}
+
+            <form onSubmit={handleSubmit} className="login-form">
+              <div className="input-group">
+                <label>E-postadress</label>
+                <input 
+                  type="email" 
+                  placeholder="namn@exempel.se" 
+                  value={email} 
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+              {!isForgotPassword && (
+                <div className="input-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label>Lösenord</label>
+                    {isLogin && (
+                      <button 
+                        type="button"
+                        onClick={() => { setIsForgotPassword(true); setError(''); setSuccessMsg(''); }}
+                        className="forgot-password-link"
+                      >
+                        Glömt lösenord?
+                      </button>
+                    )}
+                  </div>
+                  <input 
+                    type="password" 
+                    placeholder="••••••••" 
+                    value={password} 
+                    onChange={e => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
+
+              {!isLogin && !isForgotPassword && (
+                <div className="input-group">
+                  <label>Bekräfta lösenord</label>
+                  <input 
+                    type="password" 
+                    placeholder="••••••••" 
+                    value={confirmPassword} 
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
+
+              <button 
+                type="submit" 
+                className="submit-btn" 
+                disabled={loading}
+              >
+                {loading ? 'Vänta...' : isForgotPassword ? 'Skicka återställningslänk' : isLogin ? 'Logga in' : 'Skapa gratis konto'}
+              </button>
+            </form>
+
+            {demoEnabled && !isForgotPassword && (
+              <div style={{ marginTop: '1rem' }}>
+                <button 
+                  onClick={() => {
+                    trackFunnelEvent('demo_start', { source: 'login_button' });
+                    startDemo();
+                  }}
+                  type="button"
+                  style={{ 
+                    width: '100%', 
+                    padding: '1rem', 
+                    background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', 
+                    border: 'none', 
+                    color: '#fff', 
+                    borderRadius: '8px', 
+                    cursor: 'pointer', 
+                    fontWeight: 'bold',
+                    fontSize: '1rem',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)'
+                  }}
+                >
+                  🛠️ Testa appen i Demoläge
+                </button>
+              </div>
+            )}
+
+            <div className="auth-switch">
+              {isForgotPassword ? (
+                <p>Kommer du ihåg lösenordet? <button onClick={() => { setIsForgotPassword(false); setIsLogin(true); setError(''); setSuccessMsg(''); }}>Logga in här</button></p>
+              ) : isLogin ? (
+                <p>Har du inget konto? <button onClick={() => { setIsLogin(false); setError(''); setSuccessMsg(''); }}>Skapa ett här</button></p>
+              ) : (
+                <p>Har du redan ett konto? <button onClick={() => { setIsLogin(true); setError(''); setSuccessMsg(''); }}>Logga in här</button></p>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Höger sida: Formulär */}
-      <div className="login-form-section">
-        <div className="login-form-container">
-          <div className="login-form-header">
-            <div className="login-logo">
-              <span className="logo-icon">E</span>
-              SmartEkonomi
+      {/* Bottom Footer Section (FAQ and Benefits) */}
+      <div className="login-footer-section">
+        <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem', fontWeight: 600 }}>Varför hushåll väljer SmartEkonomi</h3>
+          <ul className="benefits-grid">
+            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Automatisk uppdelning av hushållets kostnader</li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Separat hantering av gemensam och privat ekonomi</li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Smart bank-import som automatiskt upptäcker utgifter och lön</li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Slipper manuella uträkningar och tjafs</li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Statistik som visar hur ekonomin utvecklas över tid</li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>✅</span> Fungerar för hela hushållet i en gemensam app</li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', fontWeight: 600 }}>Vanliga frågor (FAQ)</h2>
+          <div className="faq-grid">
+            <div className="faq-card">
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>Varför behöver vi en ekonomi-app för hushållet?</h3>
+              <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5' }}>Att ha en delad ekonomi kan leda till onödiga diskussioner och stress om vem som betalat vad. Med en dedikerad ekonomi-app för hushållet automatiseras alla uträkningar. Ni får stenkoll på er gemensamma budget, sparar tid och kan fokusera på roligare saker.</p>
             </div>
-            <h2>{isForgotPassword ? 'Återställ Lösenord' : isLogin ? 'Logga in' : 'Skapa gratis konto'}</h2>
-            <p>
-              {isForgotPassword 
-                ? 'Fyll i din e-post så skickar vi en länk'
-                : isLogin 
-                  ? 'Fortsätt till ditt hushåll.' 
-                  : 'Helt gratis.'}
-            </p>
+            <div className="faq-card">
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>Fungerar er budget-app för både sambor och familjer?</h3>
+              <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5' }}>Ja, absolut! SmartEkonomi är designad för att vara flexibel. Oavsett om ni är ett nytt sambopar som precis flyttat ihop eller en stor familj med komplexa utgifter, anpassar sig vår budget-app efter era specifika behov för en rättvis delad ekonomi.</p>
+            </div>
+            <div className="faq-card">
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>Kan vi hantera både gemensam och privat ekonomi?</h3>
+              <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5' }}>Ja, i vår ekonomi-app kan du enkelt separera dina privata utgifter från de gemensamma. Detta betyder att ni kan ha 100% transparens kring hushållets gemensamma räkningar, samtidigt som var och en behåller full kontroll över sin egen privata ekonomi och budget.</p>
+            </div>
+            <div className="faq-card">
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--accent-color)' }}>Är det svårt att komma igång med budget-appen?</h3>
+              <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5' }}>Nej, det tar bara några minuter! Du skapar ett konto och kan sedan enkelt importera utgifter direkt från din bank, eller lägga in dem manuellt. Inga fler krångliga excel-ark – vi gör det smidigt för er.</p>
+            </div>
           </div>
+        </div>
 
-          {error && <div className="login-alert error">{error}</div>}
-          {successMsg && <div className="login-alert success">{successMsg}</div>}
-
-          <form onSubmit={handleSubmit} className="login-form">
-            <div className="input-group">
-              <label>E-postadress</label>
-              <input 
-                type="email" 
-                placeholder="namn@exempel.se" 
-                value={email} 
-                onChange={e => setEmail(e.target.value)}
-                required
-              />
-            </div>
-
-            {!isForgotPassword && (
-              <div className="input-group">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label>Lösenord</label>
-                  {isLogin && (
-                    <button 
-                      type="button"
-                      onClick={() => { setIsForgotPassword(true); setError(''); setSuccessMsg(''); }}
-                      className="forgot-password-link"
-                    >
-                      Glömt lösenord?
-                    </button>
-                  )}
-                </div>
-                <input 
-                  type="password" 
-                  placeholder="••••••••" 
-                  value={password} 
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-            )}
-
-            {!isLogin && !isForgotPassword && (
-              <div className="input-group">
-                <label>Bekräfta lösenord</label>
-                <input 
-                  type="password" 
-                  placeholder="••••••••" 
-                  value={confirmPassword} 
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  required
-                />
-              </div>
-            )}
-
-            <button type="submit" disabled={loading} className="submit-btn">
-              {loading 
-                ? <span className="spinner-border"></span> 
-                : isForgotPassword 
-                  ? 'Skicka länk' 
-                  : isLogin 
-                    ? 'Logga in' 
-                    : 'Skapa gratis konto'}
-            </button>
-          </form>
-
-          {demoEnabled && !isForgotPassword && (
-            <div style={{ marginTop: '1rem' }}>
-              <button 
-                onClick={() => {
-                  trackFunnelEvent('demo_start', { source: 'login_button' });
-                  startDemo();
-                }}
-                type="button"
-                style={{ 
-                  width: '100%', 
-                  padding: '1rem', 
-                  background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', 
-                  border: 'none', 
-                  color: '#fff', 
-                  borderRadius: '8px', 
-                  cursor: 'pointer', 
-                  fontWeight: 'bold',
-                  fontSize: '1rem',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)'
-                }}
-              >
-                🛠️ Testa appen i Demoläge
-              </button>
-            </div>
-          )}
-
-          <div className="login-footer">
-            <button 
-              onClick={() => { 
-                if (isForgotPassword) {
-                  setIsForgotPassword(false);
-                } else {
-                  setIsLogin(!isLogin);
-                  if (isLogin) trackFunnelEvent('register_start', { source: 'toggle_button' });
-                }
-                setError(''); 
-                setSuccessMsg(''); 
-              }}
-              className="toggle-auth-btn"
-            >
-              {isForgotPassword 
-                ? 'Tillbaka till inloggning' 
-                : isLogin 
-                  ? <>Har du inget konto? <span>Skapa ett konto här</span></> 
-                  : <>Har du redan ett konto? <span>Logga in här</span></>}
-            </button>
-          </div>
+        <div style={{ marginTop: '2rem' }}>
+          <Footer />
         </div>
       </div>
     </div>

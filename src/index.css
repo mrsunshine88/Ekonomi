@@ -490,22 +490,44 @@ button.primary:hover {
 /* --- Login Screen Premium Styles --- */
 .login-wrapper {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   min-height: 100vh;
   width: 100%;
   background: #060913;
-  justify-content: center;
-  align-items: center; 
-  gap: 6rem; /* Generous spacing like Timedirective */
-  padding: 4rem; 
+  padding: 4rem 2rem;
+  gap: 4rem;
 }
 
-.login-info-section {
-  flex: 0 1 600px; /* Fixed max width for readability */
+.login-header-section {
+  width: 100%;
+  max-width: 900px;
+  text-align: center;
   display: flex;
   flex-direction: column;
+  align-items: center;
+}
+
+.login-split-wrapper {
+  display: flex;
+  width: 100%;
+  max-width: 1100px;
   justify-content: center;
-  padding: 0;
-  position: relative;
+  align-items: center;
+  gap: 4rem;
+}
+
+.login-left-features {
+  flex: 1;
+  max-width: 600px;
+}
+
+.login-footer-section {
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
 }
 
 .login-info-section::before {
@@ -554,7 +576,30 @@ button.primary:hover {
 
 .features-grid {
   display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 columns for a WIDER layout */
   gap: 1.5rem;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.faq-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.faq-card {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .feature-card {
@@ -769,16 +814,29 @@ button.primary:hover {
 
 @media (max-width: 1024px) {
   .login-wrapper {
-    flex-direction: column;
-    justify-content: flex-start;
     padding: 2rem 1rem;
     gap: 3rem;
   }
   
-  .login-info-section {
+  .login-header-section {
+    text-align: left;
+    align-items: flex-start;
+  }
+  
+  .login-split-wrapper {
+    flex-direction: column;
+    gap: 3rem;
+  }
+  
+  .login-left-features {
     order: 2;
-    padding: 0;
-    max-width: 600px;
+    max-width: 100%;
+  }
+  
+  .features-grid,
+  .benefits-grid,
+  .faq-grid {
+    grid-template-columns: 1fr; /* Switch back to 1 column on mobile */
   }
   
   .login-hero-title {
