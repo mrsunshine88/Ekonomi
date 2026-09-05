@@ -165,7 +165,7 @@ export default function LoginScreen() {
           Vi räknar automatiskt ut vem som ska betala vad, samtidigt som ni håller er privata ekonomi separat.
         </p>
 
-        <div style={{ marginTop: '1.5rem' }}>
+        <div className="header-demo-wrapper">
           <button 
             onClick={() => {
               trackFunnelEvent('demo_start', { source: 'login_button' });
