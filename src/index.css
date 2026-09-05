@@ -351,7 +351,7 @@ button.primary:hover {
     position: fixed;
     top: 1rem;
     left: 1rem;
-    z-index: 200;
+    z-index: 10002;
     width: 2.8rem;
     height: 2.8rem;
     border-radius: 10px;
@@ -378,7 +378,7 @@ button.primary:hover {
     display: block;
     position: fixed;
     inset: 0;
-    z-index: 150;
+    z-index: 10000;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
@@ -394,7 +394,7 @@ button.primary:hover {
     bottom: 0;
     width: 75%;
     max-width: 280px;
-    z-index: 160;
+    z-index: 10001;
     background: rgba(11, 15, 25, 0.98);
     border-right: 1px solid rgba(99, 102, 241, 0.25);
     padding: 5rem 1rem 2rem 1rem;

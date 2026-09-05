@@ -344,7 +344,7 @@ function App() {
             >
               🚪 Logga ut
             </button>
-          ) : (
+          ) : !isDemoMode ? (
             <div style={{ textAlign: 'center' }}>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Skapa ett konto och spar tid och pengar</p>
               <button 
@@ -367,7 +367,7 @@ function App() {
                 Logga in
               </button>
             </div>
-          )}
+          ) : null}
         </div>
       </aside>
 
@@ -415,7 +415,7 @@ function App() {
                 <div style={{ height: '1px', background: 'var(--border-color)', margin: '0.5rem 0' }}></div>
                 {user ? (
                   <button onClick={() => supabase.auth.signOut()} className="mobile-menu-item" style={{ color: '#f43f5e' }}>🚪 Logga ut</button>
-                ) : (
+                ) : !isDemoMode ? (
                   <div style={{ padding: '1rem', textAlign: 'center' }}>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem', margin: '0 0 0.5rem 0' }}>Skapa ett konto och spar tid och pengar</p>
                     <button 
@@ -438,7 +438,7 @@ function App() {
                       Logga in
                     </button>
                   </div>
-                )}
+                ) : null}
               </div>
             </>
           )}

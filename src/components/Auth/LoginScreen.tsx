@@ -8,7 +8,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLogin, setIsLogin] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -311,13 +311,42 @@ export default function LoginScreen() {
               </div>
             )}
 
-            <div className="auth-switch">
+            <div className="auth-switch" style={{ marginTop: '1.5rem', textAlign: 'center' }}>
               {isForgotPassword ? (
-                <p>Kommer du ihåg lösenordet? <button onClick={() => { setIsForgotPassword(false); setIsLogin(true); setError(''); setSuccessMsg(''); }}>Logga in här</button></p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  Kommer du ihåg lösenordet? <button type="button" onClick={() => { setIsForgotPassword(false); setIsLogin(true); setError(''); setSuccessMsg(''); }} style={{ background: 'none', border: 'none', color: '#6366f1', padding: 0, cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}>Logga in här</button>
+                </p>
               ) : isLogin ? (
-                <p>Har du inget konto? <button onClick={() => { setIsLogin(false); setError(''); setSuccessMsg(''); }}>Skapa ett här</button></p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                  <div style={{ position: 'relative', textAlign: 'center', margin: '0.5rem 0' }}>
+                    <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, borderTop: '1px solid rgba(255,255,255,0.1)' }}></div>
+                    <span style={{ position: 'relative', background: '#0f172a', padding: '0 10px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>eller</span>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => { setIsLogin(false); setError(''); setSuccessMsg(''); }}
+                    style={{ 
+                      width: '100%', padding: '1rem', background: 'rgba(255, 255, 255, 0.05)', 
+                      border: '1px solid rgba(255, 255, 255, 0.2)', color: '#fff', 
+                      borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', 
+                      fontSize: '1rem', transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                    }}
+                  >
+                    Skapa gratis konto
+                  </button>
+                </div>
               ) : (
-                <p>Har du redan ett konto? <button onClick={() => { setIsLogin(true); setError(''); setSuccessMsg(''); }}>Logga in här</button></p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '1rem' }}>
+                  Har du redan ett konto? <button type="button" onClick={() => { setIsLogin(true); setError(''); setSuccessMsg(''); }} style={{ background: 'none', border: 'none', color: '#6366f1', padding: 0, cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}>Logga in här</button>
+                </p>
               )}
             </div>
           </div>

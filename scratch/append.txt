@@ -1,0 +1,16 @@
+﻿## 50. Strikt Spårning av Demobesök (Anti-Spam & Datakvalitet)
+
+### Vad
+En strikt vitlista, persistent minne och användarkontroll för spårning av demobesök lades till i store.ts och App.tsx.
+
+### Varför
+Tidigare registrerades demobesök mer eller mindre så fort appen sattes i "Demo Mode" och användaren inte befann sig på den officiella startsidan. Detta orsakade ett par allvarliga fel i statistiken (Admin Dashboard):
+1. Inloggade besökare spårades: Vid appens uppstart (sidomladdning) uppstod en liten fördröjning medan inloggningssystemet verifierade användaren (loading = true). Under denna tid växlade systemet tillfälligt till demoläge i väntan på svar, vilket råkade trigga ett demo-besök för inloggade användare.
+2. "Spökbesök" via startsidan: Eftersom logiken litade blint på att "allt utom startsidan" var en demo-visning, räckte det med att besökarens router-minne i localStorage (t.ex. smartEkonomi_currentView = 'month') lurade appen att besökaren befann sig på en demosida - trots att de precis landat på index-urlen (/).
+3. Flera besök per session: Om en besökare laddade om sidan (F5) i demoläget tömdes appens lokala React-state (arbetsminnet), vilket nollställde variabeln hasLoggedDemoVisit. Samma person registrerades därmed upprepade gånger under samma sittning.
+
+### Hur
+- store.ts (Säkerhet & Vitlista): Funktionen logDemoVisit gjordes om till att ta emot den exakta vyn (currentView) som argument. Den vägrar nu att logga ett besök om sidan inte finns i vitlistan över officiella demosidor (['month', 'stats', 'privat', 'manage', 'mypages']).
+- Strikt Användarspärr: En dubbelkontroll (if (get().userId) return;) implementerades för att till 100% blockera inloggade från demostatistiken.
+- Persistent Spärr (sessionStorage): Registreringsstatusen sparas numera i webbläsarens sessionStorage (has_logged_demo_visit). Oavsett hur mycket besökaren laddar om eller trycker F5, räknas de aldrig mer än en gång per session.
+- App.tsx (Livscykel): Uppstarten (initCloud) tillåts nu aldrig att köra innan AuthContext har returnerat loading = false.
