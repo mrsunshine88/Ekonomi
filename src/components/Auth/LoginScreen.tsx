@@ -13,6 +13,7 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [demoEnabled, setDemoEnabled] = useState(false);
   const startDemo = useStore(s => s.startDemo);
 
   // Öppna register-fliken direkt om vi kom från demo-bannern
@@ -27,6 +28,18 @@ export default function LoginScreen() {
   // Sätt body background endast på login screen om vi behöver override
   useEffect(() => {
     document.body.style.background = '#060913';
+    
+    const fetchDemoSettings = async () => {
+      try {
+        const { data } = await supabase.from('global_settings').select('value').eq('key', 'login_demo_enabled').maybeSingle();
+        if (data && data.value === 'true') {
+          setDemoEnabled(true);
+        }
+      } catch (e) {
+        console.error("Could not fetch demo settings", e);
+      }
+    };
+    fetchDemoSettings();
 
     return () => {
       document.body.style.background = '#0b0f19';
@@ -152,8 +165,8 @@ export default function LoginScreen() {
             <span style={{ color: '#fff', fontWeight: 600 }}>Slipp miniräknaren.</span> <span className="text-gradient" style={{ fontWeight: 600 }}>Spara tid och få full kontroll över hushållets ekonomi.</span><br/><br/>
             SmartEkonomi är en ny ekonomi-app som automatiskt räknar ut vem som ska betala vad, håller er privata ekonomi separat och visar hur era kostnader utvecklas över tid. Perfekt för sambor och familjer som vill ha en smidig budget-app för en rättvis delad ekonomi.
           </p>
-
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+          
+          <div style={{ marginTop: '2rem', marginBottom: '2rem' }}>
             <button 
               onClick={() => {
                 trackFunnelEvent('demo_start', { source: 'login_button' });
@@ -161,23 +174,23 @@ export default function LoginScreen() {
               }}
               style={{ 
                 background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', 
-                color: '#fff', border: 'none', padding: '1.2rem 2.5rem', 
-                borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', 
-                cursor: 'pointer', boxShadow: '0 8px 25px rgba(16, 185, 129, 0.4)',
-                animation: 'pulse 2s infinite', display: 'flex', alignItems: 'center', gap: '0.5rem'
+                color: '#fff', border: 'none', padding: '1rem 2rem', 
+                borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', 
+                cursor: 'pointer', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)',
+                display: 'inline-flex', alignItems: 'center', gap: '0.5rem'
               }}
             >
               🚀 Testa Live-Demon
             </button>
           </div>
 
-          <div className="features-grid" style={{ marginTop: '3rem' }}>
+          <div className="features-grid">
             {features.map((feature, i) => (
-              <div key={i} className="feature-card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.5rem', transition: 'transform 0.2s', cursor: 'default' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-5px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
-                <div className="feature-icon" style={{ fontSize: '2rem', marginBottom: '1rem' }}>{feature.icon}</div>
+              <div key={i} className="feature-card">
+                <div className="feature-icon">{feature.icon}</div>
                 <div>
-                  <h3 className="feature-title" style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: '#fff' }}>{feature.title}</h3>
-                  <p className="feature-desc" style={{ color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>{feature.desc}</p>
+                  <h3 className="feature-title">{feature.title}</h3>
+                  <p className="feature-desc">{feature.desc}</p>
                 </div>
               </div>
             ))}
@@ -224,77 +237,47 @@ export default function LoginScreen() {
       </div>
 
       {/* Höger sida: Formulär */}
-      <div className="login-form-section" style={{ position: 'relative' }}>
-        {/* Glow effect behind form */}
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '120%', height: '120%', background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(0,0,0,0) 70%)', zIndex: 0, pointerEvents: 'none' }}></div>
-        
-        <div className="login-form-container" style={{ 
-          background: 'rgba(15, 23, 42, 0.7)', 
-          backdropFilter: 'blur(20px)', 
-          border: '1px solid rgba(255,255,255,0.1)', 
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(99, 102, 241, 0.1)',
-          borderRadius: '24px',
-          padding: '3rem',
-          position: 'relative',
-          zIndex: 1
-        }}>
-          
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', background: 'rgba(0,0,0,0.3)', padding: '0.5rem', borderRadius: '16px' }}>
-            <button 
-              type="button"
-              onClick={() => { setIsLogin(true); setIsForgotPassword(false); setError(''); setSuccessMsg(''); }}
-              style={{ flex: 1, padding: '1rem', border: 'none', borderRadius: '12px', background: isLogin && !isForgotPassword ? 'rgba(99, 102, 241, 0.3)' : 'transparent', color: isLogin && !isForgotPassword ? '#fff' : 'var(--text-secondary)', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.3s' }}
-            >
-              Logga in
-            </button>
-            <button 
-              type="button"
-              onClick={() => { setIsLogin(false); setIsForgotPassword(false); setError(''); setSuccessMsg(''); }}
-              style={{ flex: 1, padding: '1rem', border: 'none', borderRadius: '12px', background: !isLogin && !isForgotPassword ? 'rgba(16, 185, 129, 0.3)' : 'transparent', color: !isLogin && !isForgotPassword ? '#fff' : 'var(--text-secondary)', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.3s', position: 'relative' }}
-            >
-              Skapa konto
-              {!isLogin && !isForgotPassword && <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--success-color)', color: '#fff', fontSize: '0.75rem', padding: '0.2rem 0.6rem', borderRadius: '20px', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(16,185,129,0.5)' }}>GRATIS</span>}
-            </button>
-          </div>
-
-          <div className="login-form-header" style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <h2 style={{ fontSize: '1.8rem', marginBottom: '0.5rem', color: '#fff' }}>{isForgotPassword ? 'Återställ Lösenord' : isLogin ? 'Välkommen tillbaka' : 'Kom igång på 10 sekunder'}</h2>
-            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
+      <div className="login-form-section">
+        <div className="login-form-container">
+          <div className="login-form-header">
+            <div className="login-logo">
+              <span className="logo-icon">E</span>
+              SmartEkonomi
+            </div>
+            <h2>{isForgotPassword ? 'Återställ Lösenord' : isLogin ? 'Logga in' : 'Skapa gratis konto'}</h2>
+            <p>
               {isForgotPassword 
                 ? 'Fyll i din e-post så skickar vi en länk'
                 : isLogin 
-                  ? 'Logga in för att fortsätta till ditt hushåll.' 
-                  : 'Skapa ett konto för hela hushållet helt gratis.'}
+                  ? 'Fortsätt till ditt hushåll.' 
+                  : 'Helt gratis, för alltid.'}
             </p>
           </div>
 
-          {error && <div className="login-alert error" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem' }}>{error}</div>}
-          {successMsg && <div className="login-alert success" style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', borderRadius: '12px', padding: '1rem', marginBottom: '1.5rem' }}>{successMsg}</div>}
+          {error && <div className="login-alert error">{error}</div>}
+          {successMsg && <div className="login-alert success">{successMsg}</div>}
 
-          <form onSubmit={handleSubmit} className="login-form" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <form onSubmit={handleSubmit} className="login-form">
             <div className="input-group">
-              <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>E-postadress</label>
+              <label>E-postadress</label>
               <input 
                 type="email" 
                 placeholder="namn@exempel.se" 
                 value={email} 
                 onChange={e => setEmail(e.target.value)}
                 required
-                style={{ width: '100%', padding: '1.2rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', fontSize: '1rem', outline: 'none', transition: 'border 0.3s' }}
-                onFocus={e => e.target.style.border = '1px solid var(--accent-color)'}
-                onBlur={e => e.target.style.border = '1px solid rgba(255,255,255,0.1)'}
               />
             </div>
 
             {!isForgotPassword && (
               <div className="input-group">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Lösenord</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label>Lösenord</label>
                   {isLogin && (
                     <button 
                       type="button"
                       onClick={() => { setIsForgotPassword(true); setError(''); setSuccessMsg(''); }}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', fontSize: '0.85rem', cursor: 'pointer', padding: 0 }}
+                      className="forgot-password-link"
                     >
                       Glömt lösenord?
                     </button>
@@ -306,39 +289,24 @@ export default function LoginScreen() {
                   value={password} 
                   onChange={e => setPassword(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '1.2rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', fontSize: '1rem', outline: 'none', transition: 'border 0.3s' }}
-                  onFocus={e => e.target.style.border = '1px solid var(--accent-color)'}
-                  onBlur={e => e.target.style.border = '1px solid rgba(255,255,255,0.1)'}
                 />
               </div>
             )}
 
             {!isLogin && !isForgotPassword && (
               <div className="input-group">
-                <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Bekräfta lösenord</label>
+                <label>Bekräfta lösenord</label>
                 <input 
                   type="password" 
                   placeholder="••••••••" 
                   value={confirmPassword} 
                   onChange={e => setConfirmPassword(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '1.2rem', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', fontSize: '1rem', outline: 'none', transition: 'border 0.3s' }}
-                  onFocus={e => e.target.style.border = '1px solid var(--accent-color)'}
-                  onBlur={e => e.target.style.border = '1px solid rgba(255,255,255,0.1)'}
                 />
               </div>
             )}
 
-            <button type="submit" disabled={loading} style={{ 
-              width: '100%', padding: '1.2rem', marginTop: '1rem',
-              background: isLogin ? 'var(--accent-gradient)' : 'linear-gradient(135deg, #059669 0%, #10b981 100%)', 
-              color: '#fff', border: 'none', borderRadius: '12px', fontSize: '1.1rem', 
-              fontWeight: 'bold', cursor: 'pointer', transition: 'transform 0.2s, boxShadow 0.2s',
-              boxShadow: isLogin ? '0 8px 25px rgba(99, 102, 241, 0.4)' : '0 8px 25px rgba(16, 185, 129, 0.4)'
-            }}
-            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
-            >
+            <button type="submit" disabled={loading} className="submit-btn">
               {loading 
                 ? <span className="spinner-border"></span> 
                 : isForgotPassword 
@@ -348,17 +316,58 @@ export default function LoginScreen() {
                     : 'Skapa gratis konto'}
             </button>
           </form>
-          
-          {isForgotPassword && (
-            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+
+          {demoEnabled && !isForgotPassword && (
+            <div style={{ marginTop: '1rem' }}>
               <button 
-                onClick={() => { setIsForgotPassword(false); setError(''); setSuccessMsg(''); }}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', textDecoration: 'underline' }}
+                onClick={() => {
+                  trackFunnelEvent('demo_start', { source: 'login_button' });
+                  startDemo();
+                }}
+                type="button"
+                style={{ 
+                  width: '100%', 
+                  padding: '1rem', 
+                  background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', 
+                  border: 'none', 
+                  color: '#fff', 
+                  borderRadius: '8px', 
+                  cursor: 'pointer', 
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)'
+                }}
               >
-                Tillbaka till inloggning
+                🛠️ Testa appen i Demoläge
               </button>
             </div>
           )}
+
+          <div className="login-footer">
+            <button 
+              onClick={() => { 
+                if (isForgotPassword) {
+                  setIsForgotPassword(false);
+                } else {
+                  setIsLogin(!isLogin);
+                  if (isLogin) trackFunnelEvent('register_start', { source: 'toggle_button' });
+                }
+                setError(''); 
+                setSuccessMsg(''); 
+              }}
+              className="toggle-auth-btn"
+            >
+              {isForgotPassword 
+                ? 'Tillbaka till inloggning' 
+                : isLogin 
+                  ? <>Har du inget konto? <span>Skapa ett konto här</span></> 
+                  : <>Har du redan ett konto? <span>Logga in här</span></>}
+            </button>
+          </div>
         </div>
       </div>
     </div>
