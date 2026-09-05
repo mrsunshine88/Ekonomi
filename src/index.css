@@ -513,7 +513,7 @@ button.primary:hover {
   position: absolute;
   left: 100%;
   margin-left: 2rem;
-  bottom: 0;
+  bottom: 70px;
 }
 
 .login-split-wrapper {
