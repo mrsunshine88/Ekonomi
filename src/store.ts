@@ -145,10 +145,6 @@ export const useStore = create<StoreState>((set, get) => ({
 
     if (!householdId || !userId) {
       get().cleanup();
-      // Load mock data if no user is provided, acting as the test page
-      if (!get().isDemoMode) {
-        get().startDemo();
-      }
       return;
     }
     set({ householdId, userId });
