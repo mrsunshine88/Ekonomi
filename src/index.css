@@ -500,7 +500,8 @@ button.primary:hover {
 }
 
 .login-info-section {
-  flex: 0 1 800px; /* Wider info area */
+  flex: 1; /* Allow it to shrink */
+  max-width: 800px; /* Wider info area */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -777,7 +778,7 @@ button.primary:hover {
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .login-wrapper {
     flex-direction: column;
     justify-content: flex-start;
