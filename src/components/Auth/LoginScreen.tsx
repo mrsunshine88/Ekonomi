@@ -164,30 +164,30 @@ export default function LoginScreen() {
           <span style={{ color: '#fff', fontWeight: 600 }}>Slipp miniräknaren och få full kontroll över ekonomin.</span><br/>
           Vi räknar automatiskt ut vem som ska betala vad, samtidigt som ni håller er privata ekonomi separat.
         </p>
+
+        <div style={{ marginTop: '1.5rem' }}>
+          <button 
+            onClick={() => {
+              trackFunnelEvent('demo_start', { source: 'login_button' });
+              startDemo();
+            }}
+            style={{ 
+              background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', 
+              color: '#fff', border: 'none', padding: '1rem 2rem', 
+              borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', 
+              cursor: 'pointer', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)',
+              display: 'inline-flex', alignItems: 'center', gap: '0.5rem'
+            }}
+          >
+            🚀 Testa Live-Demon
+          </button>
+        </div>
       </div>
 
       {/* Split Middle Section */}
       <div className="login-split-wrapper">
         <div className="login-left-features">
           
-          <div style={{ marginTop: '2rem', marginBottom: '2rem' }}>
-            <button 
-              onClick={() => {
-                trackFunnelEvent('demo_start', { source: 'login_button' });
-                startDemo();
-              }}
-              style={{ 
-                background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', 
-                color: '#fff', border: 'none', padding: '1rem 2rem', 
-                borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', 
-                cursor: 'pointer', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)',
-                display: 'inline-flex', alignItems: 'center', gap: '0.5rem'
-              }}
-            >
-              🚀 Testa Live-Demon
-            </button>
-          </div>
-
           <div className="features-grid">
             {features.map((feature, i) => (
               <div key={i} className="feature-card">
