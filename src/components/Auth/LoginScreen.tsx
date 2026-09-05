@@ -13,7 +13,6 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
-  const [demoEnabled, setDemoEnabled] = useState(false);
   const startDemo = useStore(s => s.startDemo);
 
   // Öppna register-fliken direkt om vi kom från demo-bannern
@@ -28,18 +27,6 @@ export default function LoginScreen() {
   // Sätt body background endast på login screen om vi behöver override
   useEffect(() => {
     document.body.style.background = '#060913';
-    
-    const fetchDemoSettings = async () => {
-      try {
-        const { data } = await supabase.from('global_settings').select('value').eq('key', 'login_demo_enabled').maybeSingle();
-        if (data && data.value === 'true') {
-          setDemoEnabled(true);
-        }
-      } catch (e) {
-        console.error("Could not fetch demo settings", e);
-      }
-    };
-    fetchDemoSettings();
 
     return () => {
       document.body.style.background = '#0b0f19';
