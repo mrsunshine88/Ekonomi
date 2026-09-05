@@ -495,8 +495,8 @@ button.primary:hover {
   min-height: 100vh;
   width: 100%;
   background: #060913;
-  padding: 4rem 2rem;
-  gap: 4rem;
+  padding: 2rem 2rem 4rem 2rem; /* Less padding on top! */
+  gap: 2rem; /* Less gap! */
 }
 
 .login-header-section {
@@ -513,8 +513,8 @@ button.primary:hover {
   width: 100%;
   max-width: 1100px;
   justify-content: center;
-  align-items: center;
-  gap: 4rem;
+  align-items: flex-start; /* Align to top instead of center */
+  gap: 3rem;
 }
 
 .login-left-features {
@@ -541,23 +541,23 @@ button.primary:hover {
 
 .brand-badge {
   display: inline-block;
-  padding: 0.4rem 1rem;
+  padding: 0.3rem 0.8rem;
   background: rgba(99, 102, 241, 0.1);
   border: 1px solid rgba(99, 102, 241, 0.3);
   color: #a5b4fc;
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem; /* Compact */
 }
 
 .login-hero-title {
-  font-size: 4rem;
-  line-height: 1.1;
+  font-size: 2.8rem; /* Scaled down from 4rem! */
+  line-height: 1.2;
   font-weight: 800;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   color: #fff;
 }
 
@@ -568,10 +568,10 @@ button.primary:hover {
 }
 
 .login-hero-subtitle {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: var(--text-secondary);
-  margin-bottom: 3rem;
-  line-height: 1.6;
+  margin-bottom: 0; /* Gap handles spacing */
+  line-height: 1.5;
 }
 
 .features-grid {
