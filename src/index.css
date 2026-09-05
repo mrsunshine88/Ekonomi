@@ -509,11 +509,6 @@ button.primary:hover {
   position: relative; /* For absolute positioning of demo button */
 }
 
-.header-demo-wrapper {
-  position: absolute;
-  right: 40px;
-  bottom: 110px;
-}
 
 .login-split-wrapper {
   display: flex;
@@ -829,13 +824,7 @@ button.primary:hover {
     text-align: left;
     align-items: flex-start;
   }
-  
-  .header-demo-wrapper {
-    position: static;
-    margin-top: 1.5rem;
-    align-self: flex-start;
-  }
-  
+
   .login-split-wrapper {
     flex-direction: column;
     gap: 3rem;

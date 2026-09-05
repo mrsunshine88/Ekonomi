@@ -159,30 +159,29 @@ export default function LoginScreen() {
         <div className="brand-badge">🏠 SmartEkonomi</div>
         <h1 className="login-hero-title">
           SmartEkonomi – <span className="text-gradient">En smart ekonomi-app för hushållet</span>
+          <span style={{ display: 'inline-block', marginLeft: '1rem', verticalAlign: 'middle' }}>
+            <button 
+              onClick={() => {
+                trackFunnelEvent('demo_start', { source: 'login_button' });
+                startDemo();
+              }}
+              style={{ 
+                background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', 
+                color: '#fff', border: 'none', padding: '0.6rem 1rem', 
+                borderRadius: '8px', fontSize: '0.95rem', fontWeight: 'bold', 
+                cursor: 'pointer', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)',
+                display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              🚀 Testa Live-Demon
+            </button>
+          </span>
         </h1>
         <p className="login-hero-subtitle">
           <span style={{ color: '#fff', fontWeight: 600 }}>Slipp miniräknaren och få full kontroll över ekonomin.</span><br/>
           Vi räknar automatiskt ut vem som ska betala vad, samtidigt som ni håller er privata ekonomi separat.
         </p>
-
-        <div className="header-demo-wrapper">
-          <button 
-            onClick={() => {
-              trackFunnelEvent('demo_start', { source: 'login_button' });
-              startDemo();
-            }}
-            style={{ 
-              background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', 
-              color: '#fff', border: 'none', padding: '0.6rem 1rem', 
-              borderRadius: '8px', fontSize: '0.95rem', fontWeight: 'bold', 
-              cursor: 'pointer', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)',
-              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            🚀 Testa Live-Demon
-          </button>
-        </div>
       </div>
 
       {/* Split Middle Section */}
