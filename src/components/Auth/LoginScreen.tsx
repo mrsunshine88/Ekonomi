@@ -173,10 +173,11 @@ export default function LoginScreen() {
             }}
             style={{ 
               background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', 
-              color: '#fff', border: 'none', padding: '1rem 2rem', 
-              borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', 
+              color: '#fff', border: 'none', padding: '0.6rem 1rem', 
+              borderRadius: '8px', fontSize: '0.95rem', fontWeight: 'bold', 
               cursor: 'pointer', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)',
-              display: 'inline-flex', alignItems: 'center', gap: '0.5rem'
+              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+              whiteSpace: 'nowrap'
             }}
           >
             🚀 Testa Live-Demon

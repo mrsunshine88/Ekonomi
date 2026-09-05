@@ -511,7 +511,8 @@ button.primary:hover {
 
 .header-demo-wrapper {
   position: absolute;
-  right: -150px;
+  left: 100%;
+  margin-left: 2rem;
   bottom: 0;
 }
 
