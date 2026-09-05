@@ -8,7 +8,7 @@ export default function DemoBanner() {
   if (!isDemoMode) return null;
 
   return (
-    <div style={{
+    <div className="demo-banner" style={{
       position: 'relative',
       width: '100%',
       background: 'rgba(15, 23, 42, 0.8)',
