@@ -159,7 +159,7 @@ export default function LoginScreen() {
         <div className="brand-badge">🏠 SmartEkonomi</div>
         <h1 className="login-hero-title">
           SmartEkonomi – <span className="text-gradient">En smart ekonomi-app för hushållet</span>
-          <span style={{ display: 'inline-block', marginLeft: '1rem', verticalAlign: 'middle' }}>
+          <span style={{ display: 'inline-block', marginLeft: '2.5rem', verticalAlign: 'middle' }}>
             <button 
               onClick={() => {
                 trackFunnelEvent('demo_start', { source: 'login_button' });
