@@ -147,8 +147,8 @@ export default function LoginScreen() {
     },
     {
       icon: "💎",
-      title: "Prova gratis i 14 dagar",
-      desc: "Skapa ett konto på några minuter och upptäck hur enkelt det kan vara att hålla koll på ekonomin."
+      title: "Helt gratis att använda",
+      desc: "Skapa ett gratis konto på några minuter och upptäck hur enkelt det kan vara att hålla koll på ekonomin."
     }
   ];
 
@@ -226,13 +226,13 @@ export default function LoginScreen() {
               <span className="logo-icon">E</span>
               SmartEkonomi
             </div>
-            <h2>{isForgotPassword ? 'Återställ Lösenord' : isLogin ? 'Logga in' : 'Testa fritt i 14 dagar'}</h2>
+            <h2>{isForgotPassword ? 'Återställ Lösenord' : isLogin ? 'Logga in' : 'Skapa gratis konto'}</h2>
             <p>
               {isForgotPassword 
                 ? 'Fyll i din e-post så skickar vi en länk'
                 : isLogin 
                   ? 'Fortsätt till ditt hushåll.' 
-                  : 'Full tillgång till alla funktioner. Därefter 59 kr/mån.'}
+                  : 'Helt gratis, för alltid.'}
             </p>
           </div>
 

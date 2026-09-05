@@ -24,22 +24,16 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
         boxShadow: '0 20px 40px rgba(0,0,0,0.8)' 
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ color: '#fff', fontSize: '1.5rem', margin: 0 }}>Prenumeration & Fördelar</h2>
+          <h2 style={{ color: '#fff', fontSize: '1.5rem', margin: 0 }}>Appens Fördelar</h2>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
         </div>
 
         <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '1.25rem', marginBottom: '2rem', textAlign: 'center' }}>
           <div style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#fff', marginBottom: '0.25rem' }}>
-            Endast 59 kr / månad
-          </div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '0.75rem', fontStyle: 'italic' }}>
-            Mindre än 2 kr per dag för hela hushållet
-          </div>
-          <div style={{ color: '#10b981', fontSize: '1.1rem', fontWeight: 'bold' }}>
-            🎁 Prova gratis i 14 dagar
+            Helt gratis att använda
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem', marginBottom: 0 }}>
-            Ingen bindningstid. Avsluta när du vill. Priset gäller per hushåll – hela familjen kan använda appen för en och samma summa.
+            Hela familjen kan använda appen helt gratis. Inga avgifter, ingen bindningstid.
           </p>
         </div>
 
@@ -47,7 +41,7 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
           <div style={{ display: 'flex', gap: '1rem' }}>
             <span style={{ fontSize: '1.5rem' }}>👥</span>
             <div>
-              <strong style={{ color: '#fff' }}>En prenumeration för hela hemmet:</strong> Endast en person i hushållet behöver betala. Resten bjuds in via kod och använder appen gratis.
+              <strong style={{ color: '#fff' }}>Hela hemmet i en app:</strong> Alla i hushållet kan bjudas in via kod och använda appen tillsammans.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>

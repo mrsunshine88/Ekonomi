@@ -91,13 +91,7 @@ export default function TermsModal() {
                 <strong style={{ color: '#fff' }}>Ansvarsbegränsning och friskrivning:</strong> SmartEkonomi tillhandahålls som ett hjälpmedel för beräkningar och budgetering. Appen ska ses som ett komplement och inte som finansiell rådgivning. Användaren ansvarar själv för att kontrollera att alla uträkningar och uppgifter stämmer innan ekonomiska beslut fattas. SmartEkonomi eller dess ägare kan inte hållas ansvariga för eventuella ekonomiska förluster, felaktiga beräkningar eller beslut baserade på appens data.
               </p>
               <p>
-                <strong style={{ color: '#fff' }}>Prenumeration & Avgifter:</strong> Tjänsten kostar 59 kr/månad per hushåll. Nya användare får alltid 14 dagars kostnadsfri provperiod innan den första debiteringen sker via vår betalningspartner Stripe.
-              </p>
-              <p>
-                <strong style={{ color: '#fff' }}>Uppsägning av tjänst:</strong> Du kan när som helst avsluta din prenumeration. Detta görs genom att navigera till <strong>Mina Sidor -&gt; Premium</strong> i appen och klicka på knappen <strong>Hantera Prenumeration</strong>. Du skickas då till Stripes säkra kundportal där du kan avbryta prenumerationen. Avslutar du under din 14-dagars provperiod debiteras du ingenting.
-              </p>
-              <p>
-                <strong style={{ color: '#fff' }}>Återbetalningspolicy:</strong> Prenumerationen debiteras i förskott för varje påbörjad månad. Inga återbetalningar görs för delvis utnyttjade månader.
+                <strong style={{ color: '#fff' }}>Prenumeration & Avgifter:</strong> Appen är helt gratis att använda och har inga prenumerationsavgifter.
               </p>
               <p>
                 <strong style={{ color: '#fff' }}>Tillämplig lag:</strong> Svensk lag gäller för dessa villkor.

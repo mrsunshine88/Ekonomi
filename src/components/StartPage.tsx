@@ -49,7 +49,7 @@ export default function StartPage({ navigateTo }: StartPageProps) {
         <p className="login-hero-subtitle" style={{ maxWidth: '600px', margin: '0 auto' }}>
           SmartEkonomi räknar automatiskt ut vem som ska betala vad, håller privat ekonomi separat och visar hur era kostnader utvecklas över tid.
           {!user && (
-            <span> Prova gratis i 14 dagar – sedan 59 kr/mån utan bindningstid! 💸✨ <button onClick={openAuthModal} style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', fontWeight: 'bold', cursor: 'pointer', padding: 0, fontSize: 'inherit', textDecoration: 'underline' }}>Skapa konto här</button></span>
+            <span> Helt gratis att använda! 💸✨ <button onClick={openAuthModal} style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', fontWeight: 'bold', cursor: 'pointer', padding: 0, fontSize: 'inherit', textDecoration: 'underline' }}>Skapa konto här</button></span>
           )}
         </p>
       </div>
@@ -107,7 +107,7 @@ export default function StartPage({ navigateTo }: StartPageProps) {
           <h3 style={{ margin: 0, fontSize: '1.3rem' }}>Mina sidor</h3>
           <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: '1.5', fontSize: '0.95rem' }}>
             Full kontroll över ditt konto.<br/><br/>
-            Hantera din prenumeration (59 kr/mån, ingen bindningstid), notiser, integritet och dina personliga inställningar på ett och samma ställe.
+            Hantera din profil, notiser, integritet och dina personliga inställningar på ett och samma ställe.
           </p>
         </div>
 
@@ -185,19 +185,15 @@ export default function StartPage({ navigateTo }: StartPageProps) {
         </div>
       </div>
 
-      {/* Prova gratis i 14 dagar */}
+      {/* Kom igång gratis */}
       {!user && (
         <div style={{ padding: '3rem', background: 'var(--surface-color)', borderRadius: '16px', border: '1px solid var(--accent-color)', marginBottom: '4rem', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
-          <h2 style={{ fontSize: '2.5rem', margin: '0 0 1rem' }}>Prova helt gratis i 14 dagar 🎁</h2>
+          <h2 style={{ fontSize: '2.5rem', margin: '0 0 1rem' }}>Kom igång helt gratis 🎁</h2>
           <p style={{ fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: '1.5rem' }}>
-            Skapa ett konto på 10 sekunder och testa alla funktioner på riktigt.
-          </p>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
-            Ingen bindningstid – avsluta när du vill.
+            Skapa ett konto på 10 sekunder och få full koll på ekonomin.
           </p>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '1.1rem' }}>
-            Helt gratis i 14 dagar.<br/>
-            Därefter endast 59 kr/mån för full koll på ekonomin.
+            Appen är 100% gratis att använda för hela hushållet.
           </p>
           <button 
             onClick={openAuthModal}

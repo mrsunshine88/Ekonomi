@@ -120,15 +120,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           userRef.current = session?.user ?? null;
           setUser(session?.user ?? null);
           if (session?.user) {
-            await fetchHousehold(session.user.id);
+            const householdPromise = fetchHousehold(session.user.id);
+            let adminStatus = false;
             try {
               if (session.user.email === 'apersson508@gmail.com') {
-                if (mounted) setIsAdmin(true);
+                adminStatus = true;
               } else {
-                const { data: adminStatus } = await supabase.rpc('is_user_admin');
-                if (mounted) setIsAdmin(!!adminStatus);
+                const { data } = await supabase.rpc('is_user_admin');
+                adminStatus = !!data;
               }
-              
+            } catch (err) {
+              console.error("Failed to fetch admin status", err);
+            }
+            
+            await householdPromise;
+            if (mounted) setIsAdmin(adminStatus);
+
+            try {
               if (session.user.email !== 'apersson508@gmail.com') {
                 if (adminChannel) supabase.removeChannel(adminChannel);
                 adminChannel = supabase.channel(`admin-changes-init-${session.user.id}`)
@@ -201,16 +209,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setLoading(true);
             setTimeout(() => { if (mounted) setLoading(false); }, 4000);
           }
-          await fetchHousehold(newSession.user.id);
+          const householdPromise = fetchHousehold(newSession.user.id);
+          let adminStatusResult = false;
           try {
             if (newSession.user.email === 'apersson508@gmail.com') {
-              if (mounted) setIsAdmin(true);
+              adminStatusResult = true;
             } else {
-              const { data: adminStatus } = await supabase.rpc('is_user_admin');
-              if (mounted) setIsAdmin(!!adminStatus);
+              const { data } = await supabase.rpc('is_user_admin');
+              adminStatusResult = !!data;
             }
+          } catch (err) {
+            console.error("Failed to fetch admin status", err);
+          }
+          
+          await householdPromise;
+          if (mounted) setIsAdmin(adminStatusResult);
 
-            if (newSession.user.email !== 'apersson508@gmail.com') {
+          try {            if (newSession.user.email !== 'apersson508@gmail.com') {
               if (adminChannel) supabase.removeChannel(adminChannel);
               adminChannel = supabase.channel(`admin-changes-${newSession.user.id}`)
                 .on(

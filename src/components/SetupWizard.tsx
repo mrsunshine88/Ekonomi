@@ -905,7 +905,7 @@ export default function SetupWizard() {
             Spara din budget och få full koll! 📑🚀
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '2rem' }}>
-            För mindre än 2 kronor om dagen hjälper vi dig och ditt hushåll att hålla koll på pengarna, varje månad.
+            Appen är 100% gratis. Klicka nedan för att spara din budget och komma igång direkt!
           </p>
           
           <div style={{ 
@@ -916,7 +916,7 @@ export default function SetupWizard() {
             marginBottom: '2rem'
           }}>
             <h3 style={{ color: 'var(--success-color)', fontSize: '1.2rem', margin: '0 0 1rem 0' }}>
-              💳 Pris: Endast 59 kr i månaden per hushåll.
+              🎁 Appen är helt gratis att använda
             </h3>
             <div style={{ color: '#fff', textAlign: 'left' }}>
               <p style={{ marginBottom: '0.75rem', fontWeight: 'bold' }}>Detta ingår:</p>
@@ -924,7 +924,7 @@ export default function SetupWizard() {
                 <li>✓ Spara och ändra din budget precis när du vill.</li>
                 <li>✓ Smart översikt över inkomster och utgifter.</li>
                 <li>✓ Full koll på vad ni har över varje månad.</li>
-                <li>✓ Ingen bindningstid – avsluta när du vill.</li>
+                <li>✓ 100% gratis, inga dolda avgifter.</li>
               </ul>
             </div>
           </div>
@@ -945,10 +945,10 @@ export default function SetupWizard() {
               boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)'
             }}
           >
-            {loadingMsg !== '' ? loadingMsg : 'BETALA 59 KR / MÅNAD'}
+            {loadingMsg !== '' ? loadingMsg : 'SPARA OCH FORTSÄTT'}
           </button>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '1rem' }}>
-            När betalningen är klar skickas du direkt in på sidan till din sparade budget!
+            När det är klart skickas du direkt in på sidan till din sparade budget!
           </p>
         </div>
       </div>

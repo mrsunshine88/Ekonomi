@@ -75,19 +75,8 @@ export default function PaywallModal({ onClose }: PaywallModalProps) {
         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: '1.6' }}>
           Nu kan du börja registrera betalningar, följa hushållets ekonomi och planera framtida månader.
           <br /><br />
-          <strong style={{ color: '#10b981' }}>🎁 Prova gratis i 14 dagar</strong> innan du debiteras. Avsluta när du vill.
+          <strong style={{ color: '#10b981' }}>🎁 Appen är helt gratis att använda.</strong>
         </p>
-        
-        <div style={{ 
-          background: 'rgba(0,0,0,0.3)', 
-          padding: '1.5rem', 
-          borderRadius: '12px', 
-          marginBottom: '2rem',
-          border: '1px solid rgba(255,255,255,0.05)'
-        }}>
-          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--success-color)' }}>59 kr <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>/ mån</span></div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem' }}>Avsluta när du vill</div>
-        </div>
 
         <button 
           onClick={handleCheckout}

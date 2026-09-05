@@ -138,7 +138,7 @@ export default function AuthModal() {
               ? 'Fyll i din e-post så skickar vi en länk'
               : isLogin 
                 ? 'Fortsätt till ditt hushåll.' 
-                : 'Skapa ett konto för att låsa upp hela appen och spara dina uppgifter. 14 dagar gratis.'}
+                : 'Skapa ett konto för att låsa upp hela appen och spara dina uppgifter. Helt gratis.'}
           </p>
         </div>
 

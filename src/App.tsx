@@ -266,7 +266,7 @@ function App() {
 
 
   // 3. HARD GATE: Paywall
-  const isPaywallBlocked = state.paywallActive && state.stripeStatus !== 'vip' && state.stripeStatus !== 'active' && !isAdmin;
+  const isPaywallBlocked = false; // Paywall inaktiverad enligt önskemål
   if (isPaywallBlocked && !isDemoMode) {
     return (
       <div className="container" style={{ minHeight: '100vh' }}>

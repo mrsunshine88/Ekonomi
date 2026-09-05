@@ -20,12 +20,7 @@ export default function Footer() {
           gap: '1.5rem',
           marginBottom: '1rem',
         }}>
-          <button 
-            onClick={() => setModalType('features')}
-            style={{ fontSize: '0.85rem', padding: '0.5rem 1rem', background: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#10b981', fontWeight: 'bold' }}
-          >
-            💎 Prenumerera
-          </button>
+
           <button 
             onClick={() => setModalType('tos')}
             style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
