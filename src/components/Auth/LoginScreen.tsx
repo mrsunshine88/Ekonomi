@@ -161,8 +161,8 @@ export default function LoginScreen() {
           SmartEkonomi – <span className="text-gradient">En smart ekonomi-app för hushållet</span>
         </h1>
         <p className="login-hero-subtitle">
-          <span style={{ color: '#fff', fontWeight: 600 }}>Slipp miniräknaren.</span> <span className="text-gradient" style={{ fontWeight: 600 }}>Spara tid och få full kontroll över hushållets ekonomi.</span><br/><br/>
-          SmartEkonomi är en ny ekonomi-app som automatiskt räknar ut vem som ska betala vad, håller er privata ekonomi separat och visar hur era kostnader utvecklas över tid. Perfekt för sambor och familjer som vill ha en smidig budget-app för en rättvis delad ekonomi.
+          <span style={{ color: '#fff', fontWeight: 600 }}>Slipp miniräknaren och få full kontroll över ekonomin.</span><br/>
+          Vi räknar automatiskt ut vem som ska betala vad, samtidigt som ni håller er privata ekonomi separat.
         </p>
       </div>
 
