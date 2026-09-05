@@ -23,6 +23,7 @@ import ChatBubble from './components/ChatBubble';
 import ConfirmedModal from './components/Auth/ConfirmedModal';
 import StartPage from './components/StartPage';
 import SupportView from './components/SupportView';
+import LoginScreen from './components/Auth/LoginScreen';
 import { trackFunnelEvent } from './hooks/useFunnelTracker';
 
 function App() {
@@ -232,8 +233,15 @@ function App() {
     return <UpdatePassword />;
   }
 
-  // Remove the old LoginScreen wall completely, let unauthenticated users see the app interface
-
+  // 1. HARD GATE: LoginScreen for unauthenticated users
+  if (!user && !isDemoMode) {
+    return (
+      <div className="container" style={{ minHeight: '100vh', padding: 0 }}>
+        <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
+        <LoginScreen />
+      </div>
+    );
+  }
   // 1. HARD GATE: Grattis-rutan vid ny bekräftelse
   if (isNewlyConfirmed) {
     return (

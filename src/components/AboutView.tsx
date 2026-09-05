@@ -72,9 +72,7 @@ export default function AboutView({ onBack }: AboutViewProps) {
           </div>
         </div>
 
-        <div style={{ marginTop: '3rem' }}>
-          <Footer />
-        </div>
+
       </div>
     </div>
   );
