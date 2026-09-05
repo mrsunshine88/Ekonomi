@@ -24,6 +24,7 @@ import ConfirmedModal from './components/Auth/ConfirmedModal';
 import StartPage from './components/StartPage';
 import SupportView from './components/SupportView';
 import LoginScreen from './components/Auth/LoginScreen';
+import DemoBanner from './components/DemoBanner';
 import { trackFunnelEvent } from './hooks/useFunnelTracker';
 
 function App() {
@@ -300,9 +301,11 @@ function App() {
   });
 
   return (
-    <div className="app-layout">
-      <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
-      {isAuthModalOpen && <AuthModal />}
+    <>
+      <DemoBanner />
+      <div className="app-layout">
+        <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
+        {isAuthModalOpen && <AuthModal />}
       
       {/* DESKTOP SIDEBAR */}
       <aside className="desktop-sidebar">
@@ -520,6 +523,7 @@ function App() {
 
       {currentView !== 'support' && <ChatBubble />}
     </div>
+    </>
   );
 }
 

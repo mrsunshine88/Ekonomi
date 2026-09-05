@@ -40,19 +40,7 @@ export default function StartPage({ navigateTo }: StartPageProps) {
   return (
     <div className="start-page" style={{ padding: '0 1rem 2rem', maxWidth: '1000px', margin: '0 auto', animation: 'fadeIn 0.5s ease' }}>
       
-      {/* Hero Section */}
-      <div style={{ textAlign: 'center', marginBottom: '3rem', marginTop: '1rem' }}>
-        <h1 className="login-hero-title" style={{ marginTop: '0', textAlign: 'center' }}>
-          Välkommen till <br/>
-          <span className="text-gradient">hushållets ekonomisida</span>
-        </h1>
-        <p className="login-hero-subtitle" style={{ maxWidth: '600px', margin: '0 auto' }}>
-          Här har ni full koll på utgifter, inkomster och statistik. Klicka på rutorna nedan för att navigera.
-          {!user && (
-            <span> Helt gratis att använda! 💸✨ <button onClick={openAuthModal} style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', fontWeight: 'bold', cursor: 'pointer', padding: 0, fontSize: 'inherit', textDecoration: 'underline' }}>Skapa konto här</button></span>
-          )}
-        </p>
-      </div>
+      {/* Hero Section Removed for Dashboard feel */}
 
       {/* Navigation Boxes */}
       <div style={{ 
