@@ -238,7 +238,7 @@ function App() {
   // 1. HARD GATE: LoginScreen for unauthenticated users
   if (!user && !isDemoMode) {
     return (
-      <div className="container" style={{ minHeight: '100vh', padding: 0 }}>
+      <div style={{ minHeight: '100vh', padding: 0, width: '100%' }}>
         <Toaster position="top-center" toastOptions={{ style: { background: '#333', color: '#fff', borderRadius: '8px' } }} />
         <LoginScreen />
       </div>

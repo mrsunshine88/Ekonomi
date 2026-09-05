@@ -9,41 +9,38 @@ export default function DemoBanner() {
 
   return (
     <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
+      position: 'relative',
       width: '100%',
-      background: 'rgba(15, 23, 42, 0.95)',
-      backdropFilter: 'blur(10px)',
-      borderBottom: '1px solid rgba(255,255,255,0.1)',
+      background: '#facc15', // Yellow warning color
       zIndex: 9999,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '0.75rem 1rem',
-      boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
+      boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
       gap: '1.5rem',
       flexWrap: 'wrap'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', fontSize: '0.95rem' }}>
-        <span>🛠️</span>
-        <span style={{ fontWeight: 600 }}>Du är i Demoläge.</span>
-        <span style={{ color: 'var(--text-secondary)' }}>Här kan du testa alla funktioner fritt med låtsasdata.</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a', fontSize: '1rem' }}>
+        <span>⚠️</span>
+        <span style={{ fontWeight: 800 }}>Du är i Demoläge.</span>
+        <span style={{ color: '#334155', fontWeight: 500 }}>Här kan du testa alla funktioner fritt med låtsasdata.</span>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
         <button
           onClick={stopDemo}
           style={{
-            background: 'transparent',
-            border: '1px solid #f43f5e',
-            color: '#f43f5e',
+            background: '#0f172a',
+            border: 'none',
+            color: '#fff',
             padding: '0.5rem 1rem',
             borderRadius: '6px',
             fontSize: '0.9rem',
             fontWeight: 'bold',
             cursor: 'pointer',
-            transition: 'all 0.2s'
+            transition: 'all 0.2s',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
           }}
         >
           🚪 Avsluta Demo
@@ -55,7 +52,7 @@ export default function DemoBanner() {
             openAuthModal();
           }}
           style={{
-            background: 'var(--accent-gradient)',
+            background: '#2563eb', // Nice blue for contrast against yellow
             color: '#fff',
             border: 'none',
             padding: '0.5rem 1rem',
@@ -63,7 +60,7 @@ export default function DemoBanner() {
             fontSize: '0.9rem',
             fontWeight: 'bold',
             cursor: 'pointer',
-            boxShadow: '0 4px 10px rgba(99, 102, 241, 0.3)',
+            boxShadow: '0 2px 4px rgba(37,99,235,0.4)',
             transition: 'all 0.2s'
           }}
         >
