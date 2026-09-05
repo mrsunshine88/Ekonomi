@@ -511,9 +511,8 @@ button.primary:hover {
 
 .header-demo-wrapper {
   position: absolute;
-  left: 100%;
-  margin-left: 2rem;
-  bottom: 70px;
+  right: 40px;
+  bottom: 110px;
 }
 
 .login-split-wrapper {
