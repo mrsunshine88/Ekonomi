@@ -43,11 +43,11 @@ export default function StartPage({ navigateTo }: StartPageProps) {
       {/* Hero Section */}
       <div style={{ textAlign: 'center', marginBottom: '3rem', marginTop: '1rem' }}>
         <h1 className="login-hero-title" style={{ marginTop: '0', textAlign: 'center' }}>
-          Slipp miniräknaren. <br/>
-          <span className="text-gradient">Spara tid och få full kontroll<br/>över hushållets ekonomi.</span>
+          Välkommen till <br/>
+          <span className="text-gradient">hushållets ekonomisida</span>
         </h1>
         <p className="login-hero-subtitle" style={{ maxWidth: '600px', margin: '0 auto' }}>
-          SmartEkonomi räknar automatiskt ut vem som ska betala vad, håller privat ekonomi separat och visar hur era kostnader utvecklas över tid.
+          Här har ni full koll på utgifter, inkomster och statistik. Klicka på rutorna nedan för att navigera.
           {!user && (
             <span> Helt gratis att använda! 💸✨ <button onClick={openAuthModal} style={{ background: 'transparent', border: 'none', color: 'var(--accent-color)', fontWeight: 'bold', cursor: 'pointer', padding: 0, fontSize: 'inherit', textDecoration: 'underline' }}>Skapa konto här</button></span>
           )}

@@ -34,6 +34,7 @@ function App() {
   const logDemoVisit = useStore(s => s.logDemoVisit);
   const isAuthModalOpen = useStore(s => s.isAuthModalOpen);
   const openAuthModal = useStore(s => s.openAuthModal);
+  const stopDemo = useStore(s => s.stopDemo);
 
   type ViewType = 'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'admin_learning' | 'support' | 'about';
   const URL_TO_VIEW: Record<string, ViewType> = {
@@ -345,7 +346,13 @@ function App() {
             <div style={{ textAlign: 'center' }}>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Skapa ett konto och spar tid och pengar</p>
               <button 
-                onClick={openAuthModal} 
+                onClick={() => {
+                  if (isDemoMode) {
+                    stopDemo();
+                  } else {
+                    openAuthModal();
+                  }
+                }} 
                 style={{ 
                   width: '100%', padding: '0.8rem', fontSize: '1rem', 
                   background: 'var(--accent-gradient)', color: '#fff', 
@@ -409,7 +416,14 @@ function App() {
                   <div style={{ padding: '1rem', textAlign: 'center' }}>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem', margin: '0 0 0.5rem 0' }}>Skapa ett konto och spar tid och pengar</p>
                     <button 
-                      onClick={() => { setMobileMenuOpen(false); openAuthModal(); }} 
+                      onClick={() => { 
+                        setMobileMenuOpen(false); 
+                        if (isDemoMode) {
+                          stopDemo();
+                        } else {
+                          openAuthModal(); 
+                        }
+                      }} 
                       style={{ 
                         width: '100%', padding: '0.8rem', fontSize: '1rem', 
                         background: 'var(--accent-gradient)', color: '#fff', 

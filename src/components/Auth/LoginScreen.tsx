@@ -250,7 +250,7 @@ export default function LoginScreen() {
                 ? 'Fyll i din e-post så skickar vi en länk'
                 : isLogin 
                   ? 'Fortsätt till ditt hushåll.' 
-                  : 'Helt gratis, för alltid.'}
+                  : 'Helt gratis.'}
             </p>
           </div>
 
