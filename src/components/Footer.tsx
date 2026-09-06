@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import InfoModal from './InfoModal';
 import SubscriptionFeaturesModal from './SubscriptionFeaturesModal';
-
+import AboutModal from './AboutModal';
 export default function Footer() {
-  const [modalType, setModalType] = useState<'tos' | 'privacy' | 'contact' | 'features' | 'faq' | null>(null);
+  const [modalType, setModalType] = useState<'tos' | 'privacy' | 'contact' | 'features' | 'faq' | 'about' | null>(null);
 
   return (
     <>
@@ -45,12 +45,11 @@ export default function Footer() {
           >
             Frågor & Svar (FAQ)
           </button>
-          <a 
-            href="/om"
+          <button 
+            onClick={() => setModalType('about')}
             style={{ 
               fontSize: '0.85rem', 
               padding: '0.5rem 1rem', 
-              textDecoration: 'none', 
               color: 'var(--text-primary)', 
               background: 'rgba(255, 255, 255, 0.05)', 
               border: '1px solid rgba(255, 255, 255, 0.1)', 
@@ -63,19 +62,23 @@ export default function Footer() {
             }}
           >
             Om Oss
-          </a>
+          </button>
         </div>
         <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
           &copy; {new Date().getFullYear()} SmartEkonomi. Alla rättigheter förbehållna.
         </div>
       </footer>
 
-      {modalType && modalType !== 'features' && (
+      {modalType && modalType !== 'features' && modalType !== 'about' && (
         <InfoModal type={modalType as any} onClose={() => setModalType(null)} />
       )}
       
       {modalType === 'features' && (
         <SubscriptionFeaturesModal onClose={() => setModalType(null)} />
+      )}
+
+      {modalType === 'about' && (
+        <AboutModal onClose={() => setModalType(null)} />
       )}
     </>
   );

@@ -174,7 +174,7 @@ export default function LoginScreen() {
                 whiteSpace: 'nowrap'
               }}
             >
-              🚀 Testa Live-Demon
+              🚀 Testa demoläge
             </button>
           </span>
         </h1>

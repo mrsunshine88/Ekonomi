@@ -115,13 +115,17 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
   };
 
   return createPortal(
-    <div style={{
+    <div 
+      onClick={onClose}
+      style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       background: 'rgba(11, 15, 25, 0.95)', backdropFilter: 'blur(10px)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       zIndex: 99999, padding: '2rem'
     }}>
-      <div style={{ 
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        style={{ 
         background: 'rgba(30, 41, 59, 0.95)', 
         border: '1px solid rgba(255, 255, 255, 0.1)', 
         borderRadius: '16px', 
