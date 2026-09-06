@@ -701,13 +701,14 @@ export default function ManageBills({ readOnly }: Props) {
       {activeTab === 'salary' && (
         <div>
           <h3 className="card-title">Mina Inkomster</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', fontWeight: 'bold' }}>OBS: Alla belopp anges EFTER SKATT (netto).</p>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
             {/* Fasta Inkomster */}
             <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
               <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Fast Inkomst (Varje månad)</h4>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                Exempel: Barnbidrag, Underhåll. Läggs automatiskt på <strong>varje månad</strong> i kalkylen.
+                Exempel: Fast månadslön (efter skatt) utan tillägg, Barnbidrag, Underhåll.<br/><br/>Läggs automatiskt på <strong>varje månad</strong> i kalkylen. Skriv in det en gång, så rullar det vidare automatiskt tills du ändrar det.
               </p>
               <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
                 <input 
@@ -785,7 +786,7 @@ export default function ManageBills({ readOnly }: Props) {
             <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
               <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Rörlig Inkomst (Specifikt datum)</h4>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                Exempel: Lön, Försäkringskassan. Kopplas automatiskt till <strong>månaden efter</strong> datumet du väljer.
+                Exempel: Lön med provision/OB (efter skatt), Försäkringskassan, VAB.<br/><br/>Kopplas automatiskt till <strong>månaden efter</strong> datumet du väljer.
               </p>
               <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
                 <input 
@@ -1307,6 +1308,7 @@ export default function ManageBills({ readOnly }: Props) {
                     <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>Hur ska räkningen delas?</label>
                     <select value={newBillSplit} onChange={e => setNewBillSplit(e.target.value)} style={{ width: '100%', marginBottom: 0 }}>
                       <option value="equal">Delas lika på alla personer (Gemensam)</option>
+                      <option value="proportional">Proportionerligt utifrån inkomst</option>
                       {state.accounts.filter(a => a.type === 'person').sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => (
                         <option key={acc.id} value={acc.id}>{acc.name} betalar 100%</option>
                       ))}

@@ -75,6 +75,45 @@ export default function MonthView({ currentMonth, readOnly }: Props) {
     return acc + (amount > 0 ? amount : 0);
   }, 0);
 
+  const hasProportionalBill = state.bills.some(b => b.splitType === 'proportional' && (!b.isArchived || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0)));
+
+  let proportionalInfo = '';
+  if (hasProportionalBill) {
+      const personAccounts = state.accounts.filter(a => a.type === 'person');
+      const personIncomes: Record<string, number> = {};
+      let totalHouseholdIncome = 0;
+
+      personAccounts.forEach(p => {
+        let incomeSum = 0;
+        const userIncomes = state.incomes?.filter(i => i.userId === p.id) || [];
+        userIncomes.forEach(inc => {
+          if (inc.type === 'fixed') {
+            incomeSum += inc.amount;
+          } else if (inc.type === 'variable' && inc.payDate) {
+            const d = new Date(inc.payDate);
+            const nextMonthDate = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+            const nextMonthStr = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
+            if (nextMonthStr === currentMonth) {
+              incomeSum += inc.amount;
+            }
+          }
+        });
+        personIncomes[p.id] = incomeSum;
+        totalHouseholdIncome += incomeSum;
+      });
+
+      if (totalHouseholdIncome > 0 && personAccounts.length > 0) {
+          const parts = personAccounts.map(p => {
+             const percentage = Math.round((personIncomes[p.id] / totalHouseholdIncome) * 100);
+             return `${p.name} (${percentage}%)`;
+          });
+          const incomeParts = personAccounts.map(p => `${personIncomes[p.id].toLocaleString('sv-SE')} kr`);
+          proportionalInfo = `Proportionerlig fördelning denna månad: ${parts.join(' och ')} baserat på inkomster efter skatt (${incomeParts.join(' / ')}).`;
+      } else {
+          proportionalInfo = "Proportionerlig fördelning aktiv, men inga inkomster inmatade. Faller tillbaka på 50/50-fördelning.";
+      }
+  }
+
   const renderCategory = (account: Account) => {
     const categoryBills = state.bills
       .filter(b => b.accountId === account.id && (!b.isArchived || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0)))
@@ -127,7 +166,9 @@ export default function MonthView({ currentMonth, readOnly }: Props) {
             }
 
             let splitText = 'Delas lika';
-            if (bill.splitType !== 'equal') {
+            if (bill.splitType === 'proportional') {
+               splitText = 'Proportionerligt (Inkomst)';
+            } else if (bill.splitType !== 'equal') {
                const p = state.accounts.find(a => a.id === bill.splitType);
                if (p) splitText = `${p.name} betalar 100%`;
             }
@@ -249,6 +290,36 @@ export default function MonthView({ currentMonth, readOnly }: Props) {
           boxShadow: '0 4px 15px rgba(99, 102, 241, 0.2)' 
         }}>
           <div style={{ fontSize: '1.5rem' }}>👀</div>
+          <div>
+            <h3 style={{ margin: 0, marginBottom: '0.25rem', fontSize: '1.1rem' }}>Demoläge</h3>
+            <p style={{ margin: 0, fontSize: '0.9rem', opacity: 0.9 }}>Du tittar just nu på hur SmartEkonomi fungerar. Skapa ett eget konto gratis för att spara din egen data.</p>
+          </div>
+        </div>
+      )}
+
+      {hasProportionalBill && (
+        <div style={{ 
+          background: 'rgba(59, 130, 246, 0.15)', 
+          border: '1px solid rgba(59, 130, 246, 0.3)', 
+          color: 'var(--text-primary)', 
+          padding: '1rem', 
+          borderRadius: '12px', 
+          marginBottom: '2rem', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '1rem',
+        }}>
+          <span style={{ fontSize: '1.5rem' }}>⚖️</span>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ margin: 0, marginBottom: '0.25rem', fontSize: '1rem' }}>{proportionalInfo}</h3>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              Du kan uppdatera och kontrollera månadens inkomster under Inställningar {'>'} Inkomster.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
           <div style={{ flex: 1 }}>
             <h3 style={{ margin: 0, fontSize: '1.1rem', marginBottom: '0.25rem' }}>Förhandsvisning</h3>
             <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Du tittar just nu på din budget i läsläge.</p>
@@ -260,7 +331,6 @@ export default function MonthView({ currentMonth, readOnly }: Props) {
             Aktivera
           </button>
         </div>
-      )}
 
       {state.bills.length === 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', width: '100%' }}>
