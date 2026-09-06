@@ -40,8 +40,15 @@ export default function StartPage({ navigateTo }: StartPageProps) {
   return (
     <div className="start-page" style={{ padding: '0 1rem 2rem', maxWidth: '1000px', margin: '0 auto', animation: 'fadeIn 0.5s ease' }}>
       
-      {/* Hero Section Removed for Dashboard feel */}
-
+      {/* Welcome Hero Section */}
+      <div style={{ textAlign: 'center', marginBottom: '3rem', animation: 'fadeIn 0.5s ease', background: 'rgba(0,0,0,0.2)', padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+        <h1 style={{ fontSize: '2.2rem', margin: '0 0 1rem 0' }}>
+          Välkommen in till <span className="text-gradient">Smartekonomi!</span>
+        </h1>
+        <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.6', maxWidth: '800px', marginInline: 'auto' }}>
+          Din plattform för full kontroll. Slipp miniräknaren – vi sköter uträkningarna så att ni alltid delar rättvist, medan din privata ekonomi förblir helt din egen.
+        </p>
+      </div>
       {/* Navigation Boxes */}
       <div style={{ 
         display: 'grid', 
