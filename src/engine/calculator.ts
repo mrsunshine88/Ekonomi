@@ -28,14 +28,16 @@ export function calculateMonth(state: AppState, monthId: string): CalculationRes
     const userIncomes = state.incomes?.filter(i => i.userId === p.id) || [];
     
     userIncomes.forEach(inc => {
-      if (inc.type === 'fixed') {
-        incomeSum += inc.amount;
-      } else if (inc.type === 'variable' && inc.payDate) {
-        const d = new Date(inc.payDate);
-        const nextMonthDate = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-        const nextMonthStr = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
-        if (nextMonthStr === monthId) {
+      if (inc.includeInProportionalSplit !== false) {
+        if (inc.type === 'fixed') {
           incomeSum += inc.amount;
+        } else if (inc.type === 'variable' && inc.payDate) {
+          const d = new Date(inc.payDate);
+          const nextMonthDate = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+          const nextMonthStr = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
+          if (nextMonthStr === monthId) {
+            incomeSum += inc.amount;
+          }
         }
       }
     });
@@ -54,6 +56,21 @@ export function calculateMonth(state: AppState, monthId: string): CalculationRes
     if (bill.splitType === 'equal') {
       const splitAmt = personAccounts.length > 0 ? amount / personAccounts.length : 0;
       personAccounts.forEach(p => { liabilities[p.id] = splitAmt; });
+    } else if (bill.splitType === 'custom' && bill.customSplit) {
+      let remainingAmount = amount;
+      const personsWithSplit = Object.keys(bill.customSplit).filter(pid => personAccounts.some(pa => pa.id === pid));
+      
+      for (let i = 0; i < personsWithSplit.length; i++) {
+        const pid = personsWithSplit[i];
+        if (i === personsWithSplit.length - 1) {
+           liabilities[pid] = Math.max(0, remainingAmount);
+        } else {
+           const shareRatio = bill.customSplit[pid] / 100;
+           const personShare = Math.round((amount * shareRatio) * 100) / 100;
+           liabilities[pid] = personShare;
+           remainingAmount -= personShare;
+        }
+      }
     } else if (bill.splitType === 'proportional') {
       if (totalHouseholdIncome <= 0 || personAccounts.length === 0) {
         const splitAmt = personAccounts.length > 0 ? amount / personAccounts.length : 0;

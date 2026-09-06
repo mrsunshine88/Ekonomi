@@ -11,7 +11,8 @@ export interface BillDefinition {
   id: string;
   name: string;
   accountId: string; // id of the Account
-  splitType: 'equal' | 'proportional' | string; // 'equal' means divide among all persons. Specific accountId means 100% liability for that person. 'proportional' splits based on income.
+  splitType: 'equal' | 'proportional' | 'custom' | string; // 'equal' means divide among all persons. Specific accountId means 100% liability for that person. 'proportional' splits based on income. 'custom' splits based on customSplit.
+  customSplit?: Record<string, number>; // personId -> percentage
   defaultAmount: number;
   interval: PaymentInterval;
   customMonths?: number[]; // Array of 1-12
@@ -77,6 +78,7 @@ export interface Income {
   amount: number;
   type: 'fixed' | 'variable';
   payDate?: string; // 'YYYY-MM-DD', endast för rörliga inkomster
+  includeInProportionalSplit?: boolean;
 }
 
 export interface AppState {

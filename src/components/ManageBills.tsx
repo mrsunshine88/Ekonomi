@@ -58,6 +58,7 @@ export default function ManageBills({ readOnly }: Props) {
   const [newBillInterval, setNewBillInterval] = useState<PaymentInterval>('all');
   const [newBillCustomMonths, setNewBillCustomMonths] = useState<number[]>([]);
   const [newBillWarn, setNewBillWarn] = useState(false);
+  const [newBillCustomSplit, setNewBillCustomSplit] = useState<Record<string, number>>({});
   const [newBillIsLoan, setNewBillIsLoan] = useState(false);
   const [newBillTotalDebt, setNewBillTotalDebt] = useState('');
   const [newBillFixedFee, setNewBillFixedFee] = useState('');
@@ -77,6 +78,8 @@ export default function ManageBills({ readOnly }: Props) {
 
   const [fixedIncomeName, setFixedIncomeName] = useState('');
   const [fixedIncomeAmount, setFixedIncomeAmount] = useState('');
+  const [fixedIncludeProportional, setFixedIncludeProportional] = useState(true);
+  const [variableIncludeProportional, setVariableIncludeProportional] = useState(true);
 
   const [editingIncomeId, setEditingIncomeId] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
@@ -119,7 +122,8 @@ export default function ManageBills({ readOnly }: Props) {
         isLoan: newBillIsLoan,
         totalDebt: newBillTotalDebt === '' ? undefined : parseFloat(newBillTotalDebt),
         fixedFee: newBillFixedFee === '' ? 0 : parseFloat(newBillFixedFee),
-        isAutoTransfer: newBillAutoTransfer || undefined
+        isAutoTransfer: newBillAutoTransfer || undefined,
+        customSplit: newBillSplit === 'custom' ? newBillCustomSplit : undefined
       };
       if (editingBillId) {
         onUpdateBill(billData);
@@ -141,6 +145,7 @@ export default function ManageBills({ readOnly }: Props) {
       setNewBillAutoTransfer('');
       setNewBillInterval('all');
       setNewBillCustomMonths([]);
+      setNewBillCustomSplit({});
     }
 
     toast.success(wasEditing ? '✅ Räkning sparad!' : '✅ Räkning tillagd!');
@@ -153,6 +158,7 @@ export default function ManageBills({ readOnly }: Props) {
     setNewBillName(bill.name);
     setNewBillAccount(bill.accountId);
     setNewBillSplit(bill.splitType);
+    setNewBillCustomSplit(bill.customSplit || {});
     setNewBillDefault(bill.defaultAmount ? bill.defaultAmount.toString() : '');
     setNewBillInterval(bill.interval || 'all');
     setNewBillCustomMonths(bill.customMonths || []);
@@ -731,10 +737,11 @@ export default function ManageBills({ readOnly }: Props) {
                        if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; }
                        const amt = parseFloat(fixedIncomeAmount);
                        if (fixedIncomeName.trim() && !isNaN(amt)) {
-                         saveIncome({ id: editingIncomeId || undefined, name: fixedIncomeName, amount: amt, type: 'fixed' });
+                         saveIncome({ id: editingIncomeId || undefined, name: fixedIncomeName, amount: amt, type: 'fixed', includeInProportionalSplit: fixedIncludeProportional });
                          toast.success('Fast inkomst sparad!');
                          setFixedIncomeName('');
                          setFixedIncomeAmount('');
+                         setFixedIncludeProportional(true);
                          setEditingIncomeId(null);
                        }
                     }}
@@ -744,6 +751,10 @@ export default function ManageBills({ readOnly }: Props) {
                     Spara
                   </button>
                 </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer', marginTop: '0.25rem' }}>
+                  <input type="checkbox" checked={fixedIncludeProportional} onChange={e => setFixedIncludeProportional(e.target.checked)} />
+                  Använd som grund för proportionerlig fördelning
+                </label>
               </div>
               
               <div style={{ marginTop: '1rem' }}>
@@ -751,6 +762,7 @@ export default function ManageBills({ readOnly }: Props) {
                   <div key={inc.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', fontSize: '0.85rem', padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <div>
                       <div style={{ fontWeight: 'bold' }}>{inc.name}</div>
+                      {inc.includeInProportionalSplit !== false && <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>✓ Proportionerlig bas</div>}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                       <span style={{ color: '#10b981', fontWeight: 'bold' }}>{inc.amount.toLocaleString('sv-SE')} kr</span>
@@ -758,6 +770,7 @@ export default function ManageBills({ readOnly }: Props) {
                         onClick={() => {
                           setFixedIncomeName(inc.name);
                           setFixedIncomeAmount(inc.amount.toString());
+                          setFixedIncludeProportional(inc.includeInProportionalSplit !== false);
                           setEditingIncomeId(inc.id);
                         }}
                         style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer' }}
@@ -815,11 +828,12 @@ export default function ManageBills({ readOnly }: Props) {
                        if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; }
                        const amt = parseFloat(variableIncomeAmount);
                        if (variableIncomeName.trim() && variableIncomeDate && !isNaN(amt)) {
-                         saveIncome({ id: editingIncomeId || undefined, name: variableIncomeName, amount: amt, type: 'variable', payDate: variableIncomeDate });
+                         saveIncome({ id: editingIncomeId || undefined, name: variableIncomeName, amount: amt, type: 'variable', payDate: variableIncomeDate, includeInProportionalSplit: variableIncludeProportional });
                          toast.success('Rörlig inkomst sparad!');
                          setVariableIncomeName('');
                          setVariableIncomeAmount('');
                          setVariableIncomeDate('');
+                         setVariableIncludeProportional(true);
                          setEditingIncomeId(null);
                        }
                     }}
@@ -829,6 +843,10 @@ export default function ManageBills({ readOnly }: Props) {
                     Spara
                   </button>
                 </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)', cursor: 'pointer', marginTop: '0.25rem' }}>
+                  <input type="checkbox" checked={variableIncludeProportional} onChange={e => setVariableIncludeProportional(e.target.checked)} />
+                  Använd som grund för proportionerlig fördelning
+                </label>
               </div>
               
               <div style={{ marginTop: '1rem' }}>
@@ -841,6 +859,7 @@ export default function ManageBills({ readOnly }: Props) {
                        <div>
                          <div style={{ fontWeight: 'bold' }}>{inc.name} ({inc.payDate})</div>
                          <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Används för {nextMonthStr}</div>
+                         {inc.includeInProportionalSplit !== false && <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>✓ Proportionerlig bas</div>}
                        </div>
                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                          <span style={{ color: '#10b981', fontWeight: 'bold' }}>{inc.amount.toLocaleString('sv-SE')} kr</span>
@@ -849,6 +868,7 @@ export default function ManageBills({ readOnly }: Props) {
                              setVariableIncomeName(inc.name);
                              setVariableIncomeDate(inc.payDate!);
                              setVariableIncomeAmount(inc.amount.toString());
+                             setVariableIncludeProportional(inc.includeInProportionalSplit !== false);
                              setEditingIncomeId(inc.id);
                            }}
                            style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer' }}
@@ -1309,10 +1329,43 @@ export default function ManageBills({ readOnly }: Props) {
                     <select value={newBillSplit} onChange={e => setNewBillSplit(e.target.value)} style={{ width: '100%', marginBottom: 0 }}>
                       <option value="equal">Delas lika på alla personer (Gemensam)</option>
                       <option value="proportional">Proportionerligt utifrån inkomst</option>
+                      <option value="custom">Anpassad fördelning (%)</option>
                       {state.accounts.filter(a => a.type === 'person').sort((a, b) => a.name.localeCompare(b.name, 'sv')).map(acc => (
                         <option key={acc.id} value={acc.id}>{acc.name} betalar 100%</option>
                       ))}
                     </select>
+                    {newBillSplit === 'custom' && (
+                      <div style={{ marginTop: '0.75rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>Fyll i procentsats per person (bör bli 100% totalt):</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {state.accounts.filter(a => a.type === 'person').map(acc => (
+                            <div key={acc.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span style={{ flex: 1, fontSize: '0.9rem' }}>{acc.name}:</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', width: '100px' }}>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={newBillCustomSplit[acc.id] !== undefined ? newBillCustomSplit[acc.id] : ''}
+                                  onChange={e => {
+                                    const val = e.target.value === '' ? undefined : Number(e.target.value);
+                                    if (val === undefined) {
+                                      const copy = { ...newBillCustomSplit };
+                                      delete copy[acc.id];
+                                      setNewBillCustomSplit(copy);
+                                    } else {
+                                      setNewBillCustomSplit({ ...newBillCustomSplit, [acc.id]: val });
+                                    }
+                                  }}
+                                  style={{ width: '100%', marginBottom: 0, paddingRight: '0.5rem' }}
+                                />
+                                <span style={{ color: 'var(--text-secondary)', fontWeight: 'bold' }}>%</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

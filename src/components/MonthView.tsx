@@ -87,14 +87,16 @@ export default function MonthView({ currentMonth, readOnly }: Props) {
         let incomeSum = 0;
         const userIncomes = state.incomes?.filter(i => i.userId === p.id) || [];
         userIncomes.forEach(inc => {
-          if (inc.type === 'fixed') {
-            incomeSum += inc.amount;
-          } else if (inc.type === 'variable' && inc.payDate) {
-            const d = new Date(inc.payDate);
-            const nextMonthDate = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-            const nextMonthStr = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
-            if (nextMonthStr === currentMonth) {
+          if (inc.includeInProportionalSplit !== false) {
+            if (inc.type === 'fixed') {
               incomeSum += inc.amount;
+            } else if (inc.type === 'variable' && inc.payDate) {
+              const d = new Date(inc.payDate);
+              const nextMonthDate = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+              const nextMonthStr = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
+              if (nextMonthStr === currentMonth) {
+                incomeSum += inc.amount;
+              }
             }
           }
         });
@@ -168,6 +170,12 @@ export default function MonthView({ currentMonth, readOnly }: Props) {
             let splitText = 'Delas lika';
             if (bill.splitType === 'proportional') {
                splitText = 'Proportionerligt (Inkomst)';
+            } else if (bill.splitType === 'custom' && bill.customSplit) {
+               const parts = Object.entries(bill.customSplit).map(([pid, perc]) => {
+                  const p = state.accounts.find(a => a.id === pid);
+                  return p ? `${p.name} ${perc}%` : '';
+               }).filter(Boolean);
+               splitText = `Anpassad (${parts.join(', ')})`;
             } else if (bill.splitType !== 'equal') {
                const p = state.accounts.find(a => a.id === bill.splitType);
                if (p) splitText = `${p.name} betalar 100%`;
