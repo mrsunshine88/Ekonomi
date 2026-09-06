@@ -1354,7 +1354,14 @@ export default function ManageBills({ readOnly }: Props) {
                                       delete copy[acc.id];
                                       setNewBillCustomSplit(copy);
                                     } else {
-                                      setNewBillCustomSplit({ ...newBillCustomSplit, [acc.id]: val });
+                                      const newSplit = { ...newBillCustomSplit, [acc.id]: val };
+                                      if (personAccounts.length === 2) {
+                                        const otherPerson = personAccounts.find(p => p.id !== acc.id);
+                                        if (otherPerson) {
+                                          newSplit[otherPerson.id] = 100 - val;
+                                        }
+                                      }
+                                      setNewBillCustomSplit(newSplit);
                                     }
                                   }}
                                   style={{ width: '100%', marginBottom: 0, paddingRight: '0.5rem' }}
