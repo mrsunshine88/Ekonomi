@@ -1,10 +1,15 @@
 import { createPortal } from 'react-dom';
+import { useEffect } from 'react';
 
 interface Props {
   onClose: () => void;
 }
 
 export default function SubscriptionFeaturesModal({ onClose }: Props) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
   return createPortal(
     <div 
       onClick={onClose}
