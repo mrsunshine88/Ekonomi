@@ -2,8 +2,11 @@ import { useState } from 'react';
 import InfoModal from './InfoModal';
 import SubscriptionFeaturesModal from './SubscriptionFeaturesModal';
 import AboutModal from './AboutModal';
+import { useStore } from '../store';
+
 export default function Footer() {
   const [modalType, setModalType] = useState<'tos' | 'privacy' | 'contact' | 'features' | 'faq' | 'about' | null>(null);
+  const paywallActive = useStore(s => s.state.paywallActive);
 
   return (
     <>
@@ -44,6 +47,12 @@ export default function Footer() {
             style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
           >
             Frågor & Svar (FAQ)
+          </button>
+          <button 
+            onClick={() => setModalType('features')}
+            style={{ fontSize: '0.85rem', padding: '0.5rem 1rem', color: paywallActive ? '#10b981' : 'inherit', fontWeight: paywallActive ? 'bold' : 'normal' }}
+          >
+            {paywallActive ? 'Prenumerera (14 dagar gratis)' : 'Appens Fördelar (Gratis)'}
           </button>
           <button 
             onClick={() => setModalType('about')}

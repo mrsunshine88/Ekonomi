@@ -12,6 +12,7 @@ export default function PaywallModal({ onClose }: PaywallModalProps) {
   const householdId = useStore(s => s.householdId);
   const bills = useStore(s => s.state.bills) || [];
   const incomes = useStore(s => s.state.incomes) || [];
+  const paywallActive = useStore(s => s.state.paywallActive);
 
   const handleCheckout = async () => {
     setLoading(true);
@@ -75,7 +76,11 @@ export default function PaywallModal({ onClose }: PaywallModalProps) {
         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1.1rem', lineHeight: '1.6' }}>
           Nu kan du börja registrera betalningar, följa hushållets ekonomi och planera framtida månader.
           <br /><br />
-          <strong style={{ color: '#10b981' }}>🎁 Appen är helt gratis att använda.</strong>
+          {paywallActive ? (
+            <strong style={{ color: '#10b981' }}>💳 Kostnad: 59 kr / månad (14 dagar gratis)</strong>
+          ) : (
+            <strong style={{ color: '#10b981' }}>🎁 Appen är helt gratis att använda.</strong>
+          )}
         </p>
 
         <button 

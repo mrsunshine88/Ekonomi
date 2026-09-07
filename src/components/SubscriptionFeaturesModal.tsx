@@ -1,11 +1,13 @@
 import { createPortal } from 'react-dom';
 import { useEffect } from 'react';
+import { useStore } from '../store';
 
 interface Props {
   onClose: () => void;
 }
 
 export default function SubscriptionFeaturesModal({ onClose }: Props) {
+  const paywallActive = useStore(s => s.state.paywallActive);
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = 'unset'; };
@@ -39,10 +41,12 @@ export default function SubscriptionFeaturesModal({ onClose }: Props) {
 
         <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '1.25rem', marginBottom: '2rem', textAlign: 'center' }}>
           <div style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#fff', marginBottom: '0.25rem' }}>
-            Helt gratis att använda
+            {paywallActive ? 'Abonnemang: 59 kr/månad' : 'Helt gratis att använda'}
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem', marginBottom: 0 }}>
-            Hela familjen kan använda appen helt gratis. Inga avgifter, ingen bindningstid.
+            {paywallActive 
+              ? 'Första 14 dagarna är helt gratis! Därefter endast 59 kr i månaden för hela hushållet. Ingen bindningstid.' 
+              : 'Hela familjen kan använda appen helt gratis. Inga avgifter, ingen bindningstid.'}
           </p>
         </div>
 

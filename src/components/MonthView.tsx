@@ -327,18 +327,7 @@ export default function MonthView({ currentMonth, readOnly }: Props) {
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', marginBottom: '0.25rem' }}>Förhandsvisning</h3>
-            <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Du tittar just nu på din budget i läsläge.</p>
-          </div>
-          <button 
-            onClick={() => setShowPaywall(true)}
-            style={{ background: 'var(--accent-color)', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-          >
-            Aktivera
-          </button>
-        </div>
+
 
       {state.bills.length === 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', width: '100%' }}>
