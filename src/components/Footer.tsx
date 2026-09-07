@@ -1,12 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import InfoModal from './InfoModal';
 import SubscriptionFeaturesModal from './SubscriptionFeaturesModal';
 import AboutModal from './AboutModal';
 import { useStore } from '../store';
+import { supabase } from '../supabase';
 
 export default function Footer() {
   const [modalType, setModalType] = useState<'tos' | 'privacy' | 'contact' | 'features' | 'faq' | 'about' | null>(null);
-  const paywallActive = useStore(s => s.state.paywallActive);
+  const storePaywallActive = useStore(s => s.state.paywallActive);
+  const [localPaywallActive, setLocalPaywallActive] = useState(false);
+
+  useEffect(() => {
+    const fetchPaywall = async () => {
+      const { data } = await supabase.from('global_settings').select('value').eq('key', 'paywall_active').maybeSingle();
+      if (data && data.value === 'true') {
+        setLocalPaywallActive(true);
+      }
+    };
+    fetchPaywall();
+  }, []);
+
+  const paywallActive = storePaywallActive || localPaywallActive;
 
   return (
     <>
