@@ -14,6 +14,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [demoEnabled, setDemoEnabled] = useState(false);
+  const [paywallActive, setPaywallActive] = useState(false);
   const startDemo = useStore(s => s.startDemo);
 
   // Öppna register-fliken direkt om vi kom från demo-bannern
@@ -29,17 +30,20 @@ export default function LoginScreen() {
   useEffect(() => {
     document.body.style.background = '#060913';
     
-    const fetchDemoSettings = async () => {
+    const fetchSettings = async () => {
       try {
-        const { data } = await supabase.from('global_settings').select('value').eq('key', 'login_demo_enabled').maybeSingle();
-        if (data && data.value === 'true') {
-          setDemoEnabled(true);
+        const { data } = await supabase.from('global_settings').select('key, value').in('key', ['login_demo_enabled', 'paywall_active']);
+        if (data) {
+          const demo = data.find(d => d.key === 'login_demo_enabled');
+          const paywall = data.find(d => d.key === 'paywall_active');
+          if (demo?.value === 'true') setDemoEnabled(true);
+          if (paywall?.value === 'true') setPaywallActive(true);
         }
       } catch (e) {
-        console.error("Could not fetch demo settings", e);
+        console.error("Could not fetch global settings", e);
       }
     };
-    fetchDemoSettings();
+    fetchSettings();
 
     return () => {
       document.body.style.background = '#0b0f19';
@@ -147,8 +151,10 @@ export default function LoginScreen() {
     },
     {
       icon: "💎",
-      title: "Helt gratis att använda",
-      desc: "Skapa ett gratis konto på några minuter och upptäck hur enkelt det kan vara att hålla koll på ekonomin."
+      title: paywallActive ? "Prova 14 dagar gratis" : "Helt gratis att använda",
+      desc: paywallActive 
+        ? "Skapa ett konto och få 14 dagar gratis, därefter 59 kr/månad utan bindningstid."
+        : "Skapa ett gratis konto på några minuter och upptäck hur enkelt det kan vara att hålla koll på ekonomin."
     }
   ];
 
@@ -210,13 +216,13 @@ export default function LoginScreen() {
                 <span className="logo-icon">E</span>
                 SmartEkonomi
               </div>
-              <h2>{isForgotPassword ? 'Återställ Lösenord' : isLogin ? 'Logga in' : 'Skapa gratis konto'}</h2>
+              <h2>{isForgotPassword ? 'Återställ Lösenord' : isLogin ? 'Logga in' : (paywallActive ? 'Skapa konto' : 'Skapa gratis konto')}</h2>
               <p>
                 {isForgotPassword 
                   ? 'Fyll i din e-post så skickar vi en länk'
                   : isLogin 
                     ? 'Fortsätt till ditt hushåll.' 
-                    : 'Helt gratis.'}
+                    : (paywallActive ? '14 dagar gratis.' : 'Helt gratis.')}
               </p>
             </div>
 
@@ -277,7 +283,7 @@ export default function LoginScreen() {
                 className="submit-btn" 
                 disabled={loading}
               >
-                {loading ? 'Vänta...' : isForgotPassword ? 'Skicka återställningslänk' : isLogin ? 'Logga in' : 'Skapa gratis konto'}
+                {loading ? 'Vänta...' : isForgotPassword ? 'Skicka återställningslänk' : isLogin ? 'Logga in' : (paywallActive ? 'Skapa konto' : 'Skapa gratis konto')}
               </button>
             </form>
 
@@ -340,7 +346,7 @@ export default function LoginScreen() {
                       e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
                     }}
                   >
-                    Skapa gratis konto
+                    {paywallActive ? 'Skapa konto' : 'Skapa gratis konto'}
                   </button>
                 </div>
               ) : (

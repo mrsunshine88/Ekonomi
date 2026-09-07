@@ -29,6 +29,7 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
   const [loading, setLoading] = useState(true);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [paywallActive, setPaywallActive] = useState(false);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -40,7 +41,12 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
     {
       category: "💡 Betalning & pris",
       questions: [
-        { q: "Är appen gratis?", a: "Ja, appen är 100% gratis att använda för hela hushållet." }
+        { 
+          q: paywallActive ? "Vad kostar appen?" : "Är appen gratis?", 
+          a: paywallActive 
+            ? "Du får prova appen helt gratis i 14 dagar. Därefter kostar det 59 kr per månad för hela hushållet (ingen bindningstid)." 
+            : "Ja, appen är 100% gratis att använda för hela hushållet." 
+        }
       ]
     },
     {
@@ -101,6 +107,7 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
           address: data.find(d => d.key === 'show_contact_address')?.value !== 'false',
           vat: data.find(d => d.key === 'show_contact_vat')?.value !== 'false'
         });
+        setPaywallActive(data.find(d => d.key === 'paywall_active')?.value === 'true');
       }
       setLoading(false);
     };
@@ -151,7 +158,7 @@ export default function InfoModal({ type, onClose }: InfoModalProps) {
                 <strong style={{ color: '#fff' }}>Ansvarsbegränsning och friskrivning:</strong> SmartEkonomi tillhandahålls som ett hjälpmedel för beräkningar och budgetering. Appen ska ses som ett komplement och inte som finansiell rådgivning. Användaren ansvarar själv för att kontrollera att alla uträkningar och uppgifter stämmer innan ekonomiska beslut fattas. SmartEkonomi eller dess ägare kan inte hållas ansvariga för eventuella ekonomiska förluster, felaktiga beräkningar eller beslut baserade på appens data.
               </p>
               <p>
-                <strong style={{ color: '#fff' }}>Prenumeration & Avgifter:</strong> Appen är helt gratis att använda och har inga prenumerationsavgifter.
+                <strong style={{ color: '#fff' }}>Prenumeration & Avgifter:</strong> {paywallActive ? 'Appen kostar 59 kr per månad efter en 14 dagars gratis provperiod. Det finns ingen bindningstid och prenumerationen gäller för hela hushållet.' : 'Appen är helt gratis att använda och har inga prenumerationsavgifter.'}
               </p>
               <p>
                 <strong style={{ color: '#fff' }}>Tillämplig lag:</strong> Svensk lag gäller för dessa villkor.

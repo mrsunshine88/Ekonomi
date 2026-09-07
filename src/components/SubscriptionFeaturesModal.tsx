@@ -8,6 +8,7 @@ interface Props {
 
 export default function SubscriptionFeaturesModal({ onClose }: Props) {
   const paywallActive = useStore(s => s.state.paywallActive);
+
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = 'unset'; };
