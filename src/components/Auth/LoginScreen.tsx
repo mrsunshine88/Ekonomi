@@ -222,7 +222,7 @@ export default function LoginScreen() {
                   ? 'Fyll i din e-post så skickar vi en länk'
                   : isLogin 
                     ? 'Fortsätt till ditt hushåll.' 
-                    : (paywallActive ? '14 dagar gratis.' : 'Helt gratis.')}
+                    : (paywallActive ? '14 dagar gratis, därefter 59 kr per månad.' : 'Helt gratis.')}
               </p>
             </div>
 
