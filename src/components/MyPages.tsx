@@ -10,6 +10,7 @@ export default function MyPages() {
   const settings = useStore(s => s.state.settings);
   const updateSettings = useStore(s => s.updateSettings);
   const householdProfiles = useStore(s => s.state.householdProfiles) || [];
+  const paywallActive = useStore(s => s.state.paywallActive);
   const myProfile = householdProfiles.find(p => p.id === user?.id);
   const isSharingPrivate = myProfile?.share_private_economy || false;
   const [members, setMembers] = useState<{id: string, email: string, role: string, created_at?: string}[]>([]);
@@ -536,7 +537,7 @@ export default function MyPages() {
         </div>
       )}
 
-      {activeTab === 'settings' && householdId && (
+      {activeTab === 'settings' && householdId && paywallActive && (
         <div style={{ marginBottom: '2.5rem', paddingBottom: '2.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <h3 style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>💎 Prenumeration</h3>
           <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
