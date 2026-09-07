@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore } from '../store';
 import { useAuth } from '../AuthContext';
+import { supabase } from '../supabase';
 
 interface StartPageProps {
   navigateTo: (view: 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'start') => void;
@@ -9,6 +10,20 @@ interface StartPageProps {
 export default function StartPage({ navigateTo }: StartPageProps) {
   const openAuthModal = useStore(s => s.openAuthModal);
   const { user } = useAuth();
+  const storePaywallActive = useStore(s => s.state.paywallActive);
+  const [localPaywallActive, setLocalPaywallActive] = useState(false);
+
+  useEffect(() => {
+    const fetchPaywall = async () => {
+      const { data } = await supabase.from('global_settings').select('value').eq('key', 'paywall_active').maybeSingle();
+      if (data && data.value === 'true') {
+        setLocalPaywallActive(true);
+      }
+    };
+    fetchPaywall();
+  }, []);
+
+  const paywallActive = storePaywallActive || localPaywallActive;
 
   const boxStyle = {
     background: 'rgba(255,255,255,0.02)', 
@@ -183,12 +198,16 @@ export default function StartPage({ navigateTo }: StartPageProps) {
       {/* Kom igång gratis */}
       {!user && (
         <div style={{ padding: '3rem', background: 'var(--surface-color)', borderRadius: '16px', border: '1px solid var(--accent-color)', marginBottom: '4rem', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
-          <h2 style={{ fontSize: '2.5rem', margin: '0 0 1rem' }}>Kom igång helt gratis 🎁</h2>
+          <h2 style={{ fontSize: '2.5rem', margin: '0 0 1rem' }}>
+            {paywallActive ? 'Prova 14 dagar gratis 🎁' : 'Kom igång helt gratis 🎁'}
+          </h2>
           <p style={{ fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: '1.5rem' }}>
             Skapa ett konto på 10 sekunder och få full koll på ekonomin.
           </p>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '1.1rem' }}>
-            Appen är 100% gratis att använda för hela hushållet.
+            {paywallActive 
+              ? 'Appen är gratis i 14 dagar för hela hushållet. Därefter 59 kr/månad utan bindningstid.'
+              : 'Appen är 100% gratis att använda för hela hushållet.'}
           </p>
           <button 
             onClick={openAuthModal}
@@ -199,7 +218,7 @@ export default function StartPage({ navigateTo }: StartPageProps) {
               transition: 'transform 0.2s', animation: 'pulse 2s infinite'
             }}
           >
-            Skapa gratis konto nu 🚀
+            {paywallActive ? 'Skapa konto nu 🚀' : 'Skapa gratis konto nu 🚀'}
           </button>
         </div>
       )}

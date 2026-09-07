@@ -1,9 +1,27 @@
+import { useState, useEffect } from 'react';
 import { useStore } from '../store';
+import { supabase } from '../supabase';
 
 export default function DemoBanner() {
   const isDemoMode = useStore(s => s.isDemoMode);
   const stopDemo = useStore(s => s.stopDemo);
   const openAuthModal = useStore(s => s.openAuthModal);
+  const storePaywallActive = useStore(s => s.state.paywallActive);
+  const [localPaywallActive, setLocalPaywallActive] = useState(false);
+
+  useEffect(() => {
+    const fetchPaywall = async () => {
+      const { data } = await supabase.from('global_settings').select('value').eq('key', 'paywall_active').maybeSingle();
+      if (data && data.value === 'true') {
+        setLocalPaywallActive(true);
+      }
+    };
+    if (isDemoMode) {
+      fetchPaywall();
+    }
+  }, [isDemoMode]);
+
+  const paywallActive = storePaywallActive || localPaywallActive;
 
   if (!isDemoMode) return null;
 
@@ -82,7 +100,7 @@ export default function DemoBanner() {
             e.currentTarget.style.boxShadow = '0 4px 15px rgba(168, 85, 247, 0.4)';
           }}
         >
-          Skapa gratis konto
+          {paywallActive ? 'Skapa konto' : 'Skapa gratis konto'}
         </button>
       </div>
     </div>
