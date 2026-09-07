@@ -36,6 +36,8 @@ function App() {
   const isAuthModalOpen = useStore(s => s.isAuthModalOpen);
   const openAuthModal = useStore(s => s.openAuthModal);
   const stopDemo = useStore(s => s.stopDemo);
+  const paywallActive = useStore(s => s.state.paywallActive);
+  const stripeStatus = useStore(s => s.state.stripeStatus);
 
   type ViewType = 'start' | 'month' | 'stats' | 'manage' | 'mypages' | 'privat' | 'admin' | 'admin_learning' | 'support' | 'about';
   const URL_TO_VIEW: Record<string, ViewType> = {
@@ -276,8 +278,6 @@ function App() {
 
 
   // 3. HARD GATE: Paywall
-  const paywallActive = useStore(s => s.state.paywallActive);
-  const stripeStatus = useStore(s => s.state.stripeStatus);
   const isPaywallBlocked = paywallActive && stripeStatus !== 'vip' && stripeStatus !== 'active';
   if (isPaywallBlocked && !isDemoMode) {
     return (
