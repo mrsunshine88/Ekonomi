@@ -603,7 +603,7 @@ export default function AdminDashboard() {
       useStore.setState(s => ({ state: { ...s.state, paywallActive: !paywallActive } }));
       setMsg(paywallActive ? '✅ Betalväggen är nu AV.' : '🚨 Betalväggen är nu PÅ! Alla nya (och icke-VIP) kommer att tvingas betala.');
     } catch (e: unknown) {
-      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
+      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : ((e as any)?.message || JSON.stringify(e))));
     } finally {
       setLoading(false);
     }
@@ -618,7 +618,7 @@ export default function AdminDashboard() {
       setLoginDemoEnabled(newValue);
       setMsg(newValue ? '✅ Demoläge på inloggningssidan är PÅ.' : '❌ Demoläge på inloggningssidan är AV.');
     } catch (e: unknown) {
-      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
+      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : ((e as any)?.message || JSON.stringify(e))));
     } finally {
       setLoading(false);
     }
@@ -633,7 +633,7 @@ export default function AdminDashboard() {
       setMsg(isVip ? `📉 VIP-status borttagen för ${email}.` : `👑 ${email} har nu VIP-status!`);
       await fetchMembersList();
     } catch (e: unknown) {
-      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
+      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : ((e as any)?.message || JSON.stringify(e))));
     } finally {
       setLoading(false);
     }
@@ -650,7 +650,7 @@ export default function AdminDashboard() {
       else setMsg(isAdmin ? `📉 Administratörsrättigheter borttagna för ${email}.` : `👑 ${email} är nu admin!`);
       await fetchMembersList();
     } catch (e: unknown) {
-      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
+      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : ((e as any)?.message || JSON.stringify(e))));
     } finally {
       setLoading(false);
     }
@@ -668,7 +668,7 @@ export default function AdminDashboard() {
           setMsg(`🔒 Användaren har ${isBanned ? 'låsts upp' : 'blockerats'}.`);
           await fetchMembersList();
         } catch (e: unknown) {
-          setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
+          setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : ((e as any)?.message || JSON.stringify(e))));
         } finally {
           setLoading(false);
         }
@@ -694,7 +694,7 @@ export default function AdminDashboard() {
       setMsg(isChatAgent ? `💬 Kundservice avaktiverad för ${email}.` : `💬 ${email} kan nu jobba i kundservice!`);
       await fetchMembersList();
     } catch (e: unknown) {
-      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
+      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : ((e as any)?.message || JSON.stringify(e))));
     } finally {
       setLoading(false);
     }
@@ -717,7 +717,7 @@ export default function AdminDashboard() {
       setMsg(`💬 Kö-behörigheter uppdaterade för ${email}.`);
       await fetchMembersList();
     } catch (e: unknown) {
-      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
+      setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : ((e as any)?.message || JSON.stringify(e))));
     } finally {
       setLoading(false);
     }
@@ -737,7 +737,7 @@ export default function AdminDashboard() {
           await fetchMembersList();
           await fetchStats();
         } catch (e: unknown) {
-          setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : String(e)));
+          setMsg('❌ Admin Fel: ' + (e instanceof Error ? e.message : ((e as any)?.message || JSON.stringify(e))));
         } finally {
           setLoading(false);
         }
