@@ -69,13 +69,14 @@ export default function MonthView({ currentMonth, readOnly }: Props) {
 
   const totalSum = state.bills.reduce((acc, bill) => {
     // Endast räkna med om den ska visas denna månad
-    const isVisible = !bill.isArchived || (monthData.billAmounts[bill.id] !== undefined && monthData.billAmounts[bill.id] > 0);
+    const isActive = (!bill.startMonth || bill.startMonth <= currentMonth) && (!bill.endMonth || bill.endMonth > currentMonth);
+    const isVisible = (isActive && !bill.isArchived) || (monthData.billAmounts[bill.id] !== undefined && monthData.billAmounts[bill.id] > 0);
     if (!isVisible) return acc;
     const amount = monthData.billAmounts[bill.id] !== undefined ? monthData.billAmounts[bill.id] : bill.defaultAmount;
     return acc + (amount > 0 ? amount : 0);
   }, 0);
 
-  const hasProportionalBill = state.bills.some(b => b.splitType === 'proportional' && (!b.isArchived || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0)));
+  const hasProportionalBill = state.bills.some(b => b.splitType === 'proportional' && (((!b.startMonth || b.startMonth <= currentMonth) && (!b.endMonth || b.endMonth > currentMonth) && !b.isArchived) || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0)));
 
   let proportionalInfo = '';
   if (hasProportionalBill) {
@@ -118,7 +119,7 @@ export default function MonthView({ currentMonth, readOnly }: Props) {
 
   const renderCategory = (account: Account) => {
     const categoryBills = state.bills
-      .filter(b => b.accountId === account.id && (!b.isArchived || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0)))
+      .filter(b => b.accountId === account.id && (((!b.startMonth || b.startMonth <= currentMonth) && (!b.endMonth || b.endMonth > currentMonth) && !b.isArchived) || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0)))
       .sort((a, b) => a.name.localeCompare(b.name, 'sv'));
     if (categoryBills.length === 0) return null;
 

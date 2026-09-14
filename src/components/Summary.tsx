@@ -31,6 +31,7 @@ export default function Summary({ currentMonth }: Props) {
 
   const missingBills = state.bills.filter(bill => {
     if (bill.startMonth && bill.startMonth > currentMonth) return false;
+    if (bill.endMonth && bill.endMonth <= currentMonth) return false;
 
     const amount = monthData.billAmounts[bill.id] !== undefined ? monthData.billAmounts[bill.id] : bill.defaultAmount;
     if (bill.warnIfZero && amount === 0) {

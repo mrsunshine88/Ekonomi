@@ -117,6 +117,9 @@ export default function Statistics() {
     const billMap: Record<string, number> = {};
     
     activeBills.forEach(b => {
+      const isActive = (!b.startMonth || b.startMonth <= monthId) && (!b.endMonth || b.endMonth > monthId);
+      if (!isActive && amounts[b.id] === undefined) return;
+      
       const amt = amounts[b.id] !== undefined ? amounts[b.id] : b.defaultAmount;
       if (!isPrivate) {
         // @ts-ignore - accountId exists on shared bills
@@ -634,8 +637,10 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: App
 
     if (state.privateMonths?.[monthId]) {
       const pm = state.privateMonths[monthId];
-      const activePrivate = (state.privateBills || []).filter((b: { userId: string; isArchived?: boolean }) => b.userId === user?.id && !b.isArchived);
-      activePrivate.forEach((b: { id: string; defaultAmount: number }) => {
+      const activePrivate = (state.privateBills || []).filter((b: { userId: string; isArchived?: boolean; startMonth?: string; endMonth?: string; id: string }) => b.userId === user?.id && !b.isArchived);
+      activePrivate.forEach((b: { id: string; defaultAmount: number; startMonth?: string; endMonth?: string }) => {
+        const isActive = (!b.startMonth || b.startMonth <= monthId) && (!b.endMonth || b.endMonth > monthId);
+        if (!isActive && pm.billAmounts?.[b.id] === undefined) return;
         const amt = pm.billAmounts?.[b.id] !== undefined ? pm.billAmounts[b.id] : b.defaultAmount;
         totalExpense += amt;
       });
@@ -643,9 +648,11 @@ function InkomstUtgiftView({ state, user: realUser, sortedMonths }: { state: App
 
     const m = state.months[monthId];
     if (m) {
-      const activeShared = (state.bills || []).filter((b: { isArchived?: boolean }) => !b.isArchived);
-      activeShared.forEach((b: { accountId: string; id: string; defaultAmount: number }) => {
+      const activeShared = (state.bills || []).filter((b: { isArchived?: boolean; startMonth?: string; endMonth?: string; id: string }) => !b.isArchived);
+      activeShared.forEach((b: { accountId: string; id: string; defaultAmount: number; startMonth?: string; endMonth?: string }) => {
         if (b.accountId === selectedAccountId) {
+          const isActive = (!b.startMonth || b.startMonth <= monthId) && (!b.endMonth || b.endMonth > monthId);
+          if (!isActive && m.billAmounts?.[b.id] === undefined) return;
           const amt = m.billAmounts?.[b.id] !== undefined ? m.billAmounts[b.id] : b.defaultAmount;
           totalExpense += amt;
         }

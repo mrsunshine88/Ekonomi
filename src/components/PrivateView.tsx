@@ -38,6 +38,7 @@ export default function PrivateView({ currentMonth }: Props) {
   const myBills = (state.privateBills || [])
     .filter(b => {
       if (b.startMonth && b.startMonth > currentMonth) return false;
+      if (b.endMonth && b.endMonth <= currentMonth) return false;
       return b.userId === activeUserId && (!b.isArchived || (monthData.billAmounts[b.id] !== undefined && monthData.billAmounts[b.id] > 0));
     })
     .sort((a, b) => a.name.localeCompare(b.name, 'sv'));

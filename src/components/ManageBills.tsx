@@ -58,6 +58,13 @@ export default function ManageBills({ readOnly }: Props) {
   const [newBillInterval, setNewBillInterval] = useState<PaymentInterval>('all');
   const [newBillCustomMonths, setNewBillCustomMonths] = useState<number[]>([]);
   const [newBillWarn, setNewBillWarn] = useState(false);
+  const [startMonthOption, setStartMonthOption] = useState<'always' | 'current' | 'next' | 'custom'>('always');
+  const [startMonthCustom, setStartMonthCustom] = useState('');
+  const [endMonthOption, setEndMonthOption] = useState<'never' | 'current' | 'next' | 'custom'>('never');
+  const [endMonthCustom, setEndMonthCustom] = useState('');
+  const [billToStop, setBillToStop] = useState<{ id: string, type: 'shared' | 'private', name: string } | null>(null);
+  const [stopMonthOption, setStopMonthOption] = useState<'current' | 'next' | 'custom'>('current');
+  const [stopCustomMonth, setStopCustomMonth] = useState('');
   const [newBillCustomSplit, setNewBillCustomSplit] = useState<Record<string, number>>({});
   const [newBillIsLoan, setNewBillIsLoan] = useState(false);
   const [newBillTotalDebt, setNewBillTotalDebt] = useState('');
@@ -89,6 +96,19 @@ export default function ManageBills({ readOnly }: Props) {
     if (!newBillName.trim()) return;
     if (newBillScope === 'shared' && !newBillAccount) return;
     
+    const getCurrentMonthStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+    const getNextMonthStr = () => { const d = new Date(); d.setMonth(d.getMonth() + 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+    
+    let finalStartMonth = undefined;
+    if (startMonthOption === 'current') finalStartMonth = getCurrentMonthStr();
+    else if (startMonthOption === 'next') finalStartMonth = getNextMonthStr();
+    else if (startMonthOption === 'custom' && startMonthCustom) finalStartMonth = startMonthCustom;
+
+    let finalEndMonth = undefined;
+    if (endMonthOption === 'current') finalEndMonth = getCurrentMonthStr();
+    else if (endMonthOption === 'next') finalEndMonth = getNextMonthStr();
+    else if (endMonthOption === 'custom' && endMonthCustom) finalEndMonth = endMonthCustom;
+
     if (newBillScope === 'private') {
       if (!user) return;
       const billData: PrivateBill = {
@@ -98,6 +118,10 @@ export default function ManageBills({ readOnly }: Props) {
         interval: newBillInterval,
         customMonths: newBillInterval === 'custom' ? newBillCustomMonths : undefined,
         warnIfZero: newBillWarn,
+        startMonth: finalStartMonth,
+        endMonth: finalEndMonth,
+        startMonth: finalStartMonth,
+        endMonth: finalEndMonth,
         userId: user.id,
         isShared: false, // default, can be toggled in private view
         isLoan: newBillIsLoan,
@@ -145,6 +169,14 @@ export default function ManageBills({ readOnly }: Props) {
       setNewBillAutoTransfer('');
       setNewBillInterval('all');
       setNewBillCustomMonths([]);
+      setStartMonthOption('always');
+      setStartMonthCustom('');
+      setEndMonthOption('never');
+      setEndMonthCustom('');
+    setStartMonthOption('always');
+    setStartMonthCustom('');
+    setEndMonthOption('never');
+    setEndMonthCustom('');
       setNewBillCustomSplit({});
     }
 
@@ -161,12 +193,14 @@ export default function ManageBills({ readOnly }: Props) {
     setNewBillCustomSplit(bill.customSplit || {});
     setNewBillDefault(bill.defaultAmount ? bill.defaultAmount.toString() : '');
     setNewBillInterval(bill.interval || 'all');
+    if (bill.startMonth) { setStartMonthOption('custom'); setStartMonthCustom(bill.startMonth); } else { setStartMonthOption('always'); setStartMonthCustom(''); }
+    if (bill.endMonth) { setEndMonthOption('custom'); setEndMonthCustom(bill.endMonth); } else { setEndMonthOption('never'); setEndMonthCustom(''); }
     setNewBillCustomMonths(bill.customMonths || []);
     setNewBillWarn(bill.warnIfZero || false);
     setNewBillIsLoan(bill.isLoan || false);
     setNewBillTotalDebt(bill.totalDebt !== undefined ? bill.totalDebt.toString() : '');
     setNewBillFixedFee(bill.fixedFee !== undefined ? bill.fixedFee.toString() : '');
-    setNewBillAutoTransfer(bill.isAutoTransfer || '');
+    setNewBillAutoTransfer(bill.isAutoTransfer === true ? 'all' : (bill.isAutoTransfer || ''));
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -177,6 +211,8 @@ export default function ManageBills({ readOnly }: Props) {
     setNewBillName(bill.name);
     setNewBillDefault(bill.defaultAmount ? bill.defaultAmount.toString() : '');
     setNewBillInterval(bill.interval || 'all');
+    if (bill.startMonth) { setStartMonthOption('custom'); setStartMonthCustom(bill.startMonth); } else { setStartMonthOption('always'); setStartMonthCustom(''); }
+    if (bill.endMonth) { setEndMonthOption('custom'); setEndMonthCustom(bill.endMonth); } else { setEndMonthOption('never'); setEndMonthCustom(''); }
     setNewBillCustomMonths(bill.customMonths || []);
     setNewBillWarn(bill.warnIfZero || false);
     setNewBillIsLoan(bill.isLoan || false);
@@ -184,6 +220,36 @@ export default function ManageBills({ readOnly }: Props) {
     setNewBillFixedFee(bill.fixedFee !== undefined ? bill.fixedFee.toString() : '');
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  
+  const handleConfirmStop = () => {
+    if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; }
+    if (!billToStop) return;
+    
+    const getCurrentMonthStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+    const getNextMonthStr = () => { const d = new Date(); d.setMonth(d.getMonth() + 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+
+    let finalEndMonth = undefined;
+    if (stopMonthOption === 'current') finalEndMonth = getCurrentMonthStr();
+    else if (stopMonthOption === 'next') finalEndMonth = getNextMonthStr();
+    else if (stopMonthOption === 'custom' && stopCustomMonth) finalEndMonth = stopCustomMonth;
+
+    if (!finalEndMonth) {
+      toast.error('Du måste välja en månad.');
+      return;
+    }
+
+    if (billToStop.type === 'shared') {
+      const bill = state.bills.find(b => b.id === billToStop.id);
+      if (bill) onUpdateBill({ ...bill, endMonth: finalEndMonth });
+    } else {
+      const bill = (state.privateBills || []).find(b => b.id === billToStop.id);
+      if (bill) onUpdatePrivateBill({ ...bill, endMonth: finalEndMonth });
+    }
+
+    setBillToStop(null);
+    toast.success('✅ Räkning stoppad!');
   };
 
   const handleConfirmDelete = async () => {
@@ -1394,6 +1460,40 @@ export default function ManageBills({ readOnly }: Props) {
             <div style={{ marginTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
               <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', fontSize: '1rem' }}>Smarta inställningar</h4>
 
+              
+              {/* Start & Stopp */}
+              <div style={{ marginBottom: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px' }}>
+                 <label style={{ display: 'block', color: 'var(--text-primary)', fontWeight: 'bold', marginBottom: '0.5rem' }}>Börjar gälla från och med</label>
+                 <select 
+                   value={startMonthOption}
+                   onChange={e => setStartMonthOption(e.target.value as any)}
+                   style={{ width: '100%', marginBottom: startMonthOption === 'custom' ? '0.5rem' : 0 }}
+                 >
+                   <option value="always">Alltid / Historiskt</option>
+                   <option value="current">Nuvarande månad</option>
+                   <option value="next">Nästa månad</option>
+                   <option value="custom">Välj anpassad...</option>
+                 </select>
+                 {startMonthOption === 'custom' && (
+                   <input type="month" value={startMonthCustom} onChange={e => setStartMonthCustom(e.target.value)} style={{ width: '100%' }} />
+                 )}
+                 
+                 <label style={{ display: 'block', color: 'var(--text-primary)', fontWeight: 'bold', marginTop: '1rem', marginBottom: '0.5rem' }}>Slutar gälla efter (Stoppas)</label>
+                 <select 
+                   value={endMonthOption}
+                   onChange={e => setEndMonthOption(e.target.value as any)}
+                   style={{ width: '100%', marginBottom: endMonthOption === 'custom' ? '0.5rem' : 0 }}
+                 >
+                   <option value="never">Tillsvidare (Löpande)</option>
+                   <option value="current">Nuvarande månad</option>
+                   <option value="next">Nästa månad</option>
+                   <option value="custom">Välj anpassad...</option>
+                 </select>
+                 {endMonthOption === 'custom' && (
+                   <input type="month" value={endMonthCustom} onChange={e => setEndMonthCustom(e.target.value)} style={{ width: '100%' }} />
+                 )}
+              </div>
+
               {/* Varning */}
               <div style={{ marginBottom: '1rem', background: newBillWarn ? 'rgba(16, 185, 129, 0.1)' : 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: newBillWarn ? '1px solid #10b981' : '1px solid transparent', transition: 'all 0.2s' }}>
                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer' }}>
@@ -1658,6 +1758,51 @@ export default function ManageBills({ readOnly }: Props) {
         </div>
       )}
 
+      
+      {/* Stoppa Modal */}
+      {billToStop && createPortal(
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', zIndex: 99999 }}>
+          <div className="card" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', maxWidth: '400px', width: '90%', border: '1px solid #f59e0b', background: '#111', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', margin: 0, padding: '1.5rem' }}>
+            <h3 style={{ color: '#f59e0b', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>🛑</span> Stoppa räkning
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', margin: '0 0 1rem 0', lineHeight: '1.5' }}>
+              När vill du att <strong>{billToStop.name}</strong> ska sluta gälla? Historiken bevaras för tidigare månader.
+            </p>
+            
+            <select 
+              value={stopMonthOption}
+              onChange={e => setStopMonthOption(e.target.value as any)}
+              style={{ width: '100%', marginBottom: stopMonthOption === 'custom' ? '0.5rem' : '1.5rem', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: '1rem' }}
+            >
+              <option value="current">Från och med nuvarande månad</option>
+              <option value="next">Från och med nästa månad</option>
+              <option value="custom">Välj anpassad månad...</option>
+            </select>
+            
+            {stopMonthOption === 'custom' && (
+              <input type="month" value={stopCustomMonth} onChange={e => setStopCustomMonth(e.target.value)} style={{ width: '100%', marginBottom: '1.5rem', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: '1rem' }} />
+            )}
+
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button 
+                onClick={() => setBillToStop(null)}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Avbryt
+              </button>
+              <button 
+                onClick={handleConfirmStop}
+                style={{ flex: 1, background: '#f59e0b', color: '#fff', border: 'none', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                Stoppa räkning
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Raderingsmodal */}
       {billToDelete && createPortal(
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', zIndex: 99999 }}>
@@ -1699,3 +1844,7 @@ export default function ManageBills({ readOnly }: Props) {
     </div>
   );
 }
+
+
+
+

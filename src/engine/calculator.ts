@@ -48,6 +48,7 @@ export function calculateMonth(state: AppState, monthId: string): CalculationRes
 
   state.bills.forEach(bill => {
     if (bill.startMonth && bill.startMonth > monthId) return;
+    if (bill.endMonth && bill.endMonth <= monthId) return;
 
     const amount = amounts[bill.id] !== undefined ? amounts[bill.id] : bill.defaultAmount;
     const billAccount = state.accounts.find(a => a.id === bill.accountId);

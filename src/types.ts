@@ -23,6 +23,7 @@ export interface BillDefinition {
   isArchived?: boolean;
   isAutoTransfer?: string; // 'all' = hela räkningen, eller ett personkonto-ID = bara den personen förs automatiskt. Undefined/'' = manuell.
   startMonth?: string; // YYYY-MM
+  endMonth?: string; // YYYY-MM
 }
 
 export interface MonthData {
@@ -49,6 +50,7 @@ export interface PrivateBill {
   fixedFee?: number;
   isArchived?: boolean;
   startMonth?: string;
+  endMonth?: string;
 }
 
 export interface PrivateMonthData {
