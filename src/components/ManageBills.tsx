@@ -196,7 +196,7 @@ export default function ManageBills({ readOnly }: Props) {
     setNewBillIsLoan(bill.isLoan || false);
     setNewBillTotalDebt(bill.totalDebt !== undefined ? bill.totalDebt.toString() : '');
     setNewBillFixedFee(bill.fixedFee !== undefined ? bill.fixedFee.toString() : '');
-    const autoT = bill.isAutoTransfer;
+    const autoT: any = bill.isAutoTransfer;
     let initAuto = '';
     if (autoT === true || autoT === 'true') initAuto = 'all';
     else if (autoT === false || autoT === 'false' || !autoT) initAuto = '';
@@ -1845,6 +1845,7 @@ export default function ManageBills({ readOnly }: Props) {
     </div>
   );
 }
+
 
 
 
