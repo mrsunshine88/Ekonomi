@@ -196,7 +196,12 @@ export default function ManageBills({ readOnly }: Props) {
     setNewBillIsLoan(bill.isLoan || false);
     setNewBillTotalDebt(bill.totalDebt !== undefined ? bill.totalDebt.toString() : '');
     setNewBillFixedFee(bill.fixedFee !== undefined ? bill.fixedFee.toString() : '');
-    setNewBillAutoTransfer((bill.isAutoTransfer as any) === true ? 'all' : (bill.isAutoTransfer || ''));
+    const autoT = bill.isAutoTransfer;
+    let initAuto = '';
+    if (autoT === true || autoT === 'true') initAuto = 'all';
+    else if (autoT === false || autoT === 'false' || !autoT) initAuto = '';
+    else initAuto = String(autoT);
+    setNewBillAutoTransfer(initAuto);
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -1840,6 +1845,7 @@ export default function ManageBills({ readOnly }: Props) {
     </div>
   );
 }
+
 
 
 
