@@ -1846,7 +1846,7 @@ export default function ManageBills({ readOnly }: Props) {
               <span>⚠️</span> Är du säker?
             </h3>
             <p style={{ color: 'var(--text-secondary)', margin: '0 0 1.5rem 0', lineHeight: '1.5' }}>
-              När du raderar denna räkning kommer den att döljas för alla framtida månader, men historiken sparas så att gamla grafer och sammanställningar fortfarande stämmer.
+              VARNING: Om du raderar denna räkning försvinner även all gammal historik och statistik för den! Använd bara 'Ta bort' om räkningen lades till av misstag. Vill du istället sluta betala den men behålla all gammal historik? Klicka då på 'Stoppa' istället!
             </p>
             <div style={{ display: 'flex', gap: '1rem' }}>
               <button 
@@ -1879,6 +1879,7 @@ export default function ManageBills({ readOnly }: Props) {
     </div>
   );
 }
+
 
 
 
