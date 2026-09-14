@@ -90,6 +90,7 @@ export default function ManageBills({ readOnly }: Props) {
 
   const [editingIncomeId, setEditingIncomeId] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [successModalMsg, setSuccessModalMsg] = useState('');
 
   const handleSaveBill = () => {
     if (readOnly) { setShowPaywall(true); return; } if (!realUser) { openAuthModal(); return; }
@@ -176,7 +177,7 @@ export default function ManageBills({ readOnly }: Props) {
       setNewBillCustomSplit({});
     }
 
-    toast.success(wasEditing ? '✅ Räkning sparad!' : '✅ Räkning tillagd!');
+    setSuccessModalMsg(wasEditing ? 'Räkningen har uppdaterats.' : 'Räkningen har lagts till i listan.');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -189,8 +190,20 @@ export default function ManageBills({ readOnly }: Props) {
     setNewBillCustomSplit(bill.customSplit || {});
     setNewBillDefault(bill.defaultAmount ? bill.defaultAmount.toString() : '');
     setNewBillInterval(bill.interval || 'all');
-    if (bill.startMonth) { setStartMonthOption('custom'); setStartMonthCustom(bill.startMonth); } else { setStartMonthOption('always'); setStartMonthCustom(''); }
-    if (bill.endMonth) { setEndMonthOption('custom'); setEndMonthCustom(bill.endMonth); } else { setEndMonthOption('never'); setEndMonthCustom(''); }
+        const getCurrentMonthStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+    const getNextMonthStr = () => { const d = new Date(); d.setMonth(d.getMonth() + 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+    
+    if (bill.startMonth) { 
+      if (bill.startMonth === getCurrentMonthStr()) { setStartMonthOption('current'); setStartMonthCustom(''); }
+      else if (bill.startMonth === getNextMonthStr()) { setStartMonthOption('next'); setStartMonthCustom(''); }
+      else { setStartMonthOption('custom'); setStartMonthCustom(bill.startMonth); }
+    } else { setStartMonthOption('always'); setStartMonthCustom(''); }
+    
+    if (bill.endMonth) { 
+      if (bill.endMonth === getCurrentMonthStr()) { setEndMonthOption('current'); setEndMonthCustom(''); }
+      else if (bill.endMonth === getNextMonthStr()) { setEndMonthOption('next'); setEndMonthCustom(''); }
+      else { setEndMonthOption('custom'); setEndMonthCustom(bill.endMonth); }
+    } else { setEndMonthOption('never'); setEndMonthCustom(''); }
     setNewBillCustomMonths(bill.customMonths || []);
     setNewBillWarn(bill.warnIfZero || false);
     setNewBillIsLoan(bill.isLoan || false);
@@ -1473,7 +1486,7 @@ export default function ManageBills({ readOnly }: Props) {
                    <option value="always">Alltid / Historiskt</option>
                    <option value="current">Nuvarande månad</option>
                    <option value="next">Nästa månad</option>
-                   <option value="custom">Välj anpassad...</option>
+                   <option value="custom">Specifik månad</option>
                  </select>
                  {startMonthOption === 'custom' && (
                    <input type="month" value={startMonthCustom} onChange={e => setStartMonthCustom(e.target.value)} style={{ width: '100%' }} />
@@ -1488,7 +1501,7 @@ export default function ManageBills({ readOnly }: Props) {
                    <option value="never">Tillsvidare (Löpande)</option>
                    <option value="current">Nuvarande månad</option>
                    <option value="next">Nästa månad</option>
-                   <option value="custom">Välj anpassad...</option>
+                   <option value="custom">Specifik månad</option>
                  </select>
                  {endMonthOption === 'custom' && (
                    <input type="month" value={endMonthCustom} onChange={e => setEndMonthCustom(e.target.value)} style={{ width: '100%' }} />
@@ -1804,6 +1817,27 @@ export default function ManageBills({ readOnly }: Props) {
         document.body
       )}
 
+      
+      {/* Success Modal */}
+      {successModalMsg && createPortal(
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ maxWidth: '400px', width: '90%', border: '1px solid #10b981', background: '#111', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', margin: 0, padding: '2rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</div>
+            <h3 style={{ color: '#10b981', margin: '0 0 1rem 0' }}>Klart!</h3>
+            <p style={{ color: 'var(--text-secondary)', margin: '0 0 1.5rem 0', lineHeight: '1.5' }}>
+              {successModalMsg}
+            </p>
+            <button 
+              onClick={() => setSuccessModalMsg('')}
+              style={{ width: '100%', background: '#10b981', color: '#fff', border: 'none', padding: '1rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem' }}
+            >
+              Stäng
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Raderingsmodal */}
       {billToDelete && createPortal(
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', zIndex: 99999 }}>
@@ -1845,6 +1879,7 @@ export default function ManageBills({ readOnly }: Props) {
     </div>
   );
 }
+
 
 
 
