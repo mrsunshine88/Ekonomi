@@ -117,7 +117,7 @@ export default function ManageBills({ readOnly }: Props) {
         defaultAmount: newBillDefault === '' ? 0 : parseFloat(newBillDefault),
         interval: newBillInterval,
         customMonths: newBillInterval === 'custom' ? newBillCustomMonths : undefined,
-        warnIfZero: newBillWarn,
+        warnIfZero: newBillWarn, startMonth: finalStartMonth, endMonth: finalEndMonth,
         userId: user.id,
         isShared: false, // default, can be toggled in private view
         isLoan: newBillIsLoan,
@@ -138,7 +138,7 @@ export default function ManageBills({ readOnly }: Props) {
         defaultAmount: newBillDefault === '' ? 0 : parseFloat(newBillDefault),
         interval: newBillInterval,
         customMonths: newBillInterval === 'custom' ? newBillCustomMonths : undefined,
-        warnIfZero: newBillWarn,
+        warnIfZero: newBillWarn, startMonth: finalStartMonth, endMonth: finalEndMonth,
         isLoan: newBillIsLoan,
         totalDebt: newBillTotalDebt === '' ? undefined : parseFloat(newBillTotalDebt),
         fixedFee: newBillFixedFee === '' ? 0 : parseFloat(newBillFixedFee),
@@ -1840,6 +1840,7 @@ export default function ManageBills({ readOnly }: Props) {
     </div>
   );
 }
+
 
 
 
