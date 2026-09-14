@@ -22,7 +22,9 @@ export const billBaseSchema = z.object({
   warnIfZero: z.boolean().optional(),
   isLoan: z.boolean().optional(),
   totalDebt: amountSchema.optional(),
-  isArchived: z.boolean().optional()
+  isArchived: z.boolean().optional(),
+  startMonth: z.string().optional(),
+  endMonth: z.string().optional()
 });
 
 export const billSchema = billBaseSchema.extend({
