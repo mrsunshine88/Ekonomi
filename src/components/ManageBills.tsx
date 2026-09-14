@@ -118,10 +118,6 @@ export default function ManageBills({ readOnly }: Props) {
         interval: newBillInterval,
         customMonths: newBillInterval === 'custom' ? newBillCustomMonths : undefined,
         warnIfZero: newBillWarn,
-        startMonth: finalStartMonth,
-        endMonth: finalEndMonth,
-        startMonth: finalStartMonth,
-        endMonth: finalEndMonth,
         userId: user.id,
         isShared: false, // default, can be toggled in private view
         isLoan: newBillIsLoan,
@@ -200,7 +196,7 @@ export default function ManageBills({ readOnly }: Props) {
     setNewBillIsLoan(bill.isLoan || false);
     setNewBillTotalDebt(bill.totalDebt !== undefined ? bill.totalDebt.toString() : '');
     setNewBillFixedFee(bill.fixedFee !== undefined ? bill.fixedFee.toString() : '');
-    setNewBillAutoTransfer(bill.isAutoTransfer === true ? 'all' : (bill.isAutoTransfer || ''));
+    setNewBillAutoTransfer((bill.isAutoTransfer as any) === true ? 'all' : (bill.isAutoTransfer || ''));
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -1844,6 +1840,7 @@ export default function ManageBills({ readOnly }: Props) {
     </div>
   );
 }
+
 
 
 

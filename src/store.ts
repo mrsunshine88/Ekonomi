@@ -489,7 +489,7 @@ export const useStore = create<StoreState>((set, get) => ({
         account_id: b.accountId,
         default_amount: b.defaultAmount,
         start_month: b.startMonth,
-        end_month: b.end_month,
+        end_month: b.endMonth,
         interval: b.interval,
         warn_if_zero: b.warnIfZero,
         split_type: b.splitType,
@@ -1159,3 +1159,4 @@ export const useStore = create<StoreState>((set, get) => ({
 }));
 
 export { calculateMonth } from './engine/calculator';
+
