@@ -18,6 +18,7 @@ interface AuthState {
   isChatAgent: boolean;
   isNewlyConfirmed: boolean;
   setIsNewlyConfirmed: (val: boolean) => void;
+  profileLoaded: boolean;
 }
 
 // Fånga hash-fragmentet innan Supabase Auth rensar det
@@ -39,7 +40,8 @@ const AuthContext = createContext<AuthState>({
   isAdmin: false,
   isChatAgent: false,
   isNewlyConfirmed: false,
-  setIsNewlyConfirmed: () => {}
+  setIsNewlyConfirmed: () => {},
+  profileLoaded: false
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -57,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isChatAgent, setIsChatAgent] = useState(false);
   const [isNewlyConfirmed, setIsNewlyConfirmed] = useState(initiallyConfirmed);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   const acceptTos = async () => {
     if (!user) return;
@@ -90,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSetupStatus(data.setup_status || 'new_user');
         setIsChatAgent(data.chat_agent || false);
       }
+      setProfileLoaded(true);
     } catch (e) {
       console.error("Network or fetch error in fetchHousehold:", e);
       // We do NOT reset state here, because a temporary network drop 
@@ -102,12 +106,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let adminChannel: ReturnType<typeof supabase.channel> | null = null;
     let chatAgentChannel: ReturnType<typeof supabase.channel> | null = null;
 
-    // Failsafe: Tvinga bort "Laddar..."-skärmen efter 4 sekunder oavsett vad som händer
+    // Failsafe: Tvinga bort "Laddar..."-skärmen efter 10 sekunder oavsett vad som händer
     const failsafeTimer = setTimeout(() => {
       if (mounted) {
         setLoading(false);
       }
-    }, 4000);
+    }, 10000);
 
     const initAuth = async () => {
       try {
@@ -174,6 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setRole(null);
               setTosAccepted(false);
               setSetupStatus('new_user');
+              setProfileLoaded(false);
               sessionStorage.removeItem('setupWizardState');
             }
           }
@@ -207,7 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Visa bara "Laddar..." om vi aktivt precis loggade in från Login-skärmen
           if (event === 'SIGNED_IN' && currentUserWasNull) {
             setLoading(true);
-            setTimeout(() => { if (mounted) setLoading(false); }, 4000);
+            setTimeout(() => { if (mounted) setLoading(false); }, 10000);
           }
           const householdPromise = fetchHousehold(newSession.user.id);
           let adminStatusResult = false;
@@ -262,6 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setRole(null);
           setTosAccepted(false);
           setSetupStatus('new_user');
+          setProfileLoaded(false);
           sessionStorage.removeItem('setupWizardState');
         }
       } catch (err) {
@@ -283,7 +289,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, householdId, role, tosAccepted, setupStatus, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) }, acceptTos, isRecoveringPassword, setIsRecoveringPassword, isAdmin, isChatAgent, isNewlyConfirmed, setIsNewlyConfirmed }}>
+    <AuthContext.Provider value={{ user, session, householdId, role, tosAccepted, setupStatus, loading, refreshHousehold: async () => { if(user) await fetchHousehold(user.id) }, acceptTos, isRecoveringPassword, setIsRecoveringPassword, isAdmin, isChatAgent, isNewlyConfirmed, setIsNewlyConfirmed, profileLoaded }}>
       {children}
     </AuthContext.Provider>
   );

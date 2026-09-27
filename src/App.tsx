@@ -28,7 +28,7 @@ import DemoBanner from './components/DemoBanner';
 import { trackFunnelEvent } from './hooks/useFunnelTracker';
 
 function App() {
-  const { user, householdId, setupStatus, loading, isRecoveringPassword, isAdmin, isChatAgent, tosAccepted, isNewlyConfirmed, setIsNewlyConfirmed } = useAuth();
+  const { user, householdId, setupStatus, loading, isRecoveringPassword, isAdmin, isChatAgent, tosAccepted, isNewlyConfirmed, setIsNewlyConfirmed, profileLoaded } = useAuth();
   const initCloud = useStore(s => s.initCloud);
   const state = useStore(s => s.state);
   const isDemoMode = useStore(s => s.isDemoMode);
@@ -256,6 +256,14 @@ function App() {
   }
 
   // 2. HARD GATE: TOS & Privacy Policy
+  if (!profileLoaded && !isDemoMode && user) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-color)' }}>
+        <div style={{ color: 'var(--text-secondary)' }}>Laddar profil...</div>
+      </div>
+    );
+  }
+
   if (!tosAccepted && !isDemoMode) {
     return (
       <div className="container" style={{ minHeight: '100vh' }}>
